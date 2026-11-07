@@ -1,34 +1,82 @@
-@import "tailwindcss";
-
-@custom-variant dark (&:where(.dark, .dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
-  :root {
-    --bg-canvas: #F6F7F9;
-    --surface: #FFFFFF;
-    --navy-primary: #0F2447;
-    --navy-hover: #18325C;
-    --navy-border: #263B63;
-    --gold-accent: #B8923A;
-    --gold-subtle: #FBF0D9;
-    --text-primary: #14213D;
-    --text-muted: #5B6472;
-    --border-subtle: #E3E6EB;
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    background-color: var(--bg-canvas);
-    color: var(--text-primary);
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-canvas text-slate-800 font-sans antialiased selection:bg-gold-100 selection:text-navy-900;
+    overflow-x: hidden;
   }
+}
 
-  h1, h2, h3, .font-serif-title {
-    font-family: 'Source Serif 4', Georgia, serif;
-  }
+/* Global Smooth Scrollbar Styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
 
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+  transition: background 0.2s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Custom Scroll Utilities */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+  overscroll-behavior: contain;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #0B1B3D;
+}
+
+/* Hide scrollbar while preserving smooth touch & trackpad scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Table scroll wrapper with smooth shadow hints */
+.table-scroll-container {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }

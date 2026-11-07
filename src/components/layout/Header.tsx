@@ -1,102 +1,96 @@
 import React from 'react';
-import { UserSession } from '../../types';
-import { Calendar, PlusCircle, Bell, Send, CheckCircle2 } from 'lucide-react';
-import { formatDate, getMonday } from '../../lib/storage';
+import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { Menu, Bell, PlusCircle, Calendar } from 'lucide-react';
+import { Badge } from '../common/Badge';
 
 interface HeaderProps {
-  user: UserSession;
-  currentTab: string;
-  onOpenNewReport?: () => void;
-  onOpenBroadcast?: () => void;
-  unreadCount?: number;
-  onSelectTab?: (tab: string) => void;
+  onToggleSidebar: () => void;
+  onOpenNotifications: () => void;
+  onNavigateToForm?: () => void;
+  onOpenAccountSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  user,
-  currentTab,
-  onOpenNewReport,
-  onOpenBroadcast,
-  unreadCount = 0,
-  onSelectTab
+  onToggleSidebar,
+  onOpenNotifications,
+  onNavigateToForm,
+  onOpenAccountSettings,
 }) => {
-  const currentWeekMonday = getMonday();
-  const isAdmin = user.role === 'admin';
-
-  const tabTitles: Record<string, string> = {
-    dash: isAdmin ? 'Administrator Overview' : 'Cell Dashboard',
-    new: 'Submit Weekly Report',
-    rep: 'All Reports & Reviews',
-    hist: 'Reporting History',
-    cells: 'Cells & Ministry Leaders',
-    trend: 'Network Trends & Growth',
-    note: 'In-App Notifications',
-    settings: 'Supabase & Backend Architecture',
-    info: 'Cell Profile & Area Directory'
-  };
-
-  const currentTitle = tabTitles[currentTab] || 'Reporting System';
+  const { currentUser, canSubmitReport } = useAuth();
+  const { unreadCount } = useNotifications();
 
   return (
-    <header className="bg-white border-b border-[#E3E6EB] px-6 py-3.5 flex items-center justify-between gap-4 sticky top-0 z-20 shadow-2xs">
-      {/* Zone 1: Current Breadcrumb & Title */}
-      <div className="flex items-center gap-3 min-w-0">
-        <img
-          src="/assets/aistudio/fni_logo_5b889f17.jpg"
-          alt="FNI Logo"
-          className="w-8 h-8 rounded-md object-cover border border-[#E3E6EB] shrink-0 md:hidden"
-        />
-        <div>
-          <div className="text-[11px] font-medium text-[#5B6472] uppercase tracking-wider">
-            Forerunners Network International
+    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-canvas/85 backdrop-blur-md border-b border-slate-200/50 transition-all">
+      {/* Left: Mobile toggle & context indicator */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onToggleSidebar}
+          className="md:hidden p-2 rounded-xl bg-white shadow-card text-slate-500 hover:text-navy-950 transition-colors"
+          aria-label="Toggle navigation"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-navy-950 font-semibold text-xs shadow-card border border-slate-100">
+            <Calendar className="w-3.5 h-3.5 text-gold-600" />
+            <span>Cycle: <strong>Week 45</strong></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
           </div>
-          <h2 className="text-lg font-semibold text-[#0F2447] tracking-tight truncate font-serif-title">
-            {currentTitle}
-          </h2>
         </div>
       </div>
 
-      {/* Zone 2: Current Reporting Period Status */}
-      <div className="hidden md:flex items-center gap-2 text-xs text-[#5B6472] bg-[#F6F7F9] px-3 py-1.5 rounded border border-[#E3E6EB]">
-        <Calendar className="w-3.5 h-3.5 text-[#B8923A]" />
-        <span>Current Reporting Cycle:</span>
-        <strong className="text-[#0F2447] font-semibold">
-          Week of {formatDate(currentWeekMonday)}
-        </strong>
-      </div>
-
-      {/* Zone 3: 1 Primary Action */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        {unreadCount > 0 && onSelectTab && (
+      {/* Right: Actions, notifications, profile */}
+      <div className="flex items-center gap-2.5">
+        {canSubmitReport && onNavigateToForm && (
           <button
-            onClick={() => onSelectTab('note')}
-            className="md:hidden relative p-2 text-[#0F2447] hover:bg-[#F6F7F9] rounded border border-[#E3E6EB]"
-            title="Notifications"
+            onClick={onNavigateToForm}
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-navy-900 hover:bg-navy-950 text-white font-bold text-xs shadow-card transition-all"
           >
-            <Bell className="w-4 h-4 text-[#B8923A]" />
-            <span className="absolute -top-1 -right-1 bg-[#B8923A] text-[#0F2447] text-[10px] font-bold px-1 rounded-full">
-              {unreadCount}
-            </span>
-          </button>
-        )}
-
-        {isAdmin ? (
-          <button
-            onClick={onOpenBroadcast}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#0F2447] hover:bg-[#18325C] rounded border border-[#0F2447] transition-colors whitespace-nowrap shadow-xs"
-          >
-            <Send className="w-3.5 h-3.5 text-[#B8923A]" />
-            <span>Broadcast Notice</span>
-          </button>
-        ) : (
-          <button
-            onClick={onOpenNewReport}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#0F2447] hover:bg-[#18325C] rounded border border-[#0F2447] transition-colors whitespace-nowrap shadow-xs"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-[#B8923A]" />
+            <PlusCircle className="w-4 h-4 text-gold-400" />
             <span>Submit Report</span>
           </button>
         )}
+
+        {/* Notifications */}
+        <button
+          onClick={onOpenNotifications}
+          className="relative p-2.5 rounded-full bg-white text-slate-600 hover:text-navy-950 shadow-card transition-colors border border-slate-100"
+          title="Notifications & Dispatches"
+        >
+          <Bell className="w-4 h-4" />
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-600 text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+
+        {/* Profile Pill */}
+        <button
+          onClick={onOpenAccountSettings}
+          className="flex items-center gap-2 pl-2 text-left hover:opacity-90 transition-opacity focus:outline-hidden"
+          title="Account Settings & Security"
+        >
+          <div className="w-8 h-8 rounded-full bg-navy-900 text-gold-400 text-xs font-bold flex items-center justify-center shadow-sm">
+            {currentUser?.full_name
+              ? currentUser.full_name
+                  .split(' ')
+                  .map(n => n[0])
+                  .slice(0, 2)
+                  .join('')
+              : 'FN'}
+          </div>
+          <div className="hidden lg:block text-left">
+            <div className="text-xs font-bold text-navy-950 leading-tight">
+              {currentUser?.full_name}
+            </div>
+            <div className="text-[10px] font-medium text-slate-400 capitalize">
+              {currentUser?.role ? currentUser.role.replace('_', ' ') : 'Leader'}
+            </div>
+          </div>
+        </button>
       </div>
     </header>
   );

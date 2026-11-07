@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if caller is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper to get caller's profile
+    function getUserProfile() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
+    }
+    
+    // Helper to check if caller is administrator
+    function isAdmin() {
+      return isAuthenticated() && (
+        getUserProfile().role in ['admin', 'super_admin', 'national_admin']
+      );
+    }
+    
+    // User Profiles
+    match /profiles/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    // Regions
+    match /regions/{regionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Cells
+    match /cells/{cellId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Leaders can register during onboarding
+      allow update: if isAuthenticated() && (resource.data.leader_id == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    // Reporting Periods
+    match /reporting_periods/{periodId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Weekly Cell Reports
+    match /cell_reports/{reportId} {
+      // Cell leaders read only their own cell's reports; admins read all
+      allow read: if isAuthenticated() && (
+        resource.data.submitted_by == request.auth.uid ||
+        resource.data.cell_id == getUserProfile().cell_id ||
+        isAdmin()
+      );
+      
+      // Cell leaders submit returns for their own cell
+      allow create: if isAuthenticated() && (
+        request.resource.data.submitted_by == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Leaders can update drafts or requested revisions; Admins can update status & review
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (resource.data.submitted_by == request.auth.uid && resource.data.status in ['draft', 'needs_revision'])
+      );
+      
+      allow delete: if isAdmin();
+    }
+    
+    // Report Reviews
+    match /report_reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+    
+    // Notifications
+    match /notifications/{notifId} {
+      allow read, update: if isAuthenticated() && (
+        resource.data.user_id == request.auth.uid ||
+        resource.data.user_id == 'all'
+      );
+      allow create: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+    
+    // Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Immutable audit trail
+    }
+  }
+}
