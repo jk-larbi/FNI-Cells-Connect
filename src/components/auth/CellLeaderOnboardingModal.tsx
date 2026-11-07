@@ -137,7 +137,7 @@ export const CellLeaderOnboardingModal: React.FC = () => {
                   required
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  placeholder="e.g. Brother Michael Okon"
+                  placeholder="Enter your full name"
                   className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600"
                 />
               </div>
@@ -178,7 +178,7 @@ export const CellLeaderOnboardingModal: React.FC = () => {
                 required
                 value={cellName}
                 onChange={e => setCellName(e.target.value)}
-                placeholder="e.g. Grace Cell Victoria Island, Apex Fellowship Ikeja"
+                placeholder="Enter your cell fellowship name"
                 className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600 font-semibold"
               />
             </div>

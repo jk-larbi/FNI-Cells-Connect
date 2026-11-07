@@ -68,7 +68,7 @@ The platform implements enterprise-grade authentication with distinct separation
 - **OAuth Providers**: Supabase Authentication with **Google Account (Gmail)** and **Apple ID**.
 - **First-Time Registration Wizard**: Non-dismissible modal immediately triggered for newly signed-in cell leaders.
   - Collects Full Name, Cell Fellowship Name, WhatsApp/Phone Number, Region, Meeting Day/Time, Venue Address, Target Attendance.
-  - **Duplicate Prevention & Association**: Performs case-insensitive, alphanumeric normalization on cell names. If a cell already exists (e.g. `Grace Cell VI` vs `Grace Cell Victoria Island`), prompts to link to the existing cell without generating duplicate records.
+  - **Duplicate Prevention & Association**: Performs case-insensitive, alphanumeric normalization on cell names. If a cell already exists (e.g. `Living Waters` vs `Living Waters Fellowship`), prompts to link to the existing cell without generating duplicate records.
   - Sets `is_onboarded = true` and persists details in Supabase database.
 - **Returning Cell Leaders**: Automatically recognized; bypasses onboarding and loads their registered cell data directly.
 - **Data Isolation**: Cell leaders are restricted by Row Level Security (RLS) and can only access their own profile, cell details, and reports.
@@ -244,22 +244,18 @@ The project is preconfigured for zero-friction deployment to Vercel:
 
 ## 10. Verification & Testing Instructions
 
-You can immediately test every feature out-of-the-box using the sticky top **Role Preview Tester**:
+1. **Cell Leader Access & Registration**:
+   - On the sign-in screen, select **Cell Leader Access**.
+   - Enter your email address or click **Continue with Google** / **Continue with Apple ID**.
+   - As a first-time cell leader, the **Cell Leader Registration & Onboarding** wizard appears.
+   - Enter your full name, cell fellowship name, phone number, and meeting details.
+   - Upon completion, you enter your Cell Leader Dashboard with your registered cell name and clean 0-based records.
+   - Click **Submit Report** to file your first weekly return.
 
-1. **Super Admin Mode**:
-   - Inspect global organization numbers: 8 cells, 21 souls won, 128 attendance.
-   - Access **Administration** to register new cells, create regions, or open Week 46.
-   - Access **Audit Trail** to inspect immutable action logs.
-2. **Regional Leader Mode (Lagos Central)**:
-   - Notice the scoped dashboard reflecting Lagos Central metrics.
-   - Go to **Report Management** → Click **Review** on a report → Enter review feedback → Click **Approve Report** or **Request Revision**.
-   - Go to **Regional Oversight** to review assigned cells and click **Remind** on outstanding cells.
-3. **Cell Leader Mode (Brother Michael Okon - Grace Cell VI)**:
-   - Notice restricted navigation (Administration and Regional Oversight are hidden per RBAC).
-   - Click **Submit Weekly Report** → Complete Step 1 (Attendance), Step 2 (Evangelism), Step 3 (Meeting), Step 4 (Pastoral Remarks).
-   - Click **Submit Formal Report** or **Save Draft**.
-   - Verify the report immediately appears in your Report Management list.
-4. **Notifications Center**:
-   - Click the bell icon in the top header.
-   - Switch between **In-App Feed**, **WhatsApp Alerts**, and **Email Gateway**.
-   - Click **Trigger Notice** to test simulated multi-channel dispatch.
+2. **Administrator Access & Setup**:
+   - On the sign-in screen, select **Administrator Sign-In**.
+   - Enter initial setup credentials: Username `admin`, Password `admin123`.
+   - The system immediately requires you to create a secure personal administrator password.
+   - Once updated, you access the full **Admin Panel**.
+   - View registered cell leaders, monitor real-time submissions, filter cells, and review cell reports.
+   - The temporary initial credentials (`admin123`) are permanently disabled.

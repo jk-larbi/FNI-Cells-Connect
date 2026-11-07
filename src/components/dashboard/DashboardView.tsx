@@ -39,6 +39,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [trends, setTrends] = useState<any[]>([]);
   const [regionalStats, setRegionalStats] = useState<any[]>([]);
   const [recentReports, setRecentReports] = useState<CellReport[]>([]);
+  const [activeCell, setActiveCell] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -46,16 +47,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     async function loadDashboard() {
       try {
         setIsLoading(true);
-        const [dashStats, trendData, regData, allReports] = await Promise.all([
+        const [dashStats, trendData, regData, allReports, allCells] = await Promise.all([
           AnalyticsService.getDashboardStats(currentRole, currentUser.region_id, currentUser.cell_id),
           AnalyticsService.getWeeklyTrends(currentRole, currentUser.region_id, currentUser.cell_id),
           AnalyticsService.getRegionalPerformance(),
           ReportService.getReports(),
+          ReportService.getCells(),
         ]);
 
         setStats(dashStats);
         setTrends(trendData);
         setRegionalStats(regData);
+
+        if (currentUser.cell_id) {
+          const matched = allCells.find(c => c.id === currentUser.cell_id);
+          if (matched) setActiveCell(matched);
+        }
 
         let filtered = allReports;
         if (!isAdmin && currentUser.cell_id) {
@@ -88,7 +95,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <p className="text-xs text-slate-400 mt-0.5">
             {isAdmin
               ? 'Organization-wide reporting metrics • Week 45 Cycle'
-              : 'Fellowship Unit: Grace Cell Victoria Island • Lagos Central Region'}
+              : `Fellowship Unit: ${currentUser.cell_name || activeCell?.name || 'Awaiting Cell Registration'} • ${currentUser.region_name || 'Ecclesiastical Region'}`}
           </p>
         </div>
 
@@ -109,23 +116,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title={isAdmin ? 'Total Cells' : 'Cell Attendance'}
-          value={isAdmin ? stats.totalCells : 21}
-          subtitle={isAdmin ? `${stats.activeCellLeaders} Active leaders` : '16 members + 5 visitors'}
+          value={isAdmin ? stats.totalCells : stats.totalAttendance}
+          subtitle={isAdmin ? `${stats.activeCellLeaders} Active leaders` : `${stats.totalAttendance} total turnout`}
           icon={<Users className="w-5 h-5 text-gold-400" />}
           isActive={true}
         />
 
         <StatCard
           title={isAdmin ? 'Active Leaders' : 'Weekly Visitors'}
-          value={isAdmin ? stats.activeCellLeaders : 5}
-          subtitle={isAdmin ? 'Field leadership network' : 'First-timers registered'}
+          value={isAdmin ? stats.activeCellLeaders : stats.visitorsRecorded}
+          subtitle={isAdmin ? 'Field leadership network' : `${stats.visitorsRecorded} first-timers recorded`}
           icon={<UserCheck className="w-5 h-5 text-gold-400" />}
           isActive={false}
         />
 
         <StatCard
           title="Souls Won"
-          value={isAdmin ? `+${stats.soulsWon}` : '+4'}
+          value={`+${stats.soulsWon}`}
           subtitle="Confirmed evangelism harvest"
           icon={<Flame className="w-5 h-5 text-gold-400" />}
           isActive={false}
@@ -143,14 +150,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-card">
           <WeeklyPerformanceChart
             data={trends}
-            title={isAdmin ? 'Weekly Attendance & Visitors (All Units)' : 'Grace Cell VI Attendance Trend'}
+            title={isAdmin ? 'Weekly Attendance & Visitors (All Units)' : `${currentUser.cell_name || activeCell?.name || 'My Cell'} Attendance Trend`}
           />
         </div>
 
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-card">
           <SoulsWonChart
             data={trends}
-            title={isAdmin ? 'Evangelism Harvest Across Cycles' : 'Grace Cell VI Souls Won Harvest'}
+            title={isAdmin ? 'Evangelism Harvest Across Cycles' : `${currentUser.cell_name || activeCell?.name || 'My Cell'} Souls Won Harvest`}
           />
         </div>
       </div>
@@ -178,31 +185,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Cell Unit Info
                 </h4>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                  Active
+                  {activeCell ? 'Registered' : 'Awaiting Registration'}
                 </span>
               </div>
 
               <div className="space-y-3 text-xs">
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                   <span className="text-slate-400 text-[10px] block">Meeting Schedule</span>
-                  <span className="font-bold text-navy-950">Every Wednesday @ 18:30</span>
+                  <span className="font-bold text-navy-950">
+                    {activeCell?.meeting_day ? `Every ${activeCell.meeting_day} @ ${activeCell.meeting_time}` : 'Schedule not yet configured'}
+                  </span>
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                   <span className="text-slate-400 text-[10px] block">Venue Address</span>
-                  <span className="font-medium text-slate-700">14 Adeola Odeku Street, Victoria Island, Lagos</span>
+                  <span className="font-medium text-slate-700">
+                    {activeCell?.venue_address || 'Venue address pending'}
+                  </span>
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                   <span className="text-slate-400 text-[10px] block">Current Cycle Status</span>
-                  <span className="font-bold text-emerald-700">Week 45 Report Filed (Under Review)</span>
+                  <span className={`font-bold ${recentReports[0] ? 'text-emerald-700' : 'text-slate-600'}`}>
+                    {recentReports[0] ? `Week 45 Report Filed (${recentReports[0].status.toUpperCase()})` : 'Awaiting submission for Week 45'}
+                  </span>
                 </div>
 
                 <button
                   onClick={onNavigateToForm}
                   className="w-full py-2.5 rounded-xl bg-navy-900 text-white font-bold text-xs hover:bg-navy-950 transition-colors shadow-sm"
                 >
-                  Edit / Submit Next Return
+                  {recentReports[0] ? 'Edit / Submit Next Return' : '+ File Week 45 Return'}
                 </button>
               </div>
             </div>

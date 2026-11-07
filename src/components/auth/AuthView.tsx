@@ -11,6 +11,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const { loginAdmin, loginOAuth, isSupabaseActive } = useAuth();
   const [activePortal, setActivePortal] = useState<'cell_leader' | 'admin'>('cell_leader');
 
+  // Cell Leader state
+  const [leaderEmail, setLeaderEmail] = useState('');
+
   // Admin form state
   const [adminUsername, setAdminUsername] = useState('admin');
   const [adminPassword, setAdminPassword] = useState('admin123');
@@ -25,7 +28,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const res = await loginOAuth(provider, options);
+      const emailToUse = leaderEmail.trim() || options?.testEmail;
+      const res = await loginOAuth(provider, emailToUse ? { testEmail: emailToUse, testName: options?.testName } : undefined);
       if (!res.success) {
         setErrorMessage(res.error || 'OAuth sign-in failed');
       } else {
@@ -117,6 +121,24 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
 
               {/* OAuth Buttons */}
               <div className="space-y-3 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Your Google (Gmail) or Apple ID Email
+                  </label>
+                  <div className="relative rounded-xl shadow-xs">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="email"
+                      value={leaderEmail}
+                      onChange={e => setLeaderEmail(e.target.value)}
+                      placeholder="e.g. your.email@gmail.com"
+                      className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600"
+                    />
+                  </div>
+                </div>
+
                 {/* Google Sign-In */}
                 <button
                   type="button"
@@ -170,48 +192,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                 <p>
                   • Returning users with registered cells are automatically recognised and bypass setup.
                 </p>
-              </div>
-
-              {/* Instant Evaluation Testing Profiles */}
-              <div className="pt-2 border-t border-slate-100">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Instant Test Accounts (Click to Test)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleOAuthSignIn('google', {
-                        testEmail: 'new.leader.test@gmail.com',
-                        testName: 'Pastor Joshua Danladi',
-                      })
-                    }
-                    className="p-2.5 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 hover:bg-amber-100/70 text-left transition-colors"
-                  >
-                    <div className="font-bold text-amber-950 flex items-center justify-between">
-                      <span>1. First-Time Setup</span>
-                      <span className="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-mono">NEW</span>
-                    </div>
-                    <div className="text-[11px] text-amber-800 truncate">Triggers cell onboarding wizard</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleOAuthSignIn('google', {
-                        testEmail: 'michael.okon@gmail.com',
-                        testName: 'Brother Michael Okon',
-                      })
-                    }
-                    className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-left transition-colors"
-                  >
-                    <div className="font-bold text-navy-950 flex items-center justify-between">
-                      <span>2. Returning Leader</span>
-                      <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono">ACTIVE</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500 truncate">Grace Cell VI (Bypasses setup)</div>
-                  </button>
-                </div>
               </div>
             </div>
           )}

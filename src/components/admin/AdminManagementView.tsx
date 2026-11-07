@@ -381,7 +381,16 @@ export const AdminManagementView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredUsers.map(user => (
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                      <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 opacity-60" />
+                      <div className="font-semibold text-slate-600 text-xs">No users or cell leaders registered yet</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">Cell leaders will appear here as they register via Google or Apple sign-in.</div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map(user => (
                   <tr key={user.id} className="hover:bg-slate-50/70 transition-colors group">
                     <td className="py-3.5 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-3">
@@ -479,7 +488,7 @@ export const AdminManagementView: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
@@ -547,30 +556,40 @@ export const AdminManagementView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filteredCells.map(c => (
-                    <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-3 font-bold text-navy-950">
-                        <div>{c.name}</div>
-                        <div className="text-[10px] text-slate-400 font-normal">{c.venue_address}</div>
-                      </td>
-                      <td className="py-3 px-3 font-mono text-slate-400 font-semibold">{c.code}</td>
-                      <td className="py-3 px-3 text-slate-600 font-medium">{c.region_name}</td>
-                      <td className="py-3 px-3 text-slate-800 font-medium">
-                        <div className="font-semibold text-navy-950">{c.leader_name || 'Unassigned'}</div>
-                        {c.leader_phone && <div className="text-[10px] text-slate-400 font-mono">{c.leader_phone}</div>}
-                      </td>
-                      <td className="py-3 px-3 text-slate-500 font-medium">{c.meeting_day} @ {c.meeting_time}</td>
-                      <td className="py-3 px-3 font-bold text-navy-950">{c.target_attendance} pax</td>
-                      <td className="py-3 px-3 text-right">
-                        <button
-                          onClick={() => handleViewCellReports(c)}
-                          className="px-2.5 py-1 rounded-lg bg-navy-50 text-navy-900 font-bold hover:bg-navy-900 hover:text-white transition-all text-[11px] border border-navy-200"
-                        >
-                          View Reports
-                        </button>
+                  {filteredCells.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                        <Building className="w-8 h-8 mx-auto mb-2 text-slate-300 opacity-60" />
+                        <div className="font-semibold text-slate-600 text-xs">No registered cells yet</div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">Cell fellowships will appear here as cell leaders register upon first sign-in, or you can click "+ Register New Cell" above.</div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredCells.map(c => (
+                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-3 font-bold text-navy-950">
+                          <div>{c.name}</div>
+                          <div className="text-[10px] text-slate-400 font-normal">{c.venue_address}</div>
+                        </td>
+                        <td className="py-3 px-3 font-mono text-slate-400 font-semibold">{c.code}</td>
+                        <td className="py-3 px-3 text-slate-600 font-medium">{c.region_name}</td>
+                        <td className="py-3 px-3 text-slate-800 font-medium">
+                          <div className="font-semibold text-navy-950">{c.leader_name || 'Unassigned'}</div>
+                          {c.leader_phone && <div className="text-[10px] text-slate-400 font-mono">{c.leader_phone}</div>}
+                        </td>
+                        <td className="py-3 px-3 text-slate-500 font-medium">{c.meeting_day} @ {c.meeting_time}</td>
+                        <td className="py-3 px-3 font-bold text-navy-950">{c.target_attendance} pax</td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => handleViewCellReports(c)}
+                            className="px-2.5 py-1 rounded-lg bg-navy-50 text-navy-900 font-bold hover:bg-navy-900 hover:text-white transition-all text-[11px] border border-navy-200"
+                          >
+                            View Reports
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

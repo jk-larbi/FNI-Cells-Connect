@@ -434,7 +434,7 @@ CREATE POLICY "Audit logs insert policy"
     TO authenticated
     WITH CHECK (true);
 
--- 15. SEED DATA (Regions, Periods, and Initial Cells)
+-- 15. SEED DATA (Regions and Reporting Periods - NO Mock Cells or Mock Leaders)
 INSERT INTO public.regions (id, name, code, country, state_province) VALUES
 ('b1111111-1111-1111-1111-111111111111', 'Lagos Central Region', 'FNI-REG-LOS', 'Nigeria', 'Lagos'),
 ('b2222222-2222-2222-2222-222222222222', 'Abuja Capital Region', 'FNI-REG-ABJ', 'Nigeria', 'FCT Abuja'),
@@ -446,14 +446,6 @@ INSERT INTO public.reporting_periods (id, name, year, week_number, start_date, e
 ('c1111111-1111-1111-1111-111111111111', '2026 - Week 43', 2026, 43, '2026-10-19', '2026-10-25', '2026-10-27 23:59:59+00', false),
 ('c2222222-2222-2222-2222-222222222222', '2026 - Week 44', 2026, 44, '2026-10-26', '2026-11-01', '2026-11-03 23:59:59+00', false),
 ('c3333333-3333-3333-3333-333333333333', '2026 - Week 45', 2026, 45, '2026-11-02', '2026-11-08', '2026-11-10 23:59:59+00', true)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO public.cells (id, name, normalized_name, code, region_id, meeting_day, meeting_time, venue_address, target_attendance) VALUES
-('d1111111-1111-1111-1111-111111111111', 'Grace Cell Victoria Island', 'gracecellvictoriaisland', 'FNI-CEL-LOS-001', 'b1111111-1111-1111-1111-111111111111', 'Wednesday', '18:30:00', '14 Adeola Odeku Street, Victoria Island, Lagos', 20),
-('d2222222-2222-2222-2222-222222222222', 'Apex Fellowship Ikeja', 'apexfellowshipikeja', 'FNI-CEL-LOS-002', 'b1111111-1111-1111-1111-111111111111', 'Thursday', '18:00:00', '42 Isaac John Street, GRA Ikeja, Lagos', 25),
-('d3333333-3333-3333-3333-333333333333', 'Kingsway Hub Lekki', 'kingswayhublekki', 'FNI-CEL-LOS-003', 'b1111111-1111-1111-1111-111111111111', 'Wednesday', '19:00:00', 'Plot 8 Admiralty Way, Lekki Phase 1, Lagos', 18),
-('d4444444-4444-4444-4444-444444444444', 'Dunamis Center Wuse II', 'dunamiscenterwuseii', 'FNI-CEL-ABJ-001', 'b2222222-2222-2222-2222-222222222222', 'Wednesday', '18:00:00', 'Aminu Kano Crescent, Wuse II, Abuja', 22),
-('d5555555-5555-5555-5555-555555555555', 'Covenant Cell Canary Wharf', 'covenantcellcanarywharf', 'FNI-CEL-LON-001', 'b3333333-3333-3333-3333-333333333333', 'Friday', '19:30:00', 'South Quay Plaza, Marsh Wall, Canary Wharf, London', 15)
 ON CONFLICT (id) DO NOTHING;
 
 -- 16. HELPER FUNCTION TO PROVISION INITIAL ADMIN USER IN SUPABASE AUTH

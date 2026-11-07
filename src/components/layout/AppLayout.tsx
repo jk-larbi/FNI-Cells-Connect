@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Sidebar, NavTab } from './Sidebar';
 import { Header } from './Header';
-import { RoleSwitcherBanner } from './RoleSwitcherBanner';
 import { DashboardView } from '../dashboard/DashboardView';
 import { CellReportForm } from '../reports/CellReportForm';
 import { ReportHistoryTable } from '../reports/ReportHistoryTable';
@@ -64,9 +63,6 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-canvas flex flex-col text-slate-800">
-      {/* Role Switcher Evaluation Banner */}
-      <RoleSwitcherBanner />
-
       <div className="flex flex-1">
         {/* Navigation Sidebar */}
         <Sidebar

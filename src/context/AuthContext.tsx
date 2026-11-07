@@ -33,7 +33,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<Profile>(() => AuthService.getCurrentProfile());
-  const [isLoggedOut, setIsLoggedOut] = useState<boolean>(false);
+  const [isLoggedOut, setIsLoggedOut] = useState<boolean>(() => {
+    return !localStorage.getItem('fni_active_session_v5_clean_prod');
+  });
 
   // Listen to Supabase Auth state changes if active
   useEffect(() => {
@@ -48,11 +50,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
 
           if (profileData) {
+            localStorage.setItem('fni_active_session_v5_clean_prod', profileData.id);
             AuthService.setCurrentProfile(profileData);
             setCurrentUser(profileData);
             setIsLoggedOut(false);
           }
         } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('fni_active_session_v5_clean_prod');
           setIsLoggedOut(true);
         }
       });
@@ -70,17 +74,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const switchRole = (role: 'admin' | 'cell_leader') => {
     const updated = AuthService.switchDemoRole(role);
+    localStorage.setItem('fni_active_session_v5_clean_prod', updated.id);
     setCurrentUser(updated);
     setIsLoggedOut(false);
   };
 
   const showLoginView = () => {
+    localStorage.removeItem('fni_active_session_v5_clean_prod');
     setIsLoggedOut(true);
   };
 
   const loginAdmin = async (usernameOrEmail: string, pass: string) => {
     const result = await AuthService.signInAdmin(usernameOrEmail, pass);
     if (result.profile) {
+      localStorage.setItem('fni_active_session_v5_clean_prod', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true };
@@ -94,6 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     const result = await AuthService.signInWithOAuth(provider, options);
     if (result.profile) {
+      localStorage.setItem('fni_active_session_v5_clean_prod', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true, isNewUser: result.isNewUser };
@@ -104,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeOnboarding = async (input: CellLeaderOnboardingInput) => {
     try {
       const result = await AuthService.completeCellLeaderOnboarding(input);
+      localStorage.setItem('fni_active_session_v5_clean_prod', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true, isExistingCellAssociated: result.isExistingCellAssociated };
@@ -123,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await AuthService.signOut();
+    localStorage.removeItem('fni_active_session_v5_clean_prod');
     setIsLoggedOut(true);
   };
 

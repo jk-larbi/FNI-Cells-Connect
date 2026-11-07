@@ -3,11 +3,11 @@ import { INITIAL_REPORTS, INITIAL_CELLS, INITIAL_REGIONS, INITIAL_PERIODS, INITI
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const STORAGE_KEYS = {
-  REPORTS: 'fni_reports_store_v3',
-  CELLS: 'fni_cells_store_v3',
-  REGIONS: 'fni_regions_store_v3',
-  PERIODS: 'fni_periods_store_v3',
-  AUDIT: 'fni_audit_store_v3',
+  REPORTS: 'fni_reports_store_v5_clean_prod',
+  CELLS: 'fni_cells_store_v5_clean_prod',
+  REGIONS: 'fni_regions_store_v5_clean_prod',
+  PERIODS: 'fni_periods_store_v5_clean_prod',
+  AUDIT: 'fni_audit_store_v5_clean_prod',
 };
 
 // Local storage helper
@@ -108,7 +108,7 @@ export class ReportService {
       period_id: reportData.period_id || '',
       period_name: period?.name || reportData.period_name || '',
       submitted_by: reportData.submitted_by || 'usr-cell-leader',
-      submitted_by_name: reportData.submitted_by_name || 'Brother Michael Okon',
+      submitted_by_name: reportData.submitted_by_name || 'Cell Leader',
       status: isDraft ? 'draft' : 'submitted',
       members_present: members,
       visitors_count: visitors,

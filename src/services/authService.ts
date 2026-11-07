@@ -4,9 +4,10 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { ReportService } from './reportService';
 
 const STORAGE_KEYS = {
-  CURRENT_PROFILE: 'fni_current_profile_v2',
-  PROFILES_LIST: 'fni_profiles_directory_v2',
-  ADMIN_SECURITY: 'fni_admin_security_config_v2',
+  CURRENT_PROFILE: 'fni_current_profile_v5_clean_prod',
+  PROFILES_LIST: 'fni_profiles_directory_v5_clean_prod',
+  ADMIN_SECURITY: 'fni_admin_security_config_v5_clean_prod',
+  ACTIVE_SESSION: 'fni_active_session_v5_clean_prod',
 };
 
 interface AdminSecurityConfig {
@@ -79,7 +80,9 @@ export class AuthService {
     const all = this.getAllProfiles();
     let target = all.find(p => (role === 'admin' ? p.role === 'admin' : p.role === 'cell_leader'));
     if (!target) {
-      target = role === 'admin' ? INITIAL_PROFILES[0] : INITIAL_PROFILES[1];
+      target = role === 'admin' 
+        ? INITIAL_PROFILES[0] 
+        : all.find(p => p.role === 'cell_leader') || INITIAL_PROFILES[0];
     }
     this.setCurrentProfile(target);
     return target;
@@ -107,12 +110,12 @@ export class AuthService {
       }
     }
 
-    // 2. Local / Mock Auth Handling for immediate testing and resilience
+    // 2. Local / Real Auth Handling
     const allProfiles = this.getAllProfiles();
     const effectiveEmail = (
       options?.testEmail ||
-      (provider === 'google' ? 'cell.leader.fni@gmail.com' : 'cell.leader.fni@privaterelay.appleid.com')
-    ).toLowerCase();
+      (provider === 'google' ? `leader.${Date.now().toString().slice(-4)}@gmail.com` : `leader.${Date.now().toString().slice(-4)}@appleid.com`)
+    ).toLowerCase().trim();
 
     const existing = allProfiles.find(p => p.email.toLowerCase() === effectiveEmail);
 
@@ -122,8 +125,8 @@ export class AuthService {
       return { profile: existing, isNewUser: false, error: null };
     }
 
-    // New First-Time User: Create cell leader profile with is_onboarded = false
-    const fullName = options?.testName || (provider === 'google' ? 'Pastor David Mensah' : 'Minister Grace Taylor');
+    // New First-Time User: Create cell leader profile with is_onboarded = false so they register real details
+    const fullName = options?.testName || '';
     const newProfile: Profile = {
       id: `usr-oauth-${Date.now()}`,
       email: effectiveEmail,
