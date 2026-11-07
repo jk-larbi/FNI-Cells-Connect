@@ -1,141 +1,660 @@
 rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model & Architecture
+// ===============================================================
+//
+// Platform: FNI CELLS CONNECT (Fellowship Network International)
+//
+// 1. Collection: profiles & users
+//    Document ID: {userId} (matches request.auth.uid)
+//    Fields:
+//      - id: string (required) - User ID
+//      - full_name: string (required, 1-120 chars)
+//      - email: string (optional, <= 120 chars)
+//      - role: string (required: 'tutor' | 'cell_leader' | 'admin' | 'super_admin' | 'national_admin' | 'regional_leader')
+//      - cell_id: string (optional, <= 128 chars)
+//      - cell_name: string (optional, <= 150 chars)
+//      - region_id: string (optional, <= 128 chars)
+//      - region_name: string (optional, <= 150 chars)
+//      - phone_number: string (optional, <= 50 chars)
+//      - avatar_url: string (optional, <= 500 chars)
+//      - is_active: bool (optional)
+//      - is_onboarded: bool (optional)
+//      - must_change_password: bool (optional)
+//      - created_at: string/timestamp (optional)
+//
+// 2. Collection: cells
+//    Document ID: {cellId}
+//    Fields:
+//      - id: string (required)
+//      - name: string (required, 1-150 chars)
+//      - normalized_name: string (optional, <= 150 chars)
+//      - location: string (optional, <= 250 chars)
+//      - tutorUid: string (required/optional, <= 128 chars) - Tutor UID in charge
+//      - leader_id: string (optional, <= 128 chars)
+//      - leader_name: string (optional, <= 120 chars)
+//      - leader_phone: string (optional, <= 50 chars)
+//      - code: string (optional, <= 50 chars)
+//      - region_id: string (optional, <= 128 chars)
+//      - region_name: string (optional, <= 150 chars)
+//      - meeting_day: string (optional, <= 50 chars)
+//      - meeting_time: string (optional, <= 50 chars)
+//      - venue_address: string (optional, <= 250 chars)
+//      - target_attendance: number (optional, >= 0)
+//      - is_active: bool (optional)
+//      - created_at: string/timestamp (optional)
+//
+// 3. Collection: cellMeetingReports
+//    Document ID: {reportId}
+//    Fields:
+//      - id: string (optional, <= 128 chars)
+//      - cellId: string (required, <= 128 chars)
+//      - tutorUid: string (required, <= 128 chars) - Authoring tutor
+//      - cellName: string (required, <= 150 chars)
+//      - meetingDate: string (required, <= 50 chars)
+//      - tutorName: string (required, <= 120 chars)
+//      - members: number (required, >= 0)
+//      - activeMembers: number (required, >= 0)
+//      - attendance: number (required, >= 0)
+//      - newMembers: number (required, >= 0)
+//      - absentees: number (required, >= 0)
+//      - followUpNeeded: number (required, >= 0)
+//      - offering: number (optional, >= 0)
+//      - tutorNotes: string (optional, <= 5000 chars)
+//      - testimonies: string (optional, <= 5000 chars)
+//      - status: string (required, enum: 'Newly Submitted' | 'Approved' | 'Needs Correction' | 'draft' | 'submitted' | 'under_review' | 'approved' | 'needs_revision')
+//      - submittedAt: string (optional, <= 50 chars)
+//      - late: bool (optional)
+//      - reviewerComment: string (optional, <= 2000 chars)
+//      - reviewedBy: string (optional, <= 128 chars)
+//      - reviewedByName: string (optional, <= 120 chars)
+//      - reviewedAt: string (optional, <= 50 chars)
+//
+// 4. Collection: evangelismReports
+//    Document ID: {reportId}
+//    Fields:
+//      - id: string (optional, <= 128 chars)
+//      - cellId: string (required, <= 128 chars)
+//      - tutorUid: string (required, <= 128 chars)
+//      - cellName: string (required, <= 150 chars)
+//      - tutorName: string (required, <= 120 chars)
+//      - date: string (required, <= 50 chars)
+//      - location: string (required, <= 250 chars)
+//      - teamMembers: list (optional, max 50 items)
+//      - peopleSpokenTo: number (required, >= 0)
+//      - contactsCaptured: number (required, >= 0)
+//      - conversions: number (required, >= 0)
+//      - interestedInMinistry: number (required, >= 0)
+//      - potentialFollowUps: number (required, >= 0)
+//      - messageUsed: string (optional, <= 1000 chars)
+//      - notes: string (optional, <= 3000 chars)
+//      - testimonies: string (optional, <= 3000 chars)
+//      - status: string (required, enum)
+//      - submittedAt: string (optional, <= 50 chars)
+//      - late: bool (optional)
+//      - reviewerComment: string (optional, <= 2000 chars)
+//
+// 5. Collection: evangelismContacts & followUps
+//    Document ID: {contactId}
+//    Fields:
+//      - id: string (optional, <= 128 chars)
+//      - cellId: string (required, <= 128 chars)
+//      - cellName: string (required, <= 150 chars)
+//      - tutorUid: string (optional, <= 128 chars)
+//      - contactName/name: string (optional, <= 120 chars)
+//      - phone/contactDetails: string (optional, <= 100 chars)
+//      - email: string (optional, <= 120 chars)
+//      - dateCaptured: string (optional, <= 50 chars)
+//      - location/evangelismLocation: string (optional, <= 250 chars)
+//      - followUpStatus: string (optional, enum)
+//      - notes/followUpNotes: string (optional, <= 3000 chars)
+//
+// 6. Collection: reviewLogs
+//    Document ID: {logId}
+//    Fields: reportId, reportType, status, comment, reviewerUid, reviewerName, createdAt
+//
+// 7. Collection: notifications
+//    Document ID: {notifId}
+//    Fields: user_id (target uid or 'all'), title, message, type, channel, is_read, created_at
+//
+// 8. Collection: reportingPeriods & reporting_periods
+//    Document ID: {periodId}
+//    Fields: name, year, week_number, start_date, end_date, submission_deadline, is_open
+//
+// 9. Collection: systemSettings
+//    Document ID: general
+//    Fields: vision, mission, annualSoulWinningTarget, weeklyDeadline, updatedAt
+//
+// 10. Collection: internal_tutor_auth & systemSecurity
+//     Server-only, completely inaccessible to clients.
+//
+// 11. Collection: audit_logs
+//     Document ID: {logId}
+//     Fields: action, entity_type, entity_id, user_id, details, created_at
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if caller is authenticated
+
+    // ===============================================================
+    // Core Helper Functions
+    // ===============================================================
+
+    // Check if the caller is an authenticated Firebase user
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper to get caller's profile
-    function getUserProfile() {
-      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
+
+    // Check if the caller is the owner of a document keyed by userId
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Helper to check if caller is administrator (via Custom Claim or Profile)
+
+    // Check if the caller has an administrative role via custom claims
+    function hasAdminClaim() {
+      return isAuthenticated() &&
+        ('role' in request.auth.token) &&
+        request.auth.token.role in ['admin', 'super_admin'];
+    }
+
+    // Fallback: Check if the caller's profile document in Firestore assigns an admin role
+    function hasAdminDoc() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('role', '') in ['admin', 'super_admin'];
+    }
+
+    // Check if caller is an administrator (either custom claim or profile doc fallback)
     function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.role in ['admin', 'super_admin'] ||
-        getUserProfile().role in ['admin', 'super_admin']
+      return hasAdminClaim() || hasAdminDoc();
+    }
+
+    // Check if user belongs to the target cell (via custom claim or profile document)
+    function isCellMember(targetCellId) {
+      return isAuthenticated() && targetCellId != null && targetCellId != '' && (
+        (('cellId' in request.auth.token) && request.auth.token.cellId == targetCellId) ||
+        (exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('cell_id', '') == targetCellId)
       );
     }
 
-    // INTERNAL AUTH & SECURITY: Strictly inaccessible by public client SDK
-    match /internal_tutor_auth/{docId} {
-      allow read, write: if false; // Only Admin SDK / Cloud Functions
+    // Access authorization check for cell-scoped records:
+    // User must be the owner tutor, a member of the cell, or an administrator
+    function canAccessCellData(tutorUid, cellId) {
+      return isAuthenticated() && (
+        (tutorUid != null && tutorUid != '' && tutorUid == request.auth.uid) ||
+        isCellMember(cellId) ||
+        isAdmin()
+      );
     }
-    match /systemSecurity/{docId} {
-      allow read, write: if false; // Only Admin SDK / Cloud Functions
+
+    // Ensure specified fields are not altered in an update operation
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
     }
-    
-    // User Profiles (No password fields)
+
+    // General string length and type validator
+    function isValidOptionalString(field, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string && request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators (Enforced in both Create & Update)
+    // ===============================================================
+
+    // Profile & User Document Validator
+    function isValidProfile(data) {
+      return data.keys().hasAll(['full_name', 'role']) &&
+        data.full_name is string &&
+        data.full_name.size() > 0 &&
+        data.full_name.size() <= 120 &&
+        data.role is string &&
+        data.role in ['tutor', 'admin', 'cell_leader', 'super_admin', 'national_admin', 'regional_leader'] &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('email', 120) &&
+        isValidOptionalString('cell_id', 128) &&
+        isValidOptionalString('cell_name', 150) &&
+        isValidOptionalString('region_id', 128) &&
+        isValidOptionalString('region_name', 150) &&
+        isValidOptionalString('phone_number', 50) &&
+        isValidOptionalString('avatar_url', 500) &&
+        (!('is_active' in data) || data.is_active is bool) &&
+        (!('is_onboarded' in data) || data.is_onboarded is bool) &&
+        (!('must_change_password' in data) || data.must_change_password is bool);
+    }
+
+    // Fellowship Cell Validator
+    function isValidCell(data) {
+      return data.keys().hasAll(['name']) &&
+        data.name is string &&
+        data.name.size() > 0 &&
+        data.name.size() <= 150 &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('normalized_name', 150) &&
+        isValidOptionalString('location', 250) &&
+        isValidOptionalString('tutorUid', 128) &&
+        isValidOptionalString('leader_id', 128) &&
+        isValidOptionalString('leader_name', 120) &&
+        isValidOptionalString('leader_phone', 50) &&
+        isValidOptionalString('code', 50) &&
+        isValidOptionalString('region_id', 128) &&
+        isValidOptionalString('region_name', 150) &&
+        isValidOptionalString('meeting_day', 50) &&
+        isValidOptionalString('meeting_time', 50) &&
+        isValidOptionalString('venue_address', 250) &&
+        (!('target_attendance' in data) || (data.target_attendance is number && data.target_attendance >= 0)) &&
+        (!('is_active' in data) || data.is_active is bool);
+    }
+
+    // Allowed status transitions for weekly reports
+    function isValidReportStatus(status) {
+      return status is string &&
+        status in [
+          'Newly Submitted',
+          'Approved',
+          'Needs Correction',
+          'draft',
+          'submitted',
+          'under_review',
+          'approved',
+          'needs_revision'
+        ];
+    }
+
+    // Cell Meeting Report Validator
+    function isValidCellMeetingReport(data) {
+      return data.keys().hasAll([
+          'cellId',
+          'tutorUid',
+          'cellName',
+          'meetingDate',
+          'tutorName',
+          'members',
+          'activeMembers',
+          'attendance',
+          'newMembers',
+          'absentees',
+          'followUpNeeded',
+          'status'
+        ]) &&
+        data.cellId is string && data.cellId.size() > 0 && data.cellId.size() <= 128 &&
+        data.tutorUid is string && data.tutorUid.size() > 0 && data.tutorUid.size() <= 128 &&
+        data.cellName is string && data.cellName.size() > 0 && data.cellName.size() <= 150 &&
+        data.meetingDate is string && data.meetingDate.size() > 0 && data.meetingDate.size() <= 50 &&
+        data.tutorName is string && data.tutorName.size() > 0 && data.tutorName.size() <= 120 &&
+        data.members is number && data.members >= 0 &&
+        data.activeMembers is number && data.activeMembers >= 0 &&
+        data.attendance is number && data.attendance >= 0 &&
+        data.newMembers is number && data.newMembers >= 0 &&
+        data.absentees is number && data.absentees >= 0 &&
+        data.followUpNeeded is number && data.followUpNeeded >= 0 &&
+        isValidReportStatus(data.status) &&
+        (!('offering' in data) || (data.offering is number && data.offering >= 0)) &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('tutorNotes', 5000) &&
+        isValidOptionalString('testimonies', 5000) &&
+        isValidOptionalString('submittedAt', 50) &&
+        (!('late' in data) || data.late is bool) &&
+        isValidOptionalString('reviewerComment', 2000) &&
+        isValidOptionalString('reviewedBy', 128) &&
+        isValidOptionalString('reviewedByName', 120) &&
+        isValidOptionalString('reviewedAt', 50);
+    }
+
+    // Evangelism Outreach Report Validator
+    function isValidEvangelismReport(data) {
+      return data.keys().hasAll([
+          'cellId',
+          'tutorUid',
+          'cellName',
+          'tutorName',
+          'date',
+          'location',
+          'peopleSpokenTo',
+          'contactsCaptured',
+          'conversions',
+          'interestedInMinistry',
+          'potentialFollowUps',
+          'status'
+        ]) &&
+        data.cellId is string && data.cellId.size() > 0 && data.cellId.size() <= 128 &&
+        data.tutorUid is string && data.tutorUid.size() > 0 && data.tutorUid.size() <= 128 &&
+        data.cellName is string && data.cellName.size() > 0 && data.cellName.size() <= 150 &&
+        data.tutorName is string && data.tutorName.size() > 0 && data.tutorName.size() <= 120 &&
+        data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
+        data.location is string && data.location.size() > 0 && data.location.size() <= 250 &&
+        data.peopleSpokenTo is number && data.peopleSpokenTo >= 0 &&
+        data.contactsCaptured is number && data.contactsCaptured >= 0 &&
+        data.conversions is number && data.conversions >= 0 &&
+        data.interestedInMinistry is number && data.interestedInMinistry >= 0 &&
+        data.potentialFollowUps is number && data.potentialFollowUps >= 0 &&
+        isValidReportStatus(data.status) &&
+        (!('teamMembers' in data) || (data.teamMembers is list && data.teamMembers.size() <= 50)) &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('messageUsed', 1000) &&
+        isValidOptionalString('notes', 3000) &&
+        isValidOptionalString('testimonies', 3000) &&
+        isValidOptionalString('submittedAt', 50) &&
+        (!('late' in data) || data.late is bool) &&
+        isValidOptionalString('reviewerComment', 2000) &&
+        isValidOptionalString('reviewedBy', 128) &&
+        isValidOptionalString('reviewedByName', 120) &&
+        isValidOptionalString('reviewedAt', 50);
+    }
+
+    // Evangelism Contact and Follow-up Validator
+    function isValidContact(data) {
+      return data.keys().hasAll(['cellId', 'cellName']) &&
+        data.cellId is string && data.cellId.size() > 0 && data.cellId.size() <= 128 &&
+        data.cellName is string && data.cellName.size() > 0 && data.cellName.size() <= 150 &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('contactName', 120) &&
+        isValidOptionalString('name', 120) &&
+        isValidOptionalString('contactDetails', 100) &&
+        isValidOptionalString('phone', 100) &&
+        isValidOptionalString('email', 120) &&
+        isValidOptionalString('dateCaptured', 50) &&
+        isValidOptionalString('evangelismLocation', 250) &&
+        isValidOptionalString('location', 250) &&
+        isValidOptionalString('tutorUid', 128) &&
+        isValidOptionalString('tutorName', 120) &&
+        isValidOptionalString('assignedToName', 120) &&
+        isValidOptionalString('followUpNotes', 3000) &&
+        isValidOptionalString('notes', 3000) &&
+        isValidOptionalString('lastFollowUpDate', 50) &&
+        isValidOptionalString('nextFollowUpDate', 50) &&
+        (!('followUpStatus' in data) || (
+          data.followUpStatus is string &&
+          data.followUpStatus in [
+            'New Contact',
+            'Follow-up Pending',
+            'Contacted',
+            'Interested',
+            'Joined Ministry',
+            'Completed',
+            'Unreachable'
+          ]
+        ));
+    }
+
+    // Review Log Validator (Audit trail for approvals & corrections)
+    function isValidReviewLog(data) {
+      return data.keys().hasAll(['reportId', 'reportType', 'status', 'reviewerUid']) &&
+        data.reportId is string && data.reportId.size() > 0 && data.reportId.size() <= 128 &&
+        data.reportType is string && data.reportType in ['meeting', 'evangelism'] &&
+        isValidReportStatus(data.status) &&
+        data.reviewerUid is string && data.reviewerUid.size() > 0 && data.reviewerUid.size() <= 128 &&
+        isValidOptionalString('comment', 2000) &&
+        isValidOptionalString('reviewerName', 120) &&
+        isValidOptionalString('createdAt', 50);
+    }
+
+    // In-App Notification Validator
+    function isValidNotification(data) {
+      return data.keys().hasAll(['user_id', 'title', 'message']) &&
+        data.user_id is string && data.user_id.size() > 0 && data.user_id.size() <= 128 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+        data.message is string && data.message.size() > 0 && data.message.size() <= 2000 &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('type', 50) &&
+        isValidOptionalString('channel', 50) &&
+        (!('is_read' in data) || data.is_read is bool) &&
+        isValidOptionalString('created_at', 50);
+    }
+
+    // System Settings Validator
+    function isValidSystemSettings(data) {
+      return isValidOptionalString('id', 64) &&
+        isValidOptionalString('vision', 2000) &&
+        isValidOptionalString('mission', 2000) &&
+        isValidOptionalString('weeklyDeadline', 300) &&
+        (!('annualSoulWinningTarget' in data) || (data.annualSoulWinningTarget is number && data.annualSoulWinningTarget >= 0)) &&
+        isValidOptionalString('updatedAt', 50) &&
+        isValidOptionalString('updatedBy', 128);
+    }
+
+    // Audit Log Validator
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['action', 'entity_type']) &&
+        data.action is string && data.action.size() > 0 && data.action.size() <= 100 &&
+        data.entity_type is string && data.entity_type.size() > 0 && data.entity_type.size() <= 100 &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('user_id', 128) &&
+        isValidOptionalString('user_name', 120) &&
+        isValidOptionalString('entity_id', 128) &&
+        isValidOptionalString('created_at', 50);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // 1. User Profiles & User Documents
+    // Auth user reads/updates their own doc; Admin can read/write all
     match /profiles/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && isValidProfile(request.resource.data) && (
+        isAdmin() ||
+        (request.auth.uid == userId && (!('role' in request.resource.data) || request.resource.data.role in ['tutor', 'cell_leader']))
+      );
+      allow update: if isAuthenticated() && isValidProfile(request.resource.data) && (
+        isAdmin() ||
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role && areImmutableFieldsUnchanged(['id']))
+      );
       allow delete: if isAdmin();
     }
+
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && isValidProfile(request.resource.data) && (
+        isAdmin() ||
+        (request.auth.uid == userId && (!('role' in request.resource.data) || request.resource.data.role in ['tutor', 'cell_leader']))
+      );
+      allow update: if isAuthenticated() && isValidProfile(request.resource.data) && (
+        isAdmin() ||
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role && areImmutableFieldsUnchanged(['id']))
+      );
       allow delete: if isAdmin();
     }
-    
-    // Fellowship Cells
+
+    // 2. Fellowship Cells
+    // Authenticated users can read directory; Owner tutor can update their own cell; Admin can manage all
     match /cells/{cellId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (resource.data.tutorUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidCell(request.resource.data) && (
+        isAdmin() ||
+        (request.resource.data.get('tutorUid', '') == request.auth.uid)
+      );
+      allow update: if isAuthenticated() && isValidCell(request.resource.data) && (
+        isAdmin() ||
+        (resource.data.get('tutorUid', '') == request.auth.uid &&
+         (!('tutorUid' in request.resource.data) || request.resource.data.tutorUid == resource.data.tutorUid))
+      );
       allow delete: if isAdmin();
     }
-    
-    // Reporting Cycles / Periods
+
+    // 3. Cell Meeting Reports (Weekly)
+    // Read: Owner tutor, cell members, or admin
+    // Create: Owner tutor or admin
+    // Update: Admin, OR owner tutor only when status is in revision/draft
+    // Delete: Admin only
+    match /cellMeetingReports/{reportId} {
+      allow read: if canAccessCellData(resource.data.get('tutorUid', ''), resource.data.get('cellId', ''));
+      allow create: if isAuthenticated() && isValidCellMeetingReport(request.resource.data) && (
+        isAdmin() ||
+        request.resource.data.tutorUid == request.auth.uid
+      );
+      allow update: if isAuthenticated() && isValidCellMeetingReport(request.resource.data) && (
+        isAdmin() ||
+        (
+          resource.data.tutorUid == request.auth.uid &&
+          request.resource.data.tutorUid == resource.data.tutorUid &&
+          request.resource.data.cellId == resource.data.cellId &&
+          resource.data.status in ['Needs Correction', 'needs_revision', 'draft']
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 4. Evangelism Reports (Weekly Outreach)
+    // Read: Owner tutor, cell members, or admin
+    // Create: Owner tutor or admin
+    // Update: Admin, OR owner tutor only when status is in revision/draft
+    // Delete: Admin only
+    match /evangelismReports/{reportId} {
+      allow read: if canAccessCellData(resource.data.get('tutorUid', ''), resource.data.get('cellId', ''));
+      allow create: if isAuthenticated() && isValidEvangelismReport(request.resource.data) && (
+        isAdmin() ||
+        request.resource.data.tutorUid == request.auth.uid
+      );
+      allow update: if isAuthenticated() && isValidEvangelismReport(request.resource.data) && (
+        isAdmin() ||
+        (
+          resource.data.tutorUid == request.auth.uid &&
+          request.resource.data.tutorUid == resource.data.tutorUid &&
+          request.resource.data.cellId == resource.data.cellId &&
+          resource.data.status in ['Needs Correction', 'needs_revision', 'draft']
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 5. Evangelism Outreach Contacts & Follow-Up Pipeline
+    // Scoped strictly to the cell. Never expose one cell's private records to another cell
+    match /evangelismContacts/{contactId} {
+      allow read: if canAccessCellData(resource.data.get('tutorUid', ''), resource.data.get('cellId', ''));
+      allow create: if isAuthenticated() && isValidContact(request.resource.data) && (
+        isAdmin() ||
+        canAccessCellData(request.resource.data.get('tutorUid', ''), request.resource.data.get('cellId', ''))
+      );
+      allow update: if isAuthenticated() && isValidContact(request.resource.data) && (
+        isAdmin() ||
+        canAccessCellData(resource.data.get('tutorUid', ''), resource.data.get('cellId', ''))
+      );
+      allow delete: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.get('tutorUid', '') == request.auth.uid
+      );
+    }
+
+    match /followUps/{followUpId} {
+      allow read: if canAccessCellData(resource.data.get('tutorUid', ''), resource.data.get('cellId', ''));
+      allow create: if isAuthenticated() && isValidContact(request.resource.data) && (
+        isAdmin() ||
+        canAccessCellData(request.resource.data.get('tutorUid', ''), request.resource.data.get('cellId', ''))
+      );
+      allow update: if isAuthenticated() && isValidContact(request.resource.data) && (
+        isAdmin() ||
+        canAccessCellData(resource.data.get('tutorUid', ''), resource.data.get('cellId', ''))
+      );
+      allow delete: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.get('tutorUid', '') == request.auth.uid
+      );
+    }
+
+    // 6. Report Review Logs
+    // Authenticated can read audit trail; Only admin can create; Immutable
+    match /reviewLogs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidReviewLog(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // 7. Notifications
+    // User can read/update their own notifications or broadcasts ('all'); Admin can delete
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() && (
+        resource.data.user_id == request.auth.uid ||
+        resource.data.user_id == 'all' ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isValidNotification(request.resource.data);
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (
+          (resource.data.user_id == request.auth.uid || resource.data.user_id == 'all') &&
+          isValidNotification(request.resource.data) &&
+          areImmutableFieldsUnchanged(['id', 'user_id', 'type', 'channel', 'created_at'])
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 8. Reporting Cycles / Periods
+    // Authenticated can read; Only admin can write
+    match /reportingPeriods/{periodId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     match /reporting_periods/{periodId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
-    
-    // System Settings (Kingdom Vision, Mission, Annual Soul Target, Weekly Deadline)
+
+    // 9. System Settings (Vision, Mission, Annual Target, Deadline)
+    // Authenticated can read; Only admin can modify
     match /systemSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidSystemSettings(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // 10. Internal Tutor Auth & System Security
+    // Strictly inaccessible by public client SDK; Reserved for Admin SDK / Cloud Functions
+    match /internal_tutor_auth/{docId} {
+      allow read, write: if false;
+    }
+
+    match /systemSecurity/{docId} {
+      allow read, write: if false;
+    }
+
+    // 11. System Audit Logs
+    // Admin can read; Authenticated can create; Immutable audit trail
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && isValidAuditLog(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // 12. Geographic Regions (Legacy / Reference)
+    // Authenticated can read; Only admin can modify
+    match /regions/{regionId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
-    
-    // Cell Meeting Reports (Weekly)
-    match /cellMeetingReports/{reportId} {
+
+    // 13. Cell Reports (Legacy compatibility)
+    match /cell_reports/{reportId} {
       allow read: if isAuthenticated() && (
-        resource.data.tutorUid == request.auth.uid ||
-        resource.data.cellId == getUserProfile().cell_id ||
+        resource.data.get('submitted_by', '') == request.auth.uid ||
+        isCellMember(resource.data.get('cell_id', '')) ||
         isAdmin()
       );
       allow create: if isAuthenticated() && (
-        request.resource.data.tutorUid == request.auth.uid ||
-        isAdmin()
+        isAdmin() ||
+        request.resource.data.get('submitted_by', '') == request.auth.uid
       );
       allow update: if isAuthenticated() && (
         isAdmin() ||
-        (resource.data.tutorUid == request.auth.uid && resource.data.status in ['Needs Correction', 'needs_revision', 'draft'])
+        (
+          resource.data.get('submitted_by', '') == request.auth.uid &&
+          resource.data.status in ['Needs Correction', 'needs_revision', 'draft']
+        )
       );
       allow delete: if isAdmin();
     }
 
-    // Evangelism Reports (Weekly Outreach)
-    match /evangelismReports/{reportId} {
-      allow read: if isAuthenticated() && (
-        resource.data.tutorUid == request.auth.uid ||
-        resource.data.cellId == getUserProfile().cell_id ||
-        isAdmin()
-      );
-      allow create: if isAuthenticated() && (
-        request.resource.data.tutorUid == request.auth.uid ||
-        isAdmin()
-      );
-      allow update: if isAuthenticated() && (
-        isAdmin() ||
-        (resource.data.tutorUid == request.auth.uid && resource.data.status in ['Needs Correction', 'needs_revision', 'draft'])
-      );
-      allow delete: if isAdmin();
-    }
-
-    // Evangelism Outreach Contacts & Follow-Up Pipeline
-    match /evangelismContacts/{contactId} {
-      allow read: if isAuthenticated() && (
-        resource.data.tutorUid == request.auth.uid ||
-        resource.data.cellId == getUserProfile().cell_id ||
-        isAdmin()
-      );
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        resource.data.tutorUid == request.auth.uid ||
-        resource.data.cellId == getUserProfile().cell_id ||
-        isAdmin()
-      );
-      allow delete: if isAdmin();
-    }
-
-    // Report Review Logs (Audit trail for approval/corrections)
-    match /reviewLogs/{logId} {
+    // 14. Report Reviews (Legacy audit trail)
+    match /report_reviews/{reviewId} {
       allow read: if isAuthenticated();
       allow create: if isAdmin();
-      allow update, delete: if false; // Immutable audit log
-    }
-
-    // Notifications & Dispatches
-    match /notifications/{notifId} {
-      allow read, update: if isAuthenticated() && (
-        resource.data.user_id == request.auth.uid ||
-        resource.data.user_id == 'all'
-      );
-      allow create: if isAuthenticated();
-      allow delete: if isAdmin();
-    }
-    
-    // Audit Logs
-    match /audit_logs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isAuthenticated();
-      allow update, delete: if false; // Immutable audit trail
+      allow update, delete: if false;
     }
   }
 }

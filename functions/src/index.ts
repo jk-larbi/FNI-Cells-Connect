@@ -80,7 +80,7 @@ export const registerTutor = onCall(async (request: CallableRequest<any>) => {
   };
   await db.collection('cells').doc(cellId).set(cellRecord);
 
-  // 4. Save public profile (NEVER stores passwords)
+  // 4. Save public profile and user record (NEVER stores passwords)
   const profileRecord = {
     id: uid,
     full_name: cleanFullName,
@@ -91,7 +91,10 @@ export const registerTutor = onCall(async (request: CallableRequest<any>) => {
     is_onboarded: true,
     created_at: nowIso,
   };
-  await db.collection('profiles').doc(uid).set(profileRecord);
+  await Promise.all([
+    db.collection('profiles').doc(uid).set(profileRecord),
+    db.collection('users').doc(uid).set(profileRecord),
+  ]);
 
   // 5. Save secure credentials in private internal auth collection (not accessible by clients)
   await db.collection('internal_tutor_auth').doc(uid).set({
@@ -309,29 +312,51 @@ export const checkWeeklyReportsDeadline = onSchedule(
       if (data.cellId) submittedCellIds.add(data.cellId);
     });
 
+    // Deduplication check: fetch overdue notices dispatched within the last 24 hours
+    const recentNotifsSnap = await db
+      .collection('notifications')
+      .where('type', '==', 'overdue_notice')
+      .where('created_at', '>=', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString())
+      .get();
+
+    const alreadyNotifiedCellIds = new Set<string>();
+    let adminSummaryDispatched = false;
+    recentNotifsSnap.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
+      const data = doc.data();
+      if (data.metadata?.cellId) alreadyNotifiedCellIds.add(data.metadata.cellId);
+      if (data.user_id === 'all' || data.metadata?.target === 'admin_summary') {
+        adminSummaryDispatched = true;
+      }
+    });
+
     const batch = db.batch();
     const missingCells: any[] = [];
+    let writesCount = 0;
 
     cellsSnap.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
       const cell: any = { id: doc.id, ...doc.data() };
       if (!submittedCellIds.has(cell.id)) {
         missingCells.push(cell);
 
-        const leaderNotifRef = db.collection('notifications').doc();
-        batch.set(leaderNotifRef, {
-          user_id: cell.tutorUid || cell.leader_id || 'unassigned',
-          title: 'Weekly Return Overdue',
-          message: `The Sunday 6:00 PM deadline for cell "${cell.name}" has passed. Please file your return immediately.`,
-          type: 'overdue_notice',
-          channel: 'in_app',
-          is_read: false,
-          created_at: now.toISOString(),
-          metadata: { cellId: cell.id, cellName: cell.name },
-        });
+        // Only send if not already notified in this cycle
+        if (!alreadyNotifiedCellIds.has(cell.id)) {
+          const leaderNotifRef = db.collection('notifications').doc();
+          batch.set(leaderNotifRef, {
+            user_id: cell.tutorUid || cell.leader_id || 'unassigned',
+            title: 'Weekly Return Overdue',
+            message: `The Sunday 6:00 PM deadline for cell "${cell.name}" has passed. Please file your return immediately.`,
+            type: 'overdue_notice',
+            channel: 'in_app',
+            is_read: false,
+            created_at: now.toISOString(),
+            metadata: { cellId: cell.id, cellName: cell.name },
+          });
+          writesCount++;
+        }
       }
     });
 
-    if (missingCells.length > 0) {
+    if (missingCells.length > 0 && !adminSummaryDispatched) {
       const adminNotifRef = db.collection('notifications').doc();
       batch.set(adminNotifRef, {
         user_id: 'all',
@@ -342,13 +367,17 @@ export const checkWeeklyReportsDeadline = onSchedule(
         is_read: false,
         created_at: now.toISOString(),
         metadata: {
+          target: 'admin_summary',
           missingCount: missingCells.length,
           cells: missingCells.map(c => ({ id: c.id, name: c.name })),
         },
       });
+      writesCount++;
     }
 
-    await batch.commit();
+    if (writesCount > 0) {
+      await batch.commit();
+    }
   }
 );
 

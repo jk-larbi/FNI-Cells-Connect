@@ -41,7 +41,16 @@ export class FollowUpService {
         if (cellId) {
           q = query(contactsRef, where('cellId', '==', cellId));
         }
-        const snap = await getDocs(q);
+        let snap = await getDocs(q);
+        if (snap.empty) {
+          // Check followUps collection
+          const followUpsRef = collection(db, 'followUps');
+          let fq = query(followUpsRef, orderBy('createdAt', 'desc'));
+          if (cellId) {
+            fq = query(followUpsRef, where('cellId', '==', cellId));
+          }
+          snap = await getDocs(fq);
+        }
         if (!snap.empty) {
           const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as EvangelismContact));
           saveStoredContacts(list);
@@ -74,10 +83,14 @@ export class FollowUpService {
 
     if (isFirebaseConfigured && db) {
       try {
-        await setDoc(doc(db, 'evangelismContacts', id), {
+        const payload = {
           ...newContact,
           serverCreatedAt: serverTimestamp(),
-        });
+        };
+        await Promise.all([
+          setDoc(doc(db, 'evangelismContacts', id), payload),
+          setDoc(doc(db, 'followUps', id), payload),
+        ]);
       } catch (e) {
         console.warn('Firebase addContact error', e);
       }
@@ -107,11 +120,15 @@ export class FollowUpService {
 
     if (isFirebaseConfigured && db) {
       try {
-        await updateDoc(doc(db, 'evangelismContacts', contactId), {
+        const updatePayload = {
           ...updates,
           updatedAt: nowIso,
           serverUpdatedAt: serverTimestamp(),
-        });
+        };
+        await Promise.all([
+          updateDoc(doc(db, 'evangelismContacts', contactId), updatePayload).catch(() => {}),
+          updateDoc(doc(db, 'followUps', contactId), updatePayload).catch(() => {}),
+        ]);
       } catch (e) {
         console.warn('Firebase updateContact error', e);
       }

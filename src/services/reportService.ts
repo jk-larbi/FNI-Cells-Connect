@@ -533,6 +533,21 @@ export class ReportService {
   }
 
   static async getPeriods(): Promise<ReportingPeriod[]> {
+    if (isFirebaseConfigured && db) {
+      try {
+        let snap = await getDocs(collection(db, 'reportingPeriods'));
+        if (snap.empty) {
+          snap = await getDocs(collection(db, 'reporting_periods'));
+        }
+        if (!snap.empty) {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ReportingPeriod));
+          setStored(STORAGE_KEYS.PERIODS, list);
+          return list;
+        }
+      } catch (e) {
+        console.warn('Firebase getPeriods error', e);
+      }
+    }
     return getStored<ReportingPeriod[]>(STORAGE_KEYS.PERIODS, [
       {
         id: 'prd-w45',
@@ -549,6 +564,13 @@ export class ReportService {
   }
 
   static async addPeriod(period: ReportingPeriod): Promise<void> {
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'reportingPeriods', period.id), period);
+      } catch (e) {
+        console.warn('Firebase addPeriod error', e);
+      }
+    }
     const list = await this.getPeriods();
     setStored(STORAGE_KEYS.PERIODS, [period, ...list]);
   }
