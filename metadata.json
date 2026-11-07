@@ -1,0 +1,6 @@
+{
+  "name": "FNI Digital Reporting System",
+  "description": "Professional weekly cell reporting and ministry governance platform for Forerunners Network International.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

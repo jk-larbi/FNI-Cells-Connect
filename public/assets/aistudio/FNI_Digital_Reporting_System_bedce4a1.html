@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>FNI Digital Reporting System</title>
+<style>
+:root{--bg:#F6F7F9;--sf:#fff;--tx:#14213D;--mu:#5B6472;--bd:#E3E6EB;--nv:#0F2447;--gd:#B8923A;--pr:#0F2447;--ok:#E4F2E8;--okt:#1E6B3A;--wa:#FBF0D9;--wat:#8A5A00;--rd:#FBE5E3;--rdt:#A32B21;--bl:#E6ECF7;--blt:#1B3F7A;--gr:#ECEEF2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0B1220;--sf:#131C2E;--tx:#E8ECF4;--mu:#9AA5B8;--bd:#25314A;--pr:#3A5A99;--ok:#173222;--okt:#7FD1A0;--wa:#3A2E10;--wat:#E8C170;--rd:#3A1A18;--rdt:#F0948C;--bl:#1B2A47;--blt:#9DB8EA;--gr:#1E2840;color-scheme:dark}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--bg);color:var(--tx);font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1{font:600 24px Georgia,"Source Serif 4",serif;margin:0 0 4px}h2{font-size:15px;margin:0 0 12px}p.s{color:var(--mu);margin:0 0 20px}
+.app{display:grid;grid-template-columns:230px 1fr;min-height:100%}aside{background:#0F2447;color:#fff;padding:22px 0;display:flex;flex-direction:column}
+.br{padding:0 22px 20px;border-bottom:1px solid #263B63;margin-bottom:12px}.br strong{font:600 18px Georgia,serif;letter-spacing:.5px}.br small{display:block;color:#AEB9CF;margin-top:2px}
+aside a{display:flex;justify-content:space-between;color:#C9D2E3;text-decoration:none;padding:10px 22px;border-left:3px solid transparent}aside a.on{color:#fff;background:#18325C;border-left-color:var(--gd)}aside a b{background:var(--gd);color:#0F2447;border-radius:9px;padding:0 7px;font-size:12px}
+.me{margin-top:auto;padding:16px 22px 0;border-top:1px solid #263B63;font-size:13px}.me small{color:#AEB9CF;display:block}.me button{margin-top:10px}
+main{padding:28px 32px;max-width:1100px;width:100%}
+.st{display:grid;grid-template-columns:repeat(4,1fr);background:var(--sf);border:1px solid var(--bd);border-radius:8px;margin-bottom:24px}.st div{padding:16px 18px;border-right:1px solid var(--bd)}.st div:last-child{border:0}.st b{display:block;font-size:26px;font-weight:600}.st span{color:var(--mu);font-size:12px}
+.pn{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:18px 20px;margin-bottom:24px}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%}th{text-align:left;font-size:12px;color:var(--mu);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap}td{padding:12px;border-bottom:1px solid var(--bd)}tr:last-child td{border:0}
+.pill{padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500;white-space:nowrap}.Draft{background:var(--gr);color:var(--mu)}.Submitted{background:var(--bl);color:var(--blt)}.Approved{background:var(--ok);color:var(--okt)}.Returned{background:var(--wa);color:var(--wat)}.Overdue{background:var(--rd);color:var(--rdt)}
+button,.btn{font:inherit;font-weight:500;border-radius:6px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);padding:7px 14px;cursor:pointer}button.p{background:var(--pr);border-color:var(--pr);color:#fff}button.l{background:none;border:0;padding:0;color:var(--blt);text-decoration:underline}aside button{background:none;color:#fff;border-color:#3A5282}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--gd);outline-offset:1px}
+label{display:block;font-weight:500;margin-bottom:4px}input,select,textarea{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--sf);color:var(--tx)}textarea{min-height:70px;resize:vertical}
+.g{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.er{color:var(--rdt);font-size:12px;margin-top:3px}.fld{margin-bottom:14px}
+.msg{padding:10px 14px;border-radius:6px;margin-bottom:16px;background:var(--ok);color:var(--okt)}.msg.e{background:var(--rd);color:var(--rdt)}.em{text-align:center;color:var(--mu);padding:28px}
+.bar{display:flex;align-items:flex-end;gap:18px;height:150px;border-bottom:1px solid var(--bd);padding:0 8px}.bar div{flex:1;text-align:center;font-size:12px}.bar i{display:block;background:var(--nv);border-radius:3px 3px 0 0;margin-bottom:4px}.bar i.g1{background:var(--gd)}
+.lg{max-width:380px;margin:12vh auto;padding:0 20px}.lg .pn{padding:26px}.dl{display:grid;grid-template-columns:150px 1fr;gap:8px 16px}.dl dt{color:var(--mu)}.dl dd{margin:0;white-space:pre-wrap}
+@media(max-width:800px){.app{grid-template-columns:1fr}aside{flex-direction:row;flex-wrap:wrap;padding:10px}.br,.me{display:none}aside a{padding:8px 12px;border:0}main{padding:20px 16px}.st,.g,.g2{grid-template-columns:1fr 1fr}}
+</style></head><body><div id="r"></div><script>
+// ---- Data layer: swap this object for Supabase calls later. Everything below talks only to `api`/`D`. ----
+const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mon=(d=new Date())=>{d=new Date(d);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.toISOString().slice(0,10)};
+const fd=s=>new Date(s+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const KEY='fni-demo-v1';let D=null;try{D=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+function seed(){const L=[['Kwame Mensah','Cape Coast'],['Ama Owusu','Kasoa'],['Kofi Boateng','Accra Central'],['Abena Asare','Takoradi'],['Yaw Darko','Kumasi'],['Efua Quaye','Winneba']];
+const N=['Grace','Zion','Bethel','Antioch','Berea','Ephesus'];const cells=L.map((l,i)=>({id:'c'+i,name:N[i]+' Cell',leader:l[0],area:l[1]}));const reports=[];
+cells.forEach((c,ci)=>{for(let i=1;i<=5;i++)reports.push({id:'r'+ci+i,cell:c.id,week:mon(Date.now()-7*864e5*i),att:20+(ci*7+i*3)%15,vis:(ci+i)%5,souls:(ci*2+i)%4,fu:(ci+i*2)%6,evg:1+(ci+i)%3,meet:1,prayer:'Healing and provision for members.',test:i%2?'A member found employment this week.':'',chal:'',status:i>1||ci%2?'Approved':'Submitted',note:'',date:mon(Date.now()-7*864e5*i)})});
+reports.push({id:'rx',cell:'c0',week:mon(),att:31,vis:3,souls:2,fu:4,evg:2,meet:1,prayer:'',test:'',chal:'',status:'Submitted',note:'',date:mon()});
+return{cells,reports,notes:[{id:'n0',to:'admin',msg:'Grace Cell submitted a report for review.',date:mon(),read:false},{id:'n1',to:'c1',msg:'Welcome to the FNI reporting system.',date:mon(),read:false}]}}
+if(!D)D=seed();const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}};
+const api={cell:id=>D.cells.find(c=>c.id==id),rep:id=>D.reports.find(r=>r.id==id),
+note(to,msg){D.notes.unshift({id:'n'+Date.now()+Math.random(),to,msg,date:new Date().toISOString().slice(0,10),read:false})},
+upsert(r){const x=D.reports.find(q=>q.cell==r.cell&&q.week==r.week);if(x)Object.assign(x,r);else D.reports.push({id:'r'+Date.now(),note:'',...r});if(r.status=='Submitted')api.note('admin',api.cell(r.cell).name+' submitted a report for '+fd(r.week)+'.');save()},
+review(id,s,note){const r=api.rep(id);r.status=s;r.note=note;api.note(r.cell,'Your report for '+fd(r.week)+' was '+s.toLowerCase()+'.'+(note?' Note: '+note:''));save()},
+addCell(c){D.cells.push({id:'c'+Date.now(),...c});save()}};
+// ---- UI ----
+const st={u:null,p:'dash',v:null,f:'All',msg:null,err:{}};const root=document.getElementById('r');
+const A=[['dash','Overview'],['rep','Reports'],['cells','Cells & leaders'],['trend','Trends'],['note','Notifications']],Lm=[['dash','Dashboard'],['new','Submit report'],['hist','My reports'],['note','Notifications']];
+const pill=s=>`<span class="pill ${s}">${s}</span>`;const mine=()=>st.u.role=='admin'?'admin':st.u.cell;
+const notes=()=>D.notes.filter(n=>n.to==mine()),unread=()=>notes().filter(n=>!n.read).length;
+const tbl=(h,rows,em)=>rows.length?`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table></div>`:`<div class="em">${em}</div>`;
+const stats=a=>`<div class="st">${a.map(([n,l])=>`<div><b>${n}</b><span>${l}</span></div>`).join('')}</div>`;
+const sorted=a=>[...a].sort((x,y)=>y.week.localeCompare(x.week));
+const rrow=(r,adm)=>[fd(r.week),...(adm?[E(api.cell(r.cell).name)]:[]),r.att,r.vis,r.souls,pill(r.status),`<button class="l" data-a="view" data-id="${r.id}">View</button>`];
+function login(){return `<div class="lg"><div class="pn"><h1>FNI Reporting</h1><p class="s">Forerunners Network International</p><div class="fld"><label for="who">Sign in as</label><select id="who"><option value="admin">Administrator / Leader</option>${D.cells.map(c=>`<option value="${c.id}">${E(c.leader)} (${E(c.name)})</option>`).join('')}</select></div><button class="p" data-a="login" style="width:100%">Sign in</button><p class="s" style="margin:14px 0 0;font-size:12px">Demonstration sign-in. Secure email and password authentication arrives with the Supabase backend.</p></div></div>`}
+function pgDash(){const adm=st.u.role=='admin',w=mon();
+if(adm){const pend=D.reports.filter(r=>r.status=='Submitted'),cur=D.reports.filter(r=>r.week==w&&r.status!='Draft'),miss=D.cells.filter(c=>!cur.some(r=>r.cell==c.id));
+return `<h1>Overview</h1><p class="s">Week of ${fd(w)}</p>${stats([[D.cells.length,'Active cells'],[cur.length+'/'+D.cells.length,'Reported this week'],[pend.length,'Awaiting review'],[cur.reduce((a,r)=>a+r.souls,0),'Souls won this week']])}
+<div class="pn"><h2>Awaiting review</h2>${tbl(['Week','Cell','Attendance','Visitors','Souls','Status',''],sorted(pend).map(r=>rrow(r,1)),'Nothing waiting for review.')}</div>
+<div class="pn"><h2>Not yet reported this week</h2>${tbl(['Cell','Leader','Status'],miss.map(c=>[E(c.name),E(c.leader),pill('Overdue')]),'Every cell has reported this week.')}</div>`}
+const c=api.cell(st.u.cell),my=sorted(D.reports.filter(r=>r.cell==c.id)),cur=my.find(r=>r.week==w),ap=my.filter(r=>r.status!='Draft'),avg=ap.length?Math.round(ap.reduce((a,r)=>a+r.att,0)/ap.length):0;
+return `<h1>${E(c.name)}</h1><p class="s">${E(c.area)} · Week of ${fd(w)}</p>${stats([[cur?cur.status:'Not submitted','This week’s report'],[ap.length,'Reports submitted'],[avg,'Average attendance'],[ap.reduce((a,r)=>a+r.souls,0),'Souls won in total']])}
+${cur&&cur.status!='Returned'?'':`<div class="pn"><h2>${cur?'Your report was returned':'This week’s report is due'}</h2><p class="s" style="margin-bottom:12px">${cur?E(cur.note||'Please review and resubmit.'):'Submit the weekly report for your cell.'}</p><button class="p" data-a="go" data-k="new">${cur?'Edit report':'Start report'}</button></div>`}
+<div class="pn"><h2>Recent reports</h2>${tbl(['Week','Attendance','Visitors','Souls','Status',''],my.slice(0,5).map(r=>rrow(r)),'No reports yet.')}</div>`}
+const fe=n=>st.err[n]?`<div class="er" role="alert">${st.err[n]}</div>`:'';
+function pgNew(){const c=api.cell(st.u.cell),wk=st.wk||mon(),x=D.reports.find(r=>r.cell==c.id&&r.week==wk)||{},v=k=>E(x[k]??''),n=(k,l)=>`<div class="fld"><label for="${k}">${l}</label><input id="${k}" name="${k}" type="number" min="0" step="1" value="${v(k)}">${fe(k)}</div>`,t=(k,l)=>`<div class="fld"><label for="${k}">${l}</label><textarea id="${k}" name="${k}" maxlength="1000">${v(k)}</textarea></div>`;
+const lock=x.status=='Submitted'||x.status=='Approved';
+return `<h1>Weekly report</h1><p class="s">${E(c.name)}</p>${x.status=='Returned'?`<div class="msg e">Returned for changes: ${E(x.note||'please review and resubmit.')}</div>`:''}
+<form data-f="rep" class="pn" novalidate><div class="g2"><div class="fld"><label>Cell</label><input value="${E(c.name)}" readonly></div><div class="fld"><label for="week">Reporting week (Monday)</label><input id="week" name="week" type="date" value="${wk}" data-a="wk">${fe('week')}</div></div>
+${lock?`<div class="msg">A report for this week is already ${x.status.toLowerCase()}.</div>`:''}
+<h2>Numbers</h2><div class="g">${n('att','Attendance')}${n('vis','Visitors')}${n('souls','Souls won')}${n('fu','Follow-ups')}</div>
+<h2>Activities</h2><div class="g2">${n('evg','Evangelism activities')}${n('meet','Cell meetings held')}</div>
+<h2>Narrative</h2>${t('prayer','Prayer requests')}${t('test','Testimonies')}${t('chal','Challenges and remarks')}
+<div style="display:flex;gap:10px"><button class="p" type="submit" data-s="Submitted" ${lock?'disabled':''}>Submit report</button><button type="submit" data-s="Draft" ${lock?'disabled':''}>Save draft</button></div></form>`}
+const pgHist=()=>`<h1>My reports</h1><p class="s">Your reporting history</p><div class="pn">${tbl(['Week','Attendance','Visitors','Souls','Status',''],sorted(D.reports.filter(r=>r.cell==st.u.cell)).map(r=>rrow(r)),'You have not submitted any reports yet.')}</div>`;
+function pgRep(){const rs=sorted(D.reports.filter(r=>r.status!='Draft'&&(st.f=='All'||r.status==st.f)));
+return `<h1>Reports</h1><p class="s">All submitted reports</p><div class="pn"><div class="fld" style="max-width:220px"><label for="flt">Status</label><select id="flt" data-a="flt">${['All','Submitted','Approved','Returned'].map(o=>`<option ${o==st.f?'selected':''}>${o}</option>`).join('')}</select></div>${tbl(['Week','Cell','Attendance','Visitors','Souls','Status',''],rs.map(r=>rrow(r,1)),'No reports match this filter.')}</div>`}
+function pgView(){const r=api.rep(st.v),c=api.cell(r.cell),adm=st.u.role=='admin',f=[['Cell',c.name],['Week',fd(r.week)],['Attendance',r.att],['Visitors',r.vis],['Souls won',r.souls],['Follow-ups',r.fu],['Evangelism activities',r.evg],['Cell meetings',r.meet],['Prayer requests',r.prayer||'—'],['Testimonies',r.test||'—'],['Challenges and remarks',r.chal||'—'],['Reviewer note',r.note||'—']];
+return `<button class="l" data-a="go" data-k="${adm?'rep':'hist'}">← Back</button><h1 style="margin-top:12px">Report · ${fd(r.week)}</h1><p class="s">${pill(r.status)}</p><div class="pn"><dl class="dl">${f.map(([k,v])=>`<dt>${k}</dt><dd>${E(v)}</dd>`).join('')}</dl></div>
+${adm&&r.status=='Submitted'?`<div class="pn"><div class="fld"><label for="rn">Note to cell leader (required when returning)</label><textarea id="rn"></textarea>${fe('rn')}</div><button class="p" data-a="rev" data-s="Approved">Approve</button> <button data-a="rev" data-s="Returned">Return for changes</button></div>`:''}`}
+function pgCells(){return `<h1>Cells & leaders</h1><p class="s">${D.cells.length} registered cells</p><div class="pn"><h2>Register a cell</h2><form data-f="cell" class="g" novalidate><div class="fld"><label for="cn">Cell name</label><input id="cn" name="name">${fe('name')}</div><div class="fld"><label for="cl">Leader</label><input id="cl" name="leader">${fe('leader')}</div><div class="fld"><label for="ca">Area</label><input id="ca" name="area">${fe('area')}</div><div class="fld" style="align-self:end"><button class="p" type="submit">Add cell</button></div></form></div>
+<div class="pn">${tbl(['Cell','Leader','Area','Last report'],D.cells.map(c=>{const l=sorted(D.reports.filter(r=>r.cell==c.id&&r.status!='Draft'))[0];return[E(c.name),E(c.leader),E(c.area),l?fd(l.week):'None']}),'No cells registered.')}</div>`}
+function pgTrend(){const ws=[...new Set(D.reports.filter(r=>r.status=='Approved'||r.status=='Submitted').map(r=>r.week))].sort().slice(-6),T=ws.map(w=>{const x=D.reports.filter(r=>r.week==w&&r.status!='Draft');return{w,a:x.reduce((s,r)=>s+r.att,0),s:x.reduce((s,r)=>s+r.souls,0)}}),m=Math.max(1,...T.map(t=>t.a));
+return `<h1>Trends</h1><p class="s">Network totals by week</p><div class="pn"><h2>Attendance</h2><div class="bar">${T.map(t=>`<div><i style="height:${Math.round(t.a/m*110)}px"></i>${t.a}</div>`).join('')}</div><div class="bar" style="height:auto;border:0;padding-top:4px">${T.map(t=>`<div style="color:var(--mu)">${fd(t.w).slice(0,6)}</div>`).join('')}</div></div>
+<div class="pn"><h2>Souls won</h2>${tbl(['Week','Souls won','Attendance'],T.map(t=>[fd(t.w),t.s,t.a]),'No data yet.')}</div>`}
+function pgNote(){const n=notes();return `<h1>Notifications</h1><p class="s">In-app notifications</p><div class="pn">${tbl(['Date','Message'],n.map(x=>[fd(x.date),(x.read?'':'<b>• </b>')+E(x.msg)]),'You have no notifications.')}</div>`}
+function page(){if(st.v&&st.p=='view')return pgView();const adm=st.u.role=='admin';return({dash:pgDash,new:pgNew,hist:pgHist,rep:pgRep,cells:pgCells,trend:pgTrend,note:pgNote})[st.p]()}
+function draw(){if(!st.u){root.innerHTML=login();return}const nav=(st.u.role=='admin'?A:Lm).map(([k,l])=>`<a href="#" data-a="go" data-k="${k}" class="${st.p==k?'on':''}">${l}${k=='note'&&unread()?`<b>${unread()}</b>`:''}</a>`).join('');
+const who=st.u.role=='admin'?'Administrator':api.cell(st.u.cell).leader;
+root.innerHTML=`<div class="app"><aside><div class="br"><strong>FNI</strong><small>Reporting System</small></div>${nav}<div class="me">${E(who)}<small>${st.u.role=='admin'?'Administrator':'Cell leader'}</small><button data-a="out">Sign out</button></div></aside><main>${st.msg?`<div class="msg ${st.msg[0]}">${E(st.msg[1])}</div>`:''}${page()}</main></div>`}
+const go=(k)=>{st.p=k;st.err={};st.msg=null;if(k=='note'){notes().forEach(n=>n.read=true);save()}draw()};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(!a||a.tagName=='SELECT'||a.tagName=='INPUT')return;e.preventDefault();const k=a.dataset.a;
+if(k=='login'){const v=document.getElementById('who').value;st.u=v=='admin'?{role:'admin'}:{role:'leader',cell:v};st.wk=null;go('dash')}
+else if(k=='out'){st.u=null;draw()}else if(k=='go'){st.v=null;go(a.dataset.k)}
+else if(k=='view'){st.v=a.dataset.id;st.p='view';st.err={};st.msg=null;draw()}
+else if(k=='rev'){const note=(document.getElementById('rn')||{}).value||'';if(a.dataset.s=='Returned'&&!note.trim()){st.err={rn:'Add a note explaining what needs to change.'};draw();return}api.review(st.v,a.dataset.s,note.trim());st.msg=['s','Report '+a.dataset.s.toLowerCase()+'.'];st.err={};draw()}});
+document.addEventListener('change',e=>{const a=e.target.dataset.a;if(a=='flt'){st.f=e.target.value;draw()}if(a=='wk'){st.wk=e.target.value;draw()}});
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,k=f.dataset.f,d=Object.fromEntries(new FormData(f));st.err={};
+if(k=='cell'){['name','leader','area'].forEach(x=>{if(!(d[x]||'').trim())st.err[x]='Required'});if(!Object.keys(st.err).length){api.addCell({name:d.name.trim(),leader:d.leader.trim(),area:d.area.trim()});st.msg=['s','Cell registered.']}draw();return}
+const s=e.submitter.dataset.s,wk=d.week;if(!wk)st.err.week='Choose a week';else if(new Date(wk+'T00:00').getDay()!=1)st.err.week='Reporting weeks start on a Monday';else if(wk>mon())st.err.week='Cannot report a future week';
+if(s=='Submitted')['att','vis','souls','fu','evg','meet'].forEach(x=>{const n=Number(d[x]);if(d[x]===''||!Number.isInteger(n)||n<0)st.err[x]='Enter a whole number, 0 or more'});
+if(s=='Submitted'&&Number(d.vis)>Number(d.att))st.err.vis='Visitors cannot exceed attendance';
+st.wk=wk;if(Object.keys(st.err).length){st.msg=['e','Please correct the highlighted fields.'];st.draftVals=d;const x=D.reports.find(r=>r.cell==st.u.cell&&r.week==wk);draw();return}
+const num=x=>d[x]===''?0:Number(d[x]);api.upsert({cell:st.u.cell,week:wk,att:num('att'),vis:num('vis'),souls:num('souls'),fu:num('fu'),evg:num('evg'),meet:num('meet'),prayer:d.prayer.trim(),test:d.test.trim(),chal:d.chal.trim(),status:s,date:new Date().toISOString().slice(0,10),note:''});
+st.msg=['s',s=='Draft'?'Draft saved.':'Report submitted for review.'];if(s=='Submitted')st.p='hist';draw()});
+draw();
+</script></body></html>
