@@ -1,20 +1,44 @@
-import { CellReport, ReportStatus, ReportReview, Cell, Region, ReportingPeriod, AuditLog } from '../types';
-import { INITIAL_REPORTS, INITIAL_CELLS, INITIAL_REGIONS, INITIAL_PERIODS, INITIAL_AUDIT_LOGS } from './mockData';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import {
+  collection,
+  doc,
+  addDoc,
+  setDoc,
+  getDocs,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  query,
+  where,
+  orderBy,
+} from 'firebase/firestore';
+import { db, isFirebaseConfigured } from './firebase';
+import {
+  CellMeetingReport,
+  EvangelismReport,
+  UnifiedReportItem,
+  ReportStatus,
+  CellReport,
+  Cell,
+  Region,
+  ReportingPeriod,
+  AuditLog,
+} from '../types';
+import { evaluateSubmissionTiming, getCurrentDeadlineInfo } from '../utils/deadlineUtil';
+import { CellService } from './cellService';
 
 const STORAGE_KEYS = {
-  REPORTS: 'fni_reports_store_v5_clean_prod',
-  CELLS: 'fni_cells_store_v5_clean_prod',
+  MEETING_REPORTS: 'fni_meeting_reports_v5_clean',
+  EVANGELISM_REPORTS: 'fni_evangelism_reports_v5_clean',
+  LEGACY_REPORTS: 'fni_reports_store_v5_clean_prod',
   REGIONS: 'fni_regions_store_v5_clean_prod',
   PERIODS: 'fni_periods_store_v5_clean_prod',
   AUDIT: 'fni_audit_store_v5_clean_prod',
 };
 
-// Local storage helper
 function getStored<T>(key: string, fallback: T): T {
   try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : fallback;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch (e) {
     return fallback;
   }
@@ -29,211 +53,390 @@ function setStored<T>(key: string, value: T): void {
 }
 
 export class ReportService {
-  static async getReports(filters?: {
-    regionId?: string;
+  // =========================================================================
+  // 1. CELL MEETING REPORTS
+  // =========================================================================
+
+  static async getCellMeetingReports(filters?: {
     cellId?: string;
-    periodId?: string;
+    tutorUid?: string;
     status?: ReportStatus;
-  }): Promise<CellReport[]> {
-    if (isSupabaseConfigured && supabase) {
+  }): Promise<CellMeetingReport[]> {
+    if (isFirebaseConfigured && db) {
       try {
-        let query = supabase.from('cell_reports').select(`
-          *,
-          cell:cells(name, region:regions(name)),
-          period:reporting_periods(name),
-          submitter:profiles!submitted_by(full_name),
-          reviewer:profiles!reviewed_by(full_name)
-        `);
-
-        if (filters?.cellId) query = query.eq('cell_id', filters.cellId);
-        if (filters?.periodId) query = query.eq('period_id', filters.periodId);
-        if (filters?.status) query = query.eq('status', filters.status);
-
-        const { data, error } = await query;
-        if (error) throw error;
-        if (data && data.length > 0) {
-          return data.map((d: any) => ({
-            ...d,
-            cell_name: d.cell?.name,
-            region_name: d.cell?.region?.name,
-            period_name: d.period?.name,
-            submitted_by_name: d.submitter?.full_name,
-            reviewed_by_name: d.reviewer?.full_name,
-          }));
+        const ref = collection(db, 'cellMeetingReports');
+        let q = query(ref, orderBy('submittedAt', 'desc'));
+        if (filters?.cellId) q = query(ref, where('cellId', '==', filters.cellId));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          let list = snap.docs.map(d => ({ id: d.id, ...d.data() } as CellMeetingReport));
+          if (filters?.tutorUid) list = list.filter(r => r.tutorUid === filters.tutorUid);
+          if (filters?.status) list = list.filter(r => r.status === filters.status);
+          setStored(STORAGE_KEYS.MEETING_REPORTS, list);
+          return list;
         }
-      } catch (err) {
-        console.warn('Supabase fetch failed, falling back to local store:', err);
+      } catch (e) {
+        console.warn('Firebase getCellMeetingReports error', e);
       }
     }
 
-    // Local real store
-    let reports = getStored<CellReport[]>(STORAGE_KEYS.REPORTS, INITIAL_REPORTS);
-    if (filters?.regionId) {
-      reports = reports.filter(r => r.region_id === filters.regionId);
-    }
-    if (filters?.cellId) {
-      reports = reports.filter(r => r.cell_id === filters.cellId);
-    }
-    if (filters?.periodId) {
-      reports = reports.filter(r => r.period_id === filters.periodId);
-    }
-    if (filters?.status) {
-      reports = reports.filter(r => r.status === filters.status);
-    }
-
-    return reports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    let reports = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
+    if (filters?.cellId) reports = reports.filter(r => r.cellId === filters.cellId);
+    if (filters?.tutorUid) reports = reports.filter(r => r.tutorUid === filters.tutorUid);
+    if (filters?.status) reports = reports.filter(r => r.status === filters.status);
+    return reports.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
   }
 
-  static async getReportById(id: string): Promise<CellReport | null> {
-    const reports = await this.getReports();
-    return reports.find(r => r.id === id) || null;
-  }
+  static async submitCellMeetingReport(data: {
+    id?: string;
+    cellId: string;
+    tutorUid: string;
+    cellName: string;
+    meetingDate: string;
+    tutorName: string;
+    members: number;
+    activeMembers: number;
+    attendance: number;
+    newMembers: number;
+    absentees: number;
+    followUpNeeded: number;
+    offering?: number;
+    tutorNotes?: string;
+    isDraft?: boolean;
+  }): Promise<CellMeetingReport> {
+    const nowIso = new Date().toISOString();
+    const deadlineInfo = getCurrentDeadlineInfo();
+    const timing = evaluateSubmissionTiming(nowIso, deadlineInfo.deadlineIso);
 
-  static async submitReport(reportData: Partial<CellReport>, isDraft = false): Promise<CellReport> {
-    const cells = await this.getCells();
-    const periods = await this.getPeriods();
-    const cell = cells.find(c => c.id === reportData.cell_id);
-    const period = periods.find(p => p.id === reportData.period_id);
+    // Duplicate check: Prevent duplicate submissions for same cell and meetingDate
+    const existing = await this.getCellMeetingReports({ cellId: data.cellId });
+    const duplicate = existing.find(
+      r => r.meetingDate === data.meetingDate && r.id !== data.id && r.status !== 'Needs Correction'
+    );
+    if (duplicate && !data.isDraft) {
+      throw new Error(`A cell meeting report for "${data.cellName}" on ${data.meetingDate} has already been submitted.`);
+    }
 
-    const now = new Date().toISOString();
-    const members = Number(reportData.members_present || 0);
-    const visitors = Number(reportData.visitors_count || 0);
-
-    const newReport: CellReport = {
-      id: reportData.id || `rep-${Date.now()}`,
-      cell_id: reportData.cell_id || '',
-      cell_name: cell?.name || reportData.cell_name || 'Cell Fellowship',
-      region_id: cell?.region_id || reportData.region_id || '',
-      region_name: cell?.region_name || reportData.region_name || '',
-      period_id: reportData.period_id || '',
-      period_name: period?.name || reportData.period_name || '',
-      submitted_by: reportData.submitted_by || 'usr-cell-leader',
-      submitted_by_name: reportData.submitted_by_name || 'Cell Leader',
-      status: isDraft ? 'draft' : 'submitted',
-      members_present: members,
-      visitors_count: visitors,
-      total_attendance: members + visitors,
-      souls_won: Number(reportData.souls_won || 0),
-      souls_won_details: reportData.souls_won_details || '',
-      evangelism_outreaches_held: Number(reportData.evangelism_outreaches_held || 0),
-      evangelism_locations: reportData.evangelism_locations || '',
-      follow_ups_conducted: Number(reportData.follow_ups_conducted || 0),
-      first_timers_contacted: Number(reportData.first_timers_contacted || 0),
-      converts_established: Number(reportData.converts_established || 0),
-      meeting_held: reportData.meeting_held ?? true,
-      meeting_date: reportData.meeting_date || now.split('T')[0],
-      meeting_topic: reportData.meeting_topic || '',
-      offering_amount: Number(reportData.offering_amount || 0),
-      prayer_requests: reportData.prayer_requests || '',
-      testimonies: reportData.testimonies || '',
-      challenges_faced: reportData.challenges_faced || '',
-      additional_remarks: reportData.additional_remarks || '',
-      submitted_at: isDraft ? undefined : now,
-      created_at: reportData.created_at || now,
-      updated_at: now,
+    const reportId = data.id || `cmr-${Date.now()}`;
+    const report: CellMeetingReport = {
+      id: reportId,
+      cellId: data.cellId,
+      tutorUid: data.tutorUid,
+      cellName: data.cellName,
+      meetingDate: data.meetingDate,
+      tutorName: data.tutorName,
+      members: Number(data.members || 0),
+      activeMembers: Number(data.activeMembers || 0),
+      attendance: Number(data.attendance || 0),
+      newMembers: Number(data.newMembers || 0),
+      absentees: Number(data.absentees || 0),
+      followUpNeeded: Number(data.followUpNeeded || 0),
+      offering: data.offering ? Number(data.offering) : undefined,
+      tutorNotes: data.tutorNotes || '',
+      status: 'Newly Submitted',
+      submittedAt: nowIso,
+      late: timing.isLate,
     };
 
-    if (isSupabaseConfigured && supabase) {
+    if (isFirebaseConfigured && db) {
       try {
-        const { error } = await supabase.from('cell_reports').upsert(newReport);
-        if (error) console.error('Supabase write error:', error);
-      } catch (err) {
-        console.warn('Supabase insert failed:', err);
+        await setDoc(doc(db, 'cellMeetingReports', reportId), {
+          ...report,
+          serverTimestamp: serverTimestamp(),
+        });
+      } catch (e) {
+        console.warn('Firebase setDoc cellMeetingReports error', e);
       }
     }
 
-    const currentReports = getStored<CellReport[]>(STORAGE_KEYS.REPORTS, INITIAL_REPORTS);
-    const existingIndex = currentReports.findIndex(r => r.id === newReport.id);
-    let updatedReports: CellReport[];
-    if (existingIndex >= 0) {
-      updatedReports = [...currentReports];
-      updatedReports[existingIndex] = newReport;
+    const list = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
+    const idx = list.findIndex(r => r.id === reportId);
+    if (idx >= 0) {
+      list[idx] = report;
     } else {
-      updatedReports = [newReport, ...currentReports];
+      list.unshift(report);
     }
-    setStored(STORAGE_KEYS.REPORTS, updatedReports);
+    setStored(STORAGE_KEYS.MEETING_REPORTS, list);
 
-    // Record audit log
     this.recordAuditLog({
-      action: isDraft ? 'SAVE_DRAFT_REPORT' : 'SUBMIT_REPORT',
-      entity_type: 'cell_reports',
-      entity_id: newReport.id,
+      action: timing.isLate ? 'SUBMIT_LATE_MEETING_REPORT' : 'SUBMIT_MEETING_REPORT',
+      entity_type: 'cellMeetingReports',
+      entity_id: reportId,
       details: {
-        cell: newReport.cell_name,
-        period: newReport.period_name,
-        attendance: newReport.total_attendance,
-        soulsWon: newReport.souls_won,
+        cellName: report.cellName,
+        meetingDate: report.meetingDate,
+        attendance: report.attendance,
+        late: report.late,
       },
     });
 
-    return newReport;
+    return report;
+  }
+
+  // =========================================================================
+  // 2. EVANGELISM REPORTS
+  // =========================================================================
+
+  static async getEvangelismReports(filters?: {
+    cellId?: string;
+    tutorUid?: string;
+    status?: ReportStatus;
+  }): Promise<EvangelismReport[]> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const ref = collection(db, 'evangelismReports');
+        let q = query(ref, orderBy('submittedAt', 'desc'));
+        if (filters?.cellId) q = query(ref, where('cellId', '==', filters.cellId));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          let list = snap.docs.map(d => ({ id: d.id, ...d.data() } as EvangelismReport));
+          if (filters?.tutorUid) list = list.filter(r => r.tutorUid === filters.tutorUid);
+          if (filters?.status) list = list.filter(r => r.status === filters.status);
+          setStored(STORAGE_KEYS.EVANGELISM_REPORTS, list);
+          return list;
+        }
+      } catch (e) {
+        console.warn('Firebase getEvangelismReports error', e);
+      }
+    }
+
+    let reports = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
+    if (filters?.cellId) reports = reports.filter(r => r.cellId === filters.cellId);
+    if (filters?.tutorUid) reports = reports.filter(r => r.tutorUid === filters.tutorUid);
+    if (filters?.status) reports = reports.filter(r => r.status === filters.status);
+    return reports.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+  }
+
+  static async submitEvangelismReport(data: {
+    id?: string;
+    cellId: string;
+    tutorUid: string;
+    cellName: string;
+    tutorName: string;
+    date: string;
+    location: string;
+    teamMembers: string[];
+    peopleSpokenTo: number;
+    contactsCaptured: number;
+    conversions: number;
+    interestedInMinistry: number;
+    potentialFollowUps: number;
+    messageUsed: string;
+    notes: string;
+  }): Promise<EvangelismReport> {
+    const nowIso = new Date().toISOString();
+    const deadlineInfo = getCurrentDeadlineInfo();
+    const timing = evaluateSubmissionTiming(nowIso, deadlineInfo.deadlineIso);
+
+    const reportId = data.id || `evr-${Date.now()}`;
+    const report: EvangelismReport = {
+      id: reportId,
+      cellId: data.cellId,
+      tutorUid: data.tutorUid,
+      cellName: data.cellName,
+      tutorName: data.tutorName,
+      date: data.date,
+      location: data.location,
+      teamMembers: data.teamMembers || [],
+      peopleSpokenTo: Number(data.peopleSpokenTo || 0),
+      contactsCaptured: Number(data.contactsCaptured || 0),
+      conversions: Number(data.conversions || 0),
+      interestedInMinistry: Number(data.interestedInMinistry || 0),
+      potentialFollowUps: Number(data.potentialFollowUps || 0),
+      messageUsed: data.messageUsed || '',
+      notes: data.notes || '',
+      status: 'Newly Submitted',
+      submittedAt: nowIso,
+      late: timing.isLate,
+    };
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'evangelismReports', reportId), {
+          ...report,
+          serverTimestamp: serverTimestamp(),
+        });
+      } catch (e) {
+        console.warn('Firebase setDoc evangelismReports error', e);
+      }
+    }
+
+    const list = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
+    const idx = list.findIndex(r => r.id === reportId);
+    if (idx >= 0) {
+      list[idx] = report;
+    } else {
+      list.unshift(report);
+    }
+    setStored(STORAGE_KEYS.EVANGELISM_REPORTS, list);
+
+    this.recordAuditLog({
+      action: timing.isLate ? 'SUBMIT_LATE_EVANGELISM_REPORT' : 'SUBMIT_EVANGELISM_REPORT',
+      entity_type: 'evangelismReports',
+      entity_id: reportId,
+      details: {
+        cellName: report.cellName,
+        date: report.date,
+        peopleSpokenTo: report.peopleSpokenTo,
+        conversions: report.conversions,
+        contactsCaptured: report.contactsCaptured,
+        late: report.late,
+      },
+    });
+
+    return report;
+  }
+
+  // =========================================================================
+  // 3. UNIFIED REVIEW QUEUE (Cell Meeting + Evangelism Reports)
+  // =========================================================================
+
+  static async getUnifiedReviewQueue(filters?: {
+    reportType?: 'all' | 'meeting' | 'evangelism';
+    cellId?: string;
+    tutorUid?: string;
+    status?: ReportStatus | 'all';
+    searchQuery?: string;
+  }): Promise<UnifiedReportItem[]> {
+    const [meetingReps, evangReps] = await Promise.all([
+      this.getCellMeetingReports(),
+      this.getEvangelismReports(),
+    ]);
+
+    const formattedMeetings: UnifiedReportItem[] = meetingReps.map(m => ({
+      ...m,
+      reportType: 'meeting',
+    }));
+
+    const formattedEvang: UnifiedReportItem[] = evangReps.map(e => ({
+      ...e,
+      reportType: 'evangelism',
+    }));
+
+    let combined: UnifiedReportItem[] = [];
+    if (!filters?.reportType || filters.reportType === 'all') {
+      combined = [...formattedMeetings, ...formattedEvang];
+    } else if (filters.reportType === 'meeting') {
+      combined = formattedMeetings;
+    } else if (filters.reportType === 'evangelism') {
+      combined = formattedEvang;
+    }
+
+    if (filters?.cellId && filters.cellId !== 'all') {
+      combined = combined.filter(r => r.cellId === filters.cellId);
+    }
+    if (filters?.tutorUid && filters.tutorUid !== 'all') {
+      combined = combined.filter(r => r.tutorUid === filters.tutorUid);
+    }
+    if (filters?.status && filters.status !== 'all') {
+      combined = combined.filter(r => r.status === filters.status);
+    }
+    if (filters?.searchQuery) {
+      const q = filters.searchQuery.toLowerCase();
+      combined = combined.filter(
+        r =>
+          r.cellName.toLowerCase().includes(q) ||
+          r.tutorName.toLowerCase().includes(q)
+      );
+    }
+
+    return combined.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
   }
 
   static async reviewReport(
     reportId: string,
-    newStatus: ReportStatus,
-    feedback: string,
-    reviewerId: string,
-    reviewerName: string
-  ): Promise<CellReport> {
-    const currentReports = getStored<CellReport[]>(STORAGE_KEYS.REPORTS, INITIAL_REPORTS);
-    const index = currentReports.findIndex(r => r.id === reportId);
-    if (index === -1) {
-      throw new Error(`Report ${reportId} not found`);
+    arg2: 'meeting' | 'evangelism' | ReportStatus | string,
+    arg3: 'Approved' | 'Needs Correction' | string,
+    arg4: string,
+    arg5?: string,
+    arg6?: string
+  ): Promise<any> {
+    const isFiveArgs = arg6 === undefined;
+    const reportType: 'meeting' | 'evangelism' = isFiveArgs ? 'meeting' : (arg2 as 'meeting' | 'evangelism');
+    const rawStatus = isFiveArgs ? (arg2 as string) : (arg3 as string);
+    const comment = isFiveArgs ? (arg3 as string) : arg4;
+    const reviewerUid = isFiveArgs ? (arg4 as string) : (arg5 || '');
+    const reviewerName = isFiveArgs ? (arg5 || 'Admin') : (arg6 || 'Admin');
+
+    const status: ReportStatus =
+      rawStatus === 'approved' || rawStatus === 'Approved'
+        ? 'Approved'
+        : rawStatus === 'needs_revision' || rawStatus === 'Needs Correction'
+        ? 'Needs Correction'
+        : (rawStatus as ReportStatus);
+
+    const nowIso = new Date().toISOString();
+    const collectionName = reportType === 'meeting' ? 'cellMeetingReports' : 'evangelismReports';
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, collectionName, reportId), {
+          status,
+          reviewerComment: comment,
+          reviewedBy: reviewerUid,
+          reviewedByName: reviewerName,
+          reviewedAt: nowIso,
+          serverReviewedAt: serverTimestamp(),
+        });
+
+        // Record in reviewLogs
+        await addDoc(collection(db, 'reviewLogs'), {
+          reportId,
+          reportType,
+          status,
+          comment,
+          reviewerUid,
+          reviewerName,
+          timestamp: serverTimestamp(),
+          createdAt: nowIso,
+        });
+      } catch (e) {
+        console.warn('Firebase reviewReport error', e);
+      }
     }
 
-    const prevStatus = currentReports[index].status;
-    const now = new Date().toISOString();
+    let updatedReport: any = null;
 
-    const updatedReport: CellReport = {
-      ...currentReports[index],
-      status: newStatus,
-      reviewed_by: reviewerId,
-      reviewed_by_name: reviewerName,
-      last_reviewed_at: now,
-      updated_at: now,
-      additional_remarks: feedback 
-        ? `${currentReports[index].additional_remarks ? currentReports[index].additional_remarks + '\n\n' : ''}[Admin Note - ${reviewerName}]: ${feedback}`
-        : currentReports[index].additional_remarks,
-    };
-
-    currentReports[index] = updatedReport;
-    setStored(STORAGE_KEYS.REPORTS, currentReports);
-
-    const reviewRecord: ReportReview = {
-      id: `rev-${Date.now()}`,
-      report_id: reportId,
-      reviewer_id: reviewerId,
-      reviewer_name: reviewerName,
-      reviewer_role: 'admin',
-      previous_status: prevStatus,
-      new_status: newStatus,
-      feedback,
-      created_at: now,
-    };
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('cell_reports').update({
-          status: newStatus,
-          reviewed_by: reviewerId,
-          last_reviewed_at: now,
-        }).eq('id', reportId);
-
-        await supabase.from('report_reviews').insert(reviewRecord);
-      } catch (err) {
-        console.warn('Supabase review update failed:', err);
+    // Local storage updates
+    if (reportType === 'meeting') {
+      const list = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
+      const idx = list.findIndex(r => r.id === reportId);
+      if (idx >= 0) {
+        list[idx] = {
+          ...list[idx],
+          status,
+          reviewerComment: comment,
+          reviewedBy: reviewerUid,
+          reviewedByName: reviewerName,
+          reviewedAt: nowIso,
+        };
+        setStored(STORAGE_KEYS.MEETING_REPORTS, list);
+        updatedReport = list[idx];
+      }
+    } else {
+      const list = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
+      const idx = list.findIndex(r => r.id === reportId);
+      if (idx >= 0) {
+        list[idx] = {
+          ...list[idx],
+          status,
+          reviewerComment: comment,
+          reviewedBy: reviewerUid,
+          reviewedByName: reviewerName,
+          reviewedAt: nowIso,
+        };
+        setStored(STORAGE_KEYS.EVANGELISM_REPORTS, list);
+        updatedReport = list[idx];
       }
     }
 
     this.recordAuditLog({
-      action: newStatus === 'approved' ? 'APPROVE_REPORT' : newStatus === 'needs_revision' ? 'REQUEST_REVISION' : 'REVIEW_REPORT',
-      entity_type: 'cell_reports',
+      action: status === 'Approved' ? 'APPROVE_REPORT' : 'RETURN_REPORT_FOR_CORRECTION',
+      entity_type: collectionName,
       entity_id: reportId,
       details: {
-        previousStatus: prevStatus,
-        newStatus,
-        feedback,
+        status,
+        comment,
         reviewer: reviewerName,
       },
     });
@@ -241,136 +444,223 @@ export class ReportService {
     return updatedReport;
   }
 
-  static async getCells(): Promise<Cell[]> {
-    if (isSupabaseConfigured && supabase) {
+  static async bulkApproveReports(
+    reports: { id: string; reportType: 'meeting' | 'evangelism' }[],
+    reviewerUid: string,
+    reviewerName: string
+  ): Promise<number> {
+    let approvedCount = 0;
+    for (const item of reports) {
       try {
-        const { data } = await supabase.from('cells').select('*, region:regions(name), leader:profiles(full_name, phone_number)');
-        if (data && data.length > 0) {
-          return data.map((c: any) => ({
-            ...c,
-            region_name: c.region?.name,
-            leader_name: c.leader?.full_name,
-            leader_phone: c.leader?.phone_number,
-          }));
-        }
-      } catch (err) {
-        console.warn('Failed fetching cells from supabase:', err);
+        await this.reviewReport(item.id, item.reportType, 'Approved', 'Bulk approved by church administration.', reviewerUid, reviewerName);
+        approvedCount++;
+      } catch (e) {
+        console.warn('Error in bulk approval item', item.id, e);
       }
     }
-    return getStored<Cell[]>(STORAGE_KEYS.CELLS, INITIAL_CELLS);
+    return approvedCount;
+  }
+
+  // =========================================================================
+  // 4. CELLS & REGIONS DELEGATION
+  // =========================================================================
+
+  static async getCells(): Promise<Cell[]> {
+    return CellService.getCells();
   }
 
   static async addCell(cell: Cell): Promise<void> {
-    const cells = await this.getCells();
-    const updated = [cell, ...cells];
-    setStored(STORAGE_KEYS.CELLS, updated);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('cells').insert(cell);
-      } catch (e) {
-        console.warn('Supabase cell insert failed', e);
-      }
-    }
+    return CellService.updateCell(cell);
   }
 
   static async updateCell(cell: Cell): Promise<void> {
-    const cells = await this.getCells();
-    const updated = cells.map(c => (c.id === cell.id ? cell : c));
-    setStored(STORAGE_KEYS.CELLS, updated);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('cells').update({
-          name: cell.name,
-          leader_id: cell.leader_id,
-          meeting_day: cell.meeting_day,
-          meeting_time: cell.meeting_time,
-          venue_address: cell.venue_address,
-          target_attendance: cell.target_attendance,
-        }).eq('id', cell.id);
-      } catch (e) {
-        console.warn('Supabase cell update failed', e);
-      }
-    }
+    return CellService.updateCell(cell);
   }
 
   static async getRegions(): Promise<Region[]> {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data } = await supabase.from('regions').select('*, leader:profiles(full_name)');
-        if (data && data.length > 0) {
-          return data.map((r: any) => ({
-            ...r,
-            leader_name: r.leader?.full_name,
-          }));
-        }
-      } catch (err) {
-        console.warn('Failed fetching regions from supabase:', err);
-      }
-    }
-    return getStored<Region[]>(STORAGE_KEYS.REGIONS, INITIAL_REGIONS);
+    const list = getStored<Region[]>(STORAGE_KEYS.REGIONS, [
+      {
+        id: 'reg-lagos',
+        name: 'Lagos Central Region',
+        code: 'FNI-REG-LOS',
+        country: 'Nigeria',
+        state_province: 'Lagos',
+        total_cells: 0,
+        active_cells: 0,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'reg-abuja',
+        name: 'Abuja Capital Region',
+        code: 'FNI-REG-ABJ',
+        country: 'Nigeria',
+        state_province: 'FCT Abuja',
+        total_cells: 0,
+        active_cells: 0,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'reg-london',
+        name: 'London Diaspora Region',
+        code: 'FNI-REG-LON',
+        country: 'United Kingdom',
+        state_province: 'Greater London',
+        total_cells: 0,
+        active_cells: 0,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'reg-accra',
+        name: 'Accra Hub Region',
+        code: 'FNI-REG-ACC',
+        country: 'Ghana',
+        state_province: 'Greater Accra',
+        total_cells: 0,
+        active_cells: 0,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+    ]);
+    return list;
   }
 
   static async addRegion(region: Region): Promise<void> {
-    const regions = await this.getRegions();
-    const updated = [...regions, region];
-    setStored(STORAGE_KEYS.REGIONS, updated);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('regions').insert(region);
-      } catch (e) {
-        console.warn('Supabase region insert failed', e);
-      }
-    }
+    const list = await this.getRegions();
+    setStored(STORAGE_KEYS.REGIONS, [...list, region]);
   }
 
   static async getPeriods(): Promise<ReportingPeriod[]> {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data } = await supabase.from('reporting_periods').select('*').order('year', { ascending: false }).order('week_number', { ascending: false });
-        if (data && data.length > 0) return data;
-      } catch (err) {
-        console.warn('Failed fetching periods from supabase:', err);
-      }
-    }
-    return getStored<ReportingPeriod[]>(STORAGE_KEYS.PERIODS, INITIAL_PERIODS);
+    return getStored<ReportingPeriod[]>(STORAGE_KEYS.PERIODS, [
+      {
+        id: 'prd-w45',
+        name: '2026 - Week 45',
+        year: 2026,
+        week_number: 45,
+        start_date: '2026-11-02',
+        end_date: '2026-11-08',
+        submission_deadline: '2026-11-08T18:00:00Z',
+        is_open: true,
+        created_at: '2026-11-01T00:00:00Z',
+      },
+    ]);
   }
 
   static async addPeriod(period: ReportingPeriod): Promise<void> {
-    const periods = await this.getPeriods();
-    const updated = [period, ...periods];
-    setStored(STORAGE_KEYS.PERIODS, updated);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('reporting_periods').insert(period);
-      } catch (e) {
-        console.warn('Supabase period insert failed', e);
-      }
-    }
+    const list = await this.getPeriods();
+    setStored(STORAGE_KEYS.PERIODS, [period, ...list]);
   }
 
+  // Missing cells: registered cells with no report submitted for the cycle
+  static async getMissingCells(periodId = 'prd-w45'): Promise<Cell[]> {
+    const cells = await this.getCells();
+    const meetingReports = await this.getCellMeetingReports();
+    const submittedCellIds = new Set(
+      meetingReports.filter(r => r.status === 'Newly Submitted' || r.status === 'Approved').map(r => r.cellId)
+    );
+    return cells.filter(c => c.is_active && !submittedCellIds.has(c.id));
+  }
+
+  // Backward compatibility method
+  static async getReports(filters?: {
+    regionId?: string;
+    cellId?: string;
+    periodId?: string;
+    status?: any;
+    isLate?: boolean;
+  }): Promise<CellReport[]> {
+    const meetings = await this.getCellMeetingReports({ cellId: filters?.cellId });
+    return meetings.map(m => ({
+      id: m.id,
+      cell_id: m.cellId,
+      cell_name: m.cellName,
+      region_id: 'reg-lagos',
+      region_name: 'Lagos Central Region',
+      period_id: 'prd-w45',
+      period_name: '2026 - Week 45',
+      submitted_by: m.tutorUid,
+      submitted_by_name: m.tutorName,
+      status: m.status as any,
+      members_present: m.members,
+      visitors_count: m.absentees,
+      total_attendance: m.attendance,
+      souls_won: 0,
+      evangelism_outreaches_held: 0,
+      follow_ups_conducted: m.followUpNeeded,
+      first_timers_contacted: 0,
+      converts_established: 0,
+      meeting_held: true,
+      meeting_date: m.meetingDate,
+      meeting_topic: m.tutorNotes || '',
+      offering_amount: m.offering || 0,
+      submitted_at: m.submittedAt,
+      is_late: m.late,
+      created_at: m.submittedAt,
+      updated_at: m.submittedAt,
+    }));
+  }
+
+  static async submitReport(reportData: Partial<CellReport>): Promise<CellReport> {
+    const res = await this.submitCellMeetingReport({
+      id: reportData.id,
+      cellId: reportData.cell_id || '',
+      tutorUid: reportData.submitted_by || '',
+      cellName: reportData.cell_name || 'Fellowship Cell',
+      meetingDate: reportData.meeting_date || new Date().toISOString().split('T')[0],
+      tutorName: reportData.submitted_by_name || 'Tutor',
+      members: reportData.members_present || 0,
+      activeMembers: reportData.members_present || 0,
+      attendance: reportData.total_attendance || (Number(reportData.members_present || 0) + Number(reportData.visitors_count || 0)),
+      newMembers: reportData.first_timers_contacted || 0,
+      absentees: reportData.visitors_count || 0,
+      followUpNeeded: reportData.follow_ups_conducted || 0,
+      offering: reportData.offering_amount,
+      tutorNotes: reportData.additional_remarks || reportData.meeting_topic,
+    });
+    return {
+      id: res.id,
+      cell_id: res.cellId,
+      cell_name: res.cellName,
+      period_id: 'prd-w45',
+      submitted_by: res.tutorUid,
+      submitted_by_name: res.tutorName,
+      status: res.status as any,
+      members_present: res.members,
+      visitors_count: res.absentees,
+      total_attendance: res.attendance,
+      souls_won: 0,
+      evangelism_outreaches_held: 0,
+      follow_ups_conducted: res.followUpNeeded,
+      first_timers_contacted: res.newMembers,
+      converts_established: 0,
+      meeting_held: true,
+      meeting_date: res.meetingDate,
+      meeting_topic: res.tutorNotes || '',
+      offering_amount: res.offering,
+      submitted_at: res.submittedAt,
+      is_late: res.late,
+      created_at: res.submittedAt,
+      updated_at: res.submittedAt,
+    };
+  }
+
+  // Audit Logs
   static async getAuditLogs(): Promise<AuditLog[]> {
-    return getStored<AuditLog[]>(STORAGE_KEYS.AUDIT, INITIAL_AUDIT_LOGS);
-  }
-
-  static resetToCleanSlate(): void {
-    localStorage.removeItem(STORAGE_KEYS.REPORTS);
-    localStorage.removeItem(STORAGE_KEYS.CELLS);
-    localStorage.removeItem(STORAGE_KEYS.REGIONS);
-    localStorage.removeItem(STORAGE_KEYS.PERIODS);
-    localStorage.removeItem(STORAGE_KEYS.AUDIT);
+    return getStored<AuditLog[]>(STORAGE_KEYS.AUDIT, []);
   }
 
   static recordAuditLog(log: Omit<AuditLog, 'id' | 'created_at'>): void {
-    const currentLogs = getStored<AuditLog[]>(STORAGE_KEYS.AUDIT, INITIAL_AUDIT_LOGS);
+    const currentLogs = getStored<AuditLog[]>(STORAGE_KEYS.AUDIT, []);
     const newLog: AuditLog = {
       ...log,
       id: `aud-${Date.now()}`,
       created_at: new Date().toISOString(),
     };
     setStored(STORAGE_KEYS.AUDIT, [newLog, ...currentLogs]);
+  }
+
+  static resetToCleanSlate(): void {
+    Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem('fni_cells_store_v5_clean');
+    localStorage.removeItem('fni_contacts_store_v5_clean');
+    localStorage.removeItem('fni_system_settings_v5_clean');
   }
 }

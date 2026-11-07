@@ -27,58 +27,92 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Regions
+    // Ecclesiastical Regions
     match /regions/{regionId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
     
-    // Cells
+    // Fellowship Cells
     match /cells/{cellId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Leaders can register during onboarding
-      allow update: if isAuthenticated() && (resource.data.leader_id == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated(); // Tutors register cells during onboarding
+      allow update: if isAuthenticated() && (resource.data.leader_id == request.auth.uid || resource.data.tutorUid == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
     
-    // Reporting Periods
+    // Reporting Cycles / Periods
     match /reporting_periods/{periodId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
     
-    // Weekly Cell Reports
-    match /cell_reports/{reportId} {
-      // Cell leaders read only their own cell's reports; admins read all
+    // System Settings (Kingdom Vision, Mission, Annual Soul Target, Weekly Deadline)
+    match /systemSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Cell Meeting Reports (Weekly)
+    match /cellMeetingReports/{reportId} {
       allow read: if isAuthenticated() && (
-        resource.data.submitted_by == request.auth.uid ||
-        resource.data.cell_id == getUserProfile().cell_id ||
+        resource.data.tutorUid == request.auth.uid ||
+        resource.data.cellId == getUserProfile().cell_id ||
         isAdmin()
       );
-      
-      // Cell leaders submit returns for their own cell
       allow create: if isAuthenticated() && (
-        request.resource.data.submitted_by == request.auth.uid ||
+        request.resource.data.tutorUid == request.auth.uid ||
         isAdmin()
       );
-      
-      // Leaders can update drafts or requested revisions; Admins can update status & review
       allow update: if isAuthenticated() && (
         isAdmin() ||
-        (resource.data.submitted_by == request.auth.uid && resource.data.status in ['draft', 'needs_revision'])
+        (resource.data.tutorUid == request.auth.uid && resource.data.status in ['Needs Correction', 'needs_revision', 'draft'])
       );
-      
       allow delete: if isAdmin();
     }
-    
-    // Report Reviews
-    match /report_reviews/{reviewId} {
+
+    // Evangelism Reports (Weekly Outreach)
+    match /evangelismReports/{reportId} {
+      allow read: if isAuthenticated() && (
+        resource.data.tutorUid == request.auth.uid ||
+        resource.data.cellId == getUserProfile().cell_id ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.tutorUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (resource.data.tutorUid == request.auth.uid && resource.data.status in ['Needs Correction', 'needs_revision', 'draft'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Evangelism Outreach Contacts & Follow-Up Pipeline
+    match /evangelismContacts/{contactId} {
+      allow read: if isAuthenticated() && (
+        resource.data.tutorUid == request.auth.uid ||
+        resource.data.cellId == getUserProfile().cell_id ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.tutorUid == request.auth.uid ||
+        resource.data.cellId == getUserProfile().cell_id ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Report Review Logs (Audit trail for approval/corrections)
+    match /reviewLogs/{logId} {
       allow read: if isAuthenticated();
       allow create: if isAdmin();
-      allow update, delete: if isAdmin();
+      allow update, delete: if false; // Immutable audit log
     }
-    
-    // Notifications
+
+    // Notifications & Dispatches
     match /notifications/{notifId} {
       allow read, update: if isAuthenticated() && (
         resource.data.user_id == request.auth.uid ||
@@ -93,6 +127,24 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isAuthenticated();
       allow update, delete: if false; // Immutable audit trail
+    }
+
+    // Legacy cell_reports
+    match /cell_reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        resource.data.submitted_by == request.auth.uid ||
+        resource.data.cell_id == getUserProfile().cell_id ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.submitted_by == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (resource.data.submitted_by == request.auth.uid && resource.data.status in ['draft', 'needs_revision'])
+      );
+      allow delete: if isAdmin();
     }
   }
 }

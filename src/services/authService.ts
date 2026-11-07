@@ -1,7 +1,10 @@
 import { Profile, CellLeaderOnboardingInput, Cell } from '../types';
 import { INITIAL_PROFILES } from './mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { FirebaseService } from './firebaseService';
+import { isFirebaseConfigured } from '../lib/firebase';
 import { ReportService } from './reportService';
+import { CellService } from './cellService';
 
 const STORAGE_KEYS = {
   CURRENT_PROFILE: 'fni_current_profile_v5_clean_prod',
@@ -142,6 +145,15 @@ export class AuthService {
     const updatedList = [newProfile, ...allProfiles];
     this.saveProfiles(updatedList);
     this.setCurrentProfile(newProfile);
+
+    // Save to Firebase if configured
+    if (isFirebaseConfigured) {
+      try {
+        await FirebaseService.saveProfile(newProfile);
+      } catch (e) {
+        console.warn('Failed to save profile to Firebase', e);
+      }
+    }
 
     // Save to Supabase if configured
     if (isSupabaseConfigured && supabase) {
@@ -292,57 +304,23 @@ export class AuthService {
     input: CellLeaderOnboardingInput
   ): Promise<{ profile: Profile; cell: Cell; isExistingCellAssociated: boolean }> {
     const current = this.getCurrentProfile();
-    const allCells = await ReportService.getCells();
     const allRegions = await ReportService.getRegions();
+    const targetRegion = allRegions.find(r => r.id === input.regionId) || allRegions[0];
 
-    // 1. Normalize cell name for duplicate prevention
-    const rawName = input.cellName.trim();
-    const normalizedAttempt = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    // Check if cell already exists by normalized name or exact name
-    let associatedCell = allCells.find(c => {
-      const existingNormalized = (c.normalized_name || c.name).toLowerCase().replace(/[^a-z0-9]/g, '');
-      return existingNormalized === normalizedAttempt || c.name.toLowerCase() === rawName.toLowerCase();
+    // Delegate cell creation or association with duplicate prevention to CellService
+    const { cell: associatedCell, isExistingAssociated } = await CellService.registerCell({
+      name: input.cellName,
+      location: input.location || input.venueAddress || 'Fellowship Center',
+      tutorUid: current.id,
+      leaderName: input.fullName,
+      leaderPhone: input.phoneNumber,
+      regionId: input.regionId,
+      regionName: targetRegion?.name || 'Lagos Central Region',
+      meetingDay: input.meetingDay,
+      meetingTime: input.meetingTime,
+      venueAddress: input.venueAddress,
+      targetAttendance: input.targetAttendance,
     });
-
-    let isExistingCellAssociated = false;
-    let targetRegion = allRegions.find(r => r.id === input.regionId) || allRegions[0];
-
-    if (associatedCell) {
-      // Cell already exists! Associate the user with existing cell
-      isExistingCellAssociated = true;
-      associatedCell = {
-        ...associatedCell,
-        leader_id: current.id,
-        leader_name: input.fullName,
-        leader_phone: input.phoneNumber,
-        meeting_day: input.meetingDay || associatedCell.meeting_day,
-        meeting_time: input.meetingTime || associatedCell.meeting_time,
-        venue_address: input.venueAddress || associatedCell.venue_address,
-      };
-      await ReportService.updateCell(associatedCell);
-    } else {
-      // Create new registered cell
-      const newCellCode = `FNI-CEL-${targetRegion?.code?.split('-')[2] || 'LOS'}-${(allCells.length + 1).toString().padStart(3, '0')}`;
-      associatedCell = {
-        id: `cell-${Date.now()}`,
-        name: rawName,
-        normalized_name: normalizedAttempt,
-        code: newCellCode,
-        region_id: targetRegion ? targetRegion.id : 'reg-lagos',
-        region_name: targetRegion ? targetRegion.name : 'Lagos Central Region',
-        leader_id: current.id,
-        leader_name: input.fullName,
-        leader_phone: input.phoneNumber,
-        meeting_day: input.meetingDay,
-        meeting_time: input.meetingTime,
-        venue_address: input.venueAddress,
-        target_attendance: Number(input.targetAttendance) || 20,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      await ReportService.addCell(associatedCell);
-    }
 
     // 2. Create / Update Cell Leader Profile
     const updatedProfile: Profile = {
@@ -361,6 +339,15 @@ export class AuthService {
     const allProfiles = this.getAllProfiles().map(p => (p.id === updatedProfile.id ? updatedProfile : p));
     this.saveProfiles(allProfiles);
     this.setCurrentProfile(updatedProfile);
+
+    // Save to Firebase if configured
+    if (isFirebaseConfigured) {
+      try {
+        await FirebaseService.saveProfile(updatedProfile);
+      } catch (e) {
+        console.warn('Failed to save profile to Firebase', e);
+      }
+    }
 
     // Save to Supabase if configured
     if (isSupabaseConfigured && supabase) {
@@ -385,20 +372,20 @@ export class AuthService {
 
     // Record audit trail
     ReportService.recordAuditLog({
-      action: isExistingCellAssociated ? 'CELL_LEADER_LINKED_EXISTING' : 'CELL_REGISTERED_AND_ONBOARDED',
+      action: isExistingAssociated ? 'CELL_LEADER_LINKED_EXISTING' : 'CELL_REGISTERED_AND_ONBOARDED',
       entity_type: 'cells',
       entity_id: associatedCell.id,
       details: {
         leader_name: input.fullName,
         cell_name: associatedCell.name,
-        isExistingCellAssociated,
+        isExistingCellAssociated: isExistingAssociated,
       },
     });
 
     return {
       profile: updatedProfile,
       cell: associatedCell,
-      isExistingCellAssociated,
+      isExistingCellAssociated: isExistingAssociated,
     };
   }
 

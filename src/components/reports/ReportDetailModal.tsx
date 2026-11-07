@@ -58,24 +58,29 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
         currentUser.full_name
       );
 
-      const statusLabels = {
+      const statusLabels: Record<string, string> = {
         approved: 'Approved',
         needs_revision: 'Revision Requested',
         under_review: 'Marked Under Review',
         draft: 'Draft',
         submitted: 'Submitted',
+        'Newly Submitted': 'Newly Submitted',
+        'Approved': 'Approved',
+        'Needs Correction': 'Needs Correction',
       };
 
+      const label = statusLabels[newStatus] || String(newStatus);
+
       dispatchNotification(
-        `Report ${statusLabels[newStatus]}`,
-        `${report.cell_name} report for ${report.period_name} has been ${statusLabels[newStatus].toLowerCase()} by ${currentUser.full_name}.`,
-        newStatus === 'approved' ? 'report_approved' : 'revision_requested',
+        `Report ${label}`,
+        `${report.cell_name} report for ${report.period_name} has been ${label.toLowerCase()} by ${currentUser.full_name}.`,
+        newStatus === 'approved' || newStatus === 'Approved' ? 'report_approved' : 'revision_requested',
         'in_app'
       );
 
       setReviewFeedback('');
       setReviewMode(null);
-      if (onReportUpdated) onReportUpdated(updated);
+      if (onReportUpdated && updated) onReportUpdated(updated);
       onClose();
     } catch (err) {
       console.error('Review action failed:', err);

@@ -56,7 +56,7 @@ export const INITIAL_PERIODS: ReportingPeriod[] = [
     week_number: 45,
     start_date: '2026-11-02',
     end_date: '2026-11-08',
-    submission_deadline: '2026-11-10T23:59:59Z',
+    submission_deadline: '2026-11-08T18:00:00Z', // Sunday at exactly 6:00 PM Ghana Time (Africa/Accra, UTC+0)
     is_open: true,
     created_at: '2026-11-01T00:00:00Z',
   },

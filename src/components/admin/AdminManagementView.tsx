@@ -217,7 +217,7 @@ export const AdminManagementView: React.FC = () => {
     const q = cellSearchQuery.toLowerCase();
     const matchesQuery = !cellSearchQuery.trim() || 
       c.name.toLowerCase().includes(q) || 
-      c.code.toLowerCase().includes(q) || 
+      (c.code && c.code.toLowerCase().includes(q)) || 
       (c.leader_name && c.leader_name.toLowerCase().includes(q));
     const matchesRegion = cellRegionFilter === 'all' || c.region_id === cellRegionFilter;
     return matchesQuery && matchesRegion;

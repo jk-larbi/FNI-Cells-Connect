@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { Menu, Bell, PlusCircle, Calendar } from 'lucide-react';
+import { Menu, Bell, PlusCircle, Calendar, Clock } from 'lucide-react';
 import { Badge } from '../common/Badge';
 
 interface HeaderProps {
@@ -37,6 +37,11 @@ export const Header: React.FC<HeaderProps> = ({
             <Calendar className="w-3.5 h-3.5 text-gold-600" />
             <span>Cycle: <strong>Week 45</strong></span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+          </div>
+
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-700 font-medium text-xs border border-slate-200">
+            <Clock className="w-3.5 h-3.5 text-gold-600" />
+            <span>Deadline: <strong className="text-navy-950">Sun 6:00 PM GMT</strong> (Africa/Accra)</span>
           </div>
         </div>
       </div>

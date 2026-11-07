@@ -11,12 +11,16 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   FolderGit2,
+  Flame,
+  UserCheck,
 } from 'lucide-react';
 
 export type NavTab = 
   | 'dashboard'
   | 'cell-reporting'
+  | 'evangelism-reporting'
   | 'report-management'
+  | 'follow-ups'
   | 'regional-management'
   | 'administration'
   | 'notifications'
@@ -52,8 +56,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'report-management' as NavTab,
-      label: 'Review Reports',
+      label: 'Review Queue',
       icon: FileCheck2,
+    },
+    {
+      id: 'follow-ups' as NavTab,
+      label: 'Follow-Up Pipeline',
+      icon: UserCheck,
     },
     {
       id: 'administration' as NavTab,
@@ -80,8 +89,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'cell-reporting' as NavTab,
-      label: 'Submit Report',
+      label: 'Meeting Report',
       icon: FileSpreadsheet,
+    },
+    {
+      id: 'evangelism-reporting' as NavTab,
+      label: 'Evangelism Report',
+      icon: Flame,
+    },
+    {
+      id: 'follow-ups' as NavTab,
+      label: 'Outreach Contacts',
+      icon: UserCheck,
     },
     {
       id: 'report-management' as NavTab,
@@ -115,10 +134,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div>
           {/* Brand Header */}
-          <div className="flex items-center gap-2.5 px-2 mb-6">
-            <span className="text-xl font-extrabold tracking-tight text-navy-950">
-              forerunners<span className="text-gold-500">.</span>
-            </span>
+          <div className="px-2 mb-6">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-black tracking-tight text-navy-950">
+                FNI CELLS CONNECT
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-gold-500" />
+            </div>
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
+              Forerunners Network Int.
+            </div>
           </div>
 
           {/* User Profile Card */}
@@ -201,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {isAdmin ? 'Reporting Period' : 'Submission Cycle'}
             </div>
             <div className="text-[11px] text-slate-300 mt-0.5">
-              Week 45 Open • Due Sun 23:59
+              Week 45 Open • Due Sun 6:00 PM GMT
             </div>
           </div>
 

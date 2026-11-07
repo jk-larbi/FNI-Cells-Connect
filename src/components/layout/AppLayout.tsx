@@ -3,6 +3,8 @@ import { Sidebar, NavTab } from './Sidebar';
 import { Header } from './Header';
 import { DashboardView } from '../dashboard/DashboardView';
 import { CellReportForm } from '../reports/CellReportForm';
+import { EvangelismReportForm } from '../reports/EvangelismReportForm';
+import { FollowUpManagementView } from '../followups/FollowUpManagementView';
 import { ReportHistoryTable } from '../reports/ReportHistoryTable';
 import { ReportDetailModal } from '../reports/ReportDetailModal';
 import { RegionalManagementView } from '../regional/RegionalManagementView';
@@ -88,8 +90,10 @@ export const AppLayout: React.FC = () => {
             {currentTab === 'dashboard' && (
               <DashboardView
                 onNavigateToForm={() => setCurrentTab('cell-reporting')}
+                onNavigateToEvangelismForm={() => setCurrentTab('evangelism-reporting')}
                 onNavigateToReports={() => setCurrentTab('report-management')}
                 onNavigateToRegional={() => setCurrentTab('regional-management')}
+                onNavigateToFollowUps={() => setCurrentTab('follow-ups')}
                 onSelectReport={rep => setSelectedReport(rep)}
               />
             )}
@@ -103,6 +107,18 @@ export const AppLayout: React.FC = () => {
                 onCancel={() => setCurrentTab('dashboard')}
               />
             )}
+
+            {currentTab === 'evangelism-reporting' && (
+              <EvangelismReportForm
+                onSuccess={() => {
+                  handleRefresh();
+                  setCurrentTab('report-management');
+                }}
+                onCancel={() => setCurrentTab('dashboard')}
+              />
+            )}
+
+            {currentTab === 'follow-ups' && <FollowUpManagementView />}
 
             {currentTab === 'report-management' && (
               <ReportHistoryTable

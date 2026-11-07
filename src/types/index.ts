@@ -1,26 +1,35 @@
-export type UserRole = 
-  | 'admin'
-  | 'cell_leader'
-  | 'super_admin' 
-  | 'national_admin' 
-  | 'regional_leader';
+export type UserRole = 'tutor' | 'admin' | 'cell_leader' | 'super_admin' | 'national_admin' | 'regional_leader';
 
-export type ReportStatus = 
-  | 'draft' 
-  | 'submitted' 
-  | 'under_review' 
-  | 'approved' 
+export type ReportStatus =
+  | 'Newly Submitted'
+  | 'Approved'
+  | 'Needs Correction'
+  | 'draft'
+  | 'submitted'
+  | 'under_review'
+  | 'approved'
   | 'needs_revision';
+
+export type FollowUpStatus =
+  | 'New Contact'
+  | 'Follow-up Pending'
+  | 'Contacted'
+  | 'Interested'
+  | 'Joined Ministry'
+  | 'Completed'
+  | 'Unreachable';
 
 export type NotificationChannel = 'in_app' | 'email' | 'whatsapp';
 
-export type NotificationType = 
-  | 'report_submitted' 
-  | 'report_approved' 
-  | 'revision_requested' 
-  | 'deadline_reminder' 
-  | 'overdue_notice' 
-  | 'system_alert';
+export type NotificationType =
+  | 'report_submitted'
+  | 'report_approved'
+  | 'revision_requested'
+  | 'deadline_reminder'
+  | 'overdue_notice'
+  | 'system_alert'
+  | 'follow_up_assigned'
+  | 'follow_up_reminder';
 
 export interface Profile {
   id: string;
@@ -57,18 +66,21 @@ export interface Cell {
   id: string;
   name: string;
   normalized_name?: string;
-  code: string;
-  region_id: string;
+  location?: string;
+  tutorUid?: string;
+  code?: string;
+  region_id?: string;
   region_name?: string;
   leader_id?: string;
   leader_name?: string;
   leader_phone?: string;
-  meeting_day: string;
-  meeting_time: string;
-  venue_address: string;
-  target_attendance: number;
+  meeting_day?: string;
+  meeting_time?: string;
+  venue_address?: string;
+  target_attendance?: number;
   is_active: boolean;
   created_at: string;
+  createdAt?: unknown;
 }
 
 export interface ReportingPeriod {
@@ -83,6 +95,64 @@ export interface ReportingPeriod {
   created_at: string;
 }
 
+// 1. Cell Meeting Report
+export interface CellMeetingReport {
+  id: string;
+  cellId: string;
+  tutorUid: string;
+  cellName: string;
+  meetingDate: string;
+  tutorName: string;
+  members: number;
+  activeMembers: number;
+  attendance: number;
+  newMembers: number;
+  absentees: number;
+  followUpNeeded: number;
+  offering?: number;
+  tutorNotes?: string;
+  status: ReportStatus;
+  submittedAt: string;
+  late: boolean;
+  reviewerComment?: string;
+  reviewedBy?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+}
+
+// 2. Evangelism Report
+export interface EvangelismReport {
+  id: string;
+  cellId: string;
+  tutorUid: string;
+  cellName: string;
+  tutorName: string;
+  date: string;
+  location: string;
+  teamMembers: string[];
+  peopleSpokenTo: number;
+  contactsCaptured: number;
+  conversions: number;
+  interestedInMinistry: number;
+  potentialFollowUps: number;
+  messageUsed: string;
+  notes: string;
+  status: ReportStatus;
+  submittedAt: string;
+  late: boolean;
+  reviewerComment?: string;
+  reviewedBy?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+}
+
+// Unified queue item for review
+export type UnifiedReportItem = (
+  | (CellMeetingReport & { reportType: 'meeting' })
+  | (EvangelismReport & { reportType: 'evangelism' })
+);
+
+// Legacy combined CellReport for backward compatibility
 export interface CellReport {
   id: string;
   cell_id: string;
@@ -94,42 +164,69 @@ export interface CellReport {
   submitted_by: string;
   submitted_by_name?: string;
   status: ReportStatus;
-
-  // Attendance
   members_present: number;
   visitors_count: number;
   total_attendance: number;
-
-  // Evangelism & Souls
   souls_won: number;
   souls_won_details?: string;
   evangelism_outreaches_held: number;
   evangelism_locations?: string;
-
-  // Follow-ups & Discipleship
   follow_ups_conducted: number;
   first_timers_contacted: number;
   converts_established: number;
-
-  // Meeting Execution
   meeting_held: boolean;
   meeting_date: string;
   meeting_topic: string;
   offering_amount?: number;
-
-  // Spiritual & Pastoral Notes
   prayer_requests?: string;
   testimonies?: string;
   challenges_faced?: string;
   additional_remarks?: string;
-
-  // Audit & Workflow
   submitted_at?: string;
+  is_late?: boolean;
+  submission_timing?: 'on_time' | 'late';
+  deadline?: string;
   reviewed_by?: string;
   reviewed_by_name?: string;
   last_reviewed_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+// Evangelism Contact and Follow-up
+export interface EvangelismContact {
+  id: string;
+  contactName?: string;
+  name?: string;
+  contactDetails?: string;
+  phone?: string;
+  email?: string;
+  dateCaptured: string;
+  evangelismLocation?: string;
+  location?: string;
+  cellId: string;
+  cellName: string;
+  tutorUid?: string;
+  tutorName?: string;
+  assignedToName?: string;
+  followUpStatus: FollowUpStatus;
+  followUpNotes?: string;
+  notes?: string;
+  lastFollowUpDate?: string;
+  nextFollowUpDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// System Settings (Vision, Mission, Annual Target)
+export interface SystemSettings {
+  id: string;
+  vision: string;
+  mission: string;
+  annualSoulWinningTarget: number;
+  weeklyDeadline: string; // e.g. "Sunday at 6:00 PM Ghana Time (Africa/Accra)"
+  updatedAt: string;
+  updatedBy?: string;
 }
 
 export interface ReportReview {
@@ -173,6 +270,7 @@ export interface CellLeaderOnboardingInput {
   cellName: string;
   phoneNumber: string;
   regionId: string;
+  location?: string;
   meetingDay: string;
   meetingTime: string;
   venueAddress: string;
@@ -183,8 +281,17 @@ export interface DashboardStats {
   totalCells: number;
   activeCellLeaders: number;
   reportsSubmitted: number;
+  approvedReports: number;
   pendingReports: number;
+  awaitingReviewCount: number;
+  needsCorrectionCount: number;
+  lateReports: number;
+  missingCellsCount: number;
   soulsWon: number;
+  peopleReached: number;
+  contactsCaptured: number;
+  followUpsCompleted: number;
+  outstandingFollowUps: number;
   visitorsRecorded: number;
   totalAttendance: number;
   complianceRate: number;
