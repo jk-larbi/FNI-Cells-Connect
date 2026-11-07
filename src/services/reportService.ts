@@ -102,6 +102,7 @@ export class ReportService {
     followUpNeeded: number;
     offering?: number;
     tutorNotes?: string;
+    testimonies?: string;
     isDraft?: boolean;
   }): Promise<CellMeetingReport> {
     const nowIso = new Date().toISOString();
@@ -133,6 +134,7 @@ export class ReportService {
       followUpNeeded: Number(data.followUpNeeded || 0),
       offering: data.offering ? Number(data.offering) : undefined,
       tutorNotes: data.tutorNotes || '',
+      testimonies: data.testimonies || '',
       status: 'Newly Submitted',
       submittedAt: nowIso,
       late: timing.isLate,
@@ -223,6 +225,7 @@ export class ReportService {
     potentialFollowUps: number;
     messageUsed: string;
     notes: string;
+    testimonies?: string;
   }): Promise<EvangelismReport> {
     const nowIso = new Date().toISOString();
     const deadlineInfo = getCurrentDeadlineInfo();
@@ -245,6 +248,7 @@ export class ReportService {
       potentialFollowUps: Number(data.potentialFollowUps || 0),
       messageUsed: data.messageUsed || '',
       notes: data.notes || '',
+      testimonies: data.testimonies || '',
       status: 'Newly Submitted',
       submittedAt: nowIso,
       late: timing.isLate,

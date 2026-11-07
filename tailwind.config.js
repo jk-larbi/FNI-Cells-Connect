@@ -4,57 +4,94 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: '#EDF2F8',
+        canvas: '#F5F7FA', // Light grey page background
+        white: '#FFFFFF',
+        brand: {
+          navy: '#142B4A',     // Deep navy blue
+          navyLight: '#203D63',// Secondary navy
+          gold: '#C6A45A',     // Restrained gold
+          goldLight: '#E9D9B2',// Light gold
+          grey: '#F5F7FA',     // Light grey
+          border: '#E3E8EF',   // Border grey
+          text: '#182230',     // Primary text
+          muted: '#667085',    // Secondary text
+          success: '#23845B',  // Success green
+          warning: '#D99A32',  // Warning amber
+          error: '#C74646',    // Error red
+        },
         navy: {
           50: '#F0F4F8',
           100: '#D9E2EC',
           200: '#BCCCDC',
           300: '#9FB3C8',
-          400: '#627D98',
+          400: '#486581',
           500: '#334E68',
-          600: '#243B53',
-          700: '#102A43',
-          800: '#0B1B3D',
-          900: '#071228',
-          950: '#040A17',
+          600: '#203D63', // Secondary navy
+          700: '#1A3354',
+          800: '#142B4A', // Deep navy blue
+          900: '#10223B',
+          950: '#0B1728',
         },
         gold: {
-          50: '#FCF9EE',
-          100: '#F7F0D4',
-          200: '#EEDDA3',
-          300: '#E4C76D',
-          400: '#D7AE3D',
-          500: '#C59B27',
-          600: '#A67E1B',
-          700: '#835F16',
-          800: '#644714',
-          900: '#463110',
+          50: '#FDFCF7',
+          100: '#FAF6ED',
+          200: '#E9D9B2', // Light gold
+          300: '#DFCA96',
+          400: '#D2B777',
+          500: '#C6A45A', // Restrained gold
+          600: '#AB8B42',
+          700: '#8A6E30',
+          800: '#695221',
+          900: '#4A3914',
         },
         slate: {
-          50: '#F8FAFC',
-          100: '#F1F5F9',
-          200: '#E2E8F0',
+          50: '#F5F7FA', // Light grey
+          100: '#EFF2F6',
+          200: '#E3E8EF', // Border grey
           300: '#CBD5E1',
           400: '#94A3B8',
-          500: '#64748B',
-          600: '#475569',
-          700: '#334155',
-          800: '#1E293B',
-          900: '#0F172A',
+          500: '#667085', // Secondary text
+          600: '#475467',
+          700: '#344054',
+          800: '#1D2939',
+          900: '#182230', // Primary text
+          950: '#101828',
+        },
+        emerald: {
+          50: '#ECFDF3',
+          100: '#D1FADF',
+          500: '#23845B', // Success green
+          600: '#1F7550',
+          700: '#1B6444',
+        },
+        amber: {
+          50: '#FEF0C7',
+          100: '#FEE4E2',
+          500: '#D99A32', // Warning amber
+          600: '#B77F23',
+          700: '#936517',
+        },
+        rose: {
+          50: '#FFF5F5',  // Reference alert background tint
+          100: '#FEE4E2',
+          500: '#C74646', // Error red
+          600: '#B33B3B',
+          700: '#912018',
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       borderRadius: {
+        '2xl': '1rem',
         '3xl': '1.5rem',
         '4xl': '2rem',
       },
       boxShadow: {
-        'subtle': '0 1px 3px 0 rgba(11, 27, 61, 0.04), 0 1px 2px 0 rgba(11, 27, 61, 0.02)',
-        'card': '0 4px 14px 0 rgba(11, 27, 61, 0.05)',
-        'elevated': '0 16px 36px -4px rgba(11, 27, 61, 0.07), 0 6px 14px -2px rgba(11, 27, 61, 0.03)',
-        'floating': '0 25px 50px -12px rgba(11, 27, 61, 0.12)',
+        'subtle': '0 1px 2px 0 rgba(16, 24, 40, 0.05)',
+        'card': '0 1px 3px 0 rgba(16, 24, 40, 0.1), 0 1px 2px 0 rgba(16, 24, 40, 0.06)',
+        'elevated': '0 4px 6px -2px rgba(16, 24, 40, 0.03), 0 12px 16px -4px rgba(16, 24, 40, 0.08)',
+        'floating': '0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03)',
       }
     },
   },

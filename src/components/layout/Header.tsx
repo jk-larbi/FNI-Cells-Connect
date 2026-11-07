@@ -1,8 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { Menu, Bell, PlusCircle, Calendar, Clock } from 'lucide-react';
-import { Badge } from '../common/Badge';
+import { Menu, Bell, PlusCircle, Calendar, Clock, Flame } from 'lucide-react';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -17,56 +16,56 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateToForm,
   onOpenAccountSettings,
 }) => {
-  const { currentUser, canSubmitReport } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-canvas/85 backdrop-blur-md border-b border-slate-200/50 transition-all">
-      {/* Left: Mobile toggle & context indicator */}
+    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-white/90 backdrop-blur-md border-b border-[#E3E8EF] transition-all">
+      {/* Left: Mobile toggle & Deadline badge */}
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}
-          className="md:hidden p-2 rounded-xl bg-white shadow-card text-slate-500 hover:text-navy-950 transition-colors"
+          className="md:hidden p-2 rounded-xl bg-[#F5F7FA] text-[#667085] hover:text-[#142B4A] transition-colors"
           aria-label="Toggle navigation"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-navy-950 font-semibold text-xs shadow-card border border-slate-100">
-            <Calendar className="w-3.5 h-3.5 text-gold-600" />
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#142B4A] font-semibold text-xs border border-[#E3E8EF]">
+            <Calendar className="w-3.5 h-3.5 text-[#C6A45A]" />
             <span>Cycle: <strong>Week 45</strong></span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+            <span className="w-2 h-2 rounded-full bg-[#23845B] animate-pulse ml-0.5" />
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-700 font-medium text-xs border border-slate-200">
-            <Clock className="w-3.5 h-3.5 text-gold-600" />
-            <span>Deadline: <strong className="text-navy-950">Sun 6:00 PM GMT</strong> (Africa/Accra)</span>
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#667085] font-medium text-xs border border-[#E3E8EF]">
+            <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
+            <span>Deadline: <strong className="text-[#142B4A]">Sunday 6:00 PM GMT</strong> (Africa/Accra)</span>
           </div>
         </div>
       </div>
 
-      {/* Right: Actions, notifications, profile */}
+      {/* Right: Quick actions, notifications, profile */}
       <div className="flex items-center gap-2.5">
-        {canSubmitReport && onNavigateToForm && (
+        {!isAdmin && onNavigateToForm && (
           <button
             onClick={onNavigateToForm}
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-navy-900 hover:bg-navy-950 text-white font-bold text-xs shadow-card transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs shadow-sm transition-all"
           >
-            <PlusCircle className="w-4 h-4 text-gold-400" />
-            <span>Submit Report</span>
+            <PlusCircle className="w-3.5 h-3.5 text-[#C6A45A]" />
+            <span>Submit Return</span>
           </button>
         )}
 
         {/* Notifications */}
         <button
           onClick={onOpenNotifications}
-          className="relative p-2.5 rounded-full bg-white text-slate-600 hover:text-navy-950 shadow-card transition-colors border border-slate-100"
+          className="relative p-2.5 rounded-full bg-[#F5F7FA] text-[#667085] hover:text-[#142B4A] transition-colors border border-[#E3E8EF]"
           title="Notifications & Dispatches"
         >
           <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-600 text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
+            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C74646] text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -75,10 +74,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Profile Pill */}
         <button
           onClick={onOpenAccountSettings}
-          className="flex items-center gap-2 pl-2 text-left hover:opacity-90 transition-opacity focus:outline-hidden"
-          title="Account Settings & Security"
+          className="flex items-center gap-2 pl-2 text-left hover:opacity-90 transition-opacity focus:outline-none"
+          title="Account Settings"
         >
-          <div className="w-8 h-8 rounded-full bg-navy-900 text-gold-400 text-xs font-bold flex items-center justify-center shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#C6A45A] text-xs font-bold flex items-center justify-center shadow-sm">
             {currentUser?.full_name
               ? currentUser.full_name
                   .split(' ')
@@ -88,11 +87,11 @@ export const Header: React.FC<HeaderProps> = ({
               : 'FN'}
           </div>
           <div className="hidden lg:block text-left">
-            <div className="text-xs font-bold text-navy-950 leading-tight">
+            <div className="text-xs font-bold text-[#182230] leading-tight">
               {currentUser?.full_name}
             </div>
-            <div className="text-[10px] font-medium text-slate-400 capitalize">
-              {currentUser?.role ? currentUser.role.replace('_', ' ') : 'Leader'}
+            <div className="text-[10px] font-medium text-[#667085]">
+              {isAdmin ? 'System Administrator' : currentUser?.cell_name || 'Cell Leader'}
             </div>
           </div>
         </button>

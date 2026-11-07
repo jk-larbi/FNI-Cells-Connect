@@ -1,74 +1,60 @@
 import React, { useState } from 'react';
-import { Sidebar, NavTab } from './Sidebar';
+import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { DashboardView } from '../dashboard/DashboardView';
-import { CellReportForm } from '../reports/CellReportForm';
-import { EvangelismReportForm } from '../reports/EvangelismReportForm';
-import { FollowUpManagementView } from '../followups/FollowUpManagementView';
-import { ReportHistoryTable } from '../reports/ReportHistoryTable';
-import { ReportDetailModal } from '../reports/ReportDetailModal';
-import { RegionalManagementView } from '../regional/RegionalManagementView';
-import { AdminManagementView } from '../admin/AdminManagementView';
-import { AuditTrailView } from '../admin/AuditTrailView';
-import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
-import { AccountSettingsModal } from '../auth/AccountSettingsModal';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { ReportService } from '../../services/reportService';
-import { CellReport, Region, ReportingPeriod } from '../../types';
+import { AppNavTab } from '../../types';
+
+// Administrator Portal Views
+import { DashboardView } from '../dashboard/DashboardView';
+import { CellManagementView } from '../admin/CellManagementView';
+import { CellLeadersView } from '../admin/CellLeadersView';
+import { ReportReviewView } from '../admin/ReportReviewView';
+import { EvangelismAdminView } from '../admin/EvangelismAdminView';
+import { AnalyticsView } from '../admin/AnalyticsView';
+import { AdminSettingsView } from '../admin/AdminSettingsView';
+
+// Tutor Portal Views
+import { TutorDashboardView } from '../tutor/TutorDashboardView';
+import { MyCellView } from '../tutor/MyCellView';
+import { CellReportForm } from '../reports/CellReportForm';
+import { EvangelismReportForm } from '../reports/EvangelismReportForm';
+import { MyReportsView } from '../tutor/MyReportsView';
+import { EvangelismContactsView } from '../tutor/EvangelismContactsView';
+import { CellActivityHistoryView } from '../tutor/CellActivityHistoryView';
+import { MyAccountView } from '../tutor/MyAccountView';
+
+// Shared Views
+import { FollowUpManagementView } from '../followups/FollowUpManagementView';
+import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
+import { AccountSettingsModal } from '../auth/AccountSettingsModal';
 
 export const AppLayout: React.FC = () => {
-  const { currentRole, currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
 
-  const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
+  // Role-based initial tab
+  const [currentTab, setCurrentTab] = useState<AppNavTab>(() => (isAdmin ? 'dashboard' : 'my-dashboard'));
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<CellReport | null>(null);
 
-  // Data cache
-  const [reports, setReports] = useState<CellReport[]>([]);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  React.useEffect(() => {
-    async function loadData() {
-      const [rList, regList, pList] = await Promise.all([
-        ReportService.getReports(),
-        ReportService.getRegions(),
-        ReportService.getPeriods(),
-      ]);
-
-      if (!isAdmin && currentUser.cell_id) {
-        setReports(rList.filter(r => r.cell_id === currentUser.cell_id));
-      } else {
-        setReports(rList);
-      }
-
-      setRegions(regList);
-      setPeriods(pList);
-    }
-    loadData();
-  }, [refreshKey, currentRole, currentUser, isAdmin]);
-
-  const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const handleReportUpdated = (updated: CellReport) => {
-    setReports(prev => prev.map(r => (r.id === updated.id ? updated : r)));
-    setSelectedReport(updated);
-    handleRefresh();
-  };
+  // Fallback guard: if a non-admin is accidentally on an admin tab, redirect to tutor dashboard
+  const effectiveTab: AppNavTab = !isAdmin && (
+    currentTab === 'dashboard' ||
+    currentTab === 'cell-management' ||
+    currentTab === 'cell-leaders' ||
+    currentTab === 'report-review' ||
+    currentTab === 'analytics' ||
+    currentTab === 'settings'
+  ) ? 'my-dashboard' : currentTab;
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col text-slate-800">
+    <div className="min-h-screen bg-white flex flex-col text-[#182230]">
       <div className="flex flex-1">
         {/* Navigation Sidebar */}
         <Sidebar
-          currentTab={currentTab}
+          currentTab={effectiveTab}
           onSelectTab={tab => setCurrentTab(tab)}
           isOpen={isSidebarOpen}
           onCloseMobile={() => setIsSidebarOpen(false)}
@@ -82,80 +68,68 @@ export const AppLayout: React.FC = () => {
           <Header
             onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
             onOpenNotifications={() => setIsNotifModalOpen(true)}
-            onNavigateToForm={() => setCurrentTab('cell-reporting')}
+            onNavigateToForm={() => setCurrentTab(isAdmin ? 'report-review' : 'submit-cell-meeting-report')}
             onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
           />
 
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-            {currentTab === 'dashboard' && (
-              <DashboardView
-                onNavigateToForm={() => setCurrentTab('cell-reporting')}
-                onNavigateToEvangelismForm={() => setCurrentTab('evangelism-reporting')}
-                onNavigateToReports={() => setCurrentTab('report-management')}
-                onNavigateToRegional={() => setCurrentTab('regional-management')}
-                onNavigateToFollowUps={() => setCurrentTab('follow-ups')}
-                onSelectReport={rep => setSelectedReport(rep)}
-              />
+            {/* ADMINISTRATOR PORTAL PAGES */}
+            {isAdmin && (
+              <>
+                {effectiveTab === 'dashboard' && (
+                  <DashboardView onNavigateToTab={tab => setCurrentTab(tab)} />
+                )}
+                {effectiveTab === 'cell-management' && <CellManagementView />}
+                {effectiveTab === 'cell-leaders' && <CellLeadersView />}
+                {effectiveTab === 'report-review' && <ReportReviewView />}
+                {effectiveTab === 'evangelism' && <EvangelismAdminView />}
+                {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
+                {effectiveTab === 'analytics' && <AnalyticsView />}
+                {effectiveTab === 'settings' && <AdminSettingsView />}
+              </>
             )}
 
-            {currentTab === 'cell-reporting' && (
-              <CellReportForm
-                onSuccess={() => {
-                  handleRefresh();
-                  setCurrentTab('report-management');
-                }}
-                onCancel={() => setCurrentTab('dashboard')}
-              />
+            {/* TUTOR PORTAL PAGES */}
+            {!isAdmin && (
+              <>
+                {effectiveTab === 'my-dashboard' && (
+                  <TutorDashboardView onNavigateToTab={tab => setCurrentTab(tab)} />
+                )}
+                {effectiveTab === 'my-cell' && <MyCellView />}
+                {effectiveTab === 'submit-cell-meeting-report' && (
+                  <CellReportForm
+                    onSuccess={() => setCurrentTab('my-reports')}
+                    onCancel={() => setCurrentTab('my-dashboard')}
+                  />
+                )}
+                {effectiveTab === 'submit-evangelism-report' && (
+                  <EvangelismReportForm
+                    onSuccess={() => setCurrentTab('my-reports')}
+                    onCancel={() => setCurrentTab('my-dashboard')}
+                  />
+                )}
+                {effectiveTab === 'my-reports' && <MyReportsView />}
+                {effectiveTab === 'evangelism-contacts' && <EvangelismContactsView />}
+                {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
+                {effectiveTab === 'cell-activity-history' && <CellActivityHistoryView />}
+                {effectiveTab === 'my-account' && <MyAccountView />}
+              </>
             )}
 
-            {currentTab === 'evangelism-reporting' && (
-              <EvangelismReportForm
-                onSuccess={() => {
-                  handleRefresh();
-                  setCurrentTab('report-management');
-                }}
-                onCancel={() => setCurrentTab('dashboard')}
-              />
-            )}
-
-            {currentTab === 'follow-ups' && <FollowUpManagementView />}
-
-            {currentTab === 'report-management' && (
-              <ReportHistoryTable
-                reports={reports}
-                regions={regions}
-                periods={periods}
-                onSelectReport={rep => setSelectedReport(rep)}
-                onRefresh={handleRefresh}
-              />
-            )}
-
-            {currentTab === 'regional-management' && <RegionalManagementView />}
-
-            {currentTab === 'administration' && <AdminManagementView />}
-
-            {currentTab === 'notifications' && (
-              <div className="max-w-3xl mx-auto">
+            {/* Shared notifications tab */}
+            {effectiveTab === 'notifications' && (
+              <div className="max-w-2xl mx-auto">
                 <NotificationCenterModal
                   isOpen={true}
-                  onClose={() => setCurrentTab('dashboard')}
+                  onClose={() => setCurrentTab(isAdmin ? 'dashboard' : 'my-dashboard')}
                 />
               </div>
             )}
-
-            {currentTab === 'audit-logs' && <AuditTrailView />}
           </main>
         </div>
       </div>
 
       {/* Global Modals */}
-      <ReportDetailModal
-        report={selectedReport}
-        isOpen={Boolean(selectedReport)}
-        onClose={() => setSelectedReport(null)}
-        onReportUpdated={handleReportUpdated}
-      />
-
       <NotificationCenterModal
         isOpen={isNotifModalOpen}
         onClose={() => setIsNotifModalOpen(false)}

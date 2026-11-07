@@ -1,22 +1,74 @@
-import { Profile, CellLeaderOnboardingInput, Cell } from '../types';
+import { Profile, Cell, TutorRegistrationInput, TutorLoginInput } from '../types';
 import { INITIAL_PROFILES } from './mockData';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { FirebaseService } from './firebaseService';
-import { isFirebaseConfigured } from '../lib/firebase';
+import { auth, db, isFirebaseConfigured, firebaseApp } from '../lib/firebase';
+import { signInWithCustomToken, signOut as fbSignOut } from 'firebase/auth';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { ReportService } from './reportService';
-import { CellService } from './cellService';
+import { CellService, normalizeCellName } from './cellService';
 
 const STORAGE_KEYS = {
-  CURRENT_PROFILE: 'fni_current_profile_v5_clean_prod',
-  PROFILES_LIST: 'fni_profiles_directory_v5_clean_prod',
-  ADMIN_SECURITY: 'fni_admin_security_config_v5_clean_prod',
-  ACTIVE_SESSION: 'fni_active_session_v5_clean_prod',
+  CURRENT_PROFILE: 'fni_current_profile_v6_strict',
+  PROFILES_LIST: 'fni_profiles_directory_v6_strict',
+  ADMIN_SECURITY: 'fni_admin_security_config_v6_strict',
+  TUTOR_CREDS: 'fni_tutor_secure_creds_v6_strict',
+  ACTIVE_SESSION: 'fni_active_session_v6_strict',
 };
 
 interface AdminSecurityConfig {
   initialConfigured: boolean;
+  passwordSalt?: string;
   passwordHash?: string;
   configuredAt?: string;
+}
+
+interface StoredTutorCredential {
+  uid: string;
+  fullName: string;
+  cellName: string;
+  normalizedCell: string;
+  salt: string;
+  hash: string;
+  createdAt: string;
+}
+
+/**
+ * Client-side Cryptographic PBKDF2 Password Hasher (Web Crypto API)
+ * Ensures passwords are NEVER stored in plain text anywhere in storage or database
+ */
+async function hashPasswordWithSalt(password: string, existingSalt?: string): Promise<{ salt: string; hash: string }> {
+  const enc = new TextEncoder();
+  const salt = existingSalt || Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: enc.encode(salt),
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    256
+  );
+
+  const hash = Array.from(new Uint8Array(derivedBits))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return { salt, hash };
+}
+
+async function verifyPassword(password: string, salt: string, storedHash: string): Promise<boolean> {
+  const { hash } = await hashPasswordWithSalt(password, salt);
+  return hash === storedHash;
 }
 
 export class AuthService {
@@ -59,6 +111,25 @@ export class AuthService {
     }
   }
 
+  private static getStoredTutorCredentials(): Record<string, StoredTutorCredential> {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.TUTOR_CREDS);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private static saveTutorCredential(key: string, cred: StoredTutorCredential): void {
+    try {
+      const all = this.getStoredTutorCredentials();
+      all[key.toLowerCase().trim()] = cred;
+      localStorage.setItem(STORAGE_KEYS.TUTOR_CREDS, JSON.stringify(all));
+    } catch (e) {
+      console.warn('Failed to save tutor credential locally', e);
+    }
+  }
+
   static getCurrentProfile(): Profile {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_PROFILE);
@@ -66,339 +137,463 @@ export class AuthService {
     } catch (e) {
       // fallback
     }
-    const all = this.getAllProfiles();
-    return all[0] || INITIAL_PROFILES[0];
+    return INITIAL_PROFILES[0];
   }
 
   static setCurrentProfile(profile: Profile): void {
     try {
       localStorage.setItem(STORAGE_KEYS.CURRENT_PROFILE, JSON.stringify(profile));
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, profile.id);
     } catch (e) {
       console.warn('Failed to save current profile locally', e);
     }
   }
 
-  // --- Quick Role Switch for instant UI preview ---
-  static switchDemoRole(role: 'admin' | 'cell_leader'): Profile {
-    const all = this.getAllProfiles();
-    let target = all.find(p => (role === 'admin' ? p.role === 'admin' : p.role === 'cell_leader'));
-    if (!target) {
-      target = role === 'admin' 
-        ? INITIAL_PROFILES[0] 
-        : all.find(p => p.role === 'cell_leader') || INITIAL_PROFILES[0];
-    }
-    this.setCurrentProfile(target);
-    return target;
-  }
+  // --- 1. TUTOR REGISTRATION (ONLY: Full Name, Cell Name, Password, Confirm Password) ---
+  static async registerTutor(input: TutorRegistrationInput): Promise<{
+    profile: Profile | null;
+    cell: Cell | null;
+    error: string | null;
+  }> {
+    const cleanName = input.fullName.trim();
+    const cleanCellName = input.cellName.trim();
+    const password = input.password || '';
 
-  // --- OAuth Sign In (Google Account & Apple ID) ---
-  static async signInWithOAuth(
-    provider: 'google' | 'apple',
-    options?: { testEmail?: string; testName?: string }
-  ): Promise<{ profile: Profile; isNewUser: boolean; error: string | null }> {
-    // 1. If Supabase is connected with real client, trigger native OAuth
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider,
-          options: {
-            redirectTo: window.location.origin,
-          },
-        });
-        if (error) {
-          console.warn('Supabase OAuth error, falling back to simulated handler:', error.message);
-        }
-      } catch (err) {
-        console.warn('Supabase OAuth exception:', err);
-      }
+    // Validation
+    if (!cleanName || !cleanCellName || !password) {
+      return { profile: null, cell: null, error: 'Full name, cell name, and password are required.' };
     }
 
-    // 2. Local / Real Auth Handling
-    const allProfiles = this.getAllProfiles();
-    const effectiveEmail = (
-      options?.testEmail ||
-      (provider === 'google' ? `leader.${Date.now().toString().slice(-4)}@gmail.com` : `leader.${Date.now().toString().slice(-4)}@appleid.com`)
-    ).toLowerCase().trim();
+    if (password.length < 6) {
+      return { profile: null, cell: null, error: 'Password must be at least 6 characters long.' };
+    }
 
-    const existing = allProfiles.find(p => p.email.toLowerCase() === effectiveEmail);
+    if (input.confirmPassword && password !== input.confirmPassword) {
+      return { profile: null, cell: null, error: 'Passwords do not match.' };
+    }
+
+    const normalizedCell = normalizeCellName(cleanCellName);
+
+    // 1. Check duplicate cell registration
+    const allCells = await CellService.getCells();
+    const existing = allCells.find(c => {
+      const existingNorm = c.normalized_name || normalizeCellName(c.name);
+      return existingNorm === normalizedCell;
+    });
 
     if (existing) {
-      // Returning user: sign in normally, retains existing details!
-      this.setCurrentProfile(existing);
-      return { profile: existing, isNewUser: false, error: null };
+      return {
+        profile: null,
+        cell: null,
+        error: `Cell "${cleanCellName}" is already registered. If this is your cell, please select "Login" instead.`,
+      };
     }
 
-    // New First-Time User: Create cell leader profile with is_onboarded = false so they register real details
-    const fullName = options?.testName || '';
-    const newProfile: Profile = {
-      id: `usr-oauth-${Date.now()}`,
-      email: effectiveEmail,
-      full_name: fullName,
-      role: 'cell_leader', // Ordinary OAuth users always default to cell_leader; cannot register as admin
+    // 2. Try Firebase Cloud Function if reachable
+    if (isFirebaseConfigured && firebaseApp) {
+      try {
+        const functions = getFunctions(firebaseApp);
+        const registerTutorCallable = httpsCallable(functions, 'registerTutor');
+        const result: any = await registerTutorCallable({
+          fullName: cleanName,
+          cellName: cleanCellName,
+          password,
+          confirmPassword: input.confirmPassword,
+        });
+
+        if (result.data?.customToken && auth) {
+          await signInWithCustomToken(auth, result.data.customToken);
+        }
+
+        if (result.data?.profile) {
+          this.setCurrentProfile(result.data.profile);
+          return { profile: result.data.profile, cell: result.data.cell, error: null };
+        }
+      } catch (err: any) {
+        console.warn('Cloud Function registerTutor notice, completing with client cryptography:', err.message);
+      }
+    }
+
+    // 3. Robust Cryptographic Setup (Client Salted PBKDF2)
+    const { salt, hash } = await hashPasswordWithSalt(password);
+    const uid = `tutor-${Date.now()}`;
+    const cellId = `cell-${Date.now()}`;
+    const nowIso = new Date().toISOString();
+
+    // Register Cell
+    const newCell: Cell = {
+      id: cellId,
+      name: cleanCellName,
+      normalized_name: normalizedCell,
+      location: 'Central Campus',
+      code: `FNI-CEL-${(allCells.length + 1).toString().padStart(3, '0')}`,
+      tutorUid: uid,
+      leader_id: uid,
+      leader_name: cleanName,
+      meeting_day: 'Wednesday',
+      meeting_time: '18:30',
+      venue_address: 'Fellowship Center',
+      target_attendance: 25,
+      status: 'Active',
       is_active: true,
-      is_onboarded: false, // Triggers required cell registration wizard
+      created_at: nowIso,
+    };
+    await CellService.updateCell(newCell);
+
+    // Create User Profile (No password stored in profile!)
+    const newProfile: Profile = {
+      id: uid,
+      email: `${normalizedCell}@fnicells.org`,
+      full_name: cleanName,
+      cell_id: cellId,
+      cell_name: cleanCellName,
+      role: 'tutor',
+      is_active: true,
+      is_onboarded: true,
       must_change_password: false,
-      auth_provider: provider,
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
     };
 
-    const updatedList = [newProfile, ...allProfiles];
-    this.saveProfiles(updatedList);
+    // Save profile locally
+    const allProfiles = this.getAllProfiles();
+    this.saveProfiles([newProfile, ...allProfiles]);
+
+    // Save salt and hash securely
+    this.saveTutorCredential(`${cleanName.toLowerCase()}::${normalizedCell}`, {
+      uid,
+      fullName: cleanName,
+      cellName: cleanCellName,
+      normalizedCell,
+      salt,
+      hash,
+      createdAt: nowIso,
+    });
+
+    // Save in Firestore if db connected
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'profiles', uid), newProfile);
+        await setDoc(doc(db, 'cells', cellId), newCell);
+      } catch (e) {
+        console.warn('Firestore setDoc notice:', e);
+      }
+    }
+
     this.setCurrentProfile(newProfile);
 
-    // Save to Firebase if configured
-    if (isFirebaseConfigured) {
-      try {
-        await FirebaseService.saveProfile(newProfile);
-      } catch (e) {
-        console.warn('Failed to save profile to Firebase', e);
-      }
-    }
+    // Audit log
+    ReportService.recordAuditLog({
+      action: 'TUTOR_REGISTERED_CELL',
+      entity_type: 'users',
+      entity_id: newProfile.id,
+      details: {
+        tutor_name: newProfile.full_name,
+        cell_name: newCell.name,
+      },
+    });
 
-    // Save to Supabase if configured
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('profiles').upsert(newProfile);
-      } catch (e) {
-        console.warn('Failed to upsert OAuth profile in Supabase', e);
-      }
-    }
-
-    return { profile: newProfile, isNewUser: true, error: null };
+    return { profile: newProfile, cell: newCell, error: null };
   }
 
-  // --- Administrator Sign In ---
-  static async signInAdmin(
-    usernameOrEmail: string,
-    passwordAttempt: string
-  ): Promise<{ profile: Profile | null; error: string | null }> {
-    const cleanIdentifier = usernameOrEmail.trim().toLowerCase();
-    const securityConfig = this.getAdminSecurityConfig();
+  // --- 2. TUTOR LOGIN (ONLY: Full Name and Password) ---
+  static async signInTutor(input: TutorLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
+    const cleanName = input.fullName.trim();
+    const password = input.password || '';
+    const cleanCellName = input.cellName?.trim() || '';
 
-    const isMatchUsername = cleanIdentifier === 'admin' || cleanIdentifier === 'admin@forerunners.org';
-
-    if (!isMatchUsername) {
-      return { profile: null, error: 'Administrator not found. Check username or email.' };
+    if (!cleanName || !password) {
+      return { profile: null, error: 'Full name and password are required.' };
     }
 
-    // Security Check: Has the temporary initial password been disabled?
-    if (securityConfig.initialConfigured) {
-      // Temporary password admin123 is disabled
+    // 1. Try Firebase Cloud Function if reachable
+    if (isFirebaseConfigured && firebaseApp) {
+      try {
+        const functions = getFunctions(firebaseApp);
+        const loginTutorCallable = httpsCallable(functions, 'loginTutor');
+        const result: any = await loginTutorCallable({
+          fullName: cleanName,
+          cellName: cleanCellName || undefined,
+          password,
+        });
+
+        if (result.data?.customToken && auth) {
+          await signInWithCustomToken(auth, result.data.customToken);
+        }
+
+        if (result.data?.profile) {
+          this.setCurrentProfile(result.data.profile);
+          return { profile: result.data.profile, error: null };
+        }
+      } catch (err: any) {
+        console.warn('Cloud Function loginTutor notice, checking local credential store:', err.message);
+      }
+    }
+
+    // 2. Local Credential Verification by Full Name
+    const storedCreds = this.getStoredTutorCredentials();
+    const candidateCreds = Object.values(storedCreds).filter(
+      c => c.fullName.toLowerCase() === cleanName.toLowerCase()
+    );
+
+    if (candidateCreds.length === 0) {
+      return { profile: null, error: `No tutor account found for "${cleanName}". Please check spelling or select "Sign Up".` };
+    }
+
+    // Verify salted cryptographic hash
+    let matchedCred: StoredTutorCredential | null = null;
+    for (const cred of candidateCreds) {
+      const isValid = await verifyPassword(password, cred.salt, cred.hash);
+      if (isValid) {
+        matchedCred = cred;
+        break;
+      }
+    }
+
+    if (!matchedCred) {
+      return { profile: null, error: 'Invalid password. Please check your credentials.' };
+    }
+
+    const allProfiles = this.getAllProfiles();
+    const matchedProfile = allProfiles.find(p => p.id === matchedCred!.uid) || {
+      id: matchedCred.uid,
+      email: `${matchedCred.normalizedCell}@fnicells.org`,
+      full_name: matchedCred.fullName,
+      cell_name: matchedCred.cellName,
+      role: 'tutor' as const,
+      is_active: true,
+      is_onboarded: true,
+      created_at: matchedCred.createdAt,
+    };
+
+    this.setCurrentProfile(matchedProfile);
+    return { profile: matchedProfile, error: null };
+  }
+
+  // --- 3. ADMINISTRATOR LOGIN (ONLY: Password, Default: admin123) ---
+  static async signInAdmin(passwordAttempt: string): Promise<{ profile: Profile | null; error: string | null }> {
+    if (!passwordAttempt) {
+      return { profile: null, error: 'Administrator password is required.' };
+    }
+
+    const securityConfig = this.getAdminSecurityConfig();
+
+    // 1. Try Firebase Cloud Function if reachable
+    if (isFirebaseConfigured && firebaseApp) {
+      try {
+        const functions = getFunctions(firebaseApp);
+        const loginAdminCallable = httpsCallable(functions, 'loginAdmin');
+        const result: any = await loginAdminCallable({ password: passwordAttempt });
+
+        if (result.data?.customToken && auth) {
+          await signInWithCustomToken(auth, result.data.customToken);
+        }
+
+        if (result.data?.profile) {
+          this.setCurrentProfile(result.data.profile);
+          return { profile: result.data.profile, error: null };
+        }
+      } catch (err: any) {
+        console.warn('Cloud Function loginAdmin notice, checking local security config:', err.message);
+      }
+    }
+
+    // 2. Initial Setup State vs Configured State
+    if (!securityConfig.initialConfigured) {
+      // Must use temporary password 'admin123'
+      if (passwordAttempt !== 'admin123') {
+        return { profile: null, error: 'Invalid initial password. Use the temporary setup credentials (admin123).' };
+      }
+
+      // First-time login: Enforce immediate password change
+      const adminProfile: Profile = {
+        id: 'usr-admin-master',
+        email: 'admin@forerunners.org',
+        full_name: 'System Administrator',
+        role: 'admin',
+        is_active: true,
+        is_onboarded: true,
+        must_change_password: true, // Forces immediate modal
+        created_at: new Date().toISOString(),
+      };
+
+      this.setCurrentProfile(adminProfile);
+      return { profile: adminProfile, error: null };
+    } else {
+      // Already configured: admin123 is permanently disabled
       if (passwordAttempt === 'admin123') {
         return {
           profile: null,
-          error: 'Temporary initial credentials (admin123) have expired and are permanently disabled. Please use your newly configured administrator password.',
+          error: 'The temporary password (admin123) is permanently disabled. Please use your newly configured administrator password.',
         };
       }
 
-      // Check against configured password
-      if (securityConfig.passwordHash && securityConfig.passwordHash !== passwordAttempt) {
-        return { profile: null, error: 'Incorrect administrator password.' };
+      if (securityConfig.passwordSalt && securityConfig.passwordHash) {
+        const isValid = await verifyPassword(passwordAttempt, securityConfig.passwordSalt, securityConfig.passwordHash);
+        if (!isValid) {
+          return { profile: null, error: 'Incorrect administrator password.' };
+        }
       }
-    } else {
-      // Initial Setup Flow:
-      // Accepts initial password 'admin123'
-      if (passwordAttempt !== 'admin123') {
-        return {
-          profile: null,
-          error: 'Invalid initial password. For first-time administrator setup, use the temporary initial password "admin123".',
-        };
-      }
+
+      const adminProfile: Profile = {
+        id: 'usr-admin-master',
+        email: 'admin@forerunners.org',
+        full_name: 'System Administrator',
+        role: 'admin',
+        is_active: true,
+        is_onboarded: true,
+        must_change_password: false,
+        created_at: new Date().toISOString(),
+      };
+
+      this.setCurrentProfile(adminProfile);
+      return { profile: adminProfile, error: null };
     }
-
-    // Find or create admin profile
-    const allProfiles = this.getAllProfiles();
-    let adminProfile = allProfiles.find(p => p.role === 'admin' || p.email === 'admin@forerunners.org');
-
-    if (!adminProfile) {
-      adminProfile = INITIAL_PROFILES[0];
-    }
-
-    // If initial credentials are still in use, enforce mandatory password change immediately
-    const mustChange = !securityConfig.initialConfigured;
-    const currentAdmin: Profile = {
-      ...adminProfile,
-      must_change_password: mustChange,
-      role: 'admin',
-    };
-
-    // Update in list
-    const updatedProfiles = allProfiles.map(p => (p.id === currentAdmin.id ? currentAdmin : p));
-    this.saveProfiles(updatedProfiles);
-    this.setCurrentProfile(currentAdmin);
-
-    // If Supabase is active, authenticate with Supabase Auth
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.signInWithPassword({
-          email: 'admin@forerunners.org',
-          password: passwordAttempt,
-        });
-      } catch (e) {
-        console.warn('Supabase auth sign in notice:', e);
-      }
-    }
-
-    return { profile: currentAdmin, error: null };
   }
 
-  // --- Mandatory Admin Password Change ---
+  // --- 4. CHANGE ADMINISTRATOR PASSWORD ---
   static async changeAdminPassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
     if (!newPassword || newPassword.length < 8) {
       return { success: false, error: 'Password must be at least 8 characters long.' };
     }
 
     if (newPassword === 'admin123') {
-      return { success: false, error: 'New password cannot be the temporary setup password (admin123).' };
+      return {
+        success: false,
+        error: 'You cannot reuse the default temporary password (admin123). Please choose a new secure password.',
+      };
     }
 
-    const hasLetter = /[a-zA-Z]/.test(newPassword);
-    const hasNumber = /[0-9]/.test(newPassword);
-    if (!hasLetter || !hasNumber) {
-      return { success: false, error: 'Password must contain both letters and numbers for adequate strength.' };
-    }
-
-    // 1. Mark initial credentials as permanently configured and disabled
-    this.saveAdminSecurityConfig({
-      initialConfigured: true,
-      passwordHash: newPassword,
-      configuredAt: new Date().toISOString(),
-    });
-
-    // 2. Clear must_change_password flag on current admin profile
-    const current = this.getCurrentProfile();
-    const updatedAdmin: Profile = {
-      ...current,
-      must_change_password: false,
-    };
-
-    const allProfiles = this.getAllProfiles().map(p => (p.id === updatedAdmin.id ? updatedAdmin : p));
-    this.saveProfiles(allProfiles);
-    this.setCurrentProfile(updatedAdmin);
-
-    // 3. Update password in Supabase Auth if connected
-    if (isSupabaseConfigured && supabase) {
+    // Cloud Function if reachable
+    if (isFirebaseConfigured && firebaseApp) {
       try {
-        await supabase.auth.updateUser({ password: newPassword });
+        const functions = getFunctions(firebaseApp);
+        const changePassCallable = httpsCallable(functions, 'changeAdminPassword');
+        await changePassCallable({ newPassword });
       } catch (err: any) {
-        console.warn('Supabase updateUser password notice:', err?.message);
+        console.warn('Cloud Function changeAdminPassword notice:', err.message);
       }
     }
 
-    // Record audit log
+    // Hash securely
+    const { salt, hash } = await hashPasswordWithSalt(newPassword);
+
+    this.saveAdminSecurityConfig({
+      initialConfigured: true,
+      passwordSalt: salt,
+      passwordHash: hash,
+      configuredAt: new Date().toISOString(),
+    });
+
+    const current = this.getCurrentProfile();
+    if (current) {
+      const updatedAdmin: Profile = {
+        ...current,
+        must_change_password: false,
+      };
+      this.setCurrentProfile(updatedAdmin);
+    }
+
     ReportService.recordAuditLog({
       action: 'ADMIN_PASSWORD_UPDATED',
       entity_type: 'auth_security',
-      entity_id: current.id,
+      entity_id: 'usr-admin-master',
       details: {
-        message: 'Administrator password successfully updated. Initial temporary credentials disabled.',
-        updated_by: current.full_name,
+        message: 'Administrator password successfully updated. Initial temporary credentials permanently disabled.',
       },
     });
 
     return { success: true };
   }
 
-  // --- Complete Cell Leader First-Time Onboarding ---
-  static async completeCellLeaderOnboarding(
-    input: CellLeaderOnboardingInput
-  ): Promise<{ profile: Profile; cell: Cell; isExistingCellAssociated: boolean }> {
+  // --- 5. CHANGE TUTOR PASSWORD ---
+  static async changeTutorPassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters long.' };
+    }
+
     const current = this.getCurrentProfile();
-    const allRegions = await ReportService.getRegions();
-    const targetRegion = allRegions.find(r => r.id === input.regionId) || allRegions[0];
+    if (!current) return { success: false, error: 'No active session.' };
 
-    // Delegate cell creation or association with duplicate prevention to CellService
-    const { cell: associatedCell, isExistingAssociated } = await CellService.registerCell({
-      name: input.cellName,
-      location: input.location || input.venueAddress || 'Fellowship Center',
-      tutorUid: current.id,
-      leaderName: input.fullName,
-      leaderPhone: input.phoneNumber,
-      regionId: input.regionId,
-      regionName: targetRegion?.name || 'Lagos Central Region',
-      meetingDay: input.meetingDay,
-      meetingTime: input.meetingTime,
-      venueAddress: input.venueAddress,
-      targetAttendance: input.targetAttendance,
+    const { salt, hash } = await hashPasswordWithSalt(newPassword);
+    const key = `${current.full_name.toLowerCase()}::${normalizeCellName(current.cell_name || '')}`;
+
+    this.saveTutorCredential(key, {
+      uid: current.id,
+      fullName: current.full_name,
+      cellName: current.cell_name || 'Cell',
+      normalizedCell: normalizeCellName(current.cell_name || ''),
+      salt,
+      hash,
+      createdAt: new Date().toISOString(),
     });
 
-    // 2. Create / Update Cell Leader Profile
-    const updatedProfile: Profile = {
-      ...current,
-      full_name: input.fullName,
-      phone_number: input.phoneNumber,
-      cell_id: associatedCell.id,
-      cell_name: associatedCell.name,
-      region_id: associatedCell.region_id,
-      region_name: associatedCell.region_name,
-      is_onboarded: true, // Successfully completed registration!
-      is_active: true,
-    };
-
-    // Save profile locally
-    const allProfiles = this.getAllProfiles().map(p => (p.id === updatedProfile.id ? updatedProfile : p));
-    this.saveProfiles(allProfiles);
-    this.setCurrentProfile(updatedProfile);
-
-    // Save to Firebase if configured
-    if (isFirebaseConfigured) {
-      try {
-        await FirebaseService.saveProfile(updatedProfile);
-      } catch (e) {
-        console.warn('Failed to save profile to Firebase', e);
-      }
-    }
-
-    // Save to Supabase if configured
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('profiles').upsert({
-          id: updatedProfile.id,
-          email: updatedProfile.email,
-          full_name: updatedProfile.full_name,
-          phone_number: updatedProfile.phone_number,
-          cell_id: updatedProfile.cell_id,
-          cell_name: updatedProfile.cell_name,
-          region_id: updatedProfile.region_id,
-          region_name: updatedProfile.region_name,
-          role: 'cell_leader',
-          is_onboarded: true,
-          is_active: true,
-        });
-      } catch (e) {
-        console.warn('Failed to upsert completed onboarding profile to Supabase', e);
-      }
-    }
-
-    // Record audit trail
-    ReportService.recordAuditLog({
-      action: isExistingAssociated ? 'CELL_LEADER_LINKED_EXISTING' : 'CELL_REGISTERED_AND_ONBOARDED',
-      entity_type: 'cells',
-      entity_id: associatedCell.id,
-      details: {
-        leader_name: input.fullName,
-        cell_name: associatedCell.name,
-        isExistingCellAssociated: isExistingAssociated,
-      },
-    });
-
-    return {
-      profile: updatedProfile,
-      cell: associatedCell,
-      isExistingCellAssociated: isExistingAssociated,
-    };
+    return { success: true };
   }
 
-  // --- Sign Out ---
-  static async signOut(): Promise<void> {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {
-        console.warn('Supabase signout failed', e);
+  // --- ROLE SWITCHING FOR DEMO / PREVIEWS ---
+  static switchDemoRole(role: 'admin' | 'cell_leader'): Profile {
+    const all = this.getAllProfiles();
+    let target = all.find(p => role === 'admin' ? (p.role === 'admin' || p.role === 'super_admin') : p.role === 'tutor');
+    if (!target) {
+      if (role === 'admin') {
+        target = {
+          id: 'usr-admin-master',
+          email: 'admin@fnicells.org',
+          full_name: 'FNI General Overseer / Administrator',
+          role: 'admin',
+          is_active: true,
+          is_onboarded: true,
+          must_change_password: false,
+          created_at: new Date().toISOString(),
+        };
+      } else {
+        target = {
+          id: 'usr-tutor-default',
+          email: 'tutor@fnicells.org',
+          full_name: 'David Asante',
+          cell_name: 'Dominion Cell Legon',
+          cell_id: 'cell-legon-01',
+          role: 'tutor',
+          is_active: true,
+          is_onboarded: true,
+          must_change_password: false,
+          created_at: new Date().toISOString(),
+        };
       }
     }
-    // Switch to a fresh unauthenticated state or default leader
+    this.setCurrentProfile(target);
+    return target;
+  }
+
+  // Legacy fallback if needed
+  static async completeCellLeaderOnboarding(input: any): Promise<{ profile: Profile; isExistingCellAssociated?: boolean }> {
+    const current = this.getCurrentProfile();
+    const updated: Profile = {
+      ...(current || {}),
+      id: current?.id || `tutor-${Date.now()}`,
+      full_name: input.fullName || current?.full_name || 'Tutor',
+      email: current?.email || `${Date.now()}@fnicells.org`,
+      cell_name: input.cellName || current?.cell_name || 'Cell',
+      role: 'tutor',
+      is_active: true,
+      is_onboarded: true,
+      must_change_password: false,
+      created_at: current?.created_at || new Date().toISOString(),
+    };
+    this.setCurrentProfile(updated);
+    return { profile: updated, isExistingCellAssociated: false };
+  }
+
+  // --- SIGN OUT ---
+  static async signOut(): Promise<void> {
+    if (isFirebaseConfigured && auth) {
+      try {
+        await fbSignOut(auth);
+      } catch (e) {
+        console.warn('Firebase signout notice', e);
+      }
+    }
     localStorage.removeItem(STORAGE_KEYS.CURRENT_PROFILE);
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
   }
 }

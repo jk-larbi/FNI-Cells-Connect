@@ -50,6 +50,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
   const [potentialFollowUps, setPotentialFollowUps] = useState<number>(0);
   const [messageUsed, setMessageUsed] = useState('');
   const [notes, setNotes] = useState('');
+  const [testimonies, setTestimonies] = useState('');
 
   // Quick contact capture row state
   const [showAddContact, setShowAddContact] = useState(false);
@@ -135,6 +136,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
         potentialFollowUps: Number(potentialFollowUps) || 0,
         messageUsed: messageUsed.trim(),
         notes: notes.trim(),
+        testimonies: testimonies.trim(),
       });
 
       // Save any captured contacts directly to follow-up system
@@ -415,13 +417,27 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Notes from Evangelism (Brief summary of testimonies, encounters, or atmosphere)
+              Field Notes from Evangelism (General atmosphere, logistics & observations)
             </label>
             <textarea
-              rows={3}
+              rows={2}
               placeholder="Provide a brief summary of how the outreach went..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>Testimonies & Experiences Encountered (Optional)</span>
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Record any testimonies, miraculous healings, confessions of faith, answered prayers, or spiritual encounters during this outreach..."
+              value={testimonies}
+              onChange={e => setTestimonies(e.target.value)}
               className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
             />
           </div>

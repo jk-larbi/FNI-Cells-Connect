@@ -1,37 +1,116 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../common/Button';
-import { Shield, Lock, User, ArrowRight, Sparkles, AlertCircle, KeyRound, CheckCircle2 } from 'lucide-react';
+import {
+  Shield,
+  Lock,
+  User,
+  Users,
+  Building,
+  ArrowRight,
+  ArrowLeft,
+  KeyRound,
+  CheckCircle2,
+  AlertCircle,
+  LogIn,
+  UserPlus,
+} from 'lucide-react';
+
+export type AuthFlowView = 'tutor-signup' | 'login-select' | 'tutor-login' | 'admin-login';
 
 interface AuthViewProps {
+  initialView?: AuthFlowView;
+  onBackToLanding?: () => void;
   onSuccess?: () => void;
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
-  const { loginAdmin, loginOAuth, isSupabaseActive } = useAuth();
-  const [activePortal, setActivePortal] = useState<'cell_leader' | 'admin'>('cell_leader');
+export const AuthView: React.FC<AuthViewProps> = ({
+  initialView = 'login-select',
+  onBackToLanding,
+  onSuccess,
+}) => {
+  const { loginAdmin, loginTutor, registerTutor } = useAuth();
+  const [currentView, setCurrentView] = useState<AuthFlowView>(initialView);
 
-  // Cell Leader state
-  const [leaderEmail, setLeaderEmail] = useState('');
+  // Tutor Registration state (4 fields ONLY)
+  const [regFullName, setRegFullName] = useState('');
+  const [regCellName, setRegCellName] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
 
-  // Admin form state
-  const [adminUsername, setAdminUsername] = useState('admin');
-  const [adminPassword, setAdminPassword] = useState('admin123');
+  // Tutor Login state (3 fields ONLY)
+  const [loginFullName, setLoginFullName] = useState('');
+  const [loginCellName, setLoginCellName] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  // Administrator Login state (1 field ONLY)
+  const [adminPassword, setAdminPassword] = useState('');
+
+  // Feedback states
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successNotice, setSuccessNotice] = useState('');
 
-  // Cell Leader OAuth action
-  const handleOAuthSignIn = async (
-    provider: 'google' | 'apple',
-    options?: { testEmail?: string; testName?: string }
-  ) => {
-    setIsLoading(true);
+  // 1. Handle Tutor Registration
+  const handleTutorSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
     setErrorMessage('');
+    setSuccessNotice('');
+
+    if (!regFullName.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
+      setErrorMessage('Please complete all 4 fields.');
+      return;
+    }
+
+    if (regPassword.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setErrorMessage('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const emailToUse = leaderEmail.trim() || options?.testEmail;
-      const res = await loginOAuth(provider, emailToUse ? { testEmail: emailToUse, testName: options?.testName } : undefined);
+      const res = await registerTutor({
+        fullName: regFullName.trim(),
+        cellName: regCellName.trim(),
+        password: regPassword,
+        confirmPassword: regConfirmPassword,
+      });
+
       if (!res.success) {
-        setErrorMessage(res.error || 'OAuth sign-in failed');
+        setErrorMessage(res.error || 'Registration failed.');
+      } else {
+        setSuccessNotice('Account created successfully! Redirecting...');
+        if (onSuccess) onSuccess();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 2. Handle Tutor Login (Full Name and Password ONLY)
+  const handleTutorLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setSuccessNotice('');
+
+    if (!loginFullName.trim() || !loginPassword) {
+      setErrorMessage('Please enter Full Name and Password.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await loginTutor({
+        fullName: loginFullName.trim(),
+        password: loginPassword,
+      });
+
+      if (!res.success) {
+        setErrorMessage(res.error || 'Authentication failed. Please verify credentials.');
       } else {
         if (onSuccess) onSuccess();
       }
@@ -40,15 +119,22 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
     }
   };
 
-  // Administrator login action
-  const handleAdminSubmit = async (e: React.FormEvent) => {
+  // 3. Handle Admin Login
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setErrorMessage('');
+    setSuccessNotice('');
+
+    if (!adminPassword) {
+      setErrorMessage('Please enter the administrator password.');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const res = await loginAdmin(adminUsername, adminPassword);
+      const res = await loginAdmin(adminPassword);
       if (!res.success) {
-        setErrorMessage(res.error || 'Administrator authentication failed');
+        setErrorMessage(res.error || 'Administrator login failed.');
       } else {
         if (onSuccess) onSuccess();
       }
@@ -58,245 +144,417 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col justify-center py-10 sm:px-6 lg:px-8">
-      {/* Brand Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <span className="text-3xl font-extrabold tracking-tight text-navy-950">
-          forerunners<span className="text-gold-500">.</span>
-        </span>
-        <h2 className="text-xl font-bold tracking-tight text-navy-950 mt-1">
-          Digital Ministry Reporting System
-        </h2>
-        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-0.5">
-          Forerunners Network International (FNI)
-        </p>
+    <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans">
+      {/* Subtle background decorative circle */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <div className="w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] rounded-full border border-[#C6A45A]/10 opacity-30"></div>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Portal Switcher Tabs */}
-        <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center mb-4 text-xs font-bold text-slate-600 shadow-inner">
+      {/* Top Header / Back Navigation */}
+      <div className="w-full max-w-md mx-auto flex items-center justify-between z-10 mb-2">
+        {currentView === 'login-select' || currentView === 'tutor-signup' ? (
+          <button
+            type="button"
+            onClick={onBackToLanding}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#667085] hover:text-[#142B4A] transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#C6A45A]" />
+            <span>Back to Home</span>
+          </button>
+        ) : (
           <button
             type="button"
             onClick={() => {
-              setActivePortal('cell_leader');
               setErrorMessage('');
+              setCurrentView('login-select');
             }}
-            className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
-              activePortal === 'cell_leader'
-                ? 'bg-white text-navy-950 shadow-card'
-                : 'hover:text-navy-900'
-            }`}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#667085] hover:text-[#142B4A] transition-colors cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-gold-500" />
-            Cell Leader Access
+            <ArrowLeft className="w-4 h-4 text-[#C6A45A]" />
+            <span>Back to Login Options</span>
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActivePortal('admin');
-              setErrorMessage('');
-            }}
-            className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
-              activePortal === 'admin'
-                ? 'bg-navy-900 text-white shadow-card'
-                : 'hover:text-navy-900'
-            }`}
-          >
-            <Shield className="w-4 h-4 text-gold-400" />
-            Administrator Sign-In
-          </button>
+        )}
+      </div>
+
+      {/* Main Centered Container */}
+      <main className="w-full max-w-md mx-auto flex flex-col items-center text-center my-auto z-10">
+        {/* Official FNI Ministry Logo */}
+        <div className="relative mb-5 group">
+          <div className="absolute -inset-1.5 rounded-2xl border border-[#C6A45A]/35"></div>
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-[#142B4A] flex items-center justify-center p-0.5">
+            <img
+              src="/fni-official-logo.jpg"
+              alt="Forerunners Network International Official Logo"
+              className="w-full h-full object-contain rounded-xl"
+            />
+          </div>
         </div>
 
-        {/* Card Surface */}
-        <div className="bg-white py-8 px-6 shadow-card rounded-3xl border border-slate-100 sm:px-8">
-          {/* TAB 1: CELL LEADER ACCESS */}
-          {activePortal === 'cell_leader' && (
-            <div className="space-y-5 animate-fade-in">
-              <div className="text-center">
-                <h3 className="text-base font-extrabold text-navy-950">Cell Leader Sign-In</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Authenticate securely using your Google Account or Apple ID to submit weekly returns and manage fellowship records.
-                </p>
-              </div>
+        {/* Platform Name & Thin Gold Divider */}
+        <h1 className="text-2xl sm:text-3xl font-black text-[#142B4A] tracking-tight leading-none mb-2">
+          FNI CELLS CONNECT
+        </h1>
 
-              {/* OAuth Buttons */}
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Your Google (Gmail) or Apple ID Email
-                  </label>
-                  <div className="relative rounded-xl shadow-xs">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <User className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="email"
-                      value={leaderEmail}
-                      onChange={e => setLeaderEmail(e.target.value)}
-                      placeholder="e.g. your.email@gmail.com"
-                      className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600"
-                    />
-                  </div>
-                </div>
+        <div className="flex items-center justify-center gap-2 w-28 my-1.5">
+          <div className="h-[1.5px] bg-gradient-to-r from-transparent to-[#C6A45A] flex-1"></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]"></div>
+          <div className="h-[1.5px] bg-gradient-to-l from-transparent to-[#C6A45A] flex-1"></div>
+        </div>
 
-                {/* Google Sign-In */}
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleOAuthSignIn('google')}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all font-semibold text-xs text-slate-800 shadow-xs group"
-                >
-                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                  <span>Continue with Google (Gmail)</span>
-                </button>
-
-                {/* Apple ID Sign-In */}
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleOAuthSignIn('apple')}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-black hover:bg-neutral-900 transition-all font-semibold text-xs text-white shadow-xs"
-                >
-                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 170 170">
-                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.69-7.85-12.01-14.42-6.19-9.5-10.97-20.15-14.34-31.96-3.37-11.81-5.06-23.23-5.06-34.27 0-14.99 3.96-27.16 11.89-36.52 7.93-9.36 17.58-14.15 28.96-14.37 5.76 0 11.75 1.52 17.97 4.57 6.22 3.04 10.02 4.67 11.4 4.89 1.74-.33 5.86-2.07 12.37-5.22 6.51-3.15 12.37-4.62 17.58-4.41 12.83.65 23.3 5.48 31.42 14.51-11.3 6.85-16.85 16.5-16.64 28.96.22 9.89 4.12 18.29 11.71 25.19 7.59 6.9 16.6 10.74 27.03 11.53-2.61 7.82-5.76 15.22-9.43 22.2zM119.22 31.05c0-7.17 2.61-13.88 7.83-20.13 5.22-6.25 11.63-10.16 19.24-11.73.22 1.3.33 2.5.33 3.6 0 7.17-2.77 14.05-8.31 20.65-5.54 6.6-12.06 10.36-19.57 11.28.11-1.22.48-2.45.48-3.67z" />
-                  </svg>
-                  <span>Continue with Apple ID</span>
-                </button>
-              </div>
-
-              {/* Explanatory Protocol Note */}
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-[11px] text-slate-500 space-y-1">
-                <div className="font-semibold text-slate-700 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> First-Time Registration & Returning Access
-                </div>
-                <p>
-                  • First-time leaders are prompted to register their cell name, meeting schedule, and phone number.
-                </p>
-                <p>
-                  • Returning users with registered cells are automatically recognised and bypass setup.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: ADMINISTRATOR SIGN-IN */}
-          {activePortal === 'admin' && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-2xl bg-navy-900 text-gold-400 mx-auto flex items-center justify-center mb-2 shadow-xs">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-extrabold text-navy-950">Administrator Sign-In</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Protected administrative portal for national leadership and oversight.
-                </p>
-              </div>
-
-              {/* Initial Setup Credentials Notice */}
-              <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 text-xs text-amber-950 space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                  <KeyRound className="w-4 h-4 text-amber-600" />
-                  Initial Setup Credentials
-                </div>
-                <div className="text-[11px] text-amber-900 leading-relaxed">
-                  Use Username: <code className="bg-amber-200/70 px-1 py-0.5 rounded font-bold font-mono">admin</code>, Password: <code className="bg-amber-200/70 px-1 py-0.5 rounded font-bold font-mono">admin123</code>.
-                </div>
-                <div className="text-[10px] text-amber-800 mt-1 italic">
-                  *組織 Security Requirement: Immediate mandatory password change enforced upon first login. Temporary credentials disabled once configured.
-                </div>
-              </div>
-
-              <form onSubmit={handleAdminSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Administrator Username or Email
-                  </label>
-                  <div className="relative rounded-xl shadow-xs">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <User className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      value={adminUsername}
-                      onChange={e => setAdminUsername(e.target.value)}
-                      placeholder="admin"
-                      className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600 font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Password
-                  </label>
-                  <div className="relative rounded-xl shadow-xs">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Lock className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="password"
-                      required
-                      value={adminPassword}
-                      onChange={e => setAdminPassword(e.target.value)}
-                      placeholder="admin123"
-                      className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600 font-mono"
-                    />
-                  </div>
-                </div>
-
-                {errorMessage && (
-                  <div className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{errorMessage}</span>
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  className="w-full rounded-xl mt-2"
-                  isLoading={isLoading}
-                  rightIcon={<ArrowRight className="w-4 h-4" />}
-                >
-                  Sign In to Admin Panel
-                </Button>
-              </form>
-            </div>
-          )}
-
-          {errorMessage && activePortal === 'cell_leader' && (
-            <div className="mt-3 text-xs text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200 flex items-start gap-2">
+        {/* Card Container for Current View */}
+        <div className="w-full mt-5 bg-white rounded-2xl border-2 border-[#142B4A]/15 shadow-lg p-6 sm:p-7 text-left">
+          {/* Alerts */}
+          {errorMessage && (
+            <div className="mb-4 p-3 rounded-xl bg-[#FFF5F5] border-l-4 border-[#C74646] text-[#C74646] flex items-start gap-2.5 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
           )}
-        </div>
 
-        {/* Backend & Security Indicator */}
-        <div className="mt-4 text-center text-[11px] text-slate-400 flex items-center justify-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Supabase PostgreSQL Auth & RLS Protected</span>
+          {successNotice && (
+            <div className="mb-4 p-3 rounded-xl bg-[#F0FDF4] border-l-4 border-[#23845B] text-[#23845B] flex items-start gap-2.5 text-xs font-semibold">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{successNotice}</span>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* 1. TUTOR REGISTRATION PAGE                                   */}
+          {/* ============================================================ */}
+          {currentView === 'tutor-signup' && (
+            <div className="space-y-4">
+              <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
+                <h2 className="text-lg font-bold text-[#142B4A]">
+                  Create Your Tutor Account
+                </h2>
+                <p className="text-xs text-[#667085] mt-0.5">
+                  Register your cell and leader credentials to start submitting reports.
+                </p>
+              </div>
+
+              <form onSubmit={handleTutorSignUp} className="space-y-3.5">
+                {/* 1. Full Name */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    1. Full Name <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      required
+                      value={regFullName}
+                      onChange={(e) => setRegFullName(e.target.value)}
+                      placeholder="e.g. Samuel Mensah"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#C6A45A] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Cell Name */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    2. Cell Name <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      required
+                      value={regCellName}
+                      onChange={(e) => setRegCellName(e.target.value)}
+                      placeholder="e.g. Grace Fellowship Central"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#C6A45A] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Password */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    3. Password <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input
+                      type="password"
+                      required
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="Create a password (min 6 characters)"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#C6A45A] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Confirm Password */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    4. Confirm Password <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input
+                      type="password"
+                      required
+                      value={regConfirmPassword}
+                      onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      placeholder="Repeat password"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#C6A45A] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* SIGN UP Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full mt-3 py-3 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4 text-[#C6A45A]" />
+                  <span>{isLoading ? 'Creating Account...' : 'Sign Up'}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
+                </button>
+              </form>
+
+              {/* Already have an account link */}
+              <div className="pt-3 border-t border-[#E3E8EF] text-center">
+                <span className="text-xs text-[#667085]">Already have an account? </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setCurrentView('tutor-login');
+                  }}
+                  className="text-xs font-bold text-[#142B4A] hover:text-[#C6A45A] underline transition-colors cursor-pointer"
+                >
+                  Log In
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* 2. LOGIN PAGE (Select: Tutor vs Administrator)               */}
+          {/* ============================================================ */}
+          {currentView === 'login-select' && (
+            <div className="space-y-4">
+              <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
+                <h2 className="text-lg font-bold text-[#142B4A]">
+                  Log In to FNI Cells Connect
+                </h2>
+                <p className="text-xs text-[#667085] mt-0.5">
+                  Please select your account type:
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                {/* Option 1: LOG IN AS TUTOR */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setCurrentView('tutor-login');
+                  }}
+                  className="w-full p-4 rounded-xl border-2 border-[#E3E8EF] hover:border-[#142B4A] hover:bg-[#F5F7FA] transition-all text-left flex items-center justify-between group cursor-pointer focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 group-hover:bg-[#142B4A] text-[#142B4A] group-hover:text-[#C6A45A] flex items-center justify-center transition-colors">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-wider text-[#142B4A]">
+                        Log In as Tutor
+                      </div>
+                      <div className="text-xs text-[#667085]">
+                        Cell Leader / Field Fellowship Account
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-[#C6A45A] group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                {/* Option 2: LOG IN AS ADMINISTRATOR */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setCurrentView('admin-login');
+                  }}
+                  className="w-full p-4 rounded-xl border-2 border-[#E3E8EF] hover:border-[#142B4A] hover:bg-[#F5F7FA] transition-all text-left flex items-center justify-between group cursor-pointer focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 group-hover:bg-[#142B4A] text-[#142B4A] group-hover:text-[#C6A45A] flex items-center justify-center transition-colors">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-wider text-[#142B4A]">
+                        Log In as Administrator
+                      </div>
+                      <div className="text-xs text-[#667085]">
+                        Church Leadership & Oversight Access
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-[#C6A45A] group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+
+              {/* Link to sign up if new */}
+              <div className="pt-3 border-t border-[#E3E8EF] text-center">
+                <span className="text-xs text-[#667085]">New cell leader? </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setCurrentView('tutor-signup');
+                  }}
+                  className="text-xs font-bold text-[#142B4A] hover:text-[#C6A45A] underline transition-colors cursor-pointer"
+                >
+                  Sign Up
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* 3. TUTOR LOGIN FORM (Full Name and Password ONLY)            */}
+          {/* ============================================================ */}
+          {currentView === 'tutor-login' && (
+            <div className="space-y-4">
+              <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
+                <h2 className="text-lg font-bold text-[#142B4A]">
+                  Tutor Log In
+                </h2>
+                <p className="text-xs text-[#667085] mt-0.5">
+                  Enter your registered full name and password to access your dashboard.
+                </p>
+              </div>
+
+              <form onSubmit={handleTutorLogin} className="space-y-3.5">
+                {/* 1. Full Name */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    Full Name <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      required
+                      value={loginFullName}
+                      onChange={(e) => setLoginFullName(e.target.value)}
+                      placeholder="Enter your registered full name"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#C6A45A] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Password */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    Password <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input
+                      type="password"
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#C6A45A] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* LOG IN Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full mt-3 py-3 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4 text-[#C6A45A]" />
+                  <span>{isLoading ? 'Signing In...' : 'Log In'}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
+                </button>
+              </form>
+
+              {/* New tutor link */}
+              <div className="pt-3 border-t border-[#E3E8EF] text-center">
+                <span className="text-xs text-[#667085]">New tutor? </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setCurrentView('tutor-signup');
+                  }}
+                  className="text-xs font-bold text-[#142B4A] hover:text-[#C6A45A] underline transition-colors cursor-pointer"
+                >
+                  Sign Up
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* 4. ADMINISTRATOR LOGIN FORM                                  */}
+          {/* ============================================================ */}
+          {currentView === 'admin-login' && (
+            <div className="space-y-4">
+              <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
+                <h2 className="text-lg font-bold text-[#142B4A]">
+                  Administrator Log In
+                </h2>
+                <p className="text-xs text-[#667085] mt-0.5">
+                  Enter authorized administrator password:
+                </p>
+              </div>
+
+              <form onSubmit={handleAdminLogin} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    Administrator Password <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input
+                      type="password"
+                      required
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Enter password"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#C6A45A] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white border border-[#C6A45A]/40 text-[11px] text-[#667085]">
+                  <span className="font-semibold text-[#142B4A]">Initial Login Note: </span>
+                  Default is <code className="bg-[#F5F7FA] px-1 py-0.5 rounded border border-[#E3E8EF] font-mono font-bold text-[#142B4A]">admin123</code>. You will configure your permanent password on first sign in.
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full mt-2 py-3 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <Shield className="w-4 h-4 text-[#C6A45A]" />
+                  <span>{isLoading ? 'Authenticating...' : 'Log In'}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
+                </button>
+              </form>
+            </div>
+          )}
         </div>
-      </div>
+      </main>
+
+      {/* Subtle Minimal Footer Attribution */}
+      <footer className="w-full text-center pb-2 z-10">
+        <p className="text-[11px] font-semibold tracking-wider text-[#667085]/70 uppercase">
+          Forerunners Network International &bull; For Internal Ministry Use Only
+        </p>
+      </footer>
     </div>
   );
 };

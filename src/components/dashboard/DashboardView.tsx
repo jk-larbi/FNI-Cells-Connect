@@ -3,107 +3,93 @@ import { useAuth } from '../../context/AuthContext';
 import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
-import { FollowUpService } from '../../services/followUpService';
-import { DashboardStats, CellReport, SystemSettings } from '../../types';
+import { DashboardStats, SystemSettings, UnifiedReportItem } from '../../types';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
-import { StatCard, ActionStatCard } from './StatCard';
-import { WeeklyPerformanceChart } from './WeeklyPerformanceChart';
-import { SoulsWonChart } from './SoulsWonChart';
-import { RecentReportsTable } from './RecentReportsTable';
-import { ComplianceTracker } from './ComplianceTracker';
-import { SettingsModal } from '../settings/SettingsModal';
 import {
   Users,
-  UserCheck,
+  Building,
+  FileCheck,
   Flame,
   UserPlus,
   Search,
   CheckCircle2,
   Calendar,
   Clock,
-  MapPin,
   AlertTriangle,
-  FileCheck2,
-  AlertCircle,
   Compass,
-  BookOpen,
   Target,
   Edit3,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
   TrendingUp,
+  UserCheck,
+  ArrowRight,
+  Eye,
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
 
 interface DashboardViewProps {
-  onNavigateToForm: () => void;
-  onNavigateToEvangelismForm?: () => void;
-  onNavigateToReports: () => void;
-  onNavigateToRegional: () => void;
-  onNavigateToFollowUps?: () => void;
-  onSelectReport: (report: CellReport) => void;
+  onNavigateToTab: (tab: any) => void;
+  onOpenReport?: (reportId: string) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
-  onNavigateToForm,
-  onNavigateToEvangelismForm,
-  onNavigateToReports,
-  onNavigateToRegional,
-  onNavigateToFollowUps,
-  onSelectReport,
+  onNavigateToTab,
+  onOpenReport,
 }) => {
-  const { currentRole, currentUser, isAdmin } = useAuth();
+  const { currentRole, currentUser } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
-  const [trends, setTrends] = useState<any[]>([]);
-  const [regionalStats, setRegionalStats] = useState<any[]>([]);
-  const [recentReports, setRecentReports] = useState<CellReport[]>([]);
-  const [activeCell, setActiveCell] = useState<any | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [recentQueue, setRecentQueue] = useState<UnifiedReportItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisionExpanded, setIsVisionExpanded] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-  const loadDashboardData = async () => {
+  // Settings modal inline state
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [editVision, setEditVision] = useState('');
+  const [editMission, setEditMission] = useState('');
+  const [editTarget, setEditTarget] = useState(5000);
+
+  const loadData = async () => {
     try {
       setIsLoading(true);
-      const [dashStats, trendData, regData, allReports, allCells, systemSettings] =
-        await Promise.all([
-          AnalyticsService.getDashboardStats(currentRole, currentUser.region_id, currentUser.cell_id),
-          AnalyticsService.getWeeklyTrends(currentRole, currentUser.region_id, currentUser.cell_id),
-          AnalyticsService.getRegionalPerformance(),
-          ReportService.getReports(),
-          ReportService.getCells(),
-          SettingsService.getSettings(),
-        ]);
-
+      const [dashStats, systemSettings, queue] = await Promise.all([
+        AnalyticsService.getDashboardStats('admin'),
+        SettingsService.getSettings(),
+        ReportService.getUnifiedReviewQueue(),
+      ]);
       setStats(dashStats);
-      setTrends(trendData);
-      setRegionalStats(regData);
       setSettings(systemSettings);
-
-      if (currentUser.cell_id) {
-        const matched = allCells.find(c => c.id === currentUser.cell_id);
-        if (matched) setActiveCell(matched);
-      }
-
-      let filtered = allReports;
-      if (!isAdmin && currentUser.cell_id) {
-        filtered = allReports.filter(r => r.cell_id === currentUser.cell_id);
-      }
-      setRecentReports(filtered);
+      setRecentQueue(queue.slice(0, 7));
+      setEditVision(systemSettings.vision);
+      setEditMission(systemSettings.mission);
+      setEditTarget(systemSettings.annualSoulWinningTarget);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDashboardData();
-  }, [currentRole, currentUser, isAdmin]);
+    loadData();
+  }, []);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await SettingsService.updateSettings({
+      vision: editVision,
+      mission: editMission,
+      annualSoulWinningTarget: editTarget,
+    });
+    setSettings(prev => ({
+      ...prev,
+      vision: editVision,
+      mission: editMission,
+      annualSoulWinningTarget: editTarget,
+    }));
+    setIsEditingSettings(false);
+  };
 
   if (isLoading || !stats) {
     return (
-      <div className="py-24 text-center text-xs text-slate-400 font-medium">
+      <div className="py-24 text-center text-xs text-[#667085] font-medium">
         Loading FNI CELLS CONNECT ministry intelligence...
       </div>
     );
@@ -111,457 +97,527 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const soulTarget = settings.annualSoulWinningTarget || 5000;
   const targetPercent = Math.min(100, Math.round((stats.soulsWon / soulTarget) * 100));
+  const remainingTarget = Math.max(0, soulTarget - stats.soulsWon);
 
   return (
     <div className="space-y-6">
-      {/* Top Header Row with FNI Brand Subtitle and Pill Search */}
+      {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-navy-950">
-              FNI CELLS CONNECT
+            <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
+              Administrator Dashboard
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-navy-100 text-navy-900 border border-navy-200">
-              {isAdmin ? 'Church Leadership' : 'Tutor Portal'}
+            <span className="px-2 py-0.5 rounded-full bg-[#142B4A] text-[#C6A45A] text-[10px] font-bold uppercase tracking-wider">
+              Leadership
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Cell Document Optimisation & Reporting Platform • {isAdmin ? 'Organisation Oversight' : currentUser.cell_name || 'Fellowship Cell'}
+          <p className="text-xs text-[#667085] mt-0.5">
+            Centralised oversight of fellowship cells, weekly reporting, evangelism outreach, and discipleship.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder={isAdmin ? 'Search reports or leaders...' : 'Search submissions...'}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-56 sm:w-64 text-xs font-medium rounded-full border-0 bg-white px-4 py-2.5 pl-9 text-slate-800 placeholder-slate-400 shadow-card focus:ring-2 focus:ring-navy-600"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onNavigateToTab('report-review')}
+            className="px-3.5 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-1.5"
+          >
+            <FileCheck className="w-3.5 h-3.5 text-[#C6A45A]" />
+            <span>Open Review Queue</span>
+            {stats.awaitingReviewCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-[#D99A32] text-white text-[10px] font-bold">
+                {stats.awaitingReviewCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Vision & Mission Expandable Card */}
-      <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 text-white rounded-3xl p-5 sm:p-6 shadow-card border border-navy-800">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gold-500/20 text-gold-400 flex items-center justify-center font-bold shrink-0 border border-gold-500/30">
-              <Compass className="w-5 h-5" />
+      {/* Vision, Mission & Annual Soul-Winning Target Surface */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Vision & Mission Card */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm relative">
+          <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-[#C6A45A]" />
+              <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">
+                FNI Kingdom Vision & Mission
+              </h2>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-gold-400">
-                  Kingdom Vision & Mission
-                </span>
-                <span className="text-[10px] text-slate-400">• Forerunners Network International</span>
+            <button
+              onClick={() => setIsEditingSettings(true)}
+              className="text-xs font-semibold text-[#142B4A] hover:text-[#203D63] flex items-center gap-1"
+            >
+              <Edit3 className="w-3 h-3" />
+              <span>Edit</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-3.5 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
+              <div className="text-[11px] font-bold text-[#142B4A] uppercase tracking-wider mb-1">
+                Our Vision
               </div>
-              <p className="text-xs text-slate-200 mt-0.5 line-clamp-1 max-w-2xl font-medium">
-                {settings.vision}
+              <p className="text-xs text-[#182230] leading-relaxed">
+                "{settings.vision}"
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
+              <div className="text-[11px] font-bold text-[#142B4A] uppercase tracking-wider mb-1">
+                Our Mission
+              </div>
+              <p className="text-xs text-[#182230] leading-relaxed">
+                "{settings.mission}"
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-            {isAdmin && (
-              <button
-                onClick={() => setIsSettingsModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-300 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-navy-700"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Configure Targets</span>
-              </button>
-            )}
-            <button
-              onClick={() => setIsVisionExpanded(prev => !prev)}
-              className="p-1.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-slate-300 transition-colors"
-              title={isVisionExpanded ? 'Collapse statement' : 'View full statement'}
-            >
-              {isVisionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-          </div>
         </div>
 
-        {isVisionExpanded && (
-          <div className="mt-4 pt-4 border-t border-navy-800 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs animate-in fade-in duration-150">
-            <div className="p-3.5 rounded-2xl bg-navy-900/60 border border-navy-800">
-              <span className="text-[11px] font-bold text-gold-400 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                <Compass className="w-3.5 h-3.5" /> Vision
-              </span>
-              <p className="text-slate-300 leading-relaxed">{settings.vision}</p>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-navy-900/60 border border-navy-800">
-              <span className="text-[11px] font-bold text-gold-400 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5" /> Mission
-              </span>
-              <p className="text-slate-300 leading-relaxed">{settings.mission}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mandatory Weekly Deadline Banner */}
-      {!isAdmin && (
-        <div
-          className={`p-4 rounded-3xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-card ${
-            getCurrentDeadlineInfo().isPastDeadline
-              ? 'bg-amber-50/90 border-amber-200 text-amber-950'
-              : 'bg-white text-navy-950 border-slate-100'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${
-                getCurrentDeadlineInfo().isPastDeadline
-                  ? 'bg-amber-200 text-amber-900'
-                  : 'bg-navy-900 text-gold-400'
-              }`}
-            >
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-bold flex items-center gap-2">
-                <span>Weekly Return Deadline: Sunday 6:00 PM Ghana Time (Africa/Accra, UTC+0)</span>
-                {getCurrentDeadlineInfo().isPastDeadline ? (
-                  <span className="text-[10px] bg-rose-600 text-white px-2 py-0.5 rounded-full font-bold">
-                    LATE WINDOW
-                  </span>
-                ) : (
-                  <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
-                    ON-TIME WINDOW
-                  </span>
-                )}
-              </div>
-              <div
-                className={`text-[11px] mt-0.5 ${
-                  getCurrentDeadlineInfo().isPastDeadline ? 'text-amber-800' : 'text-slate-400'
-                }`}
-              >
-                {getCurrentDeadlineInfo().timeRemainingText} • Authoritative deadline enforced via trusted server timestamp.
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-            <button
-              onClick={onNavigateToForm}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-navy-900 text-white hover:bg-navy-950 transition-colors shadow-sm"
-            >
-              Submit Meeting Report
-            </button>
-            {onNavigateToEvangelismForm && (
-              <button
-                onClick={onNavigateToEvangelismForm}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gold-500 text-navy-950 hover:bg-gold-400 transition-colors shadow-sm"
-              >
-                Submit Evangelism
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Admin Notice for Missing Submissions */}
-      {isAdmin && stats.missingCellsCount > 0 && (
-        <div className="p-4 rounded-3xl bg-rose-50 border border-rose-200 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-card">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-rose-200 text-rose-800 flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-rose-950">
-                {stats.missingCellsCount} Registered Fellowship Cell{stats.missingCellsCount > 1 ? 's' : ''} Missing Current Returns
-              </div>
-              <div className="text-[11px] text-rose-800 mt-0.5">
-                Sunday 6:00 PM Ghana Time cutoff passed. Inspect unsubmitted units and dispatch notifications.
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={onNavigateToReports}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-900 text-white hover:bg-rose-950 transition-all shrink-0 self-start sm:self-auto"
-          >
-            Inspect Missing Cells
-          </button>
-        </div>
-      )}
-
-      {/* CENTRAL CHURCH PROGRESS: Annual Soul-Winning Target & Evangelism Reach */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Annual Soul-Winning Target Progress Card */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-card flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gold-50 text-gold-600 flex items-center justify-center font-bold">
-                  <Target className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-navy-950">Annual Soul-Winning Target</h3>
-                  <p className="text-[11px] text-slate-400">Verified conversions recorded across all evangelism reports</p>
-                </div>
+                <Target className="w-4 h-4 text-[#C6A45A]" />
+                <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">
+                  Soul-Winning Target
+                </h2>
               </div>
-              <span className="text-xs font-extrabold text-navy-950 bg-slate-100 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold text-[#23845B]">
                 {targetPercent}% Achieved
               </span>
             </div>
 
-            {/* Metric Comparison */}
-            <div className="mt-5 flex items-baseline gap-3">
-              <span className="text-3xl font-extrabold text-navy-950">{stats.soulsWon}</span>
-              <span className="text-xs font-semibold text-slate-400">
-                of <strong className="text-slate-700">{soulTarget.toLocaleString()}</strong> target souls
-              </span>
-            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-[#667085]">Conversions Recorded</span>
+                <span className="text-2xl font-black text-[#142B4A]">{stats.soulsWon}</span>
+              </div>
 
-            {/* Progress Bar */}
-            <div className="mt-3 w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-gold-500 to-amber-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${Math.max(2, targetPercent)}%` }}
-              />
-            </div>
-          </div>
+              {/* Progress bar */}
+              <div className="w-full bg-[#E3E8EF] rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-[#23845B] h-full rounded-full transition-all duration-500"
+                  style={{ width: `${targetPercent}%` }}
+                />
+              </div>
 
-          {/* Sub metrics */}
-          <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Conversions</span>
-              <span className="text-sm font-bold text-navy-950">+{stats.soulsWon}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">People Reached</span>
-              <span className="text-sm font-bold text-navy-950">{stats.peopleReached}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Contacts Captured</span>
-              <span className="text-sm font-bold text-navy-950">{stats.contactsCaptured}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Central Follow-Up Summary Card */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-navy-50 text-navy-900 flex items-center justify-center font-bold">
-                  <Users className="w-4 h-4" />
+              <div className="flex justify-between text-[11px] text-[#667085] pt-1 border-t border-[#E3E8EF]">
+                <div>
+                  Target: <span className="font-bold text-[#182230]">{soulTarget.toLocaleString()}</span>
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-navy-950">Follow-Up Pipeline</h3>
-                  <p className="text-[11px] text-slate-400">Discipleship & soul preservation</p>
+                  Remaining: <span className="font-bold text-[#D99A32]">{remainingTarget.toLocaleString()}</span>
                 </div>
-              </div>
-              {onNavigateToFollowUps && (
-                <button
-                  onClick={onNavigateToFollowUps}
-                  className="text-[11px] text-navy-900 font-bold hover:underline"
-                >
-                  Manage
-                </button>
-              )}
-            </div>
-
-            <div className="mt-4 space-y-2.5 text-xs">
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                <span className="text-slate-500 font-medium">Total Contacts Captured</span>
-                <span className="font-bold text-navy-950">{stats.contactsCaptured}</span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 bg-amber-50/70 rounded-xl">
-                <span className="text-amber-800 font-medium">Requiring Follow-Up</span>
-                <span className="font-bold text-amber-700">{stats.outstandingFollowUps}</span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 bg-emerald-50/70 rounded-xl">
-                <span className="text-emerald-800 font-medium">Completed / Joined</span>
-                <span className="font-bold text-emerald-700">{stats.followUpsCompleted}</span>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100">
-            <span className="text-[11px] text-slate-400 block text-center">
-              Targeting 100% discipleship integration for every outreach soul
-            </span>
+          <div className="mt-4 pt-3 border-t border-[#E3E8EF] flex items-center justify-between text-[11px] text-[#667085]">
+            <span>Deadline: Sunday 6:00 PM GMT</span>
+            <button
+              onClick={() => onNavigateToTab('analytics')}
+              className="font-bold text-[#142B4A] hover:underline flex items-center gap-0.5"
+            >
+              Analytics <ArrowRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Reporting Overview & Workflow Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-card">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Submitted
-          </span>
-          <div className="text-xl font-extrabold text-navy-950 mt-1">{stats.reportsSubmitted}</div>
-          <span className="text-[10px] text-slate-400">Total reports filed</span>
-        </div>
+      {/* 13 REAL METRICS GRID (Specified in Prompt Section 5) */}
+      <div>
+        <h3 className="text-xs font-bold text-[#667085] uppercase tracking-wider mb-3">
+          Key Performance Indicators & Ministry Analytics
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3.5">
+          {/* 1. Total Registered Cells */}
+          <div
+            onClick={() => onNavigateToTab('cell-management')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Total Cells</div>
+            <div className="text-xl font-black text-[#182230] mt-1">{stats.totalCells}</div>
+            <div className="text-[10px] text-[#23845B] font-semibold mt-0.5">Directory Active</div>
+          </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-card">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 block">
-            Awaiting Review
-          </span>
-          <div className="text-xl font-extrabold text-amber-600 mt-1">{stats.awaitingReviewCount}</div>
-          <span className="text-[10px] text-slate-400">Needs administrative review</span>
-        </div>
+          {/* 2. Total Registered Tutors */}
+          <div
+            onClick={() => onNavigateToTab('cell-leaders')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Registered Tutors</div>
+            <div className="text-xl font-black text-[#182230] mt-1">{stats.activeCellLeaders}</div>
+            <div className="text-[10px] text-[#667085] font-semibold mt-0.5">Assigned Leaders</div>
+          </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-card">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 block">
-            Approved
-          </span>
-          <div className="text-xl font-extrabold text-emerald-600 mt-1">{stats.approvedReports}</div>
-          <span className="text-[10px] text-slate-400">Verified & confirmed</span>
-        </div>
+          {/* 3. Meeting Reports Submitted */}
+          <div
+            onClick={() => onNavigateToTab('report-review')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Meeting Reports</div>
+            <div className="text-xl font-black text-[#182230] mt-1">{stats.meetingReportsSubmitted || 0}</div>
+            <div className="text-[10px] text-[#667085] font-semibold mt-0.5">Weekly Returns</div>
+          </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-card">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">
-            Needs Correction
-          </span>
-          <div className="text-xl font-extrabold text-rose-600 mt-1">{stats.needsCorrectionCount}</div>
-          <span className="text-[10px] text-slate-400">Returned to tutors</span>
-        </div>
+          {/* 4. Evangelism Reports Submitted */}
+          <div
+            onClick={() => onNavigateToTab('evangelism')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Evangelism Reports</div>
+            <div className="text-xl font-black text-[#182230] mt-1">{stats.evangelismReportsSubmitted || 0}</div>
+            <div className="text-[10px] text-[#C6A45A] font-semibold mt-0.5">Outreach Records</div>
+          </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-card col-span-2 md:col-span-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-            Missing Units
-          </span>
-          <div className="text-xl font-extrabold text-slate-700 mt-1">{stats.missingCellsCount}</div>
-          <span className="text-[10px] text-slate-400">Pending return</span>
+          {/* 5. Reports Awaiting Review */}
+          <div
+            onClick={() => onNavigateToTab('report-review')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#D99A32] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Awaiting Review</div>
+            <div className="text-xl font-black text-[#D99A32] mt-1">{stats.awaitingReviewCount}</div>
+            <div className="text-[10px] text-[#D99A32] font-semibold mt-0.5">Requires Action</div>
+          </div>
+
+          {/* 6. Approved Reports */}
+          <div
+            onClick={() => onNavigateToTab('report-review')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#23845B] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Approved Reports</div>
+            <div className="text-xl font-black text-[#23845B] mt-1">{stats.approvedReports}</div>
+            <div className="text-[10px] text-[#23845B] font-semibold mt-0.5">Verified Returns</div>
+          </div>
+
+          {/* 7. Reports Needing Correction */}
+          <div
+            onClick={() => onNavigateToTab('report-review')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C74646] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Needs Correction</div>
+            <div className="text-xl font-black text-[#C74646] mt-1">{stats.needsCorrectionCount}</div>
+            <div className="text-[10px] text-[#C74646] font-semibold mt-0.5">Returned to Tutors</div>
+          </div>
+
+          {/* 8. Cells with Missing Weekly Reports */}
+          <div
+            onClick={() => onNavigateToTab('cell-management')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C74646] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Missing Reports</div>
+            <div className="text-xl font-black text-[#C74646] mt-1">{stats.missingCellsCount}</div>
+            <div className="text-[10px] text-[#C74646] font-semibold mt-0.5">Cells Unreported</div>
+          </div>
+
+          {/* 9. Total People Reached */}
+          <div
+            onClick={() => onNavigateToTab('evangelism')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">People Reached</div>
+            <div className="text-xl font-black text-[#182230] mt-1">{stats.peopleReached}</div>
+            <div className="text-[10px] text-[#667085] font-semibold mt-0.5">Gospel Witnessed</div>
+          </div>
+
+          {/* 10. Total Conversions Recorded */}
+          <div
+            onClick={() => onNavigateToTab('evangelism')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#23845B] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Conversions Recorded</div>
+            <div className="text-xl font-black text-[#23845B] mt-1">{stats.soulsWon}</div>
+            <div className="text-[10px] text-[#23845B] font-semibold mt-0.5">Souls Won for Christ</div>
+          </div>
+
+          {/* 11. Interested in Joining Ministry */}
+          <div
+            onClick={() => onNavigateToTab('follow-ups')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Interested in Joining</div>
+            <div className="text-xl font-black text-[#182230] mt-1">{stats.interestedInMinistry || 0}</div>
+            <div className="text-[10px] text-[#C6A45A] font-semibold mt-0.5">Potential Members</div>
+          </div>
+
+          {/* 12. Pending & Completed Follow-ups */}
+          <div
+            onClick={() => onNavigateToTab('follow-ups')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+          >
+            <div className="text-[11px] font-semibold text-[#667085] truncate">Follow-up Pipeline</div>
+            <div className="text-xl font-black text-[#182230] mt-1">
+              {stats.followUpsCompleted} / {stats.contactsCaptured}
+            </div>
+            <div className="text-[10px] text-[#667085] font-semibold mt-0.5">
+              {stats.outstandingFollowUps} Pending
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Horizontal Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          title={isAdmin ? 'Total Registered Cells' : 'Cell Attendance'}
-          value={isAdmin ? stats.totalCells : stats.totalAttendance}
-          subtitle={isAdmin ? `${stats.activeCellLeaders} Active leaders` : `${stats.totalAttendance} total turnout`}
-          icon={<Users className="w-5 h-5 text-gold-400" />}
-          isActive={true}
-        />
-
-        <StatCard
-          title={isAdmin ? 'Total Turnout' : 'Weekly Visitors'}
-          value={isAdmin ? stats.totalAttendance : stats.visitorsRecorded}
-          subtitle={isAdmin ? `${stats.visitorsRecorded} visitors recorded` : `${stats.visitorsRecorded} first-timers recorded`}
-          icon={isAdmin ? <TrendingUp className="w-5 h-5 text-gold-400" /> : <UserCheck className="w-5 h-5 text-gold-400" />}
-          isActive={false}
-        />
-
-        <StatCard
-          title={isAdmin ? 'Late Submissions' : 'Souls Won'}
-          value={isAdmin ? `${stats.lateReports} late` : `+${stats.soulsWon}`}
-          subtitle={isAdmin ? 'Past Sunday 6 PM cutoff' : 'Confirmed evangelism harvest'}
-          icon={isAdmin ? <AlertTriangle className="w-5 h-5 text-gold-400" /> : <Flame className="w-5 h-5 text-gold-400" />}
-          isActive={false}
-        />
-
-        <ActionStatCard
-          label={isAdmin ? 'Unified Review Queue' : 'Submit Return'}
-          sublabel="Week 45 Cycle"
-          onClick={isAdmin ? onNavigateToReports : onNavigateToForm}
-        />
-      </div>
-
-      {/* Visual Analytics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-card">
-          <WeeklyPerformanceChart
-            data={trends}
-            title={isAdmin ? 'Weekly Attendance & Visitors (All Units)' : `${currentUser.cell_name || activeCell?.name || 'My Cell'} Attendance Trend`}
-          />
+      {/* RECENT SUBMISSIONS TABLE (Styled directly after the Reference Image!) */}
+      <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
+        {/* Table Header Section */}
+        <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-[#182230]">
+              Recent Submissions ({recentQueue.length})
+            </h2>
+            <p className="text-xs text-[#667085] mt-0.5">
+              Cell returns and evangelism reports submitted for central review.
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigateToTab('report-review')}
+            className="text-xs font-bold text-[#142B4A] hover:text-[#203D63] flex items-center gap-1 transition-colors"
+          >
+            <span>View All Reports</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-card">
-          <SoulsWonChart
-            data={trends}
-            title={isAdmin ? 'Evangelism Harvest Across Cycles' : `${currentUser.cell_name || activeCell?.name || 'My Cell'} Souls Won Harvest`}
-          />
-        </div>
-      </div>
+        {/* Reference Image Styled Table */}
+        <div className="table-scroll-container">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
+                <th className="py-3 px-5 w-12 text-center">
+                  <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                </th>
+                <th className="py-3 px-4">NAME & CELL</th>
+                <th className="py-3 px-4">REPORT TYPE</th>
+                <th className="py-3 px-4">KEY METRIC</th>
+                <th className="py-3 px-4">REVIEW STATUS</th>
+                <th className="py-3 px-4">SUBMISSION TIMING</th>
+                <th className="py-3 px-5 text-right">ACTION</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E3E8EF]">
+              {recentQueue.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-[#667085]">
+                    <FileText className="w-8 h-8 text-[#CBD5E1] mx-auto mb-2" />
+                    <p className="text-xs font-semibold">No reports submitted yet.</p>
+                    <p className="text-[11px] text-[#667085] mt-0.5">
+                      When tutors submit weekly returns, they will appear here in the review stream.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                recentQueue.map(item => {
+                  const isNeedsCorrection =
+                    item.status === 'Needs Correction' || item.status === 'needs_revision';
+                  const isApproved = item.status === 'Approved' || item.status === 'approved';
+                  const isNewlySubmitted =
+                    item.status === 'Newly Submitted' || item.status === 'submitted' || item.status === 'under_review';
 
-      {/* Split Grid: Recent Reports & Compliance / Cell Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-card">
-          <RecentReportsTable
-            reports={recentReports}
-            onSelectReport={onSelectReport}
-            onViewAll={onNavigateToReports}
-          />
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-card">
-          {isAdmin ? (
-            <ComplianceTracker
-              regionalStats={regionalStats}
-              onViewRegional={onNavigateToRegional}
-            />
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Cell Unit Info
-                </h4>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                  {activeCell ? 'Registered' : 'Awaiting Registration'}
-                </span>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-slate-400 text-[10px] block">Meeting Schedule</span>
-                  <span className="font-bold text-navy-950">
-                    {activeCell?.meeting_day ? `Every ${activeCell.meeting_day} @ ${activeCell.meeting_time}` : 'Schedule not yet configured'}
-                  </span>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-slate-400 text-[10px] block">Venue Address</span>
-                  <span className="font-medium text-slate-700">
-                    {activeCell?.venue_address || 'Venue address pending'}
-                  </span>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-slate-400 text-[10px] block">Current Cycle Status</span>
-                  <span className={`font-bold ${recentReports[0] ? 'text-emerald-700' : 'text-slate-600'}`}>
-                    {recentReports[0] ? `Report Filed (${recentReports[0].status.toUpperCase()})` : 'Awaiting submission for Week 45'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={onNavigateToForm}
-                    className="py-2.5 rounded-xl bg-navy-900 text-white font-bold text-xs hover:bg-navy-950 transition-colors shadow-sm"
-                  >
-                    Meeting Report
-                  </button>
-                  {onNavigateToEvangelismForm && (
-                    <button
-                      onClick={onNavigateToEvangelismForm}
-                      className="py-2.5 rounded-xl bg-gold-500 text-navy-950 font-bold text-xs hover:bg-gold-400 transition-colors shadow-sm"
+                  return (
+                    <tr
+                      key={item.id}
+                      onClick={() => onNavigateToTab('report-review')}
+                      className={`cursor-pointer transition-colors ${
+                        isNeedsCorrection
+                          ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]' // Exact reference image highlight row!
+                          : 'hover:bg-[#F5F7FA]'
+                      }`}
                     >
-                      Evangelism
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+                      {/* Selection indicator circle */}
+                      <td className="py-4 px-5 text-center">
+                        <div className="w-4 h-4 rounded-full border border-[#CBD5E1] hover:border-[#142B4A] mx-auto" />
+                      </td>
+
+                      {/* Name & Avatar Column */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
+                            {item.tutorName
+                              ? item.tutorName
+                                  .split(' ')
+                                  .map(n => n[0])
+                                  .slice(0, 2)
+                                  .join('')
+                              : 'FN'}
+                          </div>
+                          <div>
+                            <div className="font-bold text-[#182230] leading-tight">
+                              {item.tutorName || 'Cell Leader'}
+                            </div>
+                            <div className="text-[11px] text-[#667085] mt-0.5">
+                              {item.cellName}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Report Type */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span className="font-bold text-[#182230]">
+                          {item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'}
+                        </span>
+                        <div className="text-[11px] text-[#667085]">
+                          {item.reportType === 'meeting'
+                            ? (item as any).meetingDate
+                            : (item as any).date}
+                        </div>
+                      </td>
+
+                      {/* Key Metric Column */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        {item.reportType === 'meeting' ? (
+                          <div>
+                            <div className="font-bold text-[#182230]">
+                              {(item as any).attendance} Attendance
+                            </div>
+                            <div className="text-[11px] text-[#667085]">
+                              {(item as any).members} Total Members
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="font-bold text-[#23845B]">
+                              +{(item as any).conversions} Souls Won
+                            </div>
+                            <div className="text-[11px] text-[#667085]">
+                              {(item as any).peopleSpokenTo} Reached
+                            </div>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Status indicator with colored dot (matches reference image!) */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        {isApproved && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
+                            <span className="font-medium text-[#23845B]">Approved</span>
+                          </span>
+                        )}
+                        {isNewlySubmitted && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
+                            <span className="font-medium text-[#D99A32]">Awaiting Review</span>
+                          </span>
+                        )}
+                        {isNeedsCorrection && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                            <span className="font-medium text-[#C74646]">Needs Correction</span>
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Timing / Deadline Column */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        {item.late ? (
+                          <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
+                            <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                            Overdue / Late
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
+                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
+                            On Track
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Circular Action Button (matching reference image!) */}
+                      <td className="py-4 px-5 whitespace-nowrap text-right">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            onNavigateToTab('report-review');
+                          }}
+                          className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 inline-flex items-center justify-center transition-colors shadow-2xs"
+                          title="Review Report"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        onSettingsUpdated={updated => {
-          setSettings(updated);
-          loadDashboardData();
-        }}
-      />
+      {/* Inline Modal for Editing Vision, Mission & Annual Target */}
+      {isEditingSettings && (
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-[#E3E8EF] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF]">
+              <h3 className="text-base font-bold text-[#142B4A]">
+                Update FNI Vision, Mission & Target
+              </h3>
+              <button
+                onClick={() => setIsEditingSettings(false)}
+                className="text-xs text-[#667085] hover:text-[#182230]"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">FNI Vision</label>
+                <textarea
+                  rows={3}
+                  value={editVision}
+                  onChange={e => setEditVision(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">FNI Mission</label>
+                <textarea
+                  rows={3}
+                  value={editMission}
+                  onChange={e => setEditMission(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">
+                  Annual Soul-Winning Target
+                </label>
+                <input
+                  type="number"
+                  value={editTarget}
+                  onChange={e => setEditTarget(Number(e.target.value))}
+                  min={1}
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingSettings(false)}
+                  className="px-4 py-2 rounded-xl text-[#667085] hover:bg-[#F5F7FA]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63]"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

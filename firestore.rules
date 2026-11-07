@@ -12,32 +12,41 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
     }
     
-    // Helper to check if caller is administrator
+    // Helper to check if caller is administrator (via Custom Claim or Profile)
     function isAdmin() {
       return isAuthenticated() && (
-        getUserProfile().role in ['admin', 'super_admin', 'national_admin']
+        request.auth.token.role in ['admin', 'super_admin'] ||
+        getUserProfile().role in ['admin', 'super_admin']
       );
     }
+
+    // INTERNAL AUTH & SECURITY: Strictly inaccessible by public client SDK
+    match /internal_tutor_auth/{docId} {
+      allow read, write: if false; // Only Admin SDK / Cloud Functions
+    }
+    match /systemSecurity/{docId} {
+      allow read, write: if false; // Only Admin SDK / Cloud Functions
+    }
     
-    // User Profiles
+    // User Profiles (No password fields)
     match /profiles/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
-    
-    // Ecclesiastical Regions
-    match /regions/{regionId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
     }
     
     // Fellowship Cells
     match /cells/{cellId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Tutors register cells during onboarding
-      allow update: if isAuthenticated() && (resource.data.leader_id == request.auth.uid || resource.data.tutorUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.tutorUid == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
     
@@ -127,24 +136,6 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isAuthenticated();
       allow update, delete: if false; // Immutable audit trail
-    }
-
-    // Legacy cell_reports
-    match /cell_reports/{reportId} {
-      allow read: if isAuthenticated() && (
-        resource.data.submitted_by == request.auth.uid ||
-        resource.data.cell_id == getUserProfile().cell_id ||
-        isAdmin()
-      );
-      allow create: if isAuthenticated() && (
-        request.resource.data.submitted_by == request.auth.uid ||
-        isAdmin()
-      );
-      allow update: if isAuthenticated() && (
-        isAdmin() ||
-        (resource.data.submitted_by == request.auth.uid && resource.data.status in ['draft', 'needs_revision'])
-      );
-      allow delete: if isAdmin();
     }
   }
 }

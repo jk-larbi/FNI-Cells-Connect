@@ -2,39 +2,48 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppLayout } from './components/layout/AppLayout';
-import { AuthView } from './components/auth/AuthView';
+import { SimpleLandingView } from './components/landing/SimpleLandingView';
+import { AuthView, AuthFlowView } from './components/auth/AuthView';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
-import { CellLeaderOnboardingModal } from './components/auth/CellLeaderOnboardingModal';
 
 const MainContent: React.FC = () => {
-  const { currentUser, mustChangePassword, isOnboarded, isCellLeader, isLoggedOut } = useAuth();
+  const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
 
-  // 1. Unauthenticated or explicitly viewing login portal
+  // Navigation state for unauthenticated flow
+  const [entryView, setEntryView] = useState<'landing' | AuthFlowView>('landing');
+
+  // 1. Unauthenticated Visitor Flow
   if (isLoggedOut || !currentUser) {
-    return <AuthView onSuccess={() => {}} />;
+    if (entryView === 'tutor-signup' || entryView === 'login-select' || entryView === 'tutor-login' || entryView === 'admin-login') {
+      return (
+        <AuthView
+          initialView={entryView}
+          onBackToLanding={() => setEntryView('landing')}
+          onSuccess={() => {}}
+        />
+      );
+    }
+
+    // Landing Page: Displays ONLY logo, FNI CELLS CONNECT, tagline, SIGN UP and LOG IN
+    return (
+      <SimpleLandingView
+        onSignUp={() => setEntryView('tutor-signup')}
+        onLogIn={() => setEntryView('login-select')}
+      />
+    );
   }
 
   // 2. Mandatory First-Time Admin Password Change (Cannot be skipped)
   if (mustChangePassword) {
     return (
       <div className="relative min-h-screen">
-        <AuthView onSuccess={() => {}} />
+        <AuthView initialView="admin-login" onSuccess={() => {}} />
         <ForcePasswordChangeModal />
       </div>
     );
   }
 
-  // 3. Mandatory First-Time Cell Leader Onboarding (Collects Name, Cell Name, Phone, etc.)
-  if (isCellLeader && !isOnboarded) {
-    return (
-      <div className="relative min-h-screen">
-        <AuthView onSuccess={() => {}} />
-        <CellLeaderOnboardingModal />
-      </div>
-    );
-  }
-
-  // 4. Authenticated & Onboarded: Full Platform Access
+  // 3. Authenticated: Full Portal Access (Tutor or Admin based on role)
   return <AppLayout />;
 };
 

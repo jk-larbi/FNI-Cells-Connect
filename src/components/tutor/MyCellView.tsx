@@ -1,0 +1,244 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { CellService } from '../../services/cellService';
+import { Cell, CellMeetingReport, EvangelismReport } from '../../types';
+import { ReportService } from '../../services/reportService';
+import {
+  Building,
+  MapPin,
+  Calendar,
+  Clock,
+  Users,
+  Phone,
+  Save,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  Flame,
+} from 'lucide-react';
+
+export const MyCellView: React.FC = () => {
+  const { currentUser } = useAuth();
+  const [cell, setCell] = useState<Cell | null>(null);
+  const [meetingReports, setMeetingReports] = useState<CellMeetingReport[]>([]);
+  const [evangReports, setEvangReports] = useState<EvangelismReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Editable details
+  const [meetingDay, setMeetingDay] = useState('Wednesday');
+  const [meetingTime, setMeetingTime] = useState('18:30');
+  const [venueAddress, setVenueAddress] = useState('');
+  const [targetAttendance, setTargetAttendance] = useState(25);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState('');
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setIsLoading(true);
+        if (currentUser.cell_id) {
+          const [c, mList, eList] = await Promise.all([
+            CellService.getCellById(currentUser.cell_id),
+            ReportService.getCellMeetingReports({ cellId: currentUser.cell_id }),
+            ReportService.getEvangelismReports({ cellId: currentUser.cell_id }),
+          ]);
+          if (c) {
+            setCell(c);
+            setMeetingDay(c.meeting_day || 'Wednesday');
+            setMeetingTime(c.meeting_time || '18:30');
+            setVenueAddress(c.venue_address || c.location || '');
+            setTargetAttendance(c.target_attendance || 25);
+          }
+          setMeetingReports(mList);
+          setEvangReports(eList);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    load();
+  }, [currentUser]);
+
+  const handleSaveCellDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cell) return;
+    setIsSaving(true);
+    setSaveNotice('');
+    try {
+      const updated: Cell = {
+        ...cell,
+        meeting_day: meetingDay,
+        meeting_time: meetingTime,
+        venue_address: venueAddress,
+        target_attendance: targetAttendance,
+      };
+      await CellService.updateCell(updated);
+      setCell(updated);
+      setSaveNotice('Cell meeting schedule and venue updated successfully.');
+      setTimeout(() => setSaveNotice(''), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading || !cell) {
+    return (
+      <div className="py-24 text-center text-xs text-[#667085] font-medium">
+        Loading cell profile...
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
+          My Cell Profile & Details
+        </h1>
+        <p className="text-xs text-[#667085] mt-0.5">
+          View your fellowship cell's official directory record, meeting venue, and historical vital stats.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Cell Information & Edit Form */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm">
+          <div className="flex items-center gap-3 pb-4 mb-5 border-b border-[#E3E8EF]">
+            <div className="w-12 h-12 rounded-2xl bg-[#142B4A] flex items-center justify-center text-[#C6A45A] font-bold text-lg shadow-sm">
+              {cell.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#142B4A]">{cell.name}</h2>
+              <p className="text-xs text-[#667085]">
+                Campus / Location: <span className="font-semibold text-[#182230]">{cell.location}</span> &bull; Code: <span className="font-mono">{cell.code || 'FNI-CEL'}</span>
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveCellDetails} className="space-y-4 text-xs">
+            {saveNotice && (
+              <div className="p-3 bg-emerald-50 border-l-4 border-[#23845B] text-[#23845B] rounded-xl font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{saveNotice}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Assigned Tutor</label>
+                <input
+                  type="text"
+                  disabled
+                  value={cell.leader_name || currentUser.full_name}
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-[#F5F7FA] text-[#667085] cursor-not-allowed"
+                />
+                <span className="text-[10px] text-[#667085] mt-0.5 block">
+                  Cell ownership requires administrator approval to reassign
+                </span>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Leader Phone</label>
+                <input
+                  type="text"
+                  disabled
+                  value={cell.leader_phone || currentUser.phone_number || ''}
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-[#F5F7FA] text-[#667085] cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#182230] mb-1">Venue / Physical Address</label>
+              <input
+                type="text"
+                value={venueAddress}
+                onChange={e => setVenueAddress(e.target.value)}
+                required
+                placeholder="e.g. Hall 4 Common Room, Legon Campus"
+                className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Weekly Meeting Day</label>
+                <select
+                  value={meetingDay}
+                  onChange={e => setMeetingDay(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-white text-[#182230]"
+                >
+                  {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Meeting Time (GMT)</label>
+                <input
+                  type="text"
+                  value={meetingTime}
+                  onChange={e => setMeetingTime(e.target.value)}
+                  required
+                  placeholder="18:30"
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Target Attendance</label>
+                <input
+                  type="number"
+                  value={targetAttendance}
+                  onChange={e => setTargetAttendance(Number(e.target.value))}
+                  min={1}
+                  required
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-2"
+              >
+                <Save className="w-3.5 h-3.5 text-[#C6A45A]" />
+                <span>{isSaving ? 'Updating...' : 'Save Cell Schedule & Venue'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Vital Summary Sidebar */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm space-y-3">
+            <h3 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider">
+              Cell Historical Aggregates
+            </h3>
+
+            <div className="p-3 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
+              <div className="text-[10px] text-[#667085]">Total Meeting Returns</div>
+              <div className="text-xl font-bold text-[#142B4A] mt-0.5">{meetingReports.length}</div>
+            </div>
+
+            <div className="p-3 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
+              <div className="text-[10px] text-[#667085]">Total Evangelism Outreaches</div>
+              <div className="text-xl font-bold text-[#23845B] mt-0.5">{evangReports.length}</div>
+            </div>
+
+            <div className="p-3 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
+              <div className="text-[10px] text-[#667085]">Conversions Recorded</div>
+              <div className="text-xl font-bold text-[#C6A45A] mt-0.5">
+                +{evangReports.reduce((s, e) => s + (Number(e.conversions) || 0), 0)} souls
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -78,6 +78,7 @@ export interface Cell {
   meeting_time?: string;
   venue_address?: string;
   target_attendance?: number;
+  status?: 'Active' | 'Suspended' | 'Deactivated';
   is_active: boolean;
   created_at: string;
   createdAt?: unknown;
@@ -90,7 +91,7 @@ export interface ReportingPeriod {
   week_number: number;
   start_date: string;
   end_date: string;
-  submission_deadline: string;
+  submission_deadline: string; // Sunday 6:00 PM Africa/Accra
   is_open: boolean;
   created_at: string;
 }
@@ -111,6 +112,7 @@ export interface CellMeetingReport {
   followUpNeeded: number;
   offering?: number;
   tutorNotes?: string;
+  testimonies?: string;
   status: ReportStatus;
   submittedAt: string;
   late: boolean;
@@ -137,6 +139,7 @@ export interface EvangelismReport {
   potentialFollowUps: number;
   messageUsed: string;
   notes: string;
+  testimonies?: string;
   status: ReportStatus;
   submittedAt: string;
   late: boolean;
@@ -152,7 +155,7 @@ export type UnifiedReportItem = (
   | (EvangelismReport & { reportType: 'evangelism' })
 );
 
-// Legacy combined CellReport for backward compatibility
+// Combined CellReport for backward compatibility
 export interface CellReport {
   id: string;
   cell_id: string;
@@ -218,13 +221,13 @@ export interface EvangelismContact {
   updatedAt: string;
 }
 
-// System Settings (Vision, Mission, Annual Target)
+// System Settings (Vision, Mission, Annual Target, Deadline)
 export interface SystemSettings {
   id: string;
   vision: string;
   mission: string;
   annualSoulWinningTarget: number;
-  weeklyDeadline: string; // e.g. "Sunday at 6:00 PM Ghana Time (Africa/Accra)"
+  weeklyDeadline: string; // e.g. "Every Sunday at 6:00 PM Ghana time (Africa/Accra)"
   updatedAt: string;
   updatedBy?: string;
 }
@@ -265,6 +268,31 @@ export interface AuditLog {
   created_at: string;
 }
 
+export interface TutorRegistrationInput {
+  fullName: string;
+  cellName: string;
+  password: string;
+  confirmPassword?: string;
+}
+
+export interface TutorLoginInput {
+  fullName: string;
+  password: string;
+  cellName?: string;
+}
+
+export interface CellLeaderRegistrationInput {
+  fullName: string;
+  cellName: string;
+  password?: string;
+  confirmPassword?: string;
+  cellLocation?: string;
+  email?: string;
+  phoneNumber?: string;
+  meetingDay?: string;
+  meetingTime?: string;
+}
+
 export interface CellLeaderOnboardingInput {
   fullName: string;
   cellName: string;
@@ -281,6 +309,8 @@ export interface DashboardStats {
   totalCells: number;
   activeCellLeaders: number;
   reportsSubmitted: number;
+  meetingReportsSubmitted?: number;
+  evangelismReportsSubmitted?: number;
   approvedReports: number;
   pendingReports: number;
   awaitingReviewCount: number;
@@ -290,9 +320,35 @@ export interface DashboardStats {
   soulsWon: number;
   peopleReached: number;
   contactsCaptured: number;
+  interestedInMinistry?: number;
   followUpsCompleted: number;
   outstandingFollowUps: number;
   visitorsRecorded: number;
   totalAttendance: number;
   complianceRate: number;
 }
+
+export type AdminNavTab =
+  | 'dashboard'
+  | 'cell-management'
+  | 'cell-leaders'
+  | 'report-review'
+  | 'evangelism'
+  | 'follow-ups'
+  | 'analytics'
+  | 'notifications'
+  | 'settings';
+
+export type TutorNavTab =
+  | 'my-dashboard'
+  | 'my-cell'
+  | 'submit-cell-meeting-report'
+  | 'submit-evangelism-report'
+  | 'my-reports'
+  | 'evangelism-contacts'
+  | 'follow-ups'
+  | 'cell-activity-history'
+  | 'notifications'
+  | 'my-account';
+
+export type AppNavTab = AdminNavTab | TutorNavTab;

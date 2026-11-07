@@ -1,5 +1,5 @@
 {
-  "name": "fni-digital-reporting-system",
+  "name": "fni-cells-connect",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test": "node scripts/test-fni-system.mjs",
+    "test:fni": "node scripts/test-fni-system.mjs",
     "test:backend": "node scripts/test-backend.mjs",
     "test:firebase": "node scripts/test-firebase.mjs"
   },

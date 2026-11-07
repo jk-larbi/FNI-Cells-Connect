@@ -50,6 +50,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
   const [followUpNeeded, setFollowUpNeeded] = useState<number>(initialReport?.follow_ups_conducted || 0);
   const [offering, setOffering] = useState<string>(initialReport?.offering_amount ? String(initialReport.offering_amount) : '');
   const [tutorNotes, setTutorNotes] = useState<string>(initialReport?.additional_remarks || initialReport?.meeting_topic || '');
+  const [testimonies, setTestimonies] = useState<string>((initialReport as any)?.testimonies || '');
 
   useEffect(() => {
     async function loadData() {
@@ -136,6 +137,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
         followUpNeeded: Number(followUpNeeded) || 0,
         offering: offering ? Number(offering) : undefined,
         tutorNotes: tutorNotes.trim(),
+        testimonies: testimonies.trim(),
       });
 
       dispatchNotification(
@@ -386,10 +388,24 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                   Tutor's Notes Used for Cell Meeting (Optional)
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Outline key scripture passages, lesson taught, prayer items or pastoral remarks..."
                   value={tutorNotes}
                   onChange={e => setTutorNotes(e.target.value)}
+                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+                />
+              </div>
+
+              <div className="sm:col-span-3">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <span>Testimonies & Experiences Encountered (Optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Record any testimonies, answered prayers, signs, or miraculous experiences encountered during the cell meeting..."
+                  value={testimonies}
+                  onChange={e => setTestimonies(e.target.value)}
                   className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
                 />
               </div>

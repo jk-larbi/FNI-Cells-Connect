@@ -3,6 +3,7 @@ import { ReportService } from './reportService';
 import { CellService } from './cellService';
 import { FollowUpService } from './followUpService';
 import { SettingsService } from './settingsService';
+import { AuthService } from './authService';
 
 export class AnalyticsService {
   static async getDashboardStats(
@@ -13,12 +14,13 @@ export class AnalyticsService {
     const isAdmin =
       role === 'admin' || role === 'super_admin' || role === 'national_admin' || role === 'regional_leader';
 
-    const [allCells, meetingReports, evangelismReports, contacts, settings] = await Promise.all([
+    const [allCells, meetingReports, evangelismReports, contacts, settings, allProfiles] = await Promise.all([
       CellService.getCells(),
       ReportService.getCellMeetingReports(),
       ReportService.getEvangelismReports(),
       FollowUpService.getContacts(),
       SettingsService.getSettings(),
+      Promise.resolve(AuthService.getAllProfiles()),
     ]);
 
     // Filter scope by user cell if tutor
@@ -35,7 +37,12 @@ export class AnalyticsService {
     }
 
     const totalCells = scopedCells.length;
-    const activeCellLeaders = scopedCells.filter(c => c.is_active && c.tutorUid).length;
+    const registeredTutors = allProfiles.filter(p => p.role === 'tutor' || p.role === 'cell_leader');
+    const activeCellLeaders = isAdmin ? registeredTutors.length : (scopedCells.filter(c => c.is_active && c.tutorUid).length || 1);
+
+    // Meeting and Evangelism counts
+    const meetingReportsSubmitted = scopedMeetings.length;
+    const evangelismReportsSubmitted = scopedEvang.length;
 
     // Reporting stats across both meeting and evangelism reports
     const allUnifiedReports = [
@@ -53,7 +60,7 @@ export class AnalyticsService {
     ).length;
     const lateReports = allUnifiedReports.filter(r => Boolean(r.late)).length;
 
-    // Missing cells: registered cells with 0 meeting reports
+    // Missing cells: registered cells with 0 meeting reports for the current cycle
     const submittedCellIds = new Set(scopedMeetings.map(m => m.cellId));
     const missingCellsCount = scopedCells.filter(c => c.is_active && !submittedCellIds.has(c.id)).length;
 
@@ -61,13 +68,14 @@ export class AnalyticsService {
     const soulsWon = scopedEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
     const peopleReached = scopedEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
     const contactsCaptured = scopedContacts.length;
+    const interestedInMinistry = scopedEvang.reduce((sum, e) => sum + (Number(e.interestedInMinistry) || 0), 0);
 
     const followUpsCompleted = scopedContacts.filter(
       c => c.followUpStatus === 'Joined Ministry' || c.followUpStatus === 'Completed'
     ).length;
 
     const outstandingFollowUps = scopedContacts.filter(
-      c => c.followUpStatus === 'New Contact' || c.followUpStatus === 'Follow-up Pending'
+      c => c.followUpStatus === 'New Contact' || c.followUpStatus === 'Follow-up Pending' || c.followUpStatus === 'Contacted' || c.followUpStatus === 'Interested'
     ).length;
 
     // Meeting attendance
@@ -81,6 +89,8 @@ export class AnalyticsService {
       totalCells,
       activeCellLeaders,
       reportsSubmitted,
+      meetingReportsSubmitted,
+      evangelismReportsSubmitted,
       approvedReports,
       pendingReports: awaitingReviewCount + needsCorrectionCount,
       awaitingReviewCount,
@@ -90,6 +100,7 @@ export class AnalyticsService {
       soulsWon,
       peopleReached,
       contactsCaptured,
+      interestedInMinistry,
       followUpsCompleted,
       outstandingFollowUps,
       visitorsRecorded,
@@ -158,9 +169,47 @@ export class AnalyticsService {
         cells: regCells.length,
         compliance,
         souls,
-        visitors,
         attendance,
+        visitors,
       };
     });
+  }
+
+  static async exportAnalyticsCsv(): Promise<string> {
+    const [cells, meetings, evang, contacts] = await Promise.all([
+      CellService.getCells(),
+      ReportService.getCellMeetingReports(),
+      ReportService.getEvangelismReports(),
+      FollowUpService.getContacts(),
+    ]);
+
+    const rows = [
+      ['Cell Name', 'Location', 'Leader', 'Meeting Reports', 'Attendance', 'Evangelism Reports', 'People Reached', 'Souls Won', 'Follow-ups Completed'],
+    ];
+
+    cells.forEach(cell => {
+      const cellMeetings = meetings.filter(m => m.cellId === cell.id);
+      const cellEvang = evang.filter(e => e.cellId === cell.id);
+      const cellContacts = contacts.filter(c => c.cellId === cell.id);
+
+      const totalAttendance = cellMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
+      const peopleReached = cellEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
+      const soulsWon = cellEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+      const completedFollowUps = cellContacts.filter(c => c.followUpStatus === 'Joined Ministry' || c.followUpStatus === 'Completed').length;
+
+      rows.push([
+        `"${cell.name}"`,
+        `"${cell.location || ''}"`,
+        `"${cell.leader_name || ''}"`,
+        cellMeetings.length.toString(),
+        totalAttendance.toString(),
+        cellEvang.length.toString(),
+        peopleReached.toString(),
+        soulsWon.toString(),
+        completedFollowUps.toString(),
+      ]);
+    });
+
+    return rows.map(r => r.join(',')).join('\n');
   }
 }

@@ -1,12 +1,14 @@
-# Forerunners Network International (FNI) - Digital Reporting System
+# FNI CELLS CONNECT — Forerunners Network International
 
-A production-grade, centralized ministry reporting and governance platform engineered for **Forerunners Network International (FNI)**.
+*Connecting cells. Strengthening fellowship. Advancing the mission.*
+
+A production-grade, centralized digital cell management and reporting platform engineered for **Forerunners Network International (FNI)**.
 
 ---
 
 ## 1. Executive Overview
 
-The **FNI Digital Reporting System** replaces manual and fragmented ministry reporting processes with an institutional, role-based platform. Field cell leaders, regional leaders, national directors, and the global super-administrator can seamlessly submit, verify, review, monitor, and analyze fellowship activities and soul-winning harvests across territories.
+**FNI CELLS CONNECT** provides an elegant, role-protected platform for Tutors (Cell Leaders) and Church Leadership. It streamlines weekly cell returns, evangelism soul-winning logs, discipleship follow-up pipelines, and executive compliance oversight.
 
 ### Core Objectives Delivered in Phase 1:
 - **Centralized Digital Submissions**: Structured 10-area weekly reporting form replacing manual spreadsheets and messaging apps.
