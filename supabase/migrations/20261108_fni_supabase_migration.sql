@@ -85,9 +85,42 @@ ALTER TABLE public.profiles
     ADD COLUMN IF NOT EXISTS phone_number VARCHAR(30),
     ADD COLUMN IF NOT EXISTS region_name VARCHAR(100),
     ADD COLUMN IF NOT EXISTS cell_name VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS cell_id TEXT,
+    ADD COLUMN IF NOT EXISTS region_id TEXT,
     ADD COLUMN IF NOT EXISTS is_onboarded BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'email';
+
+-- Schema Compatibility: Safely drop legacy constraints if table was created by earlier schema
+DO $$
+BEGIN
+    -- Allow username to be nullable if it exists from earlier schema
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'username' AND is_nullable = 'NO'
+    ) THEN
+        ALTER TABLE public.profiles ALTER COLUMN username DROP NOT NULL;
+    END IF;
+
+    -- Drop legacy check constraints from earlier schema that conflict with reporting roles/statuses
+    ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+    ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_status_check;
+
+    -- Ensure cell_id and region_id accept alphanumeric legacy IDs as well as UUIDs
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'cell_id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE public.profiles ALTER COLUMN cell_id TYPE TEXT USING cell_id::text;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'region_id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE public.profiles ALTER COLUMN region_id TYPE TEXT USING region_id::text;
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_profiles_firebase_uid ON public.profiles(firebase_uid);
 

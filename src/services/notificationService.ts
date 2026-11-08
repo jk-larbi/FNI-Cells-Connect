@@ -1,3 +1,4 @@
+import { SupabaseService } from './supabaseService';
 import {
   collection,
   doc,
@@ -113,6 +114,13 @@ export class NotificationService {
       },
       created_at: nowIso,
     };
+
+    // 0. Dual-write to Supabase if configured
+    try {
+      await SupabaseService.insertNotification(newNotif);
+    } catch (err) {
+      console.warn('Supabase notification sync notice:', err);
+    }
 
     // 1. Persist to Firestore if available
     if (isFirebaseConfigured && db) {

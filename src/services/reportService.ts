@@ -519,6 +519,16 @@ export class ReportService {
           });
         }
       }
+
+      await SupabaseService.insertReviewLog({
+        reportId,
+        reportType,
+        reviewerUid,
+        reviewerName,
+        action: 'SET_STATUS_' + status.toUpperCase().replace(/\s+/g, '_'),
+        comments: comment,
+        createdAt: nowIso,
+      });
     } catch (err) {
       console.warn('Supabase report review sync notice:', err);
     }

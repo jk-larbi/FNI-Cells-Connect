@@ -134,6 +134,13 @@ export class FollowUpService {
       updatedAt: nowIso,
     };
 
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.upsertEvangelismContact(newContact);
+    } catch (err) {
+      console.warn('Supabase addContact sync notice:', err);
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const payload = {
@@ -186,6 +193,13 @@ export class FollowUpService {
       id: contactId,
       updatedAt: nowIso,
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.upsertEvangelismContact(merged);
+    } catch (err) {
+      console.warn('Supabase updateContact sync notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {

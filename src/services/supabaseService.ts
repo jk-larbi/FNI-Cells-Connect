@@ -824,6 +824,93 @@ export class SupabaseService {
     }
   }
 
+  // --- Review Logs & Follow-Ups ---
+  static async insertReviewLog(log: {
+    id?: string;
+    reportId: string;
+    reportType: string;
+    reviewerUid: string;
+    reviewerName: string;
+    action: string;
+    comments?: string;
+    createdAt?: string;
+  }): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const payload = {
+        id: log.id || `rev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        report_id: log.reportId,
+        report_type: log.reportType,
+        reviewer_uid: log.reviewerUid,
+        reviewer_name: log.reviewerName,
+        action: log.action,
+        comments: log.comments || null,
+        created_at: log.createdAt || new Date().toISOString(),
+      };
+      const { error } = await supabase!.from('review_logs').upsert(payload, { onConflict: 'id' });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getReviewLogs(reportId?: string): Promise<any[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      let query = supabase!.from('review_logs').select('*').order('created_at', { ascending: false });
+      if (reportId) {
+        query = query.eq('report_id', reportId);
+      }
+      const { data, error } = await query;
+      return error ? null : data;
+    } catch {
+      return null;
+    }
+  }
+
+  static async insertFollowUp(followUp: {
+    id?: string;
+    contactId: string;
+    cellId?: string;
+    tutorUid?: string;
+    notes?: string;
+    followUpDate?: string;
+    nextFollowUpDate?: string;
+    status?: string;
+  }): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const payload = {
+        id: followUp.id || `flw-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        contact_id: followUp.contactId,
+        cell_id: followUp.cellId || null,
+        tutor_uid: followUp.tutorUid || null,
+        notes: followUp.notes || null,
+        follow_up_date: followUp.followUpDate || new Date().toISOString().split('T')[0],
+        next_follow_up_date: followUp.nextFollowUpDate || null,
+        status: followUp.status || 'Completed',
+      };
+      const { error } = await supabase!.from('follow_ups').upsert(payload, { onConflict: 'id' });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getFollowUps(contactId?: string): Promise<any[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      let query = supabase!.from('follow_ups').select('*').order('created_at', { ascending: false });
+      if (contactId) {
+        query = query.eq('contact_id', contactId);
+      }
+      const { data, error } = await query;
+      return error ? null : data;
+    } catch {
+      return null;
+    }
+  }
+
   static async upsertProfile(profile: Profile): Promise<boolean> {
     if (!this.isAvailable()) return false;
     try {
