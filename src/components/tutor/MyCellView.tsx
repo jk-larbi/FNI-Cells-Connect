@@ -3,12 +3,14 @@ import { useAuth } from '../../context/AuthContext';
 import { CellService } from '../../services/cellService';
 import { Cell, CellMeetingReport, EvangelismReport } from '../../types';
 import { ReportService } from '../../services/reportService';
+import { FollowUpService } from '../../services/followUpService';
 import {
   Building,
   MapPin,
   Calendar,
   Clock,
   Users,
+  UserCheck,
   Phone,
   Save,
   CheckCircle2,
@@ -39,6 +41,7 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
   const [totalMembers, setTotalMembers] = useState(10);
   const [activeMembers, setActiveMembers] = useState(8);
   const [newMembers, setNewMembers] = useState(2);
+  const [requiringFollowUp, setRequiringFollowUp] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
 
@@ -58,12 +61,17 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
         setActiveMembers(c.active_members !== undefined ? c.active_members : 8);
         setNewMembers(c.new_members !== undefined ? c.new_members : 2);
 
-        const [mList, eList] = await Promise.all([
+        const [mList, eList, cntList] = await Promise.all([
           ReportService.getCellMeetingReports({ cellId: c.id }),
           ReportService.getEvangelismReports({ cellId: c.id }),
+          FollowUpService.getContacts(c.id),
         ]);
         setMeetingReports(mList);
         setEvangReports(eList);
+        const pendingFollowUpCount = cntList.filter(
+          ct => ct.followUpStatus === 'Follow-up required' || ct.followUpStatus === 'Not contacted' || ct.followUpStatus === 'Follow-up Pending'
+        ).length;
+        setRequiringFollowUp(c.requiring_follow_up !== undefined ? c.requiring_follow_up : pendingFollowUpCount);
       } finally {
         setIsLoading(false);
       }
@@ -89,6 +97,7 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
         total_members: Number(totalMembers) || 0,
         active_members: Number(activeMembers) || 0,
         new_members: Number(newMembers) || 0,
+        requiring_follow_up: Number(requiringFollowUp) || 0,
       };
       await CellService.updateCell(updated);
       setCell(updated);
@@ -207,19 +216,21 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
               </div>
             </div>
 
-            {/* Feature 1: Cell Membership Statistics */}
+            {/* Feature 1: Cell Membership Statistics & Pastoral Details */}
             <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-bold text-[#142B4A] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-[#C6A45A]" />
-                  Cell Membership Roster & Status
+                  Cell Membership Roster & Pastoral Care Details
                 </span>
-                <span className="text-[10px] text-[#667085]">Used for weekly report attendance validation</span>
+                <span className="text-[10px] text-[#667085]">
+                  Managed in Cell Portal &bull; Weekly reports remain quick and simple
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="p-3 bg-white rounded-xl border border-[#E3E8EF]">
-                  <label className="block font-bold text-[#182230] mb-1">Total Registered Members</label>
+                  <label className="block font-bold text-[#182230] mb-1">Total Members</label>
                   <input
                     type="number"
                     min={1}
@@ -236,9 +247,8 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                   <input
                     type="number"
                     min={0}
-                    max={totalMembers}
                     value={activeMembers}
-                    onChange={e => setActiveMembers(Math.min(totalMembers, Math.max(0, Number(e.target.value) || 0)))}
+                    onChange={e => setActiveMembers(Math.max(0, Number(e.target.value) || 0))}
                     required
                     className="w-full text-base font-extrabold text-[#23845B] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
                   />
@@ -256,6 +266,19 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                     className="w-full text-base font-extrabold text-[#C6A45A] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
                   />
                   <span className="text-[10px] text-[#667085] mt-0.5 block">Recently integrated</span>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-[#E3E8EF]">
+                  <label className="block font-bold text-[#182230] mb-1">Requiring Follow-up</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={requiringFollowUp}
+                    onChange={e => setRequiringFollowUp(Math.max(0, Number(e.target.value) || 0))}
+                    required
+                    className="w-full text-base font-extrabold text-[#C74646] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
+                  />
+                  <span className="text-[10px] text-[#667085] mt-0.5 block">Souls & brethren to visit</span>
                 </div>
               </div>
             </div>

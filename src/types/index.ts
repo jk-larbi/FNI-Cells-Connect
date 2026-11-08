@@ -89,6 +89,7 @@ export interface Cell {
   total_members?: number;
   active_members?: number;
   new_members?: number;
+  requiring_follow_up?: number;
   target_attendance?: number;
   status?: 'Active' | 'Suspended' | 'Deactivated';
   is_active: boolean;

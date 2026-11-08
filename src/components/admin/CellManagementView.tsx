@@ -431,6 +431,34 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               </div>
             </div>
 
+            {/* Cell Membership Roster & Pastoral Breakdown */}
+            <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-2">
+              <span className="font-bold text-[#142B4A] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#C6A45A]" />
+                Cell Roster & Membership Details
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
+                  <div className="text-[10px] text-[#667085] font-semibold">Total Members</div>
+                  <div className="text-base font-black text-[#142B4A] mt-0.5">{selectedCell.total_members ?? 10}</div>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
+                  <div className="text-[10px] text-[#667085] font-semibold">Active Members</div>
+                  <div className="text-base font-black text-[#23845B] mt-0.5">{selectedCell.active_members ?? 8}</div>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
+                  <div className="text-[10px] text-[#667085] font-semibold">New Members</div>
+                  <div className="text-base font-black text-[#C6A45A] mt-0.5">{selectedCell.new_members ?? 2}</div>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
+                  <div className="text-[10px] text-[#667085] font-semibold">Requiring Follow-up</div>
+                  <div className="text-base font-black text-[#C74646] mt-0.5">
+                    {selectedCell.requiring_follow_up ?? cellContacts.filter(c => c.followUpStatus !== 'Completed' && c.followUpStatus !== 'Joined Ministry').length}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Meeting Reports History */}
             <div>
               <h4 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider mb-2 flex items-center gap-1.5">

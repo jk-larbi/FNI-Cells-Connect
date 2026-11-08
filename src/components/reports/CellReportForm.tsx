@@ -352,108 +352,52 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Membership & Attendance Metrics */}
-          <div className="pt-2 border-t border-slate-100 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Section 2: Meeting Attendance (Only Present & Absent) */}
+          <div className="pt-2 border-t border-slate-100 space-y-4">
+            <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-gold-500" />
-                2. Membership & Attendance Validation
+                2. Meeting Attendance
               </h3>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="px-2.5 py-1 rounded-lg bg-navy-50 text-navy-900 border border-navy-200 font-bold">
-                  Total Cell Members: {totalCellMembers}
-                </span>
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
-                  Active Members: {activeMembers}
-                </span>
-              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Record brethren present and absent. (Active members, new members, and follow-ups are managed in your Cell Portal).
+              </p>
             </div>
 
-            {/* Attendance Consistency Helper */}
-            {attendance + absentees !== totalCellMembers && totalCellMembers > 0 && (
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-3">
-                <span>
-                  Present (<strong>{attendance}</strong>) + Absent (<strong>{absentees}</strong>) = <strong>{attendance + absentees}</strong>. Total Registered Members on file is <strong>{totalCellMembers}</strong>.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setAbsentees(Math.max(0, totalCellMembers - attendance))}
-                  className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 font-bold text-[11px] text-amber-900 hover:bg-amber-100 transition-colors shrink-0"
-                >
-                  Auto-Align Absentees
-                </button>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              <div className="p-3 bg-navy-50/80 rounded-2xl border border-navy-200">
-                <label className="block text-[11px] font-bold text-navy-900 mb-1">
-                  Number Present (Attendance) <span className="text-rose-500">*</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 shadow-2xs">
+                <label className="block text-xs font-bold text-emerald-950 mb-1">
+                  Members Present (Attendance) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="number"
                   min="0"
+                  required
                   value={attendance}
-                  onChange={e => handleAttendanceChange(parseInt(e.target.value) || 0)}
-                  className="w-full text-base font-extrabold text-navy-950 bg-white border border-navy-300 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
+                  onChange={e => setAttendance(Math.max(0, parseInt(e.target.value) || 0))}
+                  placeholder="0"
+                  className="w-full text-xl font-black text-emerald-950 bg-white border border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
-                <span className="text-[10px] text-navy-600 mt-0.5 block">Attended meeting</span>
+                <span className="text-[11px] text-emerald-700 mt-1.5 block font-medium">
+                  Count of brethren present at fellowship meeting
+                </span>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Number Absent
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-2xs">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Members Absent
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={absentees}
                   onChange={e => setAbsentees(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
+                  placeholder="0"
+                  className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-navy-600 focus:outline-none"
                 />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Unable to attend</span>
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Active Members (Metric)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={activeMembers}
-                  onChange={e => setActiveMembers(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full text-base font-bold text-emerald-800 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-emerald-600"
-                />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Regular participants</span>
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  New Members / Visitors
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={newMembers}
-                  onChange={e => setNewMembers(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-                />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">First-timers joined</span>
-              </div>
-
-              <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200">
-                <label className="block text-[11px] font-bold text-amber-950 mb-1">
-                  Requiring Follow-up
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={followUpNeeded}
-                  onChange={e => setFollowUpNeeded(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full text-base font-bold text-amber-900 bg-white border border-amber-300 rounded-xl p-2 focus:ring-1 focus:ring-amber-500"
-                />
-                <span className="text-[10px] text-amber-800 mt-0.5 block">Care pipeline</span>
+                <span className="text-[11px] text-slate-500 mt-1.5 block font-medium">
+                  Count of cell members absent from meeting
+                </span>
               </div>
             </div>
           </div>
