@@ -423,13 +423,14 @@ ALTER TABLE public.teaching_materials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.soul_targets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.device_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Helper security functions
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
     SELECT EXISTS (
         SELECT 1 FROM public.profiles
-        WHERE id = auth.uid()
+        WHERE (id = auth.uid() OR firebase_uid = auth.uid()::text)
         AND role IN ('admin', 'super_admin', 'national_admin')
     );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
@@ -512,6 +513,42 @@ CREATE POLICY "settings_select" ON public.system_settings FOR SELECT TO authenti
 
 DROP POLICY IF EXISTS "soul_targets_select" ON public.soul_targets;
 CREATE POLICY "soul_targets_select" ON public.soul_targets FOR SELECT TO authenticated USING (true);
+
+-- Offering Records: Strict Admin & Finance Governance (Confidential from cross-cell viewing)
+DROP POLICY IF EXISTS "offerings_select" ON public.offering_records;
+CREATE POLICY "offerings_select" ON public.offering_records FOR SELECT TO authenticated
+    USING (public.is_admin());
+
+DROP POLICY IF EXISTS "offerings_admin" ON public.offering_records;
+CREATE POLICY "offerings_admin" ON public.offering_records FOR ALL TO authenticated
+    USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- Notifications: Recipient, Broadcast, or Administrator
+DROP POLICY IF EXISTS "notifications_select" ON public.notifications;
+CREATE POLICY "notifications_select" ON public.notifications FOR SELECT TO authenticated
+    USING (recipient_target = 'all' OR recipient_target = auth.uid()::text OR (recipient_target = 'admin' AND public.is_admin()));
+
+DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
+CREATE POLICY "notifications_insert" ON public.notifications FOR INSERT TO authenticated
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "notifications_update" ON public.notifications;
+CREATE POLICY "notifications_update" ON public.notifications FOR UPDATE TO authenticated
+    USING (recipient_target = auth.uid()::text OR public.is_admin());
+
+-- Device Tokens: User own token only
+DROP POLICY IF EXISTS "device_tokens_user" ON public.device_tokens;
+CREATE POLICY "device_tokens_user" ON public.device_tokens FOR ALL TO authenticated
+    USING (user_id = auth.uid()::text) WITH CHECK (user_id = auth.uid()::text);
+
+-- Audit Logs: Admin read-only, append-only
+DROP POLICY IF EXISTS "audit_logs_select" ON public.audit_logs;
+CREATE POLICY "audit_logs_select" ON public.audit_logs FOR SELECT TO authenticated
+    USING (public.is_admin());
+
+DROP POLICY IF EXISTS "audit_logs_insert" ON public.audit_logs;
+CREATE POLICY "audit_logs_insert" ON public.audit_logs FOR INSERT TO authenticated
+    WITH CHECK (true);
 
 -- 19. ENABLE REALTIME PUBLICATION
 DO $$
