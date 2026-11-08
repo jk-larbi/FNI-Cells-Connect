@@ -57,8 +57,8 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
   const [notes, setNotes] = useState('');
   const [testimonies, setTestimonies] = useState('');
 
-  // Quick contact capture row state
-  const [showAddContact, setShowAddContact] = useState(false);
+  // Quick contact capture row state (open by default to automatically populate Evangelism Contacts)
+  const [showAddContact, setShowAddContact] = useState(true);
   const [newContactName, setNewContactName] = useState('');
   const [newContactPhone, setNewContactPhone] = useState('');
   const [newContactWhatsApp, setNewContactWhatsApp] = useState('');
@@ -173,21 +173,52 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
       });
 
       // Save any captured contacts directly to follow-up system with report linkage and WhatsApp
-      for (const item of capturedContactsList) {
-        await FollowUpService.addContact({
-          contactName: item.name,
-          contactDetails: item.phone || item.whatsapp || 'Provided during outreach',
-          whatsappNumber: item.whatsapp || item.phone,
-          dateCaptured: date,
-          evangelismLocation: location.trim(),
-          cellId,
-          cellName,
-          tutorUid: currentUser.id,
-          assignedToName: currentUser.full_name,
-          followUpStatus: 'Contacted',
-          followUpNotes: `Met during evangelism outreach at ${location.trim()}. Faith target: ${preSetTarget}.`,
-          evangelismReportId: rep.id,
-        });
+      if (capturedContactsList.length > 0) {
+        for (const item of capturedContactsList) {
+          await FollowUpService.addContact({
+            name: item.name,
+            contactName: item.name,
+            phone: item.phone || item.whatsapp || '',
+            contactDetails: item.phone || item.whatsapp || 'Captured during outreach',
+            whatsappNumber: item.whatsapp || item.phone || '',
+            dateCaptured: date,
+            location: location.trim(),
+            evangelismLocation: location.trim(),
+            cellId: cellId || currentUser.cell_id || 'cell-general',
+            cellName,
+            tutorUid: currentUser.id,
+            tutorName: currentUser.full_name,
+            assignedToName: currentUser.full_name,
+            followUpStatus: 'Contacted',
+            notes: `Captured during evangelism outreach at ${location.trim()}. Faith target: ${preSetTarget}.`,
+            followUpNotes: `Captured during evangelism outreach at ${location.trim()}. Faith target: ${preSetTarget}.`,
+            evangelismReportId: rep.id,
+          });
+        }
+      } else if (effectiveContacts > 0) {
+        // Tutor reported contacts captured count but didn't itemize individual names:
+        // Automatically create pipeline contacts so they immediately appear in Evangelism Contacts
+        for (let i = 1; i <= effectiveContacts; i++) {
+          await FollowUpService.addContact({
+            name: `Outreach Contact #${i} (${date})`,
+            contactName: `Outreach Contact #${i} (${date})`,
+            phone: '',
+            contactDetails: 'Captured during outreach',
+            whatsappNumber: '',
+            dateCaptured: date,
+            location: location.trim(),
+            evangelismLocation: location.trim(),
+            cellId: cellId || currentUser.cell_id || 'cell-general',
+            cellName,
+            tutorUid: currentUser.id,
+            tutorName: currentUser.full_name,
+            assignedToName: currentUser.full_name,
+            followUpStatus: 'Not contacted',
+            notes: `Logged via Evangelism Report on ${date} at ${location.trim()}. Tap to update with contact phone and notes.`,
+            followUpNotes: `Logged via Evangelism Report on ${date} at ${location.trim()}.`,
+            evangelismReportId: rep.id,
+          });
+        }
       }
 
       dispatchNotification(
@@ -524,86 +555,88 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
           </div>
         </div>
 
-        {/* Section 5: Optional Instant Follow-up Contact Capture */}
-        <div className="pt-2 border-t border-slate-100">
+        {/* Section 5: Instant Evangelism Follow-up Contact Capture */}
+        <div className="pt-3 border-t border-slate-100">
           <div className="flex items-center justify-between mb-2">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-navy-950 flex items-center gap-1.5">
-                <UserPlus className="w-4 h-4 text-gold-500" />
-                5. Captured Contacts for Immediate Follow-Up (Optional)
+                <UserPlus className="w-4 h-4 text-[#C6A45A]" />
+                5. Captured Contacts for Immediate Follow-Up
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
-                Logged contacts will automatically link to your cell's Follow-Up Management directory
+              <span className="text-xs text-[#667085] block mt-0.5">
+                Contacts logged here automatically appear in your <strong className="text-[#142B4A]">Evangelism Contacts</strong> directory for direct WhatsApp & calling
               </span>
             </div>
             <button
               type="button"
               onClick={() => setShowAddContact(prev => !prev)}
-              className="text-xs font-bold text-navy-900 hover:text-navy-700 flex items-center gap-1"
+              className="text-xs font-bold text-[#142B4A] hover:text-[#203D63] flex items-center gap-1 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{showAddContact ? 'Close Form' : '+ Add Contact'}</span>
+              <Plus className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>{showAddContact ? 'Hide Form' : '+ Add Contact'}</span>
             </button>
           </div>
 
           {showAddContact && (
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 mb-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-2.5 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <input
                   type="text"
                   placeholder="Full Name *"
                   value={newContactName}
                   onChange={e => setNewContactName(e.target.value)}
-                  className="text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-800"
+                  className="text-xs rounded-xl border border-[#E3E8EF] bg-white p-2.5 text-[#182230] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
                 />
                 <input
-                  type="text"
-                  placeholder="Phone Number"
+                  type="tel"
+                  placeholder="Phone Number (e.g. 0244123456)"
                   value={newContactPhone}
                   onChange={e => setNewContactPhone(e.target.value)}
-                  className="text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-800"
+                  className="text-xs rounded-xl border border-[#E3E8EF] bg-white p-2.5 text-[#182230] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
                 />
                 <input
-                  type="text"
-                  placeholder="WhatsApp Number (e.g. +233...)"
+                  type="tel"
+                  placeholder="WhatsApp Number (optional)"
                   value={newContactWhatsApp}
                   onChange={e => setNewContactWhatsApp(e.target.value)}
-                  className="text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-800"
+                  className="text-xs rounded-xl border border-[#E3E8EF] bg-white p-2.5 text-[#182230] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
                 />
               </div>
               <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={handleAddQuickContact}
-                  className="px-3.5 py-1.5 bg-navy-900 text-white text-xs font-bold rounded-lg hover:bg-navy-950 transition-colors"
+                  className="px-4 py-2 bg-[#142B4A] text-white text-xs font-bold rounded-xl hover:bg-[#203D63] transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
                 >
-                  + Add Contact to Follow-Up Queue
+                  <Plus className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <span>Add to Evangelism Contacts Pipeline</span>
                 </button>
               </div>
             </div>
           )}
 
           {capturedContactsList.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {capturedContactsList.map((c, i) => (
-                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                  <div>
-                    <span className="font-semibold text-navy-950">{c.name}</span>
-                    <span className="text-slate-500 ml-2">Phone: {c.phone || 'N/A'}</span>
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white border border-[#E3E8EF] text-xs">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="font-bold text-[#182230]">{c.name}</span>
+                    <span className="text-[#667085]">Phone: {c.phone || 'N/A'}</span>
                     {c.whatsapp && (
-                      <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold ml-2">
+                      <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-xs font-semibold border border-emerald-200">
                         WhatsApp: {c.whatsapp}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
-                      Linked to Outreach
+                    <span className="text-xs text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold border border-emerald-200">
+                      Auto-linking to Contacts
                     </span>
                     <button
                       type="button"
                       onClick={() => handleRemoveContact(i)}
-                      className="text-slate-400 hover:text-rose-600 transition-colors"
+                      className="p-1 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                      title="Remove contact"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

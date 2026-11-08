@@ -33,39 +33,60 @@ function saveStoredContacts(contacts: EvangelismContact[]): void {
 }
 
 export class FollowUpService {
-  static async getContacts(cellId?: string): Promise<EvangelismContact[]> {
+  static async getContacts(
+    filter?: { cellId?: string; tutorUid?: string } | string
+  ): Promise<EvangelismContact[]> {
+    let targetCellId: string | undefined;
+    let targetTutorUid: string | undefined;
+
+    if (typeof filter === 'string') {
+      targetCellId = filter;
+    } else if (filter) {
+      targetCellId = filter.cellId;
+      targetTutorUid = filter.tutorUid;
+    }
+
+    let all: EvangelismContact[] = [];
+
     if (isFirebaseConfigured && db) {
       try {
         const contactsRef = collection(db, 'evangelismContacts');
-        let q = query(contactsRef, orderBy('createdAt', 'desc'));
-        if (cellId) {
-          q = query(contactsRef, where('cellId', '==', cellId));
-        }
-        let snap = await getDocs(q);
+        let snap = await getDocs(contactsRef);
         if (snap.empty) {
-          // Check followUps collection
           const followUpsRef = collection(db, 'followUps');
-          let fq = query(followUpsRef, orderBy('createdAt', 'desc'));
-          if (cellId) {
-            fq = query(followUpsRef, where('cellId', '==', cellId));
-          }
-          snap = await getDocs(fq);
+          snap = await getDocs(followUpsRef);
         }
         if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as EvangelismContact));
-          saveStoredContacts(list);
-          return list;
+          all = snap.docs.map(d => ({ id: d.id, ...d.data() } as EvangelismContact));
+          saveStoredContacts(all);
         }
       } catch (e) {
         console.warn('Firebase getContacts error, falling back to local storage', e);
       }
     }
 
-    let all = getStoredContacts();
-    if (cellId) {
-      all = all.filter(c => c.cellId === cellId);
+    if (all.length === 0) {
+      all = getStoredContacts();
+    } else {
+      // Merge any local contacts that might not have synced to cloud yet
+      const local = getStoredContacts();
+      const existingIds = new Set(all.map(c => c.id));
+      for (const item of local) {
+        if (!existingIds.has(item.id)) {
+          all.push(item);
+        }
+      }
     }
-    return all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    if (targetCellId || targetTutorUid) {
+      all = all.filter(c => {
+        const matchCell = targetCellId ? c.cellId === targetCellId : false;
+        const matchTutor = targetTutorUid ? c.tutorUid === targetTutorUid : false;
+        return matchCell || matchTutor;
+      });
+    }
+
+    return all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }
 
   static async addContact(
@@ -73,17 +94,32 @@ export class FollowUpService {
   ): Promise<EvangelismContact> {
     const nowIso = new Date().toISOString();
     const id = `cnt-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const effectiveName = data.name || data.contactName || 'New Contact';
+    const effectivePhone = data.phone || data.contactDetails || '';
+    const effectiveWA = data.whatsappNumber || effectivePhone;
+    const effectiveLoc = data.location || data.evangelismLocation || 'Territory';
+    const effectiveNotes = data.notes || data.followUpNotes || 'Contact initially captured';
 
     const newContact: EvangelismContact = {
       ...data,
       id,
-      whatsappNumber: data.whatsappNumber || data.phone || '',
+      name: effectiveName,
+      contactName: effectiveName,
+      phone: effectivePhone,
+      contactDetails: effectivePhone,
+      whatsappNumber: effectiveWA,
+      location: effectiveLoc,
+      evangelismLocation: effectiveLoc,
+      tutorName: data.tutorName || data.assignedToName || 'Tutor',
+      assignedToName: data.assignedToName || data.tutorName || 'Tutor',
+      notes: effectiveNotes,
+      followUpNotes: effectiveNotes,
       history: [
         {
           status: data.followUpStatus || 'Not contacted',
-          note: data.notes || data.followUpNotes || 'Contact initially captured',
+          note: effectiveNotes,
           changedAt: nowIso,
-          changedBy: data.tutorName || 'Tutor',
+          changedBy: data.tutorName || data.assignedToName || 'Tutor',
         },
       ],
       createdAt: nowIso,

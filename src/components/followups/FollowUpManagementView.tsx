@@ -81,10 +81,12 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const cellFilter = isAdmin ? undefined : currentUser.cell_id;
+      const cellFilter = isAdmin
+        ? undefined
+        : { cellId: currentUser.cell_id || undefined, tutorUid: currentUser.id };
       const [contactsList, sum, cellList] = await Promise.all([
         FollowUpService.getContacts(cellFilter),
-        FollowUpService.getSummary(cellFilter),
+        FollowUpService.getSummary(typeof cellFilter === 'string' ? cellFilter : cellFilter?.cellId),
         CellService.getCells(),
       ]);
       setContacts(contactsList);

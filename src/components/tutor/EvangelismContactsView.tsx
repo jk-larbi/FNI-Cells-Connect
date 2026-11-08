@@ -35,7 +35,7 @@ interface EvangelismContactsViewProps {
 }
 
 export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ onBack }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const [contacts, setContacts] = useState<EvangelismContact[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -50,7 +50,9 @@ export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const list = await FollowUpService.getContacts(currentUser.cell_id || undefined);
+      const list = await FollowUpService.getContacts(
+        isAdmin ? undefined : { cellId: currentUser.cell_id || undefined, tutorUid: currentUser.id }
+      );
       setContacts(list);
     } finally {
       setIsLoading(false);
