@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
-import { Lock, User, Phone, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
+import { Lock, User, Phone, CheckCircle2, AlertCircle, Shield, Link2 } from 'lucide-react';
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface AccountSettingsModalProps {
 }
 
 export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, changePassword, updateAvatar, isAdmin } = useAuth();
+  const { currentUser, changePassword, updateAvatar, linkRecoveryProvider } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
   
   // Password change state
@@ -19,6 +19,8 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({ type: 'idle' });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [providerBusy, setProviderBusy] = useState<'google' | 'apple' | null>(null);
+  const [providerMessage, setProviderMessage] = useState('');
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,6 +135,23 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                 <span className="text-slate-400 font-medium">Sign-In Provider</span>
                 <span className="capitalize font-medium text-slate-700">{currentUser?.auth_provider || 'Email'}</span>
               </div>
+            </div>
+
+
+            <div className="rounded-2xl border border-[#E3E8EF] p-4 space-y-3">
+              <div className="flex items-center gap-2 text-[#142B4A] font-bold"><Link2 className="w-4 h-4 text-[#C6A45A]" /> Account recovery</div>
+              <p className="text-[11px] text-slate-500">Link a Google account or Apple ID while signed in. You can then use that same account to sign in to this FNI profile without your FNI password.</p>
+              {(['google', 'apple'] as const).map(provider => (
+                <button key={provider} type="button" disabled={!!providerBusy} onClick={async () => {
+                  setProviderBusy(provider); setProviderMessage('');
+                  const result = await linkRecoveryProvider(provider);
+                  setProviderBusy(null);
+                  setProviderMessage(result.success ? (provider === 'google' ? 'Google account linked successfully.' : 'Apple ID linked successfully.') : (result.error || 'Could not link account.'));
+                }} className="w-full rounded-xl border border-[#D7DEE8] px-3 py-2.5 text-xs font-bold text-[#142B4A] hover:bg-slate-50 disabled:opacity-50">
+                  {providerBusy === provider ? 'Connecting…' : (provider === 'google' ? 'Link Google account' : 'Link Apple ID')}
+                </button>
+              ))}
+              {providerMessage && <p role="status" className="text-[11px] text-[#142B4A] bg-[#F5F7FA] rounded-lg p-2">{providerMessage}</p>}
             </div>
 
             <p className="text-[11px] text-slate-400">
