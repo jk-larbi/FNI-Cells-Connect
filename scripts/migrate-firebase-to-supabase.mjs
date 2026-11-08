@@ -88,7 +88,7 @@ export function getDeterministicUuid(uid) {
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-5${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }
 
-// Comprehensive inventory of all 18 modules with real Firestore collection names & aliases
+// Authoritative 19-module inventory covering all domain collections and realistic aliases
 export const MODULE_DEFINITIONS = [
   { name: 'profiles', primaryCol: 'profiles', aliases: ['users'], idField: 'id', altIdField: 'firebase_uid' },
   { name: 'regions', primaryCol: 'regions', aliases: [], idField: 'code', altIdField: 'firebase_id' },
@@ -97,7 +97,7 @@ export const MODULE_DEFINITIONS = [
   { name: 'cell_meeting_reports', primaryCol: 'cellMeetingReports', aliases: ['cell_reports'], idField: 'id' },
   { name: 'evangelism_reports', primaryCol: 'evangelismReports', aliases: [], idField: 'id' },
   { name: 'evangelism_contacts', primaryCol: 'evangelismContacts', aliases: [], idField: 'id' },
-  { name: 'follow_ups', primaryCol: 'followUps', aliases: [], idField: 'id' },
+  { name: 'follow_ups', primaryCol: 'followUps', aliases: ['followups'], idField: 'id' },
   { name: 'offering_records', primaryCol: 'offerings', aliases: ['offering_records'], idField: 'id' },
   { name: 'review_logs', primaryCol: 'reviewLogs', aliases: ['report_reviews'], idField: 'id' },
   { name: 'private_messages', primaryCol: 'privateMessages', aliases: ['private_messages'], idField: 'id' },
@@ -111,22 +111,46 @@ export const MODULE_DEFINITIONS = [
   { name: 'audit_logs', primaryCol: 'audit_logs', aliases: ['auditLogs'], idField: 'id' },
 ];
 
+// Documented field mappings dictionary: every field on source records must have a documented destination mapping
+export const DOCUMENTED_FIELD_MAPPINGS = {
+  profiles: new Set(['id', 'firebase_uid', 'email', 'full_name', 'phone_number', 'role', 'region_name', 'cell_name', 'avatar_url', 'is_active', 'is_onboarded', 'created_at', 'updated_at', 'cell_id', 'status', 'fullName', 'phoneNumber', 'regionName', 'cellName', 'avatarUrl', 'isActive', 'isOnboarded', 'createdAt', 'updatedAt', 'cellId', 'normalizedCell', 'passwordHash', 'salt']),
+  regions: new Set(['id', 'name', 'code', 'country', 'state_province', 'firebase_id', 'is_active', 'created_at', 'stateProvince', 'firebaseId', 'isActive', 'createdAt']),
+  cells: new Set(['id', 'name', 'normalized_name', 'location', 'tutor_uid', 'code', 'region_name', 'leader_name', 'leader_phone', 'meeting_day', 'meeting_time', 'venue_address', 'total_members', 'active_members', 'status', 'firebase_id', 'created_at', 'updated_at', 'normalizedName', 'tutorUid', 'regionName', 'leaderName', 'leaderPhone', 'meetingDay', 'meetingTime', 'venueAddress', 'totalMembers', 'activeMembers', 'firebaseId', 'createdAt', 'updatedAt']),
+  reporting_periods: new Set(['id', 'name', 'year', 'week_number', 'start_date', 'end_date', 'submission_deadline', 'is_open', 'firebase_id', 'created_at', 'weekNumber', 'startDate', 'endDate', 'submissionDeadline', 'isOpen', 'firebaseId', 'createdAt']),
+  cell_meeting_reports: new Set(['id', 'cell_id', 'tutor_uid', 'cell_name', 'tutor_name', 'meeting_date', 'meeting_location', 'members', 'active_members', 'attendance', 'new_members', 'absentees', 'follow_up_needed', 'offering', 'scriptural_theme', 'scriptures_used', 'tutor_notes', 'testimonies', 'tutor_experience', 'status', 'submitted_at', 'late', 'reviewer_comment', 'reviewed_by', 'reviewed_by_name', 'reviewed_at', 'created_at', 'updated_at', 'cellId', 'tutorUid', 'cellName', 'tutorName', 'meetingDate', 'meetingLocation', 'activeMembers', 'newMembers', 'followUpNeeded', 'scripturalTheme', 'scripturesUsed', 'tutorNotes', 'tutorExperience', 'submittedAt', 'reviewerComment', 'reviewedBy', 'reviewedByName', 'reviewedAt', 'createdAt', 'updatedAt']),
+  evangelism_reports: new Set(['id', 'cell_id', 'tutor_uid', 'cell_name', 'tutor_name', 'date', 'location', 'team_members', 'pre_set_target', 'people_spoken_to', 'contacts_captured', 'conversions', 'verified_souls_won', 'interested_in_ministry', 'potential_follow_ups', 'scriptural_theme', 'scriptures_used', 'message_used', 'notes', 'testimonies', 'status', 'submitted_at', 'late', 'reviewer_comment', 'reviewed_by', 'reviewed_by_name', 'reviewed_at', 'created_at', 'updated_at', 'cellId', 'tutorUid', 'cellName', 'tutorName', 'teamMembers', 'preSetTarget', 'peopleSpokenTo', 'contactsCaptured', 'verifiedSoulsWon', 'interestedInMinistry', 'potentialFollowUps', 'scripturalTheme', 'scripturesUsed', 'messageUsed', 'submittedAt', 'reviewerComment', 'reviewedBy', 'reviewedByName', 'reviewedAt', 'createdAt', 'updatedAt']),
+  evangelism_contacts: new Set(['id', 'contact_name', 'phone', 'whatsapp_number', 'email', 'date_captured', 'evangelism_report_id', 'location', 'cell_id', 'cell_name', 'tutor_uid', 'tutor_name', 'assigned_to_name', 'follow_up_status', 'notes', 'last_follow_up_date', 'next_follow_up_date', 'history', 'created_at', 'updated_at', 'contactName', 'name', 'whatsappNumber', 'dateCaptured', 'evangelismReportId', 'cellId', 'cellName', 'tutorUid', 'tutorName', 'assignedToName', 'followUpStatus', 'lastFollowUpDate', 'nextFollowUpDate', 'createdAt', 'updatedAt']),
+  follow_ups: new Set(['id', 'contact_id', 'cell_id', 'tutor_uid', 'notes', 'follow_up_date', 'next_follow_up_date', 'status', 'created_at', 'contactId', 'cellId', 'tutorUid', 'followUpDate', 'nextFollowUpDate', 'createdAt']),
+  offering_records: new Set(['id', 'report_id', 'cell_id', 'cell_name', 'tutor_uid', 'tutor_name', 'amount', 'currency', 'meeting_date', 'week_label', 'submitted_at', 'status', 'created_at', 'reportId', 'cellId', 'cellName', 'tutorUid', 'tutorName', 'meetingDate', 'weekLabel', 'submittedAt', 'createdAt']),
+  review_logs: new Set(['id', 'report_id', 'report_type', 'reviewer_uid', 'reviewer_name', 'action', 'comments', 'created_at', 'reportId', 'reportType', 'reviewerUid', 'reviewerName', 'createdAt']),
+  private_messages: new Set(['id', 'sender_uid', 'sender_name', 'sender_role', 'recipient_uid', 'recipient_name', 'cell_id', 'cell_name', 'content', 'created_at', 'is_read', 'read_at', 'reply_to', 'senderUid', 'senderName', 'senderRole', 'recipientUid', 'recipientName', 'cellId', 'cellName', 'createdAt', 'isRead', 'readAt', 'replyTo']),
+  community_messages: new Set(['id', 'sender_uid', 'sender_name', 'sender_role', 'cell_name', 'content', 'category', 'created_at', 'reply_to', 'mentions', 'reactions', 'senderUid', 'senderName', 'senderRole', 'cellName', 'createdAt', 'replyTo']),
+  invitation_codes: new Set(['id', 'code', 'role', 'region_name', 'cell_name', 'max_uses', 'used_count', 'is_active', 'created_at', 'expires_at', 'regionName', 'cellName', 'maxUses', 'usedCount', 'isActive', 'createdAt', 'expiresAt']),
+  teaching_materials: new Set(['id', 'title', 'description', 'week_label', 'document_url', 'file_name', 'file_size', 'file_type', 'text_content', 'status', 'published_at', 'uploaded_by', 'uploaded_by_name', 'created_at', 'updated_at', 'weekLabel', 'documentUrl', 'fileName', 'fileSize', 'fileType', 'textContent', 'publishedAt', 'uploadedBy', 'uploadedByName', 'createdAt', 'updatedAt']),
+  system_settings: new Set(['id', 'church_name', 'currency', 'meeting_day', 'meeting_time', 'submission_deadline_day', 'submission_deadline_time', 'timezone', 'updated_at', 'updated_by', 'churchName', 'meetingDay', 'meetingTime', 'submissionDeadlineDay', 'submissionDeadlineTime', 'updatedAt', 'updatedBy', 'vision', 'mission']),
+  soul_targets: new Set(['id', 'year', 'annual_target', 'q1_target', 'q2_target', 'q3_target', 'q4_target', 'updated_at', 'updated_by', 'annualTarget', 'q1Target', 'q2Target', 'q3Target', 'q4Target', 'updatedAt', 'updatedBy']),
+  notifications: new Set(['id', 'recipient_target', 'sender_id', 'sender_name', 'title', 'message', 'type', 'channel', 'status', 'is_read', 'read_at', 'metadata', 'created_at', 'recipientTarget', 'userId', 'user_id', 'senderId', 'senderName', 'isRead', 'readAt', 'createdAt']),
+  device_tokens: new Set(['id', 'user_id', 'token', 'device_type', 'platform', 'user_agent', 'created_at', 'last_active', 'userId', 'deviceType', 'userAgent', 'createdAt', 'lastActive']),
+  audit_logs: new Set(['id', 'action', 'entity_type', 'entity_id', 'user_id', 'user_name', 'user_role', 'details', 'ip_address', 'created_at', 'entityType', 'entityId', 'userId', 'userName', 'userRole', 'ipAddress', 'createdAt']),
+};
+
 // -----------------------------------------------------------------------------
 // MODULE 1: GENUINE MULTI-COLLECTION FIREBASE EXPORTER
 // -----------------------------------------------------------------------------
 export async function extractSourceData() {
-  console.log('📦 Phase 1: Genuine Multi-Collection Source Data Extraction...');
+  console.log('📦 Phase 1: Genuine Multi-Collection Source Data Extraction across All 19 Modules...');
 
   let inventory = {
     metadata: {
       exportedAt: new Date().toISOString(),
       source: 'FNI Source Inventory',
-      version: '4.0.0',
+      version: '5.0.0',
     },
   };
   MODULE_DEFINITIONS.forEach(m => { inventory[m.name] = []; });
 
   const failedExports = [];
+  const detectedCollisions = [];
 
   // Attempt genuine Firebase Admin SDK live Firestore export
   let firebaseAdmin = null;
@@ -164,65 +188,131 @@ export async function extractSourceData() {
   }
 
   if (firestoreDb) {
-    console.log('   📡 Querying live Firestore collections via Firebase Admin SDK with alias fallback...');
+    console.log('   📡 Querying all actual Firestore collection names and aliases (non-stopping combining mode)...');
     for (const mod of MODULE_DEFINITIONS) {
       const candidateNames = [mod.primaryCol, ...mod.aliases];
-      let exported = false;
+      const combinedRecordsById = new Map();
+      const originByDocId = new Map();
 
       for (const colName of candidateNames) {
         try {
           const snap = await firestoreDb.collection(colName).get();
           if (!snap.empty) {
-            const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            inventory[mod.name] = records;
-            console.log(`      ↳ Exported "${mod.name}" from collection "${colName}": ${records.length} records`);
-            fs.writeFileSync(path.join(backupsDir, `${mod.name}.json`), JSON.stringify(records, null, 2), 'utf8');
-            exported = true;
-            break;
+            console.log(`      ↳ Reading collection "${colName}": ${snap.docs.length} documents`);
+            for (const doc of snap.docs) {
+              const docId = doc.id;
+              const docData = { id: docId, ...doc.data() };
+              if (combinedRecordsById.has(docId)) {
+                const existing = combinedRecordsById.get(docId);
+                const prevCol = originByDocId.get(docId);
+                if (areValuesEqual(existing, docData)) {
+                  console.log(`        ℹ️ Doc "${docId}" identically present in "${prevCol}" and "${colName}". Preserved.`);
+                } else {
+                  console.warn(`        ⚠️ COLLISION: Document ID "${docId}" has conflicting data between "${prevCol}" and "${colName}"!`);
+                  detectedCollisions.push({
+                    module: mod.name,
+                    id: docId,
+                    collectionA: prevCol,
+                    collectionB: colName,
+                    error: `Conflicting data for ID "${docId}" across collection aliases "${prevCol}" and "${colName}"`,
+                  });
+                }
+              } else {
+                combinedRecordsById.set(docId, docData);
+                originByDocId.set(docId, colName);
+              }
+            }
           }
         } catch (colErr) {
           failedExports.push({ module: mod.name, collection: colName, error: colErr.message });
-          console.warn(`      ⚠️ Collection "${colName}" query notice: ${colErr.message}`);
+          console.error(`      ❌ Failed to read collection "${colName}": ${colErr.message}`);
         }
       }
-      if (!exported && candidateNames.length > 0) {
-        console.log(`      ℹ️ Collection "${mod.name}" has 0 records in Firestore.`);
+
+      const combinedRecords = Array.from(combinedRecordsById.values());
+      inventory[mod.name] = combinedRecords;
+      if (combinedRecords.length > 0) {
+        console.log(`      ✅ Total combined "${mod.name}" records: ${combinedRecords.length}`);
+        fs.writeFileSync(path.join(backupsDir, `${mod.name}.json`), JSON.stringify(combinedRecords, null, 2), 'utf8');
       }
     }
   } else {
     console.log('   ℹ️ No live Firebase Admin service credentials detected in local execution environment.');
-    console.log('   📂 Scanning backups/ directory and existing verified dumps...');
+    console.log('   📂 Scanning backups/ directory and existing verified dumps across all aliases...');
 
-    // Read from backups/*.json
     for (const mod of MODULE_DEFINITIONS) {
-      const colPath = path.join(backupsDir, `${mod.name}.json`);
-      if (fs.existsSync(colPath)) {
+      const candidateFiles = [
+        path.join(backupsDir, `${mod.primaryCol}.json`),
+        path.join(backupsDir, `${mod.name}.json`),
+        ...mod.aliases.map(a => path.join(backupsDir, `${a}.json`))
+      ];
+
+      const combinedRecordsById = new Map();
+      const originByDocId = new Map();
+
+      for (const colPath of Array.from(new Set(candidateFiles))) {
+        if (fs.existsSync(colPath)) {
+          try {
+            const raw = JSON.parse(fs.readFileSync(colPath, 'utf8'));
+            if (Array.isArray(raw)) {
+              const fileTag = path.basename(colPath);
+              for (const item of raw) {
+                const docId = item.id || item[mod.idField];
+                if (!docId) continue;
+                if (combinedRecordsById.has(docId)) {
+                  const existing = combinedRecordsById.get(docId);
+                  const prevOrigin = originByDocId.get(docId);
+                  if (areValuesEqual(existing, item)) {
+                    // Identical: safe
+                  } else {
+                    detectedCollisions.push({
+                      module: mod.name,
+                      id: docId,
+                      collectionA: prevOrigin,
+                      collectionB: fileTag,
+                      error: `Conflicting document data for ID "${docId}" between "${prevOrigin}" and "${fileTag}"`,
+                    });
+                  }
+                } else {
+                  combinedRecordsById.set(docId, item);
+                  originByDocId.set(docId, fileTag);
+                }
+              }
+            }
+          } catch (e) {
+            failedExports.push({ module: mod.name, collection: path.basename(colPath), error: e.message });
+            console.warn(`      ⚠️ Could not parse ${path.basename(colPath)}:`, e.message);
+          }
+        }
+      }
+
+      // Check master dump if present and not loaded yet
+      if (combinedRecordsById.size === 0 && fs.existsSync(dumpFilePath)) {
         try {
-          const raw = JSON.parse(fs.readFileSync(colPath, 'utf8'));
-          if (Array.isArray(raw)) {
-            inventory[mod.name] = raw;
-            console.log(`      ↳ Loaded "backups/${mod.name}.json": ${raw.length} records`);
+          const masterDump = JSON.parse(fs.readFileSync(dumpFilePath, 'utf8'));
+          if (Array.isArray(masterDump[mod.name])) {
+            for (const item of masterDump[mod.name]) {
+              const docId = item.id || item[mod.idField];
+              if (docId) combinedRecordsById.set(docId, item);
+            }
           }
         } catch (e) {
-          failedExports.push({ module: mod.name, collection: mod.name, error: e.message });
-          console.warn(`      ⚠️ Could not parse backups/${mod.name}.json:`, e.message);
+          console.warn('      ⚠️ Could not parse master dump:', e.message);
         }
       }
-    }
 
-    // Read from master dump if present
-    if (fs.existsSync(dumpFilePath)) {
-      try {
-        const masterDump = JSON.parse(fs.readFileSync(dumpFilePath, 'utf8'));
-        for (const mod of MODULE_DEFINITIONS) {
-          if ((!inventory[mod.name] || inventory[mod.name].length === 0) && Array.isArray(masterDump[mod.name]) && masterDump[mod.name].length > 0) {
-            inventory[mod.name] = masterDump[mod.name];
-            console.log(`      ↳ Loaded "${mod.name}" from master dump: ${masterDump[mod.name].length} records`);
-          }
-        }
-      } catch (e) {
-        console.warn('      ⚠️ Could not parse master dump:', e.message);
-      }
+      inventory[mod.name] = Array.from(combinedRecordsById.values());
+    }
+  }
+
+  if (detectedCollisions.length > 0) {
+    for (const c of detectedCollisions) {
+      failedExports.push({
+        module: c.module,
+        collection: `${c.collectionA} & ${c.collectionB}`,
+        error: c.error,
+        docId: c.id,
+      });
     }
   }
 
@@ -233,6 +323,7 @@ export async function extractSourceData() {
   return {
     sourceData: inventory,
     failedExports,
+    detectedCollisions,
     isExportComplete: failedExports.length === 0,
   };
 }
@@ -536,7 +627,24 @@ export async function importToSupabase(supabase, sourceData) {
     await upsertBatch('community_messages', payload, 'id');
   }
 
-  // 13. Teaching Materials
+  // 13. Invitation Codes
+  if (sourceData.invitation_codes?.length > 0) {
+    const payload = sourceData.invitation_codes.map(c => ({
+      id: c.id,
+      code: c.code,
+      role: c.role || 'tutor',
+      region_name: c.regionName || c.region_name || null,
+      cell_name: c.cellName || c.cell_name || null,
+      max_uses: Number(c.maxUses || c.max_uses || 1),
+      used_count: Number(c.usedCount || c.used_count || 0),
+      is_active: c.isActive ?? c.is_active ?? true,
+      created_at: c.createdAt || c.created_at || new Date().toISOString(),
+      expires_at: c.expiresAt || c.expires_at || null,
+    }));
+    await upsertBatch('invitation_codes', payload, 'code');
+  }
+
+  // 14. Teaching Materials
   if (sourceData.teaching_materials?.length > 0) {
     const payload = sourceData.teaching_materials.map(t => ({
       id: t.id,
@@ -556,7 +664,7 @@ export async function importToSupabase(supabase, sourceData) {
     await upsertBatch('teaching_materials', payload, 'id');
   }
 
-  // 14. System Settings & Soul Targets
+  // 15. System Settings & Soul Targets
   if (sourceData.system_settings?.length > 0) {
     await upsertBatch('system_settings', sourceData.system_settings, 'id');
   }
@@ -671,11 +779,31 @@ export function areValuesEqual(a, b) {
   return false;
 }
 
+// Paginate Supabase destination queries so every record is examined, including collections with >1,000 rows
+export async function fetchAllDestinationRows(supabase, tableName) {
+  const pageSize = 1000;
+  let page = 0;
+  let allRows = [];
+  while (true) {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase.from(tableName).select('*').range(from, to);
+    if (error) {
+      return { data: null, error };
+    }
+    if (!data || data.length === 0) break;
+    allRows.push(...data);
+    if (data.length < pageSize) break;
+    page++;
+  }
+  return { data: allRows, error: null };
+}
+
 // -----------------------------------------------------------------------------
 // MODULE 4: GENUINELY EXACT RECONCILIATION
 // -----------------------------------------------------------------------------
 export async function reconcile(supabase, sourceData, importResult = { success: true, failedImports: [] }, extractionResult = { isExportComplete: true, failedExports: [] }) {
-  console.log('\n📊 Phase 3: Genuinely Exact Reconciliation & Deep Record Comparison...');
+  console.log('\n📊 Phase 3: Genuinely Exact Reconciliation & Deep Record Comparison across All 19 Modules...');
 
   console.log('| Collection / Module        | Source | Dest | Matched | Missing | Extra | Dups | Field Mismatches | Status               |');
   console.log('|----------------------------|--------|------|---------|---------|-------|------|------------------|----------------------|');
@@ -705,8 +833,8 @@ export async function reconcile(supabase, sourceData, importResult = { success: 
     // Duplicate check on source
     const sourceDuplicates = sourceIds.filter((item, index) => sourceIds.indexOf(item) !== index);
 
-    // Fetch all destination records from Supabase
-    const { data: destRows, error } = await supabase.from(mod.name).select('*');
+    // Fetch all destination records from Supabase via paginated fetch (handles >1000 records)
+    const { data: destRows, error } = await fetchAllDestinationRows(supabase, mod.name);
 
     if (error) {
       console.log(`| ${mod.name.padEnd(26)} | ${String(sourceIds.length).padStart(6)} |  ERR |       0 |       0 |     0 |    0 |                0 | QUERY FAILED ❌      |`);
@@ -750,21 +878,34 @@ export async function reconcile(supabase, sourceData, importResult = { success: 
       }
     }
 
-    // STRICT VERIFICATION CRITERIA:
+    // Unmapped source fields detection: fail when a source field has no documented destination mapping
+    const documentedFields = DOCUMENTED_FIELD_MAPPINGS[mod.name] || new Set();
+    const unmappedSourceFields = [];
+    for (const srcItem of sourceItems) {
+      for (const key of Object.keys(srcItem)) {
+        if (!documentedFields.has(key)) {
+          unmappedSourceFields.push({ id: srcItem[mod.idField] || srcItem.id, field: key });
+        }
+      }
+    }
+
+    // STRICT VERIFICATION CRITERIA (Dry-run and Live both enforce zero-extra records):
     // 1. Zero missing records
-    // 2. Zero unexpected extra records (dry run ignores extra unless strict)
+    // 2. Zero unexpected extra records (strictly enforced in dry-run and live)
     // 3. Zero duplicate IDs
     // 4. Zero field-level mismatches
-    // 5. Zero failed import operations
-    // 6. Complete source export (zero export errors)
-    // 7. Populated destination cannot match an empty source inventory!
+    // 5. Zero unmapped source fields
+    // 6. Zero failed import operations
+    // 7. Complete source export (zero export errors)
+    // 8. Populated destination cannot match an empty source inventory!
     const isSourceMissingWhileDestPopulated = sourceIds.length === 0 && destIds.length > 0;
     const isModuleVerified = 
       missing.length === 0 &&
-      (isDryRun || extra.length === 0 || sourceIds.length === 0) &&
+      extra.length === 0 &&
       !isSourceMissingWhileDestPopulated &&
       totalDuplicates === 0 &&
       fieldMismatches === 0 &&
+      unmappedSourceFields.length === 0 &&
       (importResult.failedImports?.length === 0) &&
       (extractionResult.failedExports?.length === 0);
 
@@ -776,6 +917,7 @@ export async function reconcile(supabase, sourceData, importResult = { success: 
         extra: extra.length,
         duplicates: totalDuplicates,
         fieldMismatches,
+        unmappedFields: unmappedSourceFields.length,
         emptySourceMismatch: isSourceMissingWhileDestPopulated,
       });
     }
@@ -794,6 +936,12 @@ export async function reconcile(supabase, sourceData, importResult = { success: 
 
     if (missing.length > 0) {
       console.log(`     ⚠️ Missing Source IDs in "${mod.name}":`, missing.slice(0, 5));
+    }
+    if (extra.length > 0) {
+      console.log(`     ⚠️ Unexpected Extra Destination Records in "${mod.name}": ${extra.length} records`);
+    }
+    if (unmappedSourceFields.length > 0) {
+      console.log(`     ⚠️ Unmapped Source Fields in "${mod.name}":`, unmappedSourceFields.slice(0, 5));
     }
     if (fieldMismatches > 0) {
       console.log(`     ⚠️ Field Value Mismatches in "${mod.name}": ${fieldMismatches}`);

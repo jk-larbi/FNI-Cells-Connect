@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "exportedAt": "2026-11-08T17:13:18.589Z",
+    "exportedAt": "2026-11-08T17:33:17.891Z",
     "source": "FNI Source Inventory",
-    "version": "3.0.0"
+    "version": "5.0.0"
   },
   "profiles": [],
   "regions": [],
@@ -11,9 +11,12 @@
   "cell_meeting_reports": [],
   "evangelism_reports": [],
   "evangelism_contacts": [],
+  "follow_ups": [],
   "offering_records": [],
+  "review_logs": [],
   "private_messages": [],
   "community_messages": [],
+  "invitation_codes": [],
   "teaching_materials": [],
   "system_settings": [],
   "soul_targets": [],

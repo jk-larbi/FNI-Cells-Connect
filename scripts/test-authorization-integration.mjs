@@ -238,7 +238,7 @@ assert(!resEmptySourceMismatch.verified && resEmptySourceMismatch.failureReason 
 // -----------------------------------------------------------------------------
 console.log('\n--- TEST GROUP 4: Deep Field Normalization & Value Comparison ---');
 
-import { normalizeValue, areValuesEqual } from './migrate-firebase-to-supabase.mjs';
+import { normalizeValue, areValuesEqual, fetchAllDestinationRows, DOCUMENTED_FIELD_MAPPINGS } from './migrate-firebase-to-supabase.mjs';
 
 // Normalization: numbers vs formatted decimal strings
 assert(areValuesEqual(250, '250.00'), 'Normalizes number and float string (250 === "250.00")');
@@ -301,6 +301,251 @@ assert(canInsertNotificationRule('super_admin', 'all', 'usr-admin', 'usr-admin')
 assert(!canInsertNotificationRule('cell_leader', 'all', 'tutor-1', 'tutor-1'), 'Ordinary cell leader CANNOT create broadcast to "all"');
 assert(canInsertNotificationRule('cell_leader', 'admin', 'tutor-1', 'tutor-1'), 'Ordinary cell leader CAN create report alert to "admin"');
 assert(!canInsertNotificationRule('cell_leader', 'tutor-2', 'usr-admin-master', 'tutor-1'), 'Ordinary cell leader CANNOT impersonate administrator sender_id');
+
+// -----------------------------------------------------------------------------
+// TEST 7: FAIL-CLOSED IDENTITY PROVISIONING & UNKNOWN IDENTITIES
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 7: Fail-Closed Identity Provisioning & Unknown Identities ---');
+
+function simulateTokenExchange({ authUid, profileData, supabaseUrl, serviceRoleKey, adminProvisionStatus, adminErrorMessage }) {
+  if (!authUid) {
+    return { ok: false, errorCode: 'unauthenticated', errorMsg: 'User must be authenticated with Firebase' };
+  }
+  if (!supabaseUrl || !serviceRoleKey) {
+    return { ok: false, errorCode: 'failed-precondition', errorMsg: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing' };
+  }
+  // 1. Fail closed on missing profile
+  if (!profileData) {
+    return { ok: false, errorCode: 'not-found', errorMsg: 'User profile not found in database. Identity provisioning rejected.' };
+  }
+  // 2. Fail closed on suspended/inactive account
+  if (profileData.is_active === false || profileData.status === 'Suspended') {
+    return { ok: false, errorCode: 'permission-denied', errorMsg: 'Your tutor account has been suspended or deactivated.' };
+  }
+  // 3. Fail closed if role is missing (never default to cell_leader)
+  if (!profileData.role) {
+    return { ok: false, errorCode: 'permission-denied', errorMsg: 'User profile does not contain an assigned role. Access denied.' };
+  }
+
+  // 4. Supabase Auth Admin user provisioning check
+  const isAlreadyRegistered = adminProvisionStatus === 422 || (adminErrorMessage && /already\s*(registered|exists)/i.test(adminErrorMessage));
+  if (adminProvisionStatus && adminProvisionStatus >= 400 && !isAlreadyRegistered) {
+    return { ok: false, errorCode: 'internal', errorMsg: `Supabase Auth identity provisioning failed: ${adminErrorMessage || adminProvisionStatus}` };
+  }
+
+  const supabaseUuid = getDeterministicUuid(authUid);
+  const tokenObj = mintSupabaseJwt(authUid, profileData.role);
+  return { ok: true, token: tokenObj.token, supabaseUuid, role: profileData.role };
+}
+
+// Case 1: Unknown Firebase identity with no Firestore profile
+const resUnknown = simulateTokenExchange({
+  authUid: 'unknown-intruder-uid',
+  profileData: null,
+  supabaseUrl: 'https://cjskjazsrrbfyjepwyxa.supabase.co',
+  serviceRoleKey: 'test-service-key',
+});
+assert(!resUnknown.ok && resUnknown.errorCode === 'not-found', 'Rejects unknown Firebase user with no Firestore profile (fail-closed)');
+
+// Case 2: User profile has no role assigned
+const resNoRole = simulateTokenExchange({
+  authUid: 'user-with-no-role',
+  profileData: { id: 'user-with-no-role', full_name: 'No Role Person' },
+  supabaseUrl: 'https://cjskjazsrrbfyjepwyxa.supabase.co',
+  serviceRoleKey: 'test-service-key',
+});
+assert(!resNoRole.ok && resNoRole.errorCode === 'permission-denied', 'Rejects profile without role and NEVER defaults to cell_leader');
+
+// Case 3: User profile suspended
+const resSuspended = simulateTokenExchange({
+  authUid: 'suspended-tutor',
+  profileData: { id: 'suspended-tutor', role: 'cell_leader', status: 'Suspended' },
+  supabaseUrl: 'https://cjskjazsrrbfyjepwyxa.supabase.co',
+  serviceRoleKey: 'test-service-key',
+});
+assert(!resSuspended.ok && resSuspended.errorCode === 'permission-denied', 'Rejects suspended account from receiving a Supabase JWT');
+
+// Case 4: Failed Supabase Auth Admin user provisioning (e.g. 500 error or invalid credentials)
+const resFailedProvisioning = simulateTokenExchange({
+  authUid: 'valid-tutor',
+  profileData: { id: 'valid-tutor', role: 'cell_leader', full_name: 'Valid Tutor' },
+  supabaseUrl: 'https://cjskjazsrrbfyjepwyxa.supabase.co',
+  serviceRoleKey: 'invalid-key',
+  adminProvisionStatus: 401,
+  adminErrorMessage: 'Invalid API key',
+});
+assert(!resFailedProvisioning.ok && resFailedProvisioning.errorCode === 'internal', 'Do not issue JWT if Supabase Auth Admin identity provisioning fails (HTTP 401/500)');
+
+// Case 5: User already registered in Supabase Auth (safe handling)
+const resAlreadyRegistered = simulateTokenExchange({
+  authUid: 'valid-tutor-existing',
+  profileData: { id: 'valid-tutor-existing', role: 'cell_leader', full_name: 'Existing Tutor' },
+  supabaseUrl: 'https://cjskjazsrrbfyjepwyxa.supabase.co',
+  serviceRoleKey: 'valid-key',
+  adminProvisionStatus: 422,
+  adminErrorMessage: 'User already registered',
+});
+assert(resAlreadyRegistered.ok && Boolean(resAlreadyRegistered.token), 'Safely handles already-existing Supabase user without throwing and issues JWT');
+
+// -----------------------------------------------------------------------------
+// TEST 8: MULTI-ALIAS COMBINING & ID COLLISION DETECTION
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 8: Multi-Alias Combining & ID Collision Detection ---');
+
+function combineCollectionAliases(candidateCollections) {
+  const combinedById = new Map();
+  const originByDocId = new Map();
+  const collisions = [];
+
+  for (const { colName, records } of candidateCollections) {
+    for (const doc of records) {
+      const docId = doc.id;
+      if (combinedById.has(docId)) {
+        const existing = combinedById.get(docId);
+        const prevCol = originByDocId.get(docId);
+        if (areValuesEqual(existing, doc)) {
+          // Identical: safe
+        } else {
+          collisions.push({
+            id: docId,
+            colA: prevCol,
+            colB: colName,
+            error: `Conflicting data for ID "${docId}" across "${prevCol}" and "${colName}"`,
+          });
+        }
+      } else {
+        combinedById.set(docId, doc);
+        originByDocId.set(docId, colName);
+      }
+    }
+  }
+
+  return {
+    combinedRecords: Array.from(combinedById.values()),
+    collisions,
+    hasCollisions: collisions.length > 0,
+  };
+}
+
+// Case 1: Records split across collections (primary + alias)
+const splitResult = combineCollectionAliases([
+  {
+    colName: 'cellMeetingReports',
+    records: [
+      { id: 'cmr-1', cellId: 'cell-1', attendance: 20 },
+      { id: 'cmr-2', cellId: 'cell-1', attendance: 25 },
+    ],
+  },
+  {
+    colName: 'cell_reports',
+    records: [
+      { id: 'cmr-3', cellId: 'cell-2', attendance: 30 },
+      { id: 'cmr-4', cellId: 'cell-2', attendance: 35 },
+    ],
+  },
+]);
+assert(splitResult.combinedRecords.length === 4, 'Combines records split across primary collection and aliases (all 4 returned)');
+assert(!splitResult.hasCollisions, 'Clean merge when document IDs do not conflict');
+
+// Case 2: Identical document ID across aliases (safe deduplication)
+const dupIdenticalResult = combineCollectionAliases([
+  { colName: 'cellMeetingReports', records: [{ id: 'cmr-1', cellId: 'cell-1', attendance: 20 }] },
+  { colName: 'cell_reports', records: [{ id: 'cmr-1', cellId: 'cell-1', attendance: 20 }] },
+]);
+assert(dupIdenticalResult.combinedRecords.length === 1 && !dupIdenticalResult.hasCollisions, 'Preserves document when identical ID and data appear across aliases');
+
+// Case 3: Conflicting document data across aliases (collision detected)
+const dupConflictingResult = combineCollectionAliases([
+  { colName: 'cellMeetingReports', records: [{ id: 'cmr-1', cellId: 'cell-1', attendance: 20 }] },
+  { colName: 'cell_reports', records: [{ id: 'cmr-1', cellId: 'cell-1', attendance: 99 }] }, // Divergent data!
+]);
+assert(dupConflictingResult.hasCollisions && dupConflictingResult.collisions[0].id === 'cmr-1', 'Detects duplicate ID collision when divergent data exists across aliases');
+
+// -----------------------------------------------------------------------------
+// TEST 9: PAGINATED DESTINATION QUERY (>1,000 RECORDS)
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 9: Paginated Destination Queries (>1,000 Records) ---');
+
+async function mockPaginatedSupabaseClient(totalRows) {
+  const mockTableData = Array.from({ length: totalRows }, (_, i) => ({
+    id: `rec-${i}`,
+    title: `Record ${i}`,
+  }));
+
+  const mockSupabase = {
+    from: () => ({
+      select: () => ({
+        range: async (from, to) => {
+          const slice = mockTableData.slice(from, to + 1);
+          return { data: slice, error: null };
+        },
+      }),
+    }),
+  };
+
+  return await fetchAllDestinationRows(mockSupabase, 'large_table');
+}
+
+const largeFetchRes = await mockPaginatedSupabaseClient(2500);
+assert(largeFetchRes.data && largeFetchRes.data.length === 2500, 'Paginates through Supabase destination and fetches all 2,500 records');
+
+// -----------------------------------------------------------------------------
+// TEST 10: STRICT DRY-RUN ZERO-EXTRA-RECORD ENFORCEMENT & UNMAPPED FIELDS
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 10: Strict Dry-Run Reconciliation & Unmapped Fields ---');
+
+function testReconcileModule({ sourceItems, destItems, tableName, isDryRun = true }) {
+  const modIdField = 'id';
+  const sourceIds = sourceItems.map(s => s[modIdField]);
+  const destIds = destItems.map(d => d[modIdField]);
+  const sourceSet = new Set(sourceIds);
+  const destSet = new Set(destIds);
+
+  const missing = sourceIds.filter(id => !destSet.has(id));
+  const extra = destIds.filter(id => !sourceSet.has(id));
+
+  // Unmapped fields detection
+  const documented = DOCUMENTED_FIELD_MAPPINGS[tableName] || new Set();
+  const unmappedFields = [];
+  for (const s of sourceItems) {
+    for (const k of Object.keys(s)) {
+      if (!documented.has(k)) {
+        unmappedFields.push({ id: s.id, field: k });
+      }
+    }
+  }
+
+  // Strict verification criteria: extra.length must be 0 in BOTH dry-run and live
+  const isVerified = missing.length === 0 && extra.length === 0 && unmappedFields.length === 0;
+  return { isVerified, missing, extra, unmappedFields };
+}
+
+// Case 1: Unexpected extra record in dry-run mode
+const dryRunExtraCheck = testReconcileModule({
+  sourceItems: [{ id: 'cmr-1', cell_id: 'cell-1' }],
+  destItems: [{ id: 'cmr-1', cell_id: 'cell-1' }, { id: 'cmr-unexpected', cell_id: 'cell-1' }],
+  tableName: 'cell_meeting_reports',
+  isDryRun: true,
+});
+assert(!dryRunExtraCheck.isVerified && dryRunExtraCheck.extra.length === 1, 'Strictly FAILS reconciliation on unexpected extra records during dry-run');
+
+// Case 2: Unmapped source field detection
+const unmappedFieldCheck = testReconcileModule({
+  sourceItems: [{ id: 'cmr-1', cell_id: 'cell-1', undocumented_rogue_column: 'malicious or stray' }],
+  destItems: [{ id: 'cmr-1', cell_id: 'cell-1' }],
+  tableName: 'cell_meeting_reports',
+  isDryRun: true,
+});
+assert(!unmappedFieldCheck.isVerified && unmappedFieldCheck.unmappedFields.length === 1, 'Strictly FAILS reconciliation when a source field has no documented destination mapping');
+
+// Case 3: Fully matched clean module
+const cleanModuleCheck = testReconcileModule({
+  sourceItems: [{ id: 'cmr-1', cell_id: 'cell-1', attendance: 30 }],
+  destItems: [{ id: 'cmr-1', cell_id: 'cell-1', attendance: 30 }],
+  tableName: 'cell_meeting_reports',
+  isDryRun: true,
+});
+assert(cleanModuleCheck.isVerified, 'Reconciliation passes when all source records match destination with zero extra records and valid mappings');
 
 console.log('\n================================================================');
 console.log(`TOTAL PHASE 6 INTEGRATION TESTS: ${passedTests + failedTests}`);

@@ -305,47 +305,91 @@ export const getSupabaseAuthToken = onCall(async (request: CallableRequest<any>)
     throw new HttpsError('failed-precondition', 'SUPABASE_JWT_SECRET is not configured on the server.');
   }
 
-  // 1. Fetch user profile from Firestore to obtain verified role
-  const profileSnap = await db.collection('profiles').doc(firebaseUid).get();
-  const profileData = profileSnap.exists ? profileSnap.data() : null;
-
-  // Account suspension / revocation check
-  if (profileData && (profileData.is_active === false || profileData.status === 'Suspended')) {
-    throw new HttpsError('permission-denied', 'Your tutor account has been suspended by church leadership.');
+  // Confirm that SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are securely configured server-side
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new HttpsError('failed-precondition', 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured on the server.');
   }
 
-  const userRole = profileData?.role || 'cell_leader';
-  const fullName = profileData?.full_name || request.auth.token.name || 'Member';
+  // 1. Fetch user profile from Firestore to obtain verified role — FAIL CLOSED
+  let profileSnap = await db.collection('profiles').doc(firebaseUid).get();
+  let profileData = profileSnap.exists ? profileSnap.data() : null;
+
+  if (!profileData) {
+    const userSnap = await db.collection('users').doc(firebaseUid).get();
+    if (userSnap.exists) {
+      profileData = userSnap.data();
+    }
+  }
+
+  // Reject Firebase users who do not have a valid, existing Firestore profile
+  if (!profileData) {
+    throw new HttpsError('not-found', 'User profile not found in database. Identity provisioning rejected.');
+  }
+
+  // Account status check: verify is_active and status
+  if (profileData.is_active === false || profileData.status === 'Suspended') {
+    throw new HttpsError('permission-denied', 'Your tutor account has been suspended or deactivated by church leadership.');
+  }
+
+  // Role check: verify role exists, DO NOT automatically assign 'cell_leader' to unknown users
+  if (!profileData.role) {
+    throw new HttpsError('permission-denied', 'User profile does not contain an assigned role. Access denied.');
+  }
+
+  const userRole = profileData.role;
+  const fullName = profileData.full_name || request.auth.token.name || 'Member';
 
   // 2. Generate deterministic UUID
   const supabaseUuid = getDeterministicUuid(firebaseUid);
 
-  // 3. Supported identity provisioning: ensure auth.users entity exists if service role configured
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (supabaseUrl && serviceRoleKey) {
+  // 3. Supported identity provisioning: ensure auth.users entity exists via Supabase Auth Admin
+  let adminRes: Response;
+  try {
+    adminRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: supabaseUuid,
+        email: request.auth.token.email || `${firebaseUid}@fnicells.org`,
+        email_confirm: true,
+        user_metadata: { firebase_uid: firebaseUid, role: userRole, full_name: fullName },
+        app_metadata: { provider: 'firebase', role: userRole, firebase_uid: firebaseUid },
+      }),
+    });
+  } catch (netErr: any) {
+    console.error('Supabase Auth user provisioning network error:', netErr);
+    throw new HttpsError('internal', `Failed to reach Supabase Auth Admin: ${netErr.message || netErr}`);
+  }
+
+  // Check HTTP response from Supabase Auth Admin user provisioning
+  if (!adminRes.ok) {
+    let errBody: any = null;
+    let errText = '';
     try {
-      await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-        method: 'POST',
-        headers: {
-          'apikey': serviceRoleKey,
-          'Authorization': `Bearer ${serviceRoleKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: supabaseUuid,
-          email: request.auth.token.email || `${firebaseUid}@fnicells.org`,
-          email_confirm: true,
-          user_metadata: { firebase_uid: firebaseUid, role: userRole, full_name: fullName },
-          app_metadata: { provider: 'firebase', role: userRole, firebase_uid: firebaseUid },
-        }),
-      });
-    } catch (provisionErr) {
-      console.warn('Supabase Auth user provisioning notice:', provisionErr);
+      errBody = await adminRes.json();
+    } catch {
+      errText = await adminRes.text().catch(() => '');
+    }
+    const errMsg = (errBody && (errBody.msg || errBody.message || errBody.error_description)) || errText || `HTTP ${adminRes.status}`;
+
+    // Handle an already-existing user safely, but do not silently ignore unrelated errors
+    const isAlreadyRegistered =
+      adminRes.status === 422 ||
+      (typeof errMsg === 'string' && /already\s*(registered|exists)/i.test(errMsg));
+
+    if (!isAlreadyRegistered) {
+      console.error(`Supabase Auth Admin user provisioning failed with status ${adminRes.status}:`, errMsg);
+      throw new HttpsError('internal', `Supabase Auth identity provisioning failed: ${errMsg}`);
     }
   }
 
-  // 3. Construct verified claims
+  // 4. Construct verified claims and issue JWT only after successful/verified provisioning
   const now = Math.floor(Date.now() / 1000);
   const payload = {
     aud: 'authenticated',
