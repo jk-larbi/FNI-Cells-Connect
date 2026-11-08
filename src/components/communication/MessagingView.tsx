@@ -32,14 +32,45 @@ export interface MessagingViewProps {
   onBack?: () => void;
 }
 
-// Popular quick emojis for fellowship chat
-const QUICK_EMOJIS = ['🙏', '🙌', '❤️', '🔥', '👍', '🎉', '🕊️', '✨'];
+// Standard general quick emojis (WhatsApp / Telegram / social media style)
+const QUICK_EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '❤️', '🔥', '🎉', '🙌', '👏', '✨', '💯'];
 
-// Full categorized emoji palette
-const EMOJI_PALETTE = {
-  Fellowship: ['🙏', '🙌', '✝️', '🕊️', '❤️', '🔥', '📖', '✨', '🌟', '👑', '🛡️', '⛪'],
-  Celebration: ['👍', '👏', '🎉', '🥳', '💯', '🤝', '💪', '💖', '🤍', '😊', '😂', '😃'],
-  Ministry: ['📞', '💬', '👣', '🌱', '🎯', '☀️', '🌈', '💐', '🍞', '🍇', '⚡', '😇'],
+// Standard general emoji categories (just like WhatsApp, Telegram & modern keyboards)
+const STANDARD_EMOJI_CATEGORIES: Record<string, string[]> = {
+  'Smileys & Faces': [
+    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊',
+    '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😋', '😛', '😜', '🤪', '😝',
+    '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄',
+    '😬', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧',
+    '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟',
+    '🙁', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢',
+    '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠',
+    '🤬', '😈', '👿', '💀', '💩', '🤡', '👻', '👽', '🤖',
+  ],
+  'Gestures & People': [
+    '👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '👋', '🤚',
+    '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🫰', '🤟', '🤘', '🤙',
+    '👈', '👉', '👆', '🖕', '👇', '☝️', '✊', '👊', '🤛', '🤜', '🫂', '🏃',
+    '🚶', '🧍', '🧎', '🧑‍🤝‍🧑', '👫', '👭', '👬', '💃', '🕺', '🧘',
+  ],
+  'Hearts & Symbols': [
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❤️‍🔥', '❤️‍🩹',
+    '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🕊️', '✝️', '☮️',
+    '💯', '🔥', '✨', '🌟', '⭐', '💫', '💥', '💢', '💬', '💭', '💤', '👑',
+    '🛡️', '⚡', '☀️', '🌈', '💎', '🔔', '🏷️', '🎯', '📍', '💡',
+  ],
+  'Celebration & Objects': [
+    '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🎫', '🎟️',
+    '📱', '💻', '🖥️', '📷', '📹', '📖', '📚', '📝', '✏️', '✉️', '📦', '🔑',
+    '🔒', '🔓', '🚀', '✈️', '🚗', '🏠', '⛪', '🕯️', '🎤', '🎧', '🎵', '🎶',
+    '⚽', '🏀', '🏈', '⚾', '🎾', '🎮', '🎲',
+  ],
+  'Food & Nature': [
+    '🌸', '🌹', '🌺', '🌻', '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌿', '☘️',
+    '🍀', '🍁', '🍂', '🍃', '🍎', '🍏', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓',
+    '🍒', '🍑', '🍍', '🥥', '🥑', '🍔', '🍟', '🍕', '🥪', '🍞', '🍦', '🍩',
+    '🍪', '🎂', '🍰', '🍫', '🍬', '🍭', '☕', '🍵', '🧃', '🥤', '💧', '🌊',
+  ],
 };
 
 export const MessagingView: React.FC<MessagingViewProps> = ({
@@ -58,6 +89,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
   const [showPrivateEmoji, setShowPrivateEmoji] = useState(false);
+  const [privateEmojiCategory, setPrivateEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Community Messaging State
   const [communityMessages, setCommunityMessages] = useState<CommunityMessage[]>([]);
@@ -66,6 +98,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [isSendingCommunity, setIsSendingCommunity] = useState(false);
   const [communityReplyTo, setCommunityReplyTo] = useState<MessageReply | null>(null);
   const [showCommunityEmoji, setShowCommunityEmoji] = useState(false);
+  const [communityEmojiCategory, setCommunityEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Registered members / tutors directory for @mention tagging
   const [memberDirectory, setMemberDirectory] = useState<{ id: string; name: string; cellName?: string }[]>([]);
@@ -615,44 +648,55 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
           )}
 
-          {/* EMOJI DRAWER POPUP */}
+          {/* Standard Social Media / WhatsApp Emoji Drawer */}
           {showCommunityEmoji && (
-            <div className="border-t border-[#E3E8EF] bg-white p-3 shadow-md space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-[#E3E8EF]">
-                <span className="text-xs font-bold text-[#142B4A]">Fellowship & Faith Emojis</span>
+            <div className="border-t border-[#E3E8EF] bg-white p-3 shadow-md space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E3E8EF] gap-2">
+                {/* Category Navigation Bar (WhatsApp / Telegram style) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
+                  {Object.keys(STANDARD_EMOJI_CATEGORIES).map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCommunityEmojiCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                        communityEmojiCategory === cat
+                          ? 'bg-[#142B4A] text-white shadow-xs'
+                          : 'bg-[#F5F7FA] text-[#667085] hover:bg-[#E3E8EF] hover:text-[#182230]'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowCommunityEmoji(false)}
-                  className="text-xs text-[#667085] hover:text-[#142B4A] cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-[#F5F7FA] text-[#667085] hover:text-[#182230] cursor-pointer shrink-0"
+                  title="Close emoji picker"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="space-y-2.5">
-                {Object.entries(EMOJI_PALETTE).map(([category, emojis]) => (
-                  <div key={category}>
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#667085] mb-1">
-                      {category}
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {emojis.map(emoji => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => {
-                            setCommunityText(prev => prev + emoji);
-                            communityInputRef.current?.focus();
-                          }}
-                          className="w-10 h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer"
-                          title={emoji}
-                        >
-                          <span className="text-2xl leading-none">{emoji}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              {/* Standard General Emojis Grid */}
+              <div className="max-h-52 overflow-y-auto p-1 custom-scrollbar">
+                <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-14 gap-1.5">
+                  {STANDARD_EMOJI_CATEGORIES[communityEmojiCategory]?.map(emoji => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        setCommunityText(prev => prev + emoji);
+                        communityInputRef.current?.focus();
+                      }}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer text-xl sm:text-2xl"
+                      title={emoji}
+                    >
+                      <span>{emoji}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -912,34 +956,55 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
           )}
 
-          {/* Private Emoji Drawer */}
+          {/* Standard Social Media / WhatsApp Emoji Drawer for Private Chat */}
           {showPrivateEmoji && (
-            <div className="border-t border-[#E3E8EF] bg-white p-3 shadow-md">
-              <div className="flex items-center justify-between pb-2 border-b border-[#E3E8EF] mb-2">
-                <span className="text-xs font-bold text-[#142B4A]">Insert Emoji</span>
+            <div className="border-t border-[#E3E8EF] bg-white p-3 shadow-md space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E3E8EF] gap-2">
+                {/* Category Navigation Bar (WhatsApp / Telegram style) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
+                  {Object.keys(STANDARD_EMOJI_CATEGORIES).map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setPrivateEmojiCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                        privateEmojiCategory === cat
+                          ? 'bg-[#142B4A] text-white shadow-xs'
+                          : 'bg-[#F5F7FA] text-[#667085] hover:bg-[#E3E8EF] hover:text-[#182230]'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowPrivateEmoji(false)}
-                  className="text-xs text-[#667085] hover:text-[#142B4A] cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-[#F5F7FA] text-[#667085] hover:text-[#182230] cursor-pointer shrink-0"
+                  title="Close emoji picker"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {QUICK_EMOJIS.map(emoji => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => {
-                      setPrivateText(prev => prev + emoji);
-                      privateInputRef.current?.focus();
-                    }}
-                    className="w-10 h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer"
-                    title={emoji}
-                  >
-                    <span className="text-xl leading-none">{emoji}</span>
-                  </button>
-                ))}
+
+              {/* Standard General Emojis Grid */}
+              <div className="max-h-52 overflow-y-auto p-1 custom-scrollbar">
+                <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-14 gap-1.5">
+                  {STANDARD_EMOJI_CATEGORIES[privateEmojiCategory]?.map(emoji => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        setPrivateText(prev => prev + emoji);
+                        privateInputRef.current?.focus();
+                      }}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer text-xl sm:text-2xl"
+                      title={emoji}
+                    >
+                      <span>{emoji}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
