@@ -67,13 +67,35 @@ Adheres strictly to an organizational management aesthetic:
 The platform implements enterprise-grade authentication with distinct separation between field ministers and national administration:
 
 ### A. Cell Leader Sign-In & Onboarding
-- **OAuth Providers**: Supabase Authentication with **Google Account (Gmail)** and **Apple ID**.
+- **OAuth recovery providers**: Firebase Authentication links Google Accounts and Apple IDs to an existing Firebase UID; Firestore profile, cell, and report records remain attached to that UID.
 - **First-Time Registration Wizard**: Non-dismissible modal immediately triggered for newly signed-in cell leaders.
   - Collects Full Name, Cell Fellowship Name, WhatsApp/Phone Number, Region, Meeting Day/Time, Venue Address, Target Attendance.
   - **Duplicate Prevention & Association**: Performs case-insensitive, alphanumeric normalization on cell names. If a cell already exists (e.g. `Living Waters` vs `Living Waters Fellowship`), prompts to link to the existing cell without generating duplicate records.
   - Sets `is_onboarded = true` and persists details in Supabase database.
 - **Returning Cell Leaders**: Automatically recognized; bypasses onboarding and loads their registered cell data directly.
 - **Data Isolation**: Cell leaders are restricted by Row Level Security (RLS) and can only access their own profile, cell details, and reports.
+
+### OAuth Account Recovery (Google & Apple)
+
+Members must first sign in to their existing FNI account, open **Account Settings → Account recovery**, and link their own Google Account or Apple ID. Linking attaches the provider to the current Firebase Auth user; it does not create a second FNI profile or move Firestore records. A provider already attached to a different Firebase user is rejected rather than silently merged.
+
+After linking, members can use **Continue with Google** or **Continue with Apple** on the tutor login screen. Mobile browsers use the OAuth redirect flow; desktop browsers use a popup. The app checks for the existing Firestore `profiles/{uid}` record and refuses access if the profile is missing or suspended.
+
+**Firebase Console setup**
+1. Open Firebase Console → **Authentication → Sign-in method**.
+2. Enable **Google**, select the project support email, and save.
+3. Under **Authentication → Settings → Authorized domains**, add the exact production website hostname and any development hostname used for testing (for example, `localhost`).
+4. Test linking and sign-in with a non-admin test tutor before announcing the feature.
+
+**Apple setup (additional account prerequisites)**
+1. An active Apple Developer Program membership is required to configure Sign in with Apple for the web.
+2. In Apple Developer → Certificates, Identifiers & Profiles, enable **Sign in with Apple** and configure the website domain.
+3. Register Firebase's OAuth return URL: `https://YOUR_FIREBASE_PROJECT_ID.firebaseapp.com/__/auth/handler`.
+4. Create an Apple Services ID and Sign in with Apple private key; note the Services ID, Team ID, Key ID, and private key.
+5. In Firebase Console → Authentication → Sign-in method → **Apple**, enter those values and save.
+6. Configure Apple's private email relay if Firebase email features will send messages to users who choose Hide My Email.
+
+**Important:** The code and UI are prepared on this feature branch, but provider activation requires access to the Firebase project owner settings. Apple cannot be enabled without the Apple Developer credentials. Never commit the Apple private key or other provider secrets to this repository.
 
 ### B. Administrator Access & Hardened Credentials
 - **Separate Admin Sign-In**: Dedicated login portal for system and national administrators.
