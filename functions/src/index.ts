@@ -969,3 +969,52 @@ export const onReviewLogCreated = onDocumentCreated(
   }
 );
 
+/**
+ * Trigger 7: New Cell Registered → Notifies Administrators via In-App and Multicast FCM
+ */
+export const onCellCreated = onDocumentCreated(
+  'cells/{cellId}',
+  async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const data = snap.data();
+    const cellId = snap.id;
+    const cellName = data.name || 'New Fellowship Cell';
+    const leaderName = data.leader_name || data.leaderName || 'Cell Leader';
+    const tutorUid = data.tutorUid || data.leader_id || '';
+    const nowIso = new Date().toISOString();
+
+    const notifId = `notif-cell-reg-${cellId}`;
+    await db.collection('notifications').doc(notifId).set({
+      id: notifId,
+      user_id: 'admin',
+      title: 'New Fellowship Cell & Tutor Registered',
+      message: `${leaderName} has registered "${cellName}" in the fellowship directory.`,
+      type: 'system_alert',
+      channel: 'in_app',
+      is_read: false,
+      metadata: {
+        targetTab: 'cell-management',
+        cellId,
+        cellName,
+        tutorUid,
+        leaderName,
+        category: 'cells',
+        idempotencyKey: notifId,
+      },
+      created_at: nowIso,
+    });
+
+    // Multicast FCM to Admin devices
+    await sendFcmNotification(
+      ['admin'],
+      {
+        title: `New Cell Registered: ${cellName}`,
+        body: `${leaderName} registered "${cellName}". Review in Cell Management.`,
+      },
+      { targetTab: 'cell-management', cellId, cellName }
+    );
+  }
+);
+

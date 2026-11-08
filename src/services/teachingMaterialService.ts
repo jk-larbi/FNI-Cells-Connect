@@ -2,44 +2,9 @@ import { collection, doc, setDoc, getDocs, updateDoc, query, orderBy, deleteDoc 
 import { db, isFirebaseConfigured } from './firebase';
 import { TeachingMaterial } from '../types';
 
-const STORAGE_KEY = 'fni_teaching_materials_v1';
+const STORAGE_KEY = 'fni_teaching_materials_v2_clean';
 
-const INITIAL_MATERIALS: TeachingMaterial[] = [
-  {
-    id: 'mat-001',
-    title: 'Apostolic Cell Leadership & Pastoral Oversight',
-    description: 'Foundational training manual for newly consecrated cell tutors. Explores spiritual authority, home visitation strategies, and soul nurturing protocols.',
-    weekLabel: 'Week 45 (Foundations)',
-    documentUrl: 'https://forerunnersnetwork.org/materials/pastoral-oversight-w45.pdf',
-    fileName: 'FNI_Cell_Leadership_Manual_W45.pdf',
-    fileSize: '1.4 MB',
-    fileType: 'application/pdf',
-    textContent: 'Session 1: The Heart of a Cell Shepherd\nJesus ministered in the synagogues and from house to house (Acts 20:20). The cell fellowship is the front-line battalion of the Kingdom of God.\n\nKey Tenets:\n1. Personal consecration and intercession for every assigned soul.\n2. Diligent record keeping and timely reporting by Sunday 6:00 PM.\n3. Continuous discipleship and follow-up until Christ is formed in every believer.',
-    status: 'published',
-    publishedAt: '2026-11-01T08:00:00Z',
-    uploadedBy: 'usr-admin-master',
-    uploadedByName: 'General Overseer / System Admin',
-    createdAt: '2026-11-01T07:30:00Z',
-    updatedAt: '2026-11-01T08:00:00Z',
-  },
-  {
-    id: 'mat-002',
-    title: 'The Great Commission: Effective Field Evangelism Dynamics',
-    description: 'Practical guide for cell evangelism outings. Covers pre-set goal setting, handling objections, gospel clarity, and seamless contact registration.',
-    weekLabel: 'Week 46 (Harvest Outreaches)',
-    documentUrl: 'https://forerunnersnetwork.org/materials/evangelism-dynamics-w46.pdf',
-    fileName: 'FNI_Field_Evangelism_Dynamics_W46.pdf',
-    fileSize: '950 KB',
-    fileType: 'application/pdf',
-    textContent: 'Session 2: Mobilizing the Harvest Team\nBefore setting out on an evangelism drive, the cell leader must declare a pre-set soul target and anoint the team in prayer.\n\nImmediate Steps:\n1. Gather names, phone numbers, and WhatsApp coordinates accurately.\n2. Verify decisions for Christ without inflating numbers.\n3. Follow up every contact within 48 hours.',
-    status: 'published',
-    publishedAt: '2026-11-04T10:00:00Z',
-    uploadedBy: 'usr-admin-master',
-    uploadedByName: 'System Administrator',
-    createdAt: '2026-11-04T09:30:00Z',
-    updatedAt: '2026-11-04T10:00:00Z',
-  },
-];
+const INITIAL_MATERIALS: TeachingMaterial[] = [];
 
 function getStoredMaterials(): TeachingMaterial[] {
   try {

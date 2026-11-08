@@ -292,6 +292,27 @@ export class AuthService {
       },
     });
 
+    // Notify administrators of new cell & tutor registration
+    try {
+      const { NotificationService } = await import('./notificationService');
+      await NotificationService.createNotification({
+        userId: 'admin',
+        title: 'New Fellowship Cell & Tutor Registered',
+        message: `${cleanName} has registered "${cleanCellName}" in the fellowship directory.`,
+        type: 'system_alert',
+        channel: 'in_app',
+        metadata: {
+          targetTab: 'cell-management',
+          cellId,
+          cellName: cleanCellName,
+          tutorUid: uid,
+          tutorName: cleanName,
+        },
+      });
+    } catch (e) {
+      console.warn('Failed to notify admin of tutor registration:', e);
+    }
+
     return { profile: newProfile, cell: newCell, error: null };
   }
 
