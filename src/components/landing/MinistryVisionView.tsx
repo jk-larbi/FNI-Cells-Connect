@@ -46,7 +46,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           {/* Logo Frame: Full Emblem Preserved */}
           <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-3xl overflow-hidden border-2 border-white shadow-xl bg-[#142B4A] flex items-center justify-center p-1 relative z-10">
             <img
-              src="/fni-official-logo.jpg"
+              src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
               alt="Forerunners Network International Logo"
               className="w-full h-full object-contain rounded-2xl"
             />
