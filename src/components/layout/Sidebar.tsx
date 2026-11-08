@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
     { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users },
-    { id: 'report-review' as AppNavTab, label: 'Report Review', icon: FileCheck },
+    { id: 'report-review' as AppNavTab, label: 'Accept / Decline Reports', icon: FileCheck },
     { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
     { id: 'finance' as AppNavTab, label: 'Offering Aggregation', icon: DollarSign },

@@ -34,6 +34,8 @@ import {
   Settings,
   Bell,
   ShieldCheck,
+  Check,
+  X,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -55,7 +57,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   // Push Notifications state
-  const { isPushEnabled, isPushSupported, requestPushPermission } = useNotifications();
+  const { isPushEnabled, isPushSupported, requestPushPermission, dispatchNotification } = useNotifications();
   const [pushStatusMsg, setPushStatusMsg] = useState<string | null>(null);
   const [isRequestingPush, setIsRequestingPush] = useState(false);
 
@@ -183,13 +185,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigateToTab('report-review')}
-            className="px-3.5 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-extrabold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-2 cursor-pointer border border-[#C6A45A]/30"
           >
-            <FileCheck className="w-3.5 h-3.5 text-[#C6A45A]" />
-            <span>Open Review Queue</span>
-            {stats.awaitingReviewCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-[#D99A32] text-white text-[10px] font-bold">
-                {stats.awaitingReviewCount}
+            <FileCheck className="w-4 h-4 text-[#C6A45A]" />
+            <span>Accept / Decline Reports</span>
+            {stats.awaitingReviewCount > 0 ? (
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-[#D99A32] text-white text-[10px] font-bold animate-pulse">
+                {stats.awaitingReviewCount} Awaiting Decision
+              </span>
+            ) : (
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-700/60 text-white text-[10px] font-semibold">
+                All Cleared
               </span>
             )}
           </button>
@@ -751,21 +757,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* RECENT SUBMISSIONS TABLE (Styled directly after the Reference Image!) */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
         {/* Table Header Section */}
-        <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center justify-between">
+        <div className="py-4 px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-[#182230]">
-              Recent Submissions ({recentQueue.length})
+              Recent Submissions — Accept / Decline Queue ({recentQueue.length})
             </h2>
             <p className="text-xs text-[#667085] mt-0.5">
-              Cell returns and evangelism reports submitted for central review.
+              Weekly fellowship returns and evangelism reports. Directly accept (approve) or decline (return for correction).
             </p>
           </div>
           <button
             onClick={() => onNavigateToTab('report-review')}
-            className="text-xs font-bold text-[#142B4A] hover:text-[#203D63] flex items-center gap-1 transition-colors"
+            className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] text-[#142B4A] border border-[#C6A45A]/30 text-xs font-bold hover:bg-[#F5F0E4] flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <span>View All Reports</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Open Accept / Decline Directorate</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
           </button>
         </div>
 
@@ -920,22 +926,74 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                       </td>
 
-                      {/* Circular Action Button (matching reference image!) */}
+                      {/* Action Buttons: Accept / Decline / Inspect */}
                       <td className="py-4 px-5 whitespace-nowrap text-right">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (onOpenReport) {
-                              onOpenReport(item.id);
-                            } else {
-                              onNavigateToTab('report-review');
-                            }
-                          }}
-                          className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 inline-flex items-center justify-center transition-colors shadow-2xs"
-                          title="Review Report"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {!isApproved && (
+                            <button
+                              onClick={async e => {
+                                e.stopPropagation();
+                                await ReportService.reviewReport(
+                                  item.id,
+                                  item.reportType,
+                                  'Approved',
+                                  'Accepted by Administrator from Dashboard',
+                                  currentUser.id,
+                                  currentUser.full_name
+                                );
+                                dispatchNotification(
+                                  `Report Accepted: ${item.cellName}`,
+                                  `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been accepted.`,
+                                  'report_approved',
+                                  'in_app'
+                                );
+                                // Refresh dashboard
+                                const [updatedStats, updatedQueue] = await Promise.all([
+                                  AnalyticsService.getDashboardStats('admin'),
+                                  ReportService.getUnifiedReviewQueue(),
+                                ]);
+                                setStats(updatedStats);
+                                setRecentQueue(updatedQueue.slice(0, 5));
+                              }}
+                              className="px-2 py-1 rounded-lg bg-emerald-50 text-[#23845B] hover:bg-emerald-100 inline-flex items-center gap-1 text-[11px] font-bold transition-colors shadow-2xs cursor-pointer border border-emerald-200"
+                              title="Accept Report"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Accept</span>
+                            </button>
+                          )}
+                          {!isNeedsCorrection && (
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (onOpenReport) {
+                                  onOpenReport(item.id);
+                                } else {
+                                  onNavigateToTab('report-review');
+                                }
+                              }}
+                              className="px-2 py-1 rounded-lg bg-rose-50 text-[#C74646] hover:bg-rose-100 inline-flex items-center gap-1 text-[11px] font-bold transition-colors shadow-2xs cursor-pointer border border-rose-200"
+                              title="Decline / Return for Correction"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Decline</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (onOpenReport) {
+                                onOpenReport(item.id);
+                              } else {
+                                onNavigateToTab('report-review');
+                              }
+                            }}
+                            className="w-7 h-7 rounded-lg bg-[#F5F7FA] text-[#142B4A] hover:bg-[#142B4A] hover:text-[#C6A45A] inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer border border-[#E3E8EF]"
+                            title="Inspect Full Report Details"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

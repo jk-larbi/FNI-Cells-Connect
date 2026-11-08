@@ -510,10 +510,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             </div>
             <div>
               <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
-                Central Report Review Directorate
+                Accept / Decline Reports Directorate
               </h1>
               <p className="text-xs text-[#667085] mt-0.5">
-                Audit, verify, approve, or return Cell Meeting Returns and Evangelism Outreaches with full audit integrity.
+                Central leadership portal to evaluate, accept (approve), or decline (return for correction) weekly fellowship reports.
               </p>
             </div>
           </div>
@@ -574,7 +574,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           </div>
         </button>
 
-        {/* Needs Correction */}
+        {/* Needs Correction / Declined */}
         <button
           type="button"
           onClick={() => setStatusFilter(statusFilter === 'Needs Correction' ? 'all' : 'Needs Correction')}
@@ -586,7 +586,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
-              Needs Correction
+              Declined
             </span>
             <AlertCircle className="w-3.5 h-3.5 text-[#C74646]" />
           </div>
@@ -594,11 +594,11 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             {needsCorrectionCount}
           </div>
           <div className="text-[11px] font-semibold text-[#C74646] mt-1">
-            Returned to Tutors
+            Returned for Revision
           </div>
         </button>
 
-        {/* Approved */}
+        {/* Approved / Accepted */}
         <button
           type="button"
           onClick={() => setStatusFilter(statusFilter === 'Approved' ? 'all' : 'Approved')}
@@ -610,7 +610,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
-              Approved
+              Accepted
             </span>
             <CheckCircle2 className="w-3.5 h-3.5 text-[#23845B]" />
           </div>
@@ -618,7 +618,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             {approvedCount}
           </div>
           <div className="text-[11px] font-semibold text-[#23845B] mt-1">
-            Verified Submissions
+            Verified & Approved
           </div>
         </button>
 
@@ -738,17 +738,22 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E3E8EF]">
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="text-[11px] font-bold text-[#667085] uppercase mr-1">Status:</span>
-            {(['all', 'Newly Submitted', 'Needs Correction', 'Approved'] as const).map(st => (
+            {[
+              { id: 'all', label: 'All Statuses' },
+              { id: 'Newly Submitted', label: 'Awaiting Decision' },
+              { id: 'Approved', label: 'Accepted' },
+              { id: 'Needs Correction', label: 'Declined' },
+            ].map(st => (
               <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
+                key={st.id}
+                onClick={() => setStatusFilter(st.id)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  statusFilter === st
+                  statusFilter === st.id
                     ? 'bg-[#142B4A] text-white shadow-2xs'
                     : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
                 }`}
               >
-                {st === 'all' ? 'All Statuses' : st}
+                {st.label}
               </button>
             ))}
 
@@ -821,7 +826,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               className="px-4 py-2 rounded-xl bg-[#23845B] hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Bulk Approve</span>
+              <span>Bulk Accept</span>
             </button>
 
             <button
@@ -830,7 +835,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               className="px-4 py-2 rounded-xl bg-[#C74646] hover:bg-rose-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
               <AlertCircle className="w-4 h-4" />
-              <span>Bulk Return for Revision</span>
+              <span>Bulk Decline</span>
             </button>
 
             <button
@@ -1134,32 +1139,34 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                             </a>
                           )}
 
-                          {/* Quick Approve (Only if not approved) */}
+                          {/* Quick Accept */}
                           {!isApproved && (
                             <button
                               type="button"
                               disabled={isQuickProcessing}
                               onClick={e => handleQuickApprove(item, e)}
-                              className="w-8 h-8 rounded-xl bg-emerald-50 text-[#23845B] hover:bg-emerald-100 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                              title="1-Click Approve"
+                              className="px-2 py-1 rounded-lg bg-emerald-50 text-[#23845B] hover:bg-emerald-100 inline-flex items-center gap-1 text-[11px] font-bold transition-colors shadow-2xs cursor-pointer border border-emerald-200"
+                              title="Accept Report"
                             >
                               {isQuickProcessing ? (
                                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                               ) : (
                                 <Check className="w-3.5 h-3.5" />
                               )}
+                              <span>Accept</span>
                             </button>
                           )}
 
-                          {/* Quick Return for Correction */}
+                          {/* Quick Decline */}
                           {!isNeedsCorrection && (
                             <button
                               type="button"
                               onClick={e => handleQuickReturn(item, e)}
-                              className="w-8 h-8 rounded-xl bg-rose-50 text-[#C74646] hover:bg-rose-100 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                              title="Return for Correction"
+                              className="px-2 py-1 rounded-lg bg-rose-50 text-[#C74646] hover:bg-rose-100 inline-flex items-center gap-1 text-[11px] font-bold transition-colors shadow-2xs cursor-pointer border border-rose-200"
+                              title="Decline Report"
                             >
                               <AlertCircle className="w-3.5 h-3.5" />
+                              <span>Decline</span>
                             </button>
                           )}
 
@@ -1587,11 +1594,11 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   className={`flex-1 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     reviewAction === 'Approved'
                       ? 'bg-[#23845B] text-white shadow-md'
-                      : 'bg-emerald-50 text-[#23845B] hover:bg-emerald-100'
+                      : 'bg-emerald-50 text-[#23845B] hover:bg-emerald-100 border border-emerald-200'
                   }`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Approve Report</span>
+                  <span>Accept Report</span>
                 </button>
 
                 <button
@@ -1603,11 +1610,11 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   className={`flex-1 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     reviewAction === 'Needs Correction'
                       ? 'bg-[#C74646] text-white shadow-md'
-                      : 'bg-rose-50 text-[#C74646] hover:bg-rose-100'
+                      : 'bg-rose-50 text-[#C74646] hover:bg-rose-100 border border-rose-200'
                   }`}
                 >
                   <AlertCircle className="w-4 h-4" />
-                  <span>Return for Correction</span>
+                  <span>Decline Report</span>
                 </button>
               </div>
 
@@ -1687,7 +1694,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          <span>Confirm {reviewAction === 'Approved' ? 'Approval' : 'Return for Correction'}</span>
+                          <span>Confirm {reviewAction === 'Approved' ? 'Acceptance' : 'Decline (Return with Directives)'}</span>
                         </>
                       )}
                     </button>
@@ -1699,7 +1706,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         </div>
       )}
 
-      {/* BULK APPROVE MODAL */}
+      {/* BULK ACCEPT MODAL */}
       {isBulkApproveModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#E3E8EF] space-y-4 text-center animate-fade-in">
@@ -1708,10 +1715,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             </div>
             <div>
               <h3 className="text-base font-extrabold text-[#182230]">
-                Approve {selectedIds.size} Reports?
+                Accept {selectedIds.size} Reports?
               </h3>
               <p className="text-xs text-[#667085] mt-1.5 leading-relaxed">
-                You are about to bulk approve {selectedIds.size} selected reports. Each tutor will receive an official in-app confirmation notification.
+                You are about to accept {selectedIds.size} selected reports. Each tutor will receive an official in-app acceptance notification.
               </p>
             </div>
 
@@ -1732,10 +1739,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                 {isBulkProcessing ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Processing Approval...</span>
+                    <span>Processing Acceptance...</span>
                   </>
                 ) : (
-                  <span>Confirm Bulk Approval</span>
+                  <span>Confirm Bulk Acceptance</span>
                 )}
               </button>
             </div>
@@ -1743,7 +1750,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         </div>
       )}
 
-      {/* BULK RETURN FOR CORRECTION MODAL */}
+      {/* BULK DECLINE MODAL */}
       {isBulkReturnModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#E3E8EF] space-y-4 text-left animate-fade-in">
@@ -1753,23 +1760,23 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-[#182230]">
-                  Return {selectedIds.size} Reports for Correction
+                  Decline {selectedIds.size} Reports
                 </h3>
                 <p className="text-xs text-[#667085]">
-                  Tutors will receive a directive notification to update and resubmit.
+                  Tutors will receive an administrative directive to update and resubmit.
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-[#182230]">
-                Corrective Guidance / Remark for Tutors <span className="text-[#C74646]">*</span>
+                Decline Directives / Corrective Remarks <span className="text-[#C74646]">*</span>
               </label>
               <textarea
                 rows={3}
                 value={bulkReturnComment}
                 onChange={e => setBulkReturnComment(e.target.value)}
-                placeholder="State the general reason for returning these reports (e.g., please verify attendance, offering receipts, or convert phone numbers)..."
+                placeholder="State clearly why these reports are declined and what the tutors must correct before resubmitting..."
                 className="w-full p-3 text-xs rounded-xl border border-[#E3E8EF] bg-white focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none text-[#182230]"
               />
             </div>
@@ -1791,10 +1798,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                 {isBulkProcessing ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Returning Reports...</span>
+                    <span>Declining Reports...</span>
                   </>
                 ) : (
-                  <span>Send Directives</span>
+                  <span>Send Decline Directives</span>
                 )}
               </button>
             </div>

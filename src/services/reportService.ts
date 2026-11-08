@@ -440,9 +440,9 @@ export class ReportService {
     const reviewerName = isFiveArgs ? (arg5 || 'Admin') : (arg6 || 'Admin');
 
     const status: ReportStatus =
-      rawStatus === 'approved' || rawStatus === 'Approved'
+      rawStatus === 'approved' || rawStatus === 'Approved' || rawStatus === 'Accepted' || rawStatus === 'accepted'
         ? 'Approved'
-        : rawStatus === 'needs_revision' || rawStatus === 'Needs Correction'
+        : rawStatus === 'needs_revision' || rawStatus === 'Needs Correction' || rawStatus === 'Declined' || rawStatus === 'declined' || rawStatus === 'Rejected' || rawStatus === 'rejected'
         ? 'Needs Correction'
         : (rawStatus as ReportStatus);
 
