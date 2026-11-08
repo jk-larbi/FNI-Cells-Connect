@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         const profile = profileSnap.data() as Profile;
         if (profile.is_active === false || (profile as any).status === 'Suspended') {
-          await firebaseSignOut(auth);
+          await firebaseSignOut(firebaseAuth);
           localStorage.removeItem('fni_active_session_v5_clean_prod');
           setIsLoggedOut(true);
           return;
