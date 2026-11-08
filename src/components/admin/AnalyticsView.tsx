@@ -3,7 +3,7 @@ import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { SettingsService } from '../../services/settingsService';
-import { DashboardStats, SystemSettings, Cell, Region } from '../../types';
+import { DashboardStats, SystemSettings, Cell, CellPerformanceRecord } from '../../types';
 import {
   BarChart3,
   Download,
@@ -16,15 +16,16 @@ import {
   Building,
   Printer,
   Sparkles,
+  FileCheck,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const AnalyticsView: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
-  const [regions, setRegions] = useState<Region[]>([]);
   const [weeklyTrends, setWeeklyTrends] = useState<any[]>([]);
-  const [regionalStats, setRegionalStats] = useState<any[]>([]);
+  const [cellStats, setCellStats] = useState<CellPerformanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters
@@ -35,20 +36,18 @@ export const AnalyticsView: React.FC = () => {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [dashStats, sysSettings, cellList, regList, trends, regStats] = await Promise.all([
+      const [dashStats, sysSettings, cellList, trends, cStats] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
         CellService.getCells(),
-        ReportService.getRegions(),
         AnalyticsService.getWeeklyTrends('admin'),
-        AnalyticsService.getRegionalPerformance(),
+        AnalyticsService.getCellPerformance(),
       ]);
       setStats(dashStats);
       setSettings(sysSettings);
       setCells(cellList);
-      setRegions(regList);
       setWeeklyTrends(trends);
-      setRegionalStats(regStats);
+      setCellStats(cStats);
     } finally {
       setIsLoading(false);
     }
@@ -269,19 +268,19 @@ export const AnalyticsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Regional & Cell Performance Comparison (Reference Image Table Styled) */}
+      {/* Cells Breakdown & Compliance (Live Operational Tracking for Signed-up Cells) */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
         <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-[#182230]">
-              Regional Breakdown & Compliance
+              Cells Breakdown & Compliance
             </h2>
             <p className="text-xs text-[#667085] mt-0.5">
-              Live aggregation of attendance, soul-winning harvest, and submission compliance by hub.
+              Live operational breakdown of attendance, soul-winning harvest, offerings, and reporting compliance for registered cells.
             </p>
           </div>
-          <span className="text-xs font-semibold text-[#142B4A]">
-            Ghana / Africa / Europe Hubs
+          <span className="px-2.5 py-1 rounded-full bg-[#142B4A]/5 border border-[#142B4A]/10 text-xs font-bold text-[#142B4A]">
+            Registered Fellowship Cells ({cellStats.length})
           </span>
         </div>
 
@@ -292,85 +291,122 @@ export const AnalyticsView: React.FC = () => {
                 <th className="py-3 px-5 w-12 text-center">
                   <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
                 </th>
-                <th className="py-3 px-4">REGION HUB</th>
-                <th className="py-3 px-4">ACTIVE CELLS</th>
-                <th className="py-3 px-4">ATTENDANCE</th>
-                <th className="py-3 px-4">SOULS WON</th>
-                <th className="py-3 px-4">COMPLIANCE</th>
-                <th className="py-3 px-5 text-right">STATUS</th>
+                <th className="py-3 px-4">FELLOWSHIP CELL & TUTOR</th>
+                <th className="py-3 px-4">MEETING ATTENDANCE</th>
+                <th className="py-3 px-4">SOULS WON (HARVEST)</th>
+                <th className="py-3 px-4">OFFERINGS (GHS)</th>
+                <th className="py-3 px-4">REPORTING COMPLIANCE</th>
+                <th className="py-3 px-5 text-right">LATEST STATUS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E3E8EF]">
-              {regionalStats.map(reg => (
-                <tr key={reg.id} className="hover:bg-[#F5F7FA] transition-colors">
-                  <td className="py-4 px-5 text-center">
-                    <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
-                        {reg.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-bold text-[#182230] leading-tight">
-                          {reg.name}
-                        </div>
-                        <div className="text-[11px] text-[#667085] mt-0.5">
-                          Code: {reg.code}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <span className="font-bold text-[#182230] text-sm">
-                      {reg.cells}
-                    </span>
-                    <div className="text-[10px] text-[#667085]">Fellowship Cells</div>
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <span className="font-bold text-[#182230] text-sm">
-                      {reg.attendance}
-                    </span>
-                    <div className="text-[10px] text-[#667085]">Turnout</div>
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <span className="font-bold text-[#23845B] text-sm">
-                      +{reg.souls}
-                    </span>
-                    <div className="text-[10px] text-[#23845B]">Souls Won</div>
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <span className="font-bold text-[#182230] text-sm">
-                      {reg.compliance}%
-                    </span>
-                    <div className="w-24 bg-[#E3E8EF] rounded-full h-1.5 mt-1">
-                      <div
-                        className="bg-[#23845B] h-full rounded-full"
-                        style={{ width: `${reg.compliance}%` }}
-                      />
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-5 whitespace-nowrap text-right">
-                    {reg.compliance >= 70 ? (
-                      <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                        <span className="w-2 h-2 rounded-full bg-[#23845B]" />
-                        On Track
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 font-medium text-[#D99A32]">
-                        <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
-                        Attention Needed
-                      </span>
-                    )}
+              {cellStats.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-[#667085]">
+                    <Building className="w-8 h-8 text-[#CBD5E1] mx-auto mb-2" />
+                    <p className="text-xs font-semibold">No fellowship cells registered yet.</p>
+                    <p className="text-[11px] text-[#667085] mt-0.5">
+                      When tutors sign up, their cells and submitted reports will appear here in real time.
+                    </p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                cellStats.map(cell => (
+                  <tr key={cell.id} className="hover:bg-[#F5F7FA] transition-colors">
+                    <td className="py-4 px-5 text-center">
+                      <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
+                          {cell.name
+                            .split(' ')
+                            .map(n => n[0])
+                            .slice(0, 2)
+                            .join('')}
+                        </div>
+                        <div>
+                          <div className="font-bold text-[#182230] leading-tight">
+                            {cell.name}
+                          </div>
+                          <div className="text-[11px] text-[#667085] mt-0.5">
+                            Tutor: <span className="font-semibold text-[#142B4A]">{cell.leaderName}</span>
+                            {cell.code && <span className="ml-1.5 text-slate-400">({cell.code})</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#182230] text-sm">
+                        {cell.totalAttendance}
+                      </span>
+                      <div className="text-[10px] text-[#667085]">
+                        {cell.meetingReportsCount} meeting report{cell.meetingReportsCount === 1 ? '' : 's'}
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#23845B] text-sm">
+                        +{cell.soulsWon}
+                      </span>
+                      <div className="text-[10px] text-[#667085]">
+                        {cell.peopleReached} gospel reached &bull; {cell.evangelismReportsCount} outreach
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#182230] text-sm">
+                        GHS {cell.offeringsGhs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      <div className="text-[10px] text-[#667085]">Total remitted</div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#182230] text-sm">
+                        {cell.compliance}%
+                      </span>
+                      <div className="w-24 bg-[#E3E8EF] rounded-full h-1.5 mt-1">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            cell.compliance >= 80
+                              ? 'bg-[#23845B]'
+                              : cell.compliance >= 50
+                              ? 'bg-[#D99A32]'
+                              : 'bg-[#C74646]'
+                          }`}
+                          style={{ width: `${cell.compliance}%` }}
+                        />
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-5 whitespace-nowrap text-right">
+                      {cell.status === 'On Track' ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
+                          <span className="w-2 h-2 rounded-full bg-[#23845B]" />
+                          On Track
+                        </span>
+                      ) : cell.status === 'Awaiting Review' ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#D99A32]">
+                          <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
+                          Awaiting Review
+                        </span>
+                      ) : cell.status === 'Needs Correction' ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
+                          <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                          Needs Correction
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
+                          <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                          Missing Return
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

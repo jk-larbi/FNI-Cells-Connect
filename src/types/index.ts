@@ -466,6 +466,27 @@ export interface DashboardStats {
   complianceRate: number;
 }
 
+export interface CellPerformanceRecord {
+  id: string;
+  name: string;
+  code: string;
+  leaderName: string;
+  leaderPhone: string;
+  location: string;
+  targetAttendance: number;
+  meetingReportsCount: number;
+  evangelismReportsCount: number;
+  totalAttendance: number;
+  soulsWon: number;
+  peopleReached: number;
+  offeringsGhs: number;
+  compliance: number;
+  status: 'On Track' | 'Awaiting Review' | 'Needs Correction' | 'Missing Report';
+  statusColor: 'emerald' | 'amber' | 'rose';
+  latestMeetingDate?: string;
+  latestSubmissionIso?: string;
+}
+
 export type AdminNavTab =
   | 'dashboard'
   | 'cell-management'

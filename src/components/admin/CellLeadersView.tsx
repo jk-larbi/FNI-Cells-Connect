@@ -230,10 +230,10 @@ export const CellLeadersView: React.FC = () => {
 
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="font-bold text-[#182230]">
-                          {leader.cell_name || 'Unassigned Cell'}
+                          {leader.cell_name || 'Assigned Fellowship Cell'}
                         </div>
                         <div className="text-[11px] text-[#667085]">
-                          {leader.region_name || 'Accra Hub Region'}
+                          {leader.role === 'tutor' || leader.role === 'cell_leader' ? 'Fellowship Cell Tutor' : 'Leadership'}
                         </div>
                       </td>
 

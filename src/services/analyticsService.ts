@@ -1,4 +1,4 @@
-import { DashboardStats, UserRole } from '../types';
+import { DashboardStats, UserRole, CellPerformanceRecord } from '../types';
 import { ReportService } from './reportService';
 import { CellService } from './cellService';
 import { FollowUpService } from './followUpService';
@@ -141,38 +141,128 @@ export class AnalyticsService {
     });
   }
 
-  static async getRegionalPerformance() {
-    const regions = await ReportService.getRegions();
-    const cells = await CellService.getCells();
-    const meetings = await ReportService.getCellMeetingReports();
-    const evang = await ReportService.getEvangelismReports();
+  /**
+   * Cell Breakdown & Compliance
+   * Aggregates real operational performance strictly for signed-up cells from real submitted reports.
+   */
+  static async getCellPerformance(): Promise<CellPerformanceRecord[]> {
+    const [cells, meetings, evang, allProfiles] = await Promise.all([
+      CellService.getCells(),
+      ReportService.getCellMeetingReports(),
+      ReportService.getEvangelismReports(),
+      Promise.resolve(AuthService.getAllProfiles()),
+    ]);
 
-    return regions.map(reg => {
-      const regCells = cells.filter(c => c.region_id === reg.id);
-      const regCellIds = new Set(regCells.map(c => c.id));
+    return cells.map(cell => {
+      const cellMeetings = meetings.filter(m => m.cellId === cell.id);
+      const cellEvang = evang.filter(e => e.cellId === cell.id);
 
-      const regMeetings = meetings.filter(m => regCellIds.has(m.cellId));
-      const regEvang = evang.filter(e => regCellIds.has(e.cellId));
+      // Identify assigned tutor / leader
+      const tutorProfile = allProfiles.find(
+        p => p.cell_id === cell.id || p.id === cell.tutorUid || p.full_name.toLowerCase() === (cell.leader_name || '').toLowerCase()
+      );
+      const leaderName = cell.leader_name || tutorProfile?.full_name || 'Assigned Tutor';
+      const leaderPhone = cell.leader_phone || tutorProfile?.phone_number || '';
 
-      const souls = regEvang.reduce((s, e) => s + (Number(e.conversions) || 0), 0);
-      const visitors = regEvang.reduce((v, e) => v + (Number(e.peopleSpokenTo) || 0), 0);
-      const attendance = regMeetings.reduce((a, m) => a + (Number(m.attendance) || 0), 0);
+      // Attendance
+      const totalAttendance = cellMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
 
-      const submittedCount = regMeetings.filter(m => m.status === 'Approved' || m.status === 'Newly Submitted').length;
-      const totalCells = regCells.length || 1;
-      const compliance = regCells.length > 0 ? Math.min(100, Math.round((submittedCount / totalCells) * 100)) : 0;
+      // Souls won: outreach conversions + cell meeting new converts/members
+      const soulsFromEvang = cellEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+      const soulsFromCell = cellMeetings.reduce((sum, m) => sum + (Number(m.newMembers) || 0), 0);
+      const soulsWon = soulsFromEvang + soulsFromCell;
+
+      // People reached through evangelism
+      const peopleReached = cellEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
+
+      // Offerings reported (GHS)
+      const offeringsGhs = cellMeetings.reduce(
+        (sum, m) => sum + (Number(m.offering) || Number((m as any).offering_amount) || 0),
+        0
+      );
+
+      // Check latest report status across meeting and evangelism
+      const combinedReports = [
+        ...cellMeetings.map(m => ({
+          type: 'meeting',
+          status: m.status,
+          date: m.meetingDate || m.submittedAt,
+          late: m.late,
+          createdAt: m.submittedAt || m.meetingDate,
+        })),
+        ...cellEvang.map(e => ({
+          type: 'evangelism',
+          status: e.status,
+          date: e.date || e.submittedAt,
+          late: e.late,
+          createdAt: e.submittedAt || e.date,
+        })),
+      ].sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
+
+      const latest = combinedReports[0];
+
+      let compliance = 0;
+      let status: 'On Track' | 'Awaiting Review' | 'Needs Correction' | 'Missing Report' = 'Missing Report';
+      let statusColor: 'emerald' | 'amber' | 'rose' = 'rose';
+
+      if (!latest) {
+        compliance = 0;
+        status = 'Missing Report';
+        statusColor = 'rose';
+      } else if (latest.status === 'Needs Correction' || latest.status === 'needs_revision') {
+        compliance = 60;
+        status = 'Needs Correction';
+        statusColor = 'rose';
+      } else if (latest.status === 'Newly Submitted' || latest.status === 'submitted' || latest.status === 'under_review') {
+        compliance = latest.late ? 75 : 90;
+        status = 'Awaiting Review';
+        statusColor = 'amber';
+      } else if (latest.status === 'Approved' || latest.status === 'approved') {
+        compliance = latest.late ? 85 : 100;
+        status = 'On Track';
+        statusColor = 'emerald';
+      } else {
+        compliance = 50;
+        status = 'Missing Report';
+        statusColor = 'rose';
+      }
 
       return {
-        id: reg.id,
-        name: reg.name,
-        code: reg.code,
-        cells: regCells.length,
+        id: cell.id,
+        name: cell.name,
+        code: cell.code || `FNI-CEL-${cell.name.slice(0, 3).toUpperCase()}`,
+        leaderName,
+        leaderPhone,
+        location: cell.venue_address || cell.location || 'Local Fellowship Base',
+        targetAttendance: cell.target_attendance || 20,
+        meetingReportsCount: cellMeetings.length,
+        evangelismReportsCount: cellEvang.length,
+        totalAttendance,
+        soulsWon,
+        peopleReached,
+        offeringsGhs,
         compliance,
-        souls,
-        attendance,
-        visitors,
+        status,
+        statusColor,
+        latestMeetingDate: cellMeetings[0]?.meetingDate,
+        latestSubmissionIso: latest?.createdAt,
       };
     });
+  }
+
+  // Legacy method mapped to cell performance
+  static async getRegionalPerformance() {
+    const cellStats = await this.getCellPerformance();
+    return cellStats.map(c => ({
+      id: c.id,
+      name: c.name,
+      code: c.code,
+      cells: 1,
+      compliance: c.compliance,
+      souls: c.soulsWon,
+      attendance: c.totalAttendance,
+      visitors: c.peopleReached,
+    }));
   }
 
   static async exportAnalyticsCsv(): Promise<string> {

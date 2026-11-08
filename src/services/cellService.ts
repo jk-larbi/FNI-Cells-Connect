@@ -132,7 +132,7 @@ export class CellService {
 
     // 3. Register brand-new unique cell
     const cellId = `cell-${Date.now()}`;
-    const code = `FNI-CEL-${data.regionId ? data.regionId.replace('reg-', '').toUpperCase() : 'LOS'}-${(allCells.length + 1).toString().padStart(3, '0')}`;
+    const code = `FNI-CEL-${(allCells.length + 1).toString().padStart(3, '0')}`;
     const nowIso = new Date().toISOString();
 
     const newCell: Cell = {
@@ -145,8 +145,8 @@ export class CellService {
       leader_id: data.tutorUid,
       leader_name: data.leaderName,
       leader_phone: data.leaderPhone,
-      region_id: data.regionId || 'reg-lagos',
-      region_name: data.regionName || 'Lagos Central Region',
+      region_id: data.regionId || '',
+      region_name: data.regionName || '',
       meeting_day: data.meetingDay || 'Wednesday',
       meeting_time: data.meetingTime || '18:30',
       venue_address: data.venueAddress || data.location,

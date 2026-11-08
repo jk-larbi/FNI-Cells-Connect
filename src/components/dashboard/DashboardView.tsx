@@ -6,7 +6,7 @@ import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
-import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics } from '../../types';
+import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics, CellPerformanceRecord } from '../../types';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import {
   Users,
@@ -49,6 +49,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [recentQueue, setRecentQueue] = useState<UnifiedReportItem[]>([]);
+  const [cellPerformance, setCellPerformance] = useState<CellPerformanceRecord[]>([]);
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
   const [showSoulModal, setShowSoulModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,16 +95,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [dashStats, systemSettings, queue, sMetrics] = await Promise.all([
+      const [dashStats, systemSettings, queue, sMetrics, cPerf] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
         ReportService.getUnifiedReviewQueue(),
         SoulTargetService.calculateMetrics(),
+        AnalyticsService.getCellPerformance(),
       ]);
       setStats(dashStats);
       setSettings(systemSettings);
       setRecentQueue(queue.slice(0, 7));
       setSoulMetrics(sMetrics);
+      setCellPerformance(cPerf);
       setEditVision(systemSettings.vision);
       setEditMission(systemSettings.mission);
       setEditTarget(systemSettings.annualSoulWinningTarget);
@@ -122,6 +125,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         ...prev,
         soulsWon: liveM.verifiedSoulsWon,
       } : prev);
+      AnalyticsService.getCellPerformance().then(setCellPerformance);
     });
 
     return () => {
@@ -583,6 +587,164 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
           </div>
+        </div>
+      </div>
+
+      {/* CELLS BREAKDOWN & COMPLIANCE (Live Tracking For Registered Cells) */}
+      <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
+        <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-[#182230]">
+                Cells Breakdown & Reporting Compliance
+              </h2>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Cells
+              </span>
+            </div>
+            <p className="text-xs text-[#667085] mt-0.5">
+              Live submission status, meeting attendance, and harvest returns across all registered fellowship cells.
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigateToTab('analytics')}
+            className="text-xs font-bold text-[#142B4A] hover:text-[#203D63] flex items-center gap-1 transition-colors"
+          >
+            <span>Full Analytics</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="table-scroll-container">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
+                <th className="py-3 px-5 w-12 text-center">
+                  <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                </th>
+                <th className="py-3 px-4">FELLOWSHIP CELL & TUTOR</th>
+                <th className="py-3 px-4">ATTENDANCE</th>
+                <th className="py-3 px-4">SOULS WON</th>
+                <th className="py-3 px-4">OFFERINGS (GHS)</th>
+                <th className="py-3 px-4">REPORTING COMPLIANCE</th>
+                <th className="py-3 px-5 text-right">LATEST STATUS</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E3E8EF]">
+              {cellPerformance.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-[#667085]">
+                    <Building className="w-8 h-8 text-[#CBD5E1] mx-auto mb-2" />
+                    <p className="text-xs font-semibold">No fellowship cells registered yet.</p>
+                    <p className="text-[11px] text-[#667085] mt-0.5">
+                      Only cells that sign up are tracked here. As soon as a tutor registers, their cell and returns appear live.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                cellPerformance.map(cell => (
+                  <tr
+                    key={cell.id}
+                    onClick={() => onNavigateToTab('cell-management')}
+                    className="hover:bg-[#F5F7FA] transition-colors cursor-pointer"
+                  >
+                    <td className="py-4 px-5 text-center">
+                      <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
+                          {cell.name
+                            .split(' ')
+                            .map(n => n[0])
+                            .slice(0, 2)
+                            .join('')}
+                        </div>
+                        <div>
+                          <div className="font-bold text-[#182230] leading-tight">
+                            {cell.name}
+                          </div>
+                          <div className="text-[11px] text-[#667085] mt-0.5">
+                            Tutor: <span className="font-semibold text-[#142B4A]">{cell.leaderName}</span>
+                            {cell.code && <span className="ml-1.5 text-slate-400">({cell.code})</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#182230] text-sm">
+                        {cell.totalAttendance}
+                      </span>
+                      <div className="text-[10px] text-[#667085]">
+                        {cell.meetingReportsCount} return{cell.meetingReportsCount === 1 ? '' : 's'}
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#23845B] text-sm">
+                        +{cell.soulsWon}
+                      </span>
+                      <div className="text-[10px] text-[#667085]">
+                        {cell.peopleReached} reached
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#182230] text-sm">
+                        GHS {cell.offeringsGhs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      <div className="text-[10px] text-[#667085]">Remitted</div>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-[#182230] text-sm">
+                        {cell.compliance}%
+                      </span>
+                      <div className="w-24 bg-[#E3E8EF] rounded-full h-1.5 mt-1">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            cell.compliance >= 80
+                              ? 'bg-[#23845B]'
+                              : cell.compliance >= 50
+                              ? 'bg-[#D99A32]'
+                              : 'bg-[#C74646]'
+                          }`}
+                          style={{ width: `${cell.compliance}%` }}
+                        />
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-5 whitespace-nowrap text-right">
+                      {cell.status === 'On Track' ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
+                          <span className="w-2 h-2 rounded-full bg-[#23845B]" />
+                          On Track
+                        </span>
+                      ) : cell.status === 'Awaiting Review' ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#D99A32]">
+                          <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
+                          Awaiting Review
+                        </span>
+                      ) : cell.status === 'Needs Correction' ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
+                          <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                          Needs Correction
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
+                          <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                          Missing Return
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
