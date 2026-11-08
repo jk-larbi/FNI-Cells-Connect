@@ -124,6 +124,21 @@ export class TeachingMaterialService {
     all.unshift(record);
     setStoredMaterials(all);
 
+    // If published, notify all field tutors
+    if (record.status === 'published') {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyTeachingNotes({
+          materialId: record.id,
+          title: record.title,
+          weekLabel: record.weekLabel,
+          uploadedByName: record.uploadedByName,
+        });
+      } catch (e) {
+        console.warn('Teaching material notification notice:', e);
+      }
+    }
+
     return record;
   }
 
@@ -142,6 +157,20 @@ export class TeachingMaterialService {
     }
 
     setStoredMaterials(all);
+
+    if (newStatus === 'published') {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyTeachingNotes({
+          materialId: item.id,
+          title: item.title,
+          weekLabel: item.weekLabel,
+          uploadedByName: item.uploadedByName,
+        });
+      } catch (e) {
+        console.warn('Teaching material notification notice:', e);
+      }
+    }
 
     if (isFirebaseConfigured && db) {
       try {

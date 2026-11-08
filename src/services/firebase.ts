@@ -1,1 +1,1 @@
-export { auth, db, functions, appCheck, googleProvider, appleProvider, isFirebaseConfigured, firebaseApp } from '../lib/firebase';
+export { auth, db, functions, appCheck, googleProvider, appleProvider, isFirebaseConfigured, firebaseApp, getMessagingInstance } from '../lib/firebase';

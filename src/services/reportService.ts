@@ -192,6 +192,24 @@ export class ReportService {
       },
     });
 
+    // Real-time notification dispatch for Administrators & Tutor Confirmation
+    try {
+      const { NotificationService } = await import('./notificationService');
+      await NotificationService.notifyReportSubmission({
+        reportId: report.id,
+        reportType: 'meeting',
+        cellId: report.cellId,
+        cellName: report.cellName,
+        tutorUid: report.tutorUid,
+        tutorName: report.tutorName,
+        attendance: report.attendance,
+        late: report.late,
+        submittedAt: report.submittedAt,
+      });
+    } catch (notifErr) {
+      console.warn('Report submission notification dispatch notice:', notifErr);
+    }
+
     return report;
   }
 
@@ -311,6 +329,25 @@ export class ReportService {
         late: report.late,
       },
     });
+
+    // Real-time notification dispatch for Administrators & Tutor Confirmation
+    try {
+      const { NotificationService } = await import('./notificationService');
+      await NotificationService.notifyReportSubmission({
+        reportId: report.id,
+        reportType: 'evangelism',
+        cellId: report.cellId,
+        cellName: report.cellName,
+        tutorUid: report.tutorUid,
+        tutorName: report.tutorName,
+        conversions: report.conversions,
+        contactsCaptured: report.contactsCaptured,
+        late: report.late,
+        submittedAt: report.submittedAt,
+      });
+    } catch (notifErr) {
+      console.warn('Evangelism submission notification dispatch notice:', notifErr);
+    }
 
     return report;
   }
@@ -468,6 +505,24 @@ export class ReportService {
         reviewer: reviewerName,
       },
     });
+
+    // Real-time notification dispatch to authoring Tutor
+    try {
+      if (updatedReport) {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyReportReview({
+          reportId: updatedReport.id,
+          reportType: reportType,
+          status: status,
+          comment: comment,
+          tutorUid: updatedReport.tutorUid,
+          cellName: updatedReport.cellName,
+          reviewerName: reviewerName,
+        });
+      }
+    } catch (notifErr) {
+      console.warn('Report review notification dispatch notice:', notifErr);
+    }
 
     return updatedReport;
   }

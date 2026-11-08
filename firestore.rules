@@ -116,7 +116,19 @@ rules_version = '2';
 //
 // 7. Collection: notifications
 //    Document ID: {notifId}
-//    Fields: user_id (target uid or 'all'), title, message, type, channel, is_read, created_at
+//    Fields:
+//      - id: string (optional, <= 128 chars)
+//      - user_id: string (required, <= 128 chars: UID, 'all', 'tutor_community', 'admin')
+//      - title: string (required, 1-200 chars)
+//      - message: string (required, 1-2000 chars)
+//      - type: string (optional, <= 50 chars)
+//      - channel: string (optional, <= 50 chars)
+//      - targetTab: string (optional, <= 100 chars)
+//      - actionUrl: string (optional, <= 500 chars)
+//      - metadata: map (optional, <= 50 keys)
+//      - is_read: bool (optional)
+//      - read_at: string/timestamp (optional)
+//      - created_at: string/timestamp (optional)
 //
 // 8. Collection: reportingPeriods & reporting_periods
 //    Document ID: {periodId}
@@ -132,6 +144,18 @@ rules_version = '2';
 // 11. Collection: audit_logs
 //     Document ID: {logId}
 //     Fields: action, entity_type, entity_id, user_id, details, created_at
+//
+// 12. Collection: deviceTokens
+//     Document ID: {tokenId}
+//     Fields:
+//       - id: string (optional, <= 128 chars)
+//       - userId: string (required, <= 128 chars)
+//       - token: string (required, <= 500 chars)
+//       - role: string (optional, <= 50 chars)
+//       - device: string (optional, <= 500 chars)
+//       - platform: string (optional, <= 100 chars)
+//       - createdAt / created_at: string/timestamp (optional)
+//       - updatedAt / updated_at: string/timestamp (optional)
 //
 // ===============================================================
 
@@ -401,8 +425,30 @@ service cloud.firestore {
         isValidOptionalString('id', 128) &&
         isValidOptionalString('type', 50) &&
         isValidOptionalString('channel', 50) &&
+        isValidOptionalString('targetTab', 100) &&
+        isValidOptionalString('actionUrl', 500) &&
+        isValidOptionalString('target', 100) &&
+        isValidOptionalString('link', 500) &&
+        isValidOptionalString('category', 50) &&
+        (!('metadata' in data) || (data.metadata is map && data.metadata.size() <= 50)) &&
         (!('is_read' in data) || data.is_read is bool) &&
-        isValidOptionalString('created_at', 50);
+        (!('read_at' in data) || (data.read_at is string && data.read_at.size() <= 50) || data.read_at is timestamp) &&
+        (!('created_at' in data) || (data.created_at is string && data.created_at.size() <= 50) || data.created_at is timestamp);
+    }
+
+    // Device Token Validator (FCM / Push Notifications)
+    function isValidDeviceToken(data) {
+      return data.keys().hasAll(['userId', 'token']) &&
+        data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+        data.token is string && data.token.size() > 0 && data.token.size() <= 500 &&
+        isValidOptionalString('id', 128) &&
+        isValidOptionalString('role', 50) &&
+        isValidOptionalString('device', 500) &&
+        isValidOptionalString('platform', 100) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50) || data.createdAt is timestamp) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50) || data.updatedAt is timestamp) &&
+        (!('created_at' in data) || (data.created_at is string && data.created_at.size() <= 50) || data.created_at is timestamp) &&
+        (!('updated_at' in data) || (data.updated_at is string && data.updated_at.size() <= 50) || data.updated_at is timestamp);
     }
 
     // System Settings Validator
@@ -565,20 +611,24 @@ service cloud.firestore {
     }
 
     // 7. Notifications
-    // User can read/update their own notifications or broadcasts ('all'); Admin can delete
+    // User can read their own notifications, broadcasts ('all'), community ('tutor_community'), admin notifications (if admin), or all if admin.
+    // Authenticated users can create valid notifications.
+    // Recipient or admin can update (e.g. mark as read).
+    // Admin can delete.
     match /notifications/{notifId} {
       allow read: if isAuthenticated() && (
         resource.data.user_id == request.auth.uid ||
         resource.data.user_id == 'all' ||
+        resource.data.user_id == 'tutor_community' ||
+        (resource.data.user_id == 'admin' && isAdmin()) ||
         isAdmin()
       );
       allow create: if isAuthenticated() && isValidNotification(request.resource.data);
-      allow update: if isAuthenticated() && (
+      allow update: if isAuthenticated() && isValidNotification(request.resource.data) && (
         isAdmin() ||
         (
-          (resource.data.user_id == request.auth.uid || resource.data.user_id == 'all') &&
-          isValidNotification(request.resource.data) &&
-          areImmutableFieldsUnchanged(['id', 'user_id', 'type', 'channel', 'created_at'])
+          (resource.data.user_id == request.auth.uid || resource.data.user_id == 'all' || resource.data.user_id == 'tutor_community') &&
+          areImmutableFieldsUnchanged(['id', 'user_id', 'created_at'])
         )
       );
       allow delete: if isAdmin();
@@ -655,6 +705,32 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAdmin();
       allow update, delete: if false;
+    }
+
+    // 15. Device Tokens (FCM Push Notifications)
+    // Users can read/write their own device tokens where userId == request.auth.uid.
+    // Admins can read and delete all device tokens.
+    match /deviceTokens/{tokenId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isValidDeviceToken(request.resource.data) && (
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && isValidDeviceToken(request.resource.data) && (
+        isAdmin() ||
+        (
+          resource.data.userId == request.auth.uid &&
+          request.resource.data.userId == resource.data.userId &&
+          areImmutableFieldsUnchanged(['id', 'userId'])
+        )
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
   }
 }

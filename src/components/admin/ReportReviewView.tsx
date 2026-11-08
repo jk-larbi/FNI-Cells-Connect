@@ -24,7 +24,15 @@ import {
   DollarSign,
 } from 'lucide-react';
 
-export const ReportReviewView: React.FC = () => {
+export interface ReportReviewViewProps {
+  initialReportId?: string;
+  onClearInitialReportId?: () => void;
+}
+
+export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
+  initialReportId,
+  onClearInitialReportId,
+}) => {
   const { currentUser } = useAuth();
   const { dispatchNotification } = useNotifications();
 
@@ -56,10 +64,27 @@ export const ReportReviewView: React.FC = () => {
       });
       setReports(queue);
       setSelectedIds(new Set());
+
+      // If an initial report ID was provided by notification click, open it immediately
+      if (initialReportId) {
+        const found = queue.find(r => r.id === initialReportId);
+        if (found) {
+          setInspectingItem(found);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialReportId && reports.length > 0) {
+      const found = reports.find(r => r.id === initialReportId);
+      if (found) {
+        setInspectingItem(found);
+      }
+    }
+  }, [initialReportId, reports]);
 
   useEffect(() => {
     loadData();

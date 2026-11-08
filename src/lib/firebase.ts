@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider, OAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions, Functions } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider, AppCheck } from 'firebase/app-check';
+import { getMessaging, Messaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -31,6 +32,20 @@ export const firebaseApp = isFirebaseConfigured
 export const auth = firebaseApp ? getAuth(firebaseApp) : null;
 export const db = firebaseApp ? getFirestore(firebaseApp) : null;
 export const functions: Functions | null = firebaseApp ? getFunctions(firebaseApp) : null;
+
+// Firebase Cloud Messaging instance promise (safe check for browser environment & Web Worker support)
+export const getMessagingInstance = async (): Promise<Messaging | null> => {
+  if (typeof window === 'undefined' || !firebaseApp) return null;
+  try {
+    const supported = await isSupported();
+    if (supported) {
+      return getMessaging(firebaseApp);
+    }
+  } catch (e) {
+    console.warn('FCM messaging isSupported check failed:', e);
+  }
+  return null;
+};
 
 // Optional App Check Initialization
 export let appCheck: AppCheck | null = null;

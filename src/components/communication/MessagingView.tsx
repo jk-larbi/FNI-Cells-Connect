@@ -19,14 +19,22 @@ import {
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
-export const MessagingView: React.FC = () => {
+export interface MessagingViewProps {
+  initialConversationId?: string;
+  initialTab?: 'private' | 'community';
+}
+
+export const MessagingView: React.FC<MessagingViewProps> = ({
+  initialConversationId,
+  initialTab,
+}) => {
   const { currentUser, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'private' | 'community'>('private');
+  const [activeTab, setActiveTab] = useState<'private' | 'community'>(() => initialTab || 'private');
 
   // Private Messaging State
   const [privateMessages, setPrivateMessages] = useState<PrivateMessage[]>([]);
   const [privateText, setPrivateText] = useState('');
-  const [selectedTutorId, setSelectedTutorId] = useState<string>('');
+  const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || '');
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
 

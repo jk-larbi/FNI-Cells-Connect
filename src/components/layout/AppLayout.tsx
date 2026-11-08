@@ -34,13 +34,42 @@ import { AccountSettingsModal } from '../auth/AccountSettingsModal';
 
 export const AppLayout: React.FC = () => {
   const { currentUser, isAdmin } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, activeNavigationTarget, clearNavigationTarget } = useNotifications();
 
   // Role-based initial tab
   const [currentTab, setCurrentTab] = useState<AppNavTab>(() => (isAdmin ? 'dashboard' : 'my-dashboard'));
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+
+  // Deep-linking target parameters
+  const [highlightedReportId, setHighlightedReportId] = useState<string | undefined>(undefined);
+  const [targetConversationId, setTargetConversationId] = useState<string | undefined>(undefined);
+
+  // Handle external / service worker notification click targets
+  React.useEffect(() => {
+    if (activeNavigationTarget?.targetTab) {
+      setCurrentTab(activeNavigationTarget.targetTab as AppNavTab);
+      if (activeNavigationTarget.reportId) {
+        setHighlightedReportId(activeNavigationTarget.reportId);
+      }
+      if (activeNavigationTarget.conversationId) {
+        setTargetConversationId(activeNavigationTarget.conversationId);
+      }
+      clearNavigationTarget();
+    }
+  }, [activeNavigationTarget]);
+
+  const handleNavigateFromNotification = (tab: string, meta?: any) => {
+    setCurrentTab(tab as AppNavTab);
+    setIsNotifModalOpen(false);
+    if (meta?.reportId) {
+      setHighlightedReportId(meta.reportId);
+    }
+    if (meta?.conversationId) {
+      setTargetConversationId(meta.conversationId);
+    }
+  };
 
   // Fallback guard: if a non-admin is accidentally on an admin tab, redirect to tutor dashboard
   const effectiveTab: AppNavTab = !isAdmin && (
@@ -85,12 +114,19 @@ export const AppLayout: React.FC = () => {
                 )}
                 {effectiveTab === 'cell-management' && <CellManagementView />}
                 {effectiveTab === 'cell-leaders' && <CellLeadersView />}
-                {effectiveTab === 'report-review' && <ReportReviewView />}
+                {effectiveTab === 'report-review' && (
+                  <ReportReviewView
+                    initialReportId={highlightedReportId}
+                    onClearInitialReportId={() => setHighlightedReportId(undefined)}
+                  />
+                )}
                 {effectiveTab === 'evangelism' && <EvangelismAdminView />}
                 {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
                 {effectiveTab === 'finance' && <FinanceView />}
                 {effectiveTab === 'materials' && <TeachingMaterialsView />}
-                {effectiveTab === 'messages' && <MessagingView />}
+                {effectiveTab === 'messages' && (
+                  <MessagingView initialConversationId={targetConversationId} />
+                )}
                 {effectiveTab === 'analytics' && <AnalyticsView />}
                 {effectiveTab === 'settings' && <AdminSettingsView />}
               </>
@@ -119,7 +155,9 @@ export const AppLayout: React.FC = () => {
                 {effectiveTab === 'evangelism-contacts' && <EvangelismContactsView />}
                 {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
                 {effectiveTab === 'materials' && <TeachingMaterialsView />}
-                {effectiveTab === 'messages' && <MessagingView />}
+                {effectiveTab === 'messages' && (
+                  <MessagingView initialConversationId={targetConversationId} />
+                )}
                 {effectiveTab === 'cell-activity-history' && <CellActivityHistoryView />}
                 {effectiveTab === 'my-account' && <MyAccountView />}
               </>
@@ -131,6 +169,7 @@ export const AppLayout: React.FC = () => {
                 <NotificationCenterModal
                   isOpen={true}
                   onClose={() => setCurrentTab(isAdmin ? 'dashboard' : 'my-dashboard')}
+                  onNavigate={handleNavigateFromNotification}
                 />
               </div>
             )}
@@ -142,6 +181,7 @@ export const AppLayout: React.FC = () => {
       <NotificationCenterModal
         isOpen={isNotifModalOpen}
         onClose={() => setIsNotifModalOpen(false)}
+        onNavigate={handleNavigateFromNotification}
       />
 
       <AccountSettingsModal

@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "node scripts/test-fni-system.mjs",
+    "test:notifications": "node scripts/test-notification-system.mjs",
     "test:fni": "node scripts/test-fni-system.mjs",
     "test:backend": "node scripts/test-backend.mjs",
     "test:firebase": "node scripts/test-firebase.mjs"

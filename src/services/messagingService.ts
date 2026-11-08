@@ -70,6 +70,22 @@ export class MessagingService {
     all.push(msg);
     setStored(STORAGE_KEYS.PRIVATE, all);
 
+    // Real-time notification dispatch
+    try {
+      const { NotificationService } = await import('./notificationService');
+      await NotificationService.notifyPrivateMessage({
+        messageId: msg.id,
+        senderUid: msg.senderUid,
+        senderName: msg.senderName,
+        senderRole: msg.senderRole,
+        recipientUid: msg.recipientUid,
+        cellName: msg.cellName,
+        content: msg.content,
+      });
+    } catch (e) {
+      console.warn('Private message notification dispatch notice:', e);
+    }
+
     return msg;
   }
 
@@ -190,6 +206,21 @@ export class MessagingService {
     const all = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
     all.push(msg);
     setStored(STORAGE_KEYS.COMMUNITY, all);
+
+    // Real-time notification dispatch to other tutors
+    try {
+      const { NotificationService } = await import('./notificationService');
+      await NotificationService.notifyCommunityMessage({
+        messageId: msg.id,
+        senderUid: msg.senderUid,
+        senderName: msg.senderName,
+        cellName: msg.cellName,
+        content: msg.content,
+        category: msg.category,
+      });
+    } catch (e) {
+      console.warn('Community message notification dispatch notice:', e);
+    }
 
     return msg;
   }

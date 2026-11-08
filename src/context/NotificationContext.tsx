@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { NotificationItem, NotificationType, NotificationChannel } from '../types';
-import { INITIAL_NOTIFICATIONS } from '../services/mockData';
+import { NotificationService } from '../services/notificationService';
+import { PushNotificationService } from '../services/pushNotificationService';
+import { useAuth } from './AuthContext';
 
 export interface ReminderLogEntry {
   cellId: string;
@@ -11,18 +13,30 @@ export interface ReminderLogEntry {
   sentAt: string;
 }
 
+export interface NotificationNavigationTarget {
+  targetTab: string;
+  reportId?: string;
+  conversationId?: string;
+  materialId?: string;
+}
+
 interface NotificationContextType {
   notifications: NotificationItem[];
   unreadCount: number;
   reminderLogs: ReminderLogEntry[];
+  pushPermission: NotificationPermission | 'unsupported';
+  isPushSupported: boolean;
+  isPushEnabled: boolean;
+  activeNavigationTarget: NotificationNavigationTarget | null;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   dispatchNotification: (
     title: string,
     message: string,
     type: NotificationType,
-    channel?: NotificationChannel
-  ) => void;
+    channel?: NotificationChannel,
+    metadata?: Record<string, any>
+  ) => Promise<void>;
   sendCellReminder: (
     cellId: string,
     cellName: string,
@@ -31,23 +45,19 @@ interface NotificationContextType {
     channel?: NotificationChannel
   ) => boolean;
   triggerBatchReminders: (targetPeriod: string) => number;
+  requestPushPermission: () => Promise<{ success: boolean; token?: string; error?: string }>;
+  clearNavigationTarget: () => void;
+  handleNotificationClick: (notif: NotificationItem, onNavigate?: (tab: string, meta?: any) => void) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const STORAGE_NOTIF_KEY = 'fni_notifications_store';
 const STORAGE_REMINDER_KEY = 'fni_reminder_logs_store';
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_NOTIF_KEY);
-      return stored ? JSON.parse(stored) : INITIAL_NOTIFICATIONS;
-    } catch {
-      return INITIAL_NOTIFICATIONS;
-    }
-  });
+  const { currentUser, isAdmin } = useAuth();
 
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [reminderLogs, setReminderLogs] = useState<ReminderLogEntry[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_REMINDER_KEY);
@@ -57,14 +67,79 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_NOTIF_KEY, JSON.stringify(notifications));
-    } catch (e) {
-      console.warn('Failed to save notifications', e);
-    }
-  }, [notifications]);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [activeNavigationTarget, setActiveNavigationTarget] = useState<NotificationNavigationTarget | null>(null);
 
+  // Initialize push capabilities
+  useEffect(() => {
+    const supported = PushNotificationService.isPushSupported();
+    setIsPushSupported(supported);
+    if (supported) {
+      const perm = PushNotificationService.getPermissionState();
+      setPushPermission(perm);
+      if (currentUser?.id) {
+        const prefs = PushNotificationService.getPreferences(currentUser.id);
+        setIsPushEnabled(prefs.pushEnabled && perm === 'granted');
+      }
+    }
+  }, [currentUser?.id]);
+
+  // Real-time subscription to notifications for the current authenticated user
+  useEffect(() => {
+    if (!currentUser) {
+      setNotifications([]);
+      return;
+    }
+
+    const unsubscribe = NotificationService.subscribeToUserNotifications(
+      currentUser.id,
+      currentUser.role,
+      (userNotifs) => {
+        setNotifications(userNotifs);
+      }
+    );
+
+    // Setup foreground FCM listener
+    let unsubscribeForeground: (() => void) | null = null;
+    PushNotificationService.setupForegroundListener(payload => {
+      // Re-trigger local notification refresh
+      const notifs = NotificationService.filterForUser(
+        JSON.parse(localStorage.getItem('fni_notifications_store_v2') || '[]'),
+        currentUser.id,
+        currentUser.role
+      );
+      setNotifications(notifs);
+    }).then(unsub => {
+      if (unsub) unsubscribeForeground = unsub;
+    });
+
+    // Listen for background service worker click messages via postMessage
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'FNI_NOTIFICATION_CLICK' && event.data?.targetTab) {
+        setActiveNavigationTarget({
+          targetTab: event.data.targetTab,
+          reportId: event.data.reportId,
+          conversationId: event.data.conversationId,
+          materialId: event.data.materialId,
+        });
+      }
+    };
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    }
+
+    return () => {
+      unsubscribe();
+      if (unsubscribeForeground) unsubscribeForeground();
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      }
+    };
+  }, [currentUser?.id, currentUser?.role]);
+
+  // Persist reminder logs
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_REMINDER_KEY, JSON.stringify(reminderLogs));
@@ -75,33 +150,33 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
-    );
+  const markAsRead = async (id: string) => {
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
+    await NotificationService.markAsRead(id);
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    if (!currentUser) return;
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    await NotificationService.markAllAsRead(currentUser.id, currentUser.role);
   };
 
-  const dispatchNotification = (
+  const dispatchNotification = async (
     title: string,
     message: string,
     type: NotificationType,
-    channel: NotificationChannel = 'in_app'
+    channel: NotificationChannel = 'in_app',
+    metadata?: Record<string, any>
   ) => {
-    const newNotif: NotificationItem = {
-      id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      user_id: 'broadcast',
+    const targetUserId = metadata?.targetUserId || (isAdmin ? 'all' : 'admin');
+    await NotificationService.createNotification({
+      userId: targetUserId,
       title,
       message,
       type,
       channel,
-      is_read: false,
-      created_at: new Date().toISOString(),
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+      metadata,
+    });
   };
 
   const sendCellReminder = (
@@ -111,7 +186,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     scenario: 'upcoming' | 'overdue' | 'escalation',
     channel: NotificationChannel = 'in_app'
   ): boolean => {
-    // Prevent duplicate reminders for the same cell, period and scenario
     const exists = reminderLogs.some(
       r => r.cellId === cellId && r.periodId === periodId && r.scenario === scenario
     );
@@ -134,7 +208,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ? `The reporting window for ${cellName} closed at 6:00 PM. Please submit your return immediately. It will be recorded as late.`
         : `Your weekly return for ${cellName} is now more than 24 hours overdue. FNI Leadership intervention requested.`;
 
-    dispatchNotification(title, message, scenario === 'upcoming' ? 'deadline_reminder' : 'overdue_notice', channel);
+    dispatchNotification(
+      title,
+      message,
+      scenario === 'upcoming' ? 'deadline_reminder' : 'overdue_notice',
+      channel,
+      { cellId, cellName, periodId, scenario, category: 'deadlines' }
+    );
 
     const logEntry: ReminderLogEntry = {
       cellId,
@@ -155,10 +235,62 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         `Automated Reporting Reminder (${ch.toUpperCase()})`,
         `Formal reporting notice dispatched for ${targetPeriod}. All cell leaders must submit before Sunday 6:00 PM deadline.`,
         'deadline_reminder',
-        ch
+        ch,
+        { period: targetPeriod, category: 'deadlines' }
       );
     });
-    return 8; // 8 leaders reached
+    return 8;
+  };
+
+  const requestPushPermission = async (): Promise<{ success: boolean; token?: string; error?: string }> => {
+    if (!currentUser) {
+      return { success: false, error: 'User must be signed in to enable push notifications.' };
+    }
+    const res = await PushNotificationService.requestPermissionAndRegister(
+      currentUser.id,
+      isAdmin ? 'admin' : 'tutor'
+    );
+    setPushPermission(PushNotificationService.getPermissionState());
+    if (res.success) {
+      setIsPushEnabled(true);
+    }
+    return res;
+  };
+
+  const clearNavigationTarget = () => {
+    setActiveNavigationTarget(null);
+  };
+
+  const handleNotificationClick = (notif: NotificationItem, onNavigate?: (tab: string, meta?: any) => void) => {
+    // Mark as read
+    markAsRead(notif.id);
+
+    // Determine target tab and metadata
+    const meta = notif.metadata || {};
+    const targetTab = meta.targetTab || (
+      notif.type === 'report_submitted'
+        ? (isAdmin ? 'report-review' : 'my-reports')
+        : notif.type === 'report_approved' || notif.type === 'revision_requested'
+        ? 'my-reports'
+        : notif.type === 'direct_message' || notif.type === 'community_message'
+        ? 'messages'
+        : notif.type === 'teaching_notes'
+        ? 'materials'
+        : ''
+    );
+
+    if (targetTab) {
+      setActiveNavigationTarget({
+        targetTab,
+        reportId: meta.reportId,
+        conversationId: meta.conversationId,
+        materialId: meta.materialId,
+      });
+
+      if (onNavigate) {
+        onNavigate(targetTab, meta);
+      }
+    }
   };
 
   return (
@@ -167,11 +299,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         notifications,
         unreadCount,
         reminderLogs,
+        pushPermission,
+        isPushSupported,
+        isPushEnabled,
+        activeNavigationTarget,
         markAsRead,
         markAllAsRead,
         dispatchNotification,
         sendCellReminder,
         triggerBatchReminders,
+        requestPushPermission,
+        clearNavigationTarget,
+        handleNotificationClick,
       }}
     >
       {children}
