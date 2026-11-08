@@ -289,17 +289,17 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
           </div>
 
           {/* Quick Filing Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-2.5 shrink-0">
             <button
               onClick={() => onNavigateToTab('submit-cell-meeting-report')}
-              className="h-11 sm:h-12 px-5 rounded-2xl bg-[#C6A45A] hover:bg-[#B59349] text-[#142B4A] text-xs sm:text-sm font-black transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              className="h-10 sm:h-11 px-4 sm:px-4.5 rounded-2xl bg-[#C6A45A] hover:bg-[#B59349] text-[#142B4A] text-xs sm:text-sm font-black transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <FileText className="w-4 h-4 text-[#142B4A] shrink-0" />
               <span>Submit Meeting Return</span>
             </button>
             <button
               onClick={() => onNavigateToTab('submit-evangelism-report')}
-              className="h-11 sm:h-12 px-5 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold transition-all border border-white/20 backdrop-blur-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              className="h-10 sm:h-11 px-4 sm:px-4.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold transition-all border border-white/20 backdrop-blur-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <Flame className="w-4 h-4 text-[#C6A45A] shrink-0" />
               <span>Submit Outreach</span>
@@ -347,11 +347,11 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="shrink-0 flex items-center gap-3">
+          <div className="shrink-0 flex items-center gap-2.5">
             {hasSubmittedCurrentCycle ? (
               <button
                 onClick={() => onNavigateToTab('my-reports')}
-                className="h-11 px-4 rounded-xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] text-xs sm:text-sm font-bold transition-all border border-[#E3E8EF] flex items-center justify-center gap-2 cursor-pointer"
+                className="h-10 px-4 rounded-xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] text-xs sm:text-sm font-bold transition-all border border-[#E3E8EF] flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>View Submitted Returns</span>
                 <ChevronRight className="w-4 h-4 text-[#667085]" />
@@ -359,7 +359,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             ) : (
               <button
                 onClick={() => onNavigateToTab('submit-cell-meeting-report')}
-                className="h-11 px-5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                className="h-10 px-4 sm:px-4.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
               >
                 <span>File Return Now</span>
                 <ChevronRight className="w-4 h-4 text-[#C6A45A]" />

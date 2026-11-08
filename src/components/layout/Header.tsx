@@ -52,31 +52,32 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-[#F5F7FA] text-[#142B4A] font-semibold text-[11px] sm:text-xs border border-[#E3E8EF] shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] text-[#142B4A] font-bold text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
             <Calendar className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
             <span>
-              <span className="hidden sm:inline">Cycle: </span>
+              <span className="hidden md:inline">Cycle: </span>
               <strong>{deadlineInfo.periodName}</strong>
             </span>
             <span className="w-2 h-2 rounded-full bg-[#23845B] animate-pulse ml-0.5 shrink-0" />
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#667085] font-medium text-xs border border-[#E3E8EF]">
-            <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5F7FA] text-[#667085] font-medium text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
+            <Clock className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
             <span>Deadline: <strong className="text-[#142B4A]">{deadlineInfo.deadlineFormatted}</strong></span>
           </div>
         </div>
       </div>
 
       {/* Right: Quick actions, notifications, profile */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 shrink-0">
         {!isAdmin && onNavigateToForm && (
           <button
             onClick={onNavigateToForm}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs shadow-sm transition-all"
+            className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs shadow-2xs transition-all shrink-0 whitespace-nowrap"
+            title="Submit Weekly Fellowship Return"
           >
-            <PlusCircle className="w-3.5 h-3.5 text-[#C6A45A]" />
+            <PlusCircle className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
             <span>Submit Return</span>
           </button>
         )}
