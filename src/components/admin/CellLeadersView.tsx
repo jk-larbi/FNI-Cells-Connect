@@ -223,14 +223,22 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
 
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
-                            {leader.full_name
-                              ? leader.full_name
-                                  .split(' ')
-                                  .map(n => n[0])
-                                  .slice(0, 2)
-                                  .join('')
-                              : 'TL'}
+                          <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                            {leader.avatar_url ? (
+                              <img
+                                src={leader.avatar_url}
+                                alt={leader.full_name || 'Leader'}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : leader.full_name ? (
+                              leader.full_name
+                                .split(' ')
+                                .map(n => n[0])
+                                .slice(0, 2)
+                                .join('')
+                            ) : (
+                              'TL'
+                            )}
                           </div>
                           <div>
                             <div className="font-bold text-[#182230] leading-tight">
@@ -310,18 +318,37 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
         <div className="fixed inset-0 z-50 bg-[#142B4A]/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-xl border border-[#E3E8EF] max-h-[90vh] overflow-y-auto custom-scrollbar space-y-5">
             <div className="flex items-start justify-between pb-3 border-b border-[#E3E8EF]">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-[#142B4A]">{selectedLeader.full_name}</h3>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    selectedLeader.is_active ? 'bg-emerald-50 text-[#23845B]' : 'bg-rose-50 text-[#C74646]'
-                  }`}>
-                    {selectedLeader.is_active ? 'Active Account' : 'Suspended Account'}
-                  </span>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-sm flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                  {selectedLeader.avatar_url ? (
+                    <img
+                      src={selectedLeader.avatar_url}
+                      alt={selectedLeader.full_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : selectedLeader.full_name ? (
+                    selectedLeader.full_name
+                      .split(' ')
+                      .map(n => n[0])
+                      .slice(0, 2)
+                      .join('')
+                  ) : (
+                    'TL'
+                  )}
                 </div>
-                <p className="text-xs text-[#667085] mt-0.5">
-                  Email: {selectedLeader.email} &bull; Phone: {selectedLeader.phone_number || 'N/A'}
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-[#142B4A]">{selectedLeader.full_name}</h3>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      selectedLeader.is_active ? 'bg-emerald-50 text-[#23845B]' : 'bg-rose-50 text-[#C74646]'
+                    }`}>
+                      {selectedLeader.is_active ? 'Active Account' : 'Suspended Account'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#667085] mt-0.5">
+                    Email: {selectedLeader.email} &bull; Phone: {selectedLeader.phone_number || 'N/A'}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setSelectedLeader(null)}

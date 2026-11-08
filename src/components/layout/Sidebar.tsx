@@ -136,14 +136,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title="Account Information"
             >
               <div className="relative shrink-0">
-                <div className="w-8 h-8 rounded-full bg-[#142B4A] border-2 border-white shadow-xs flex items-center justify-center text-xs font-bold text-[#C6A45A]">
-                  {currentUser?.full_name
-                    ? currentUser.full_name
-                        .split(' ')
-                        .map(n => n[0])
-                        .slice(0, 2)
-                        .join('')
-                    : 'FN'}
+                <div className="w-8 h-8 rounded-full bg-[#142B4A] border-2 border-white shadow-xs flex items-center justify-center text-xs font-bold text-[#C6A45A] overflow-hidden">
+                  {currentUser?.avatar_url ? (
+                    <img
+                      src={currentUser.avatar_url}
+                      alt={currentUser.full_name || 'Profile'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : currentUser?.full_name ? (
+                    currentUser.full_name
+                      .split(' ')
+                      .map(n => n[0])
+                      .slice(0, 2)
+                      .join('')
+                  ) : (
+                    'FN'
+                  )}
                 </div>
                 <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[#23845B] border border-white" />
               </div>

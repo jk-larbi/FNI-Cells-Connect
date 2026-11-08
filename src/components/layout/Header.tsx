@@ -102,14 +102,22 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2 pl-2 text-left hover:opacity-90 transition-opacity focus:outline-none"
           title="Account Settings"
         >
-          <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#C6A45A] text-xs font-bold flex items-center justify-center shadow-sm">
-            {currentUser?.full_name
-              ? currentUser.full_name
-                  .split(' ')
-                  .map(n => n[0])
-                  .slice(0, 2)
-                  .join('')
-              : 'FN'}
+          <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#C6A45A] text-xs font-bold flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+            {currentUser?.avatar_url ? (
+              <img
+                src={currentUser.avatar_url}
+                alt={currentUser.full_name || 'Profile'}
+                className="w-full h-full object-cover"
+              />
+            ) : currentUser?.full_name ? (
+              currentUser.full_name
+                .split(' ')
+                .map(n => n[0])
+                .slice(0, 2)
+                .join('')
+            ) : (
+              'FN'
+            )}
           </div>
           <div className="hidden lg:block text-left">
             <div className="text-xs font-bold text-[#182230] leading-tight">

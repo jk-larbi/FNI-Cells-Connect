@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import {
   User,
   Mail,
@@ -19,7 +20,7 @@ interface MyAccountViewProps {
 }
 
 export const MyAccountView: React.FC<MyAccountViewProps> = ({ onBack }) => {
-  const { currentUser, changePassword, logout } = useAuth();
+  const { currentUser, changePassword, updateAvatar, logout } = useAuth();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -79,19 +80,31 @@ export const MyAccountView: React.FC<MyAccountViewProps> = ({ onBack }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profile Card */}
         <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-3.5 pb-4 border-b border-[#E3E8EF]">
-            <div className="w-14 h-14 rounded-full bg-[#142B4A] flex items-center justify-center text-[#C6A45A] font-bold text-base shadow-sm">
-              {currentUser.full_name
-                ? currentUser.full_name
-                    .split(' ')
-                    .map(n => n[0])
-                    .slice(0, 2)
-                    .join('')
-                : 'TL'}
+          <div className="pb-4 border-b border-[#E3E8EF] space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-[#182230]">{currentUser.full_name}</h2>
+                <p className="text-xs text-[#667085]">Cell Leader / Tutor &bull; {currentUser.cell_name || 'Fellowship'}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-[#182230]">{currentUser.full_name}</h2>
-              <p className="text-xs text-[#667085]">Cell Leader / Tutor</p>
+
+            {/* Profile Picture Uploader for Tutor */}
+            <div className="p-3 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
+              <div className="text-[10px] font-bold text-[#667085] uppercase tracking-wider mb-2">
+                Leader Profile Picture
+              </div>
+              <ProfilePhotoUploader
+                currentAvatarUrl={currentUser?.avatar_url}
+                userName={currentUser?.full_name}
+                userRole={currentUser?.role}
+                size="md"
+                onPhotoUploaded={async (url) => {
+                  await updateAvatar(url);
+                }}
+                onPhotoRemoved={async () => {
+                  await updateAvatar('');
+                }}
+              />
             </div>
           </div>
 

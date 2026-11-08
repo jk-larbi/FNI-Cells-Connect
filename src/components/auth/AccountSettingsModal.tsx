@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
+import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { Lock, User, Phone, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 
 interface AccountSettingsModalProps {
@@ -10,7 +11,7 @@ interface AccountSettingsModalProps {
 }
 
 export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, changePassword, isAdmin } = useAuth();
+  const { currentUser, changePassword, updateAvatar, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
   
   // Password change state
@@ -77,6 +78,24 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
 
         {activeTab === 'profile' && (
           <div className="space-y-3 text-xs">
+            {/* Ministry Photo Uploader */}
+            <div className="bg-[#F5F7FA] p-3.5 rounded-2xl border border-[#E3E8EF]">
+              <div className="text-[10px] font-bold text-[#667085] uppercase tracking-wider mb-2">
+                Official Ministry Photo
+              </div>
+              <ProfilePhotoUploader
+                currentAvatarUrl={currentUser?.avatar_url}
+                userName={currentUser?.full_name}
+                userRole={currentUser?.role}
+                onPhotoUploaded={async (url) => {
+                  await updateAvatar(url);
+                }}
+                onPhotoRemoved={async () => {
+                  await updateAvatar('');
+                }}
+              />
+            </div>
+
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 font-medium">Full Name</span>

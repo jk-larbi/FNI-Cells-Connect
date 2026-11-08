@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { ReportService } from '../../services/reportService';
 import { SystemSettings, AuditLog } from '../../types';
@@ -17,6 +18,7 @@ import {
   Bell,
   History,
   ArrowLeft,
+  User,
 } from 'lucide-react';
 
 interface AdminSettingsViewProps {
@@ -24,7 +26,7 @@ interface AdminSettingsViewProps {
 }
 
 export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) => {
-  const { currentUser, changePassword } = useAuth();
+  const { currentUser, changePassword, updateAvatar } = useAuth();
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [activeTab, setActiveTab] = useState<'system' | 'security' | 'audit'>('system');
@@ -252,15 +254,39 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
         </div>
       )}
 
-      {/* TAB 2: ADMINISTRATOR SECURITY */}
+      {/* TAB 2: ADMINISTRATOR PROFILE & SECURITY */}
       {activeTab === 'security' && (
-        <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm max-w-md">
-          <div className="mb-4">
-            <h3 className="text-sm font-bold text-[#182230]">Change Administrator Password</h3>
-            <p className="text-xs text-[#667085] mt-0.5">
-              Secure your leadership account. Passwords persist across deployments.
-            </p>
+        <div className="space-y-6 max-w-md">
+          {/* Administrator Profile Photo */}
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-[#182230]">Administrator Profile Photo</h3>
+              <p className="text-xs text-[#667085] mt-0.5">
+                Official portrait displayed in the navigation header, leadership oversight cards, and communications.
+              </p>
+            </div>
+
+            <ProfilePhotoUploader
+              currentAvatarUrl={currentUser?.avatar_url}
+              userName={currentUser?.full_name}
+              userRole="Administrator"
+              size="md"
+              onPhotoUploaded={async (url) => {
+                await updateAvatar(url);
+              }}
+              onPhotoRemoved={async () => {
+                await updateAvatar('');
+              }}
+            />
           </div>
+
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm">
+            <div className="mb-4">
+              <h3 className="text-sm font-bold text-[#182230]">Change Administrator Password</h3>
+              <p className="text-xs text-[#667085] mt-0.5">
+                Secure your leadership account. Passwords persist across deployments.
+              </p>
+            </div>
 
           <form onSubmit={handlePasswordChange} className="space-y-3.5 text-xs">
             {passMessage && (
@@ -310,6 +336,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
             </button>
           </form>
         </div>
+      </div>
       )}
 
       {/* TAB 3: AUDIT TRAIL */}

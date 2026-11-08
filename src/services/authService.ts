@@ -677,6 +677,41 @@ export class AuthService {
     return { profile: updated, isExistingCellAssociated: false };
   }
 
+  // --- AVATAR / PROFILE PHOTO UPDATE ---
+  static async updateUserAvatar(userId: string, avatarUrl: string): Promise<Profile> {
+    const profiles = this.getAllProfiles();
+    const idx = profiles.findIndex(p => p.id === userId);
+    let updatedProfile: Profile;
+    if (idx >= 0) {
+      profiles[idx] = { ...profiles[idx], avatar_url: avatarUrl };
+      this.saveProfiles(profiles);
+      updatedProfile = profiles[idx];
+    } else {
+      const current = this.getCurrentProfile();
+      updatedProfile = { ...current, avatar_url: avatarUrl };
+      this.saveProfiles([...profiles, updatedProfile]);
+    }
+
+    const current = this.getCurrentProfile();
+    if (current && current.id === userId) {
+      this.setCurrentProfile(updatedProfile);
+    }
+
+    // Sync with Firestore if configured
+    if (isFirebaseConfigured && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore');
+        await updateDoc(doc(db, 'profiles', userId), {
+          avatar_url: avatarUrl,
+        });
+      } catch (e) {
+        console.warn('Firebase updateUserAvatar notice:', e);
+      }
+    }
+
+    return updatedProfile;
+  }
+
   // --- SIGN OUT ---
   static async signOut(): Promise<void> {
     if (isFirebaseConfigured && auth) {

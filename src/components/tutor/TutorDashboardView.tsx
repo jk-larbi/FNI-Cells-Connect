@@ -239,7 +239,11 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
           <div className="space-y-2.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#C6A45A] text-xs font-bold uppercase tracking-wider backdrop-blur-xs border border-white/15">
-                {greetingIcon}
+                {currentUser?.avatar_url ? (
+                  <img src={currentUser.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover -ml-0.5" />
+                ) : (
+                  greetingIcon
+                )}
                 <span>{greetingText}, Tutor {currentUser.full_name?.split(' ')[0]}</span>
               </span>
               <span className="px-3 py-1 rounded-full bg-[#C6A45A] text-[#142B4A] text-xs font-black uppercase tracking-wider shadow-2xs">

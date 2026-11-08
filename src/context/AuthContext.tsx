@@ -23,6 +23,7 @@ interface AuthContextType {
   registerTutor: (input: TutorRegistrationInput) => Promise<{ success: boolean; error?: string }>;
   completeOnboarding: (input: any) => Promise<{ success: boolean; isExistingCellAssociated?: boolean; error?: string }>;
   changePassword: (newPass: string) => Promise<{ success: boolean; error?: string }>;
+  updateAvatar: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   showLoginView: () => void;
   refreshProfile: () => void;
@@ -136,6 +137,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoggedOut(true);
   };
 
+  const updateAvatar = async (avatarUrl: string) => {
+    try {
+      const updated = await AuthService.updateUserAvatar(currentUser.id, avatarUrl);
+      setCurrentUser(updated);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to update profile picture' };
+    }
+  };
+
   const role = currentUser?.role;
   const isAdmin = role === 'admin' || role === 'super_admin' || role === 'national_admin';
   const isTutor = !isAdmin;
@@ -164,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerTutor,
         completeOnboarding,
         changePassword,
+        updateAvatar,
         logout,
         showLoginView,
         refreshProfile,
