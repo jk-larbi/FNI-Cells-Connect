@@ -1,6 +1,6 @@
 import { collection, doc, setDoc, getDocs, query, where, orderBy, getDoc, updateDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
-import { PrivateMessage, CommunityMessage, InvitationCode, UserRole } from '../types';
+import { PrivateMessage, CommunityMessage, InvitationCode, UserRole, MessageReply } from '../types';
 
 const STORAGE_KEYS = {
   PRIVATE: 'fni_private_messages_v1',
@@ -40,6 +40,7 @@ export class MessagingService {
     cellId?: string;
     cellName?: string;
     content: string;
+    replyTo?: MessageReply;
   }): Promise<PrivateMessage> {
     const id = `pmsg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const nowIso = new Date().toISOString();
@@ -56,6 +57,7 @@ export class MessagingService {
       content: data.content.trim(),
       createdAt: nowIso,
       isRead: false,
+      replyTo: data.replyTo,
     };
 
     if (isFirebaseConfigured && db) {
@@ -180,6 +182,8 @@ export class MessagingService {
     cellName?: string;
     content: string;
     category?: 'general' | 'announcement' | 'prayer_request' | 'testimony';
+    replyTo?: MessageReply;
+    mentions?: string[];
   }): Promise<CommunityMessage> {
     const id = `cmsg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const nowIso = new Date().toISOString();
@@ -193,6 +197,9 @@ export class MessagingService {
       content: data.content.trim(),
       category: data.category || 'general',
       createdAt: nowIso,
+      replyTo: data.replyTo,
+      mentions: data.mentions,
+      reactions: {},
     };
 
     if (isFirebaseConfigured && db) {
@@ -368,9 +375,45 @@ export class MessagingService {
     return { valid: true };
   }
 
-  static checkCommunityAccess(tutorUid: string, userRole?: UserRole): boolean {
-    if (userRole === 'admin' || userRole === 'super_admin') return true;
-    const authorizedUsers = getStored<string[]>(STORAGE_KEYS.COMMUNITY_ACCESS, []);
-    return authorizedUsers.includes(tutorUid);
+  static async reactToCommunityMessage(
+    messageId: string,
+    emoji: string,
+    userName: string
+  ): Promise<CommunityMessage | null> {
+    const all = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
+    const target = all.find(m => m.id === messageId);
+    if (!target) return null;
+
+    if (!target.reactions) {
+      target.reactions = {};
+    }
+
+    const currentReactors = target.reactions[emoji] || [];
+    if (currentReactors.includes(userName)) {
+      // Remove reaction
+      target.reactions[emoji] = currentReactors.filter(u => u !== userName);
+      if (target.reactions[emoji].length === 0) {
+        delete target.reactions[emoji];
+      }
+    } else {
+      // Add reaction
+      target.reactions[emoji] = [...currentReactors, userName];
+    }
+
+    setStored(STORAGE_KEYS.COMMUNITY, all);
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'communityMessages', messageId), { reactions: target.reactions });
+      } catch (e) {
+        console.warn('Firebase react notice:', e);
+      }
+    }
+
+    return target;
+  }
+
+  static checkCommunityAccess(_tutorUid?: string, _userRole?: UserRole): boolean {
+    // Open access for all authenticated fellowship tutors, leaders and users
+    return true;
   }
 }

@@ -271,6 +271,12 @@ export interface OfferingAggregation {
 }
 
 // Communication: Private Tutor-Admin & Community
+export interface MessageReply {
+  id: string;
+  senderName: string;
+  content: string;
+}
+
 export interface PrivateMessage {
   id: string;
   senderUid: string;
@@ -284,6 +290,7 @@ export interface PrivateMessage {
   createdAt: string;
   isRead: boolean;
   readAt?: string;
+  replyTo?: MessageReply;
 }
 
 export interface CommunityMessage {
@@ -295,6 +302,9 @@ export interface CommunityMessage {
   content: string;
   category?: 'general' | 'announcement' | 'prayer_request' | 'testimony';
   createdAt: string;
+  replyTo?: MessageReply;
+  mentions?: string[];
+  reactions?: { [emoji: string]: string[] };
 }
 
 export interface InvitationCode {
