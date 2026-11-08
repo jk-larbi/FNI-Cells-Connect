@@ -1,7 +1,7 @@
 import { Profile, Cell, TutorRegistrationInput, TutorLoginInput } from '../types';
 import { INITIAL_PROFILES } from './mockData';
 import { auth, db, isFirebaseConfigured, firebaseApp } from '../lib/firebase';
-import { signInWithCustomToken, signOut as fbSignOut } from 'firebase/auth';
+import { signInWithCustomToken, signOut as fbSignOut, onIdTokenChanged } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { ReportService } from './reportService';
@@ -69,6 +69,27 @@ async function hashPasswordWithSalt(password: string, existingSalt?: string): Pr
 async function verifyPassword(password: string, salt: string, storedHash: string): Promise<boolean> {
   const { hash } = await hashPasswordWithSalt(password, salt);
   return hash === storedHash;
+}
+
+
+let renewalTimeoutId: any = null;
+
+function scheduleSupabaseRenewal(expiresAtSeconds: number) {
+  if (renewalTimeoutId) {
+    clearTimeout(renewalTimeoutId);
+    renewalTimeoutId = null;
+  }
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const remainingSeconds = expiresAtSeconds - nowSeconds;
+  // Renew 5 minutes (300 seconds) prior to expiration, or halfway if remaining time is small
+  const refreshInMs = Math.max((remainingSeconds - 300) * 1000, 15000);
+  renewalTimeoutId = setTimeout(async () => {
+    try {
+      await AuthService.syncSupabaseSession();
+    } catch (e) {
+      console.warn('Scheduled Supabase token renewal notice:', e);
+    }
+  }, refreshInMs);
 }
 
 export class AuthService {

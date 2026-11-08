@@ -386,6 +386,44 @@ CREATE TABLE IF NOT EXISTS public.device_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_tokens_user ON public.device_tokens(user_id);
 
+
+-- 16b. NOTIFICATIONS (In-App & Multi-Channel Feed)
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    recipient_target TEXT NOT NULL,
+    sender_id TEXT,
+    sender_name TEXT,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    type notification_type NOT NULL DEFAULT 'system_alert',
+    channel notification_channel NOT NULL DEFAULT 'in_app',
+    status TEXT NOT NULL DEFAULT 'delivered',
+    is_read BOOLEAN NOT NULL DEFAULT false,
+    read_at TIMESTAMPTZ,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON public.notifications(recipient_target);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON public.notifications(created_at DESC);
+
+-- 16c. AUDIT LOGS (Immutable Activity Ledger)
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    action TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    user_role TEXT NOT NULL DEFAULT 'cell_leader',
+    details JSONB DEFAULT '{}'::jsonb,
+    ip_address TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_user ON public.audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON public.audit_logs(created_at DESC);
+
 -- 17. AUTOMATED TIMESTAMP & NORMALIZATION TRIGGERS
 CREATE OR REPLACE FUNCTION public.auto_update_timestamp()
 RETURNS TRIGGER AS $$
@@ -699,7 +737,7 @@ DROP POLICY IF EXISTS "offerings_admin" ON public.offering_records;
 CREATE POLICY "offerings_admin" ON public.offering_records FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- Notifications: Recipient, Broadcast, or Administrator
+-- Notifications: Role-Aware Authorization & Anti-Impersonation Safeguards
 DROP POLICY IF EXISTS "notifications_select" ON public.notifications;
 CREATE POLICY "notifications_select" ON public.notifications FOR SELECT TO authenticated
     USING (
@@ -711,15 +749,36 @@ CREATE POLICY "notifications_select" ON public.notifications FOR SELECT TO authe
 
 DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
 CREATE POLICY "notifications_insert" ON public.notifications FOR INSERT TO authenticated
-    WITH CHECK (true);
+    WITH CHECK (
+        -- Only administrators may issue ministry-wide broadcasts ('all')
+        (recipient_target = 'all' AND public.is_admin())
+        OR
+        -- Members can notify administrators (e.g. newly registered cells, report submissions)
+        (recipient_target = 'admin')
+        OR
+        -- Targeted direct notifications where sender matches authenticated identity
+        (
+            recipient_target != 'all'
+            AND (sender_id IS NULL OR sender_id = auth.uid()::text OR sender_id = public.current_firebase_uid() OR public.is_admin())
+        )
+    );
 
 DROP POLICY IF EXISTS "notifications_update" ON public.notifications;
 CREATE POLICY "notifications_update" ON public.notifications FOR UPDATE TO authenticated
     USING (
-        recipient_target = auth.uid()::text 
-        OR recipient_target = public.current_firebase_uid() 
-        OR public.is_admin()
+        public.is_admin()
+        OR recipient_target = auth.uid()::text 
+        OR recipient_target = public.current_firebase_uid()
+    )
+    WITH CHECK (
+        public.is_admin()
+        OR recipient_target = auth.uid()::text 
+        OR recipient_target = public.current_firebase_uid()
     );
+
+DROP POLICY IF EXISTS "notifications_delete" ON public.notifications;
+CREATE POLICY "notifications_delete" ON public.notifications FOR DELETE TO authenticated
+    USING (public.is_admin());
 
 -- Device Tokens: User own token only
 DROP POLICY IF EXISTS "device_tokens_user" ON public.device_tokens;
@@ -733,14 +792,18 @@ CREATE POLICY "device_tokens_user" ON public.device_tokens FOR ALL TO authentica
         OR user_id = public.current_firebase_uid()
     );
 
--- Audit Logs: Admin read-only, append-only
+-- Audit Logs: Admin read-only, strict authenticated caller append-only
 DROP POLICY IF EXISTS "audit_logs_select" ON public.audit_logs;
 CREATE POLICY "audit_logs_select" ON public.audit_logs FOR SELECT TO authenticated
     USING (public.is_admin());
 
 DROP POLICY IF EXISTS "audit_logs_insert" ON public.audit_logs;
 CREATE POLICY "audit_logs_insert" ON public.audit_logs FOR INSERT TO authenticated
-    WITH CHECK (true);
+    WITH CHECK (
+        public.is_admin()
+        OR user_id = auth.uid()::text 
+        OR user_id = public.current_firebase_uid()
+    );
 
 -- 19. ENABLE REALTIME PUBLICATION
 DO $$

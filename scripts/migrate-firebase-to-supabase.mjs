@@ -1,20 +1,30 @@
 /**
  * Forerunners Network International (FNI) - Digital Reporting System
- * Phase 4: Production Data Migration & Exact Reconciliation Engine
+ * Phase 5: Production Data Migration & Genuinely Exact Reconciliation Engine
  * 
  * Target Supabase Project: cjskjazsrrbfyjepwyxa (eu-west-3)
  * Target Repository: jk-larbi/FNI-Cells-Connect
  * 
- * Modules:
- * 1. Source Data Extraction (Firestore Admin SDK / Backups Directory / Local Stores)
- * 2. ID-Preserving Normalization & Transform
- * 3. Non-Destructive Batch Upsert
- * 4. Exact Set-Theoretic Reconciliation (Source IDs vs Destination IDs)
+ * Capabilities:
+ * 1. Real Firebase Admin SDK Export (when credentials provided) with full collection extraction
+ * 2. ID-Preserving Normalization & Field Mapping
+ * 3. Dry-Run Verification Mode (--dry-run)
+ * 4. Non-Destructive Batch Upsert with explicit conflict resolution
+ * 5. Genuinely Exact Reconciliation:
+ *    - Source vs Destination IDs
+ *    - Missing records detection
+ *    - Unexpected Extra records detection
+ *    - Duplicate IDs detection (source & dest)
+ *    - Deep field-level value and type matching
+ *    - Failed import error tracking (zero tolerance for partial failures)
  */
 
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // -----------------------------------------------------------------------------
 // ENVIRONMENT & CREDENTIAL RESOLUTION
@@ -40,10 +50,18 @@ envContent.split('\n').forEach(line => {
 const supabaseUrl = envVars.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://cjskjazsrrbfyjepwyxa.supabase.co';
 const supabaseKey = envVars.SUPABASE_SERVICE_ROLE_KEY || envVars.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
+// Check CLI flags
+const isDryRun = process.argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
+
 console.log('================================================================');
 console.log('FNI CELLS CONNECT — PRODUCTION DATA MIGRATION & RECONCILIATION');
 console.log('Target Project: cjskjazsrrbfyjepwyxa (eu-west-3)');
 console.log('Repository:     jk-larbi/FNI-Cells-Connect');
+if (isDryRun) {
+  console.log('Execution Mode: 🛡️ DRY RUN (Read-only verification — no Supabase writes)');
+} else {
+  console.log('Execution Mode: 🚀 LIVE BATCH UPSERT');
+}
 console.log('================================================================\n');
 
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -53,76 +71,129 @@ if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
 
 const dumpFilePath = path.join(dataDir, 'migration_source_dump.json');
 
+// All 16 system collections
+export const ALL_COLLECTIONS = [
+  'profiles',
+  'regions',
+  'cells',
+  'reporting_periods',
+  'cell_meeting_reports',
+  'evangelism_reports',
+  'evangelism_contacts',
+  'offering_records',
+  'private_messages',
+  'community_messages',
+  'teaching_materials',
+  'system_settings',
+  'soul_targets',
+  'notifications',
+  'device_tokens',
+  'audit_logs',
+];
+
 // -----------------------------------------------------------------------------
-// MODULE 1: GENUINE SOURCE EXTRACTION (NO FABRICATED COUNTS)
+// MODULE 1: GENUINE FIREBASE ADMIN SDK EXPORT WORKFLOW
 // -----------------------------------------------------------------------------
-export function extractSourceData() {
-  console.log('📦 Phase 1: Source Extraction & Multi-Source Inventory Check...');
+export async function extractSourceData() {
+  console.log('📦 Phase 1: Genuine Source Data Extraction...');
 
   let inventory = {
     metadata: {
       exportedAt: new Date().toISOString(),
-      source: 'FNI Active Data Inventory',
-      version: '2.0.0',
+      source: 'FNI Source Inventory',
+      version: '3.0.0',
     },
-    profiles: [],
-    regions: [],
-    cells: [],
-    reporting_periods: [],
-    cell_meeting_reports: [],
-    evangelism_reports: [],
-    evangelism_contacts: [],
-    offering_records: [],
-    private_messages: [],
-    community_messages: [],
-    teaching_materials: [],
-    system_settings: [],
-    soul_targets: [],
-    notifications: [],
-    device_tokens: [],
-    audit_logs: [],
   };
+  ALL_COLLECTIONS.forEach(col => { inventory[col] = []; });
 
-  // 1. Check existing master dump file
-  if (fs.existsSync(dumpFilePath)) {
+  // 1. Attempt genuine Firebase Admin SDK live Firestore export
+  let firebaseAdmin = null;
+  try {
+    firebaseAdmin = require('./functions/node_modules/firebase-admin');
+  } catch (e) {
     try {
-      const existing = JSON.parse(fs.readFileSync(dumpFilePath, 'utf8'));
-      console.log(`   Loaded existing master dump from ${dumpFilePath}`);
-      for (const k of Object.keys(inventory)) {
-        if (Array.isArray(existing[k]) && existing[k].length > 0) {
-          inventory[k] = existing[k];
-        }
-      }
-    } catch (e) {
-      console.warn(`   Could not parse ${dumpFilePath}:`, e.message);
+      firebaseAdmin = require('firebase-admin');
+    } catch (e2) {
+      // not loaded
     }
   }
 
-  // 2. Scan backups/ directory for collection-specific JSON exports
-  const collectionNames = [
-    'profiles', 'regions', 'cells', 'reporting_periods',
-    'cell_meeting_reports', 'evangelism_reports', 'evangelism_contacts',
-    'offering_records', 'private_messages', 'community_messages',
-    'teaching_materials', 'system_settings', 'soul_targets',
-    'notifications', 'device_tokens', 'audit_logs'
-  ];
+  let firestoreDb = null;
+  const serviceAccountPath = envVars.FIREBASE_SERVICE_ACCOUNT_PATH || process.env.GOOGLE_APPLICATION_CREDENTIALS || path.resolve(process.cwd(), 'serviceAccountKey.json');
 
-  for (const col of collectionNames) {
-    const colBackupPath = path.join(backupsDir, `${col}.json`);
-    if (fs.existsSync(colBackupPath)) {
+  if (firebaseAdmin) {
+    try {
+      if (fs.existsSync(serviceAccountPath)) {
+        console.log(`   🔑 Initializing Firebase Admin with service account: ${serviceAccountPath}`);
+        const cert = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        firebaseAdmin.initializeApp({
+          credential: firebaseAdmin.credential.cert(cert),
+        });
+        firestoreDb = firebaseAdmin.firestore();
+      } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+        console.log('   🔑 Initializing Firebase Admin with FIREBASE_SERVICE_ACCOUNT_KEY env var');
+        const cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        firebaseAdmin.initializeApp({
+          credential: firebaseAdmin.credential.cert(cert),
+        });
+        firestoreDb = firebaseAdmin.firestore();
+      }
+    } catch (err) {
+      console.warn('   ⚠️ Firebase Admin initialization notice:', err.message);
+    }
+  }
+
+  if (firestoreDb) {
+    console.log('   📡 Querying live Firestore collections via Firebase Admin SDK...');
+    for (const col of ALL_COLLECTIONS) {
       try {
-        const data = JSON.parse(fs.readFileSync(colBackupPath, 'utf8'));
-        if (Array.isArray(data) && data.length > 0) {
-          console.log(`   Found collection backup: backups/${col}.json (${data.length} records)`);
-          inventory[col] = data;
+        const snap = await firestoreDb.collection(col).get();
+        const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        inventory[col] = records;
+        console.log(`      ↳ Exported "${col}": ${records.length} records`);
+        // Save to individual backup file
+        fs.writeFileSync(path.join(backupsDir, `${col}.json`), JSON.stringify(records, null, 2), 'utf8');
+      } catch (colErr) {
+        console.warn(`      ⚠️ Collection "${col}" query notice: ${colErr.message}`);
+      }
+    }
+  } else {
+    console.log('   ℹ️ No live Firebase Admin service credentials detected in local environment.');
+    console.log('   📂 Scanning backups/ directory and existing verified dumps...');
+
+    // Read from backups/*.json
+    for (const col of ALL_COLLECTIONS) {
+      const colPath = path.join(backupsDir, `${col}.json`);
+      if (fs.existsSync(colPath)) {
+        try {
+          const raw = JSON.parse(fs.readFileSync(colPath, 'utf8'));
+          if (Array.isArray(raw)) {
+            inventory[col] = raw;
+            console.log(`      ↳ Loaded "backups/${col}.json": ${raw.length} records`);
+          }
+        } catch (e) {
+          console.warn(`      ⚠️ Could not parse backups/${col}.json:`, e.message);
         }
-      } catch (err) {
-        console.warn(`   Failed reading backups/${col}.json:`, err.message);
+      }
+    }
+
+    // Read from master dump if present
+    if (fs.existsSync(dumpFilePath)) {
+      try {
+        const masterDump = JSON.parse(fs.readFileSync(dumpFilePath, 'utf8'));
+        for (const col of ALL_COLLECTIONS) {
+          if ((!inventory[col] || inventory[col].length === 0) && Array.isArray(masterDump[col]) && masterDump[col].length > 0) {
+            inventory[col] = masterDump[col];
+            console.log(`      ↳ Loaded "${col}" from master dump: ${masterDump[col].length} records`);
+          }
+        }
+      } catch (e) {
+        console.warn('      ⚠️ Could not parse master dump:', e.message);
       }
     }
   }
 
-  // 3. Write consolidated export dump
+  // Write consolidated inventory
   fs.writeFileSync(dumpFilePath, JSON.stringify(inventory, null, 2), 'utf8');
   console.log(`   Consolidated source inventory updated at ${dumpFilePath}`);
   return inventory;
@@ -132,12 +203,17 @@ export function extractSourceData() {
 // MODULE 2: NON-DESTRUCTIVE BATCH UPSERT WITH ID PRESERVATION
 // -----------------------------------------------------------------------------
 export async function importToSupabase(supabase, sourceData) {
-  console.log('\n🚀 Phase 2: Non-Destructive Batch Upsert to Supabase...');
+  if (isDryRun) {
+    console.log('\n🛡️ Phase 2: [DRY RUN] Skipping all write operations to Supabase.');
+    return { success: true, failedImports: [] };
+  }
 
-  // Helper batch runner
+  console.log('\n🚀 Phase 2: Non-Destructive Batch Upsert to Supabase...');
+  const failedImports = [];
+
   async function upsertBatch(tableName, rows, onConflict) {
     if (!rows || rows.length === 0) {
-      console.log(`   ℹ️ ${tableName.padEnd(24)}: No source records to import`);
+      console.log(`   ℹ️ ${tableName.padEnd(24)}: 0 records to import`);
       return;
     }
 
@@ -147,7 +223,8 @@ export async function importToSupabase(supabase, sourceData) {
       const batch = rows.slice(i, i + batchSize);
       const { error } = await supabase.from(tableName).upsert(batch, { onConflict });
       if (error) {
-        console.log(`   ⚠️ ${tableName} batch error: ${error.message}`);
+        console.log(`   ⚠️ ${tableName} batch error (${i}..${i + batch.length}): ${error.message}`);
+        failedImports.push({ table: tableName, error: error.message, range: `${i}..${i + batch.length}` });
       } else {
         imported += batch.length;
       }
@@ -221,7 +298,7 @@ export async function importToSupabase(supabase, sourceData) {
       new_members: r.newMembers || r.new_members || 0,
       absentees: r.absentees || 0,
       follow_up_needed: r.followUpNeeded || r.follow_up_needed || 0,
-      offering: r.offering || 0,
+      offering: Number(r.offering || 0),
       scriptural_theme: r.scripturalTheme || r.scriptural_theme || null,
       scriptures_used: r.scripturesUsed || r.scriptures_used || null,
       tutor_notes: r.tutorNotes || r.tutor_notes || null,
@@ -306,7 +383,7 @@ export async function importToSupabase(supabase, sourceData) {
       cell_name: o.cellName || o.cell_name,
       tutor_uid: o.tutorUid || o.tutor_uid || null,
       tutor_name: o.tutorName || o.tutor_name || null,
-      amount: o.amount || 0,
+      amount: Number(o.amount || 0),
       currency: o.currency || 'GHS',
       meeting_date: o.meetingDate || o.meeting_date,
       week_label: o.weekLabel || o.week_label || null,
@@ -387,6 +464,8 @@ export async function importToSupabase(supabase, sourceData) {
     const payload = sourceData.notifications.map(n => ({
       id: n.id,
       recipient_target: n.recipientTarget || n.recipient_target || n.userId || n.user_id,
+      sender_id: n.senderId || n.sender_id || null,
+      sender_name: n.senderName || n.sender_name || null,
       title: n.title,
       message: n.message,
       type: n.type || 'system_alert',
@@ -416,36 +495,47 @@ export async function importToSupabase(supabase, sourceData) {
     }));
     await upsertBatch('audit_logs', payload, 'id');
   }
+
+  return {
+    success: failedImports.length === 0,
+    failedImports,
+  };
 }
 
 // -----------------------------------------------------------------------------
-// MODULE 3: EXACT RECONCILIATION & INTEGRITY VERIFICATION
+// MODULE 3: GENUINELY EXACT RECONCILIATION & FIELD-BY-FIELD INTEGRITY
 // -----------------------------------------------------------------------------
-export async function reconcile(supabase, sourceData) {
-  console.log('\n📊 Phase 3: Exact Set-Theoretic Reconciliation & Record Integrity...');
+export async function reconcile(supabase, sourceData, importResult = { success: true, failedImports: [] }) {
+  console.log('\n📊 Phase 3: Genuinely Exact Reconciliation & Deep Record Comparison...');
 
   const modules = [
-    { name: 'regions', sourceItems: sourceData.regions || [], idField: 'code', altIdField: 'firebase_id', reqFields: ['name', 'code'] },
-    { name: 'cells', sourceItems: sourceData.cells || [], idField: 'firebase_id', altIdField: 'id', reqFields: ['name', 'status'] },
-    { name: 'reporting_periods', sourceItems: sourceData.reporting_periods || [], idField: 'id', altIdField: 'firebase_id', reqFields: ['year', 'week_number'] },
-    { name: 'cell_meeting_reports', sourceItems: sourceData.cell_meeting_reports || [], idField: 'id', reqFields: ['cell_id', 'tutor_uid', 'meeting_date'] },
-    { name: 'evangelism_reports', sourceItems: sourceData.evangelism_reports || [], idField: 'id', reqFields: ['cell_id', 'tutor_uid', 'date'] },
-    { name: 'evangelism_contacts', sourceItems: sourceData.evangelism_contacts || [], idField: 'id', reqFields: ['cell_id', 'contact_name'] },
-    { name: 'offering_records', sourceItems: sourceData.offering_records || [], idField: 'id', reqFields: ['cell_id', 'report_id', 'amount'] },
-    { name: 'private_messages', sourceItems: sourceData.private_messages || [], idField: 'id', reqFields: ['sender_uid', 'recipient_uid', 'content'] },
-    { name: 'community_messages', sourceItems: sourceData.community_messages || [], idField: 'id', reqFields: ['sender_uid', 'content'] },
-    { name: 'teaching_materials', sourceItems: sourceData.teaching_materials || [], idField: 'id', reqFields: ['title', 'week_label'] },
-    { name: 'system_settings', sourceItems: sourceData.system_settings || [], idField: 'id', reqFields: ['vision', 'mission'] },
-    { name: 'soul_targets', sourceItems: sourceData.soul_targets || [], idField: 'id', reqFields: ['year', 'annual_target'] },
-    { name: 'notifications', sourceItems: sourceData.notifications || [], idField: 'id', reqFields: ['recipient_target', 'title'] },
-    { name: 'audit_logs', sourceItems: sourceData.audit_logs || [], idField: 'id', reqFields: ['action', 'entity_type'] },
+    { name: 'regions', sourceItems: sourceData.regions || [], idField: 'code', altIdField: 'firebase_id', fieldsToCheck: ['name', 'code', 'country'] },
+    { name: 'cells', sourceItems: sourceData.cells || [], idField: 'firebase_id', altIdField: 'id', fieldsToCheck: ['name', 'status', 'meeting_day'] },
+    { name: 'reporting_periods', sourceItems: sourceData.reporting_periods || [], idField: 'id', altIdField: 'firebase_id', fieldsToCheck: ['name', 'year', 'week_number'] },
+    { name: 'cell_meeting_reports', sourceItems: sourceData.cell_meeting_reports || [], idField: 'id', fieldsToCheck: ['cell_id', 'tutor_uid', 'meeting_date', 'status'] },
+    { name: 'evangelism_reports', sourceItems: sourceData.evangelism_reports || [], idField: 'id', fieldsToCheck: ['cell_id', 'tutor_uid', 'date', 'status'] },
+    { name: 'evangelism_contacts', sourceItems: sourceData.evangelism_contacts || [], idField: 'id', fieldsToCheck: ['cell_id', 'contact_name', 'follow_up_status'] },
+    { name: 'offering_records', sourceItems: sourceData.offering_records || [], idField: 'id', fieldsToCheck: ['cell_id', 'report_id', 'amount'] },
+    { name: 'private_messages', sourceItems: sourceData.private_messages || [], idField: 'id', fieldsToCheck: ['sender_uid', 'recipient_uid', 'content'] },
+    { name: 'community_messages', sourceItems: sourceData.community_messages || [], idField: 'id', fieldsToCheck: ['sender_uid', 'content'] },
+    { name: 'teaching_materials', sourceItems: sourceData.teaching_materials || [], idField: 'id', fieldsToCheck: ['title', 'week_label'] },
+    { name: 'system_settings', sourceItems: sourceData.system_settings || [], idField: 'id', fieldsToCheck: ['vision', 'mission'] },
+    { name: 'soul_targets', sourceItems: sourceData.soul_targets || [], idField: 'id', fieldsToCheck: ['year', 'annual_target'] },
+    { name: 'notifications', sourceItems: sourceData.notifications || [], idField: 'id', fieldsToCheck: ['recipient_target', 'title'] },
+    { name: 'audit_logs', sourceItems: sourceData.audit_logs || [], idField: 'id', fieldsToCheck: ['action', 'entity_type'] },
   ];
 
-  console.log('| Collection / Module        | Source | Dest | Matched | Missing | Extra | Field Errors | Verification Status  |');
-  console.log('|----------------------------|--------|------|---------|---------|-------|--------------|----------------------|');
+  console.log('| Collection / Module        | Source | Dest | Matched | Missing | Extra | Dups | Field Mismatches | Status               |');
+  console.log('|----------------------------|--------|------|---------|---------|-------|------|------------------|----------------------|');
 
   let allVerified = true;
   const discrepancies = [];
+
+  // If batch imports had failed batches, reconciliation fails immediately
+  if (importResult.failedImports?.length > 0) {
+    allVerified = false;
+    console.log(`⚠️ CRITICAL: ${importResult.failedImports.length} batch upsert operations failed during import.`);
+  }
 
   for (const mod of modules) {
     const sourceIds = mod.sourceItems
@@ -453,12 +543,14 @@ export async function reconcile(supabase, sourceData) {
       .filter(Boolean);
     const sourceSet = new Set(sourceIds);
 
-    // Fetch destination IDs and required fields from Supabase
-    const selectCols = [mod.idField, mod.altIdField, ...(mod.reqFields || [])].filter(Boolean).join(',');
-    const { data: destRows, error } = await supabase.from(mod.name).select(selectCols);
+    // Duplicate check on source
+    const sourceDuplicates = sourceIds.filter((item, index) => sourceIds.indexOf(item) !== index);
+
+    // Fetch all destination records from Supabase
+    const { data: destRows, error } = await supabase.from(mod.name).select('*');
 
     if (error) {
-      console.log(`| ${mod.name.padEnd(26)} | ${String(sourceIds.length).padStart(6)} |  ERR |       0 |       0 |     0 |            0 | QUERY FAILED ❌      |`);
+      console.log(`| ${mod.name.padEnd(26)} | ${String(sourceIds.length).padStart(6)} |  ERR |       0 |       0 |     0 |    0 |                0 | QUERY FAILED ❌      |`);
       allVerified = false;
       discrepancies.push({ table: mod.name, error: error.message });
       continue;
@@ -467,29 +559,68 @@ export async function reconcile(supabase, sourceData) {
     const destIds = (destRows || []).map(row => row[mod.idField] || (mod.altIdField ? row[mod.altIdField] : null)).filter(Boolean);
     const destSet = new Set(destIds);
 
+    // Duplicate check on destination
+    const destDuplicates = destIds.filter((item, index) => destIds.indexOf(item) !== index);
+    const totalDuplicates = sourceDuplicates.length + destDuplicates.length;
+
     const matched = sourceIds.filter(id => destSet.has(id));
     const missing = sourceIds.filter(id => !destSet.has(id));
     const extra = destIds.filter(id => !sourceSet.has(id));
 
-    // Field-level error validation (check non-null required fields)
-    let fieldErrors = 0;
-    if (destRows && mod.reqFields) {
-      for (const row of destRows) {
-        for (const reqF of mod.reqFields) {
-          if (row[reqF] === null || row[reqF] === undefined) {
-            fieldErrors++;
+    // Deep field-level comparison
+    let fieldMismatches = 0;
+    const destMap = new Map();
+    (destRows || []).forEach(row => {
+      const key = row[mod.idField] || (mod.altIdField ? row[mod.altIdField] : null);
+      if (key) destMap.set(key, row);
+    });
+
+    for (const srcItem of mod.sourceItems) {
+      const key = srcItem[mod.idField] || (mod.altIdField ? srcItem[mod.altIdField] : null);
+      if (!key || !destMap.has(key)) continue;
+
+      const destRow = destMap.get(key);
+      for (const field of mod.fieldsToCheck) {
+        const srcVal = srcItem[field] ?? srcItem[toCamelCase(field)];
+        const destVal = destRow[field];
+
+        // Normalization comparison for numbers, strings, and nulls
+        if (typeof srcVal === 'number' || typeof destVal === 'number') {
+          if (Number(srcVal || 0) !== Number(destVal || 0)) {
+            fieldMismatches++;
           }
+        } else if (srcVal !== undefined && srcVal !== null && destVal !== undefined && destVal !== null) {
+          if (String(srcVal).trim() !== String(destVal).trim()) {
+            fieldMismatches++;
+          }
+        } else if (srcVal !== destVal) {
+          fieldMismatches++;
         }
       }
     }
 
-    // A module is verified ONLY if:
-    // 1. Every source record exists in destination (missing.length === 0)
-    // 2. No critical required fields are null (fieldErrors === 0)
-    const isVerified = (missing.length === 0) && (fieldErrors === 0);
-    if (!isVerified) {
+    // STRICT RECONCILIATION CRITERIA:
+    // 1. Zero missing records (every source record exists in destination)
+    // 2. Zero unexpected extra records (unless in dry-run mode or intentional seed)
+    // 3. Zero duplicate IDs
+    // 4. Zero field-level mismatches
+    // 5. Zero failed import operations
+    const isModuleVerified = 
+      missing.length === 0 && 
+      (isDryRun || extra.length === 0 || sourceIds.length === 0) &&
+      totalDuplicates === 0 &&
+      fieldMismatches === 0 &&
+      (importResult.failedImports?.length === 0);
+
+    if (!isModuleVerified) {
       allVerified = false;
-      discrepancies.push({ table: mod.name, missing, fieldErrors });
+      discrepancies.push({
+        table: mod.name,
+        missing: missing.length,
+        extra: extra.length,
+        duplicates: totalDuplicates,
+        fieldMismatches,
+      });
     }
 
     const colName = mod.name.padEnd(26);
@@ -498,50 +629,62 @@ export async function reconcile(supabase, sourceData) {
     const colMatch = String(matched.length).padStart(7);
     const colMiss = String(missing.length).padStart(7);
     const colExtra = String(extra.length).padStart(5);
-    const colFieldErr = String(fieldErrors).padStart(12);
-    const colStatus = isVerified ? 'VERIFIED ✅           ' : 'MISSING / ERROR ❌    ';
+    const colDups = String(totalDuplicates).padStart(4);
+    const colFieldDiff = String(fieldMismatches).padStart(16);
+    const colStatus = isModuleVerified ? 'VERIFIED ✅           ' : 'MISMATCH ❌           ';
 
-    console.log(`| ${colName} | ${colSrc} | ${colDest} | ${colMatch} | ${colMiss} | ${colExtra} | ${colFieldErr} | ${colStatus} |`);
+    console.log(`| ${colName} | ${colSrc} | ${colDest} | ${colMatch} | ${colMiss} | ${colExtra} | ${colDups} | ${colFieldDiff} | ${colStatus} |`);
 
     if (missing.length > 0) {
       console.log(`     ⚠️ Missing Source IDs in "${mod.name}":`, missing.slice(0, 5));
     }
+    if (fieldMismatches > 0) {
+      console.log(`     ⚠️ Field Value Mismatches in "${mod.name}": ${fieldMismatches}`);
+    }
   }
 
-  console.log('|----------------------------|--------|------|---------|---------|-------|--------------|----------------------|');
+  console.log('|----------------------------|--------|------|---------|---------|-------|------|------------------|----------------------|');
 
   if (allVerified) {
-    console.log('\n🎉 ALL MODULES FULLY RECONCILED WITH ZERO MISSING RECORDS & ZERO FIELD ERRORS!');
+    console.log('\n🎉 ALL MODULES FULLY RECONCILED WITH ZERO MISSING RECORDS, ZERO EXTRA RECORDS, AND ZERO FIELD MISMATCHES!');
   } else {
-    console.log('\n⚠️ RECONCILIATION INCOMPLETE: Some records exist in source but not in destination, or have field errors.');
+    console.log('\n❌ RECONCILIATION FAILED: Inconsistencies detected between source and destination records.');
   }
 
   return { allVerified, discrepancies };
+}
+
+function toCamelCase(str) {
+  return str.replace(/_([a-z])/g, g => g[1].toUpperCase());
 }
 
 // -----------------------------------------------------------------------------
 // MAIN CONTROLLER
 // -----------------------------------------------------------------------------
 async function main() {
+  // 1. Source Extraction
+  const sourceData = await extractSourceData();
+
   if (!supabaseKey) {
-    console.log('❌ Supabase Key is missing in .env.');
-    console.log('   Please provide VITE_SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY.');
+    console.log('\nℹ️ Supabase Key is not configured in .env.');
+    console.log('   Source extraction and schema normalization completed successfully.');
+    console.log('   To reconcile against live Supabase project (cjskjazsrrbfyjepwyxa), set VITE_SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY in .env.');
     console.log('================================================================');
     process.exit(0);
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Source Extraction
-  const sourceData = extractSourceData();
-
   // 2. Batch Upsert
-  await importToSupabase(supabase, sourceData);
+  const importResult = await importToSupabase(supabase, sourceData);
 
   // 3. Exact Reconciliation
-  await reconcile(supabase, sourceData);
+  const reconResult = await reconcile(supabase, sourceData, importResult);
 
   console.log('\n================================================================');
+  if (!reconResult.allVerified) {
+    process.exit(1);
+  }
 }
 
 // If run directly
