@@ -403,20 +403,26 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
           </div>
 
           {/* Section 3: Offering & Notes */}
-          <div className="pt-2 border-t border-slate-100 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-1 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-gold-500" />
-              3. Finance, Member Testimonies & Tutor Assessment
-            </h3>
+          <div className="pt-3 border-t border-slate-200/80 space-y-4">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#142B4A] mb-0.5 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#C6A45A]" />
+                <span>3. Fellowship Finance, Member Testimonies & Pastoral Assessment</span>
+              </h3>
+              <p className="text-xs text-[#667085]">
+                Accurate financial stewardship, recorded miracles, and tutor shepherd reflections.
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Offering Field */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-[#182230] mb-1">
                   Offering Collected (Auto-aggregated in Finance)
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-semibold text-xs">
-                    ₵ / ₦
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#142B4A] font-black text-sm">
+                    ₵
                   </div>
                   <input
                     type="number"
@@ -425,55 +431,62 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                     placeholder="0.00"
                     value={offering}
                     onChange={e => setOffering(e.target.value)}
-                    className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-bold"
+                    className="w-full pl-8 text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] font-bold"
                   />
                 </div>
-                <span className="text-[10px] text-slate-500 mt-0.5 block">
+                <span className="text-xs text-[#667085] mt-1 block leading-tight">
                   Automatically logged for ministry financial reporting
                 </span>
               </div>
 
+              {/* Scripture / Lesson Taught */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-[#182230] mb-1">
                   Scripture / Lesson Taught (Optional)
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Outline key scripture passages or message taught during the cell meeting..."
+                  placeholder="Outline key scripture passages or message taught during the cell meeting (e.g. Romans 8:28, Walking in Faith)..."
                   value={tutorNotes}
                   onChange={e => setTutorNotes(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+                  className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] leading-relaxed"
                 />
               </div>
 
               {/* Feature 1: Member Testimonies as a separate field */}
               <div className="sm:col-span-3">
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A45A]" />
-                  <span>Member Testimonies (Signs, Healings, Answered Prayers)</span>
+                <label className="block text-xs font-bold text-[#182230] mb-1 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#C6A45A]" />
+                  <span>Member Testimonies (Signs, Healings, Answered Prayers & Breakthroughs)</span>
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Record specific testimonies shared by cell members during this meeting..."
+                  placeholder="Record specific testimonies shared by cell members during this meeting (e.g. divine healing, answered prayers, academic or career breakthroughs)..."
                   value={testimonies}
                   onChange={e => setTestimonies(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+                  className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] leading-relaxed"
                 />
+                <span className="text-xs text-[#667085] mt-1 block">
+                  Document answered prayers and miracles shared by members to celebrate God's goodness across the ministry.
+                </span>
               </div>
 
               {/* Feature 1: Tutor's Personal Assessment & Experiences as a separate field */}
               <div className="sm:col-span-3">
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-[#142B4A]" />
+                <label className="block text-xs font-bold text-[#182230] mb-1 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-[#142B4A]" />
                   <span>Tutor's Personal Assessment & Experiences (Separate Field)</span>
                 </label>
                 <textarea
-                  rows={2}
-                  placeholder="Tutor's personal evaluation: spiritual atmosphere, member responsiveness, cell growth challenges, and leadership experiences..."
+                  rows={3}
+                  placeholder="Tutor's personal evaluation: spiritual atmosphere, member responsiveness, cell growth challenges, and leadership experiences during fellowship..."
                   value={tutorExperience}
                   onChange={e => setTutorExperience(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+                  className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] leading-relaxed"
                 />
+                <span className="text-xs text-[#667085] mt-1 block">
+                  Your confidential shepherd reflections help leadership provide targeted prayer, discipleship resources, and pastoral support.
+                </span>
               </div>
             </div>
           </div>
