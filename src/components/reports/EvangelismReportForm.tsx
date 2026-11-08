@@ -470,85 +470,114 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-            <div className="p-3 bg-navy-50/80 rounded-2xl border border-navy-200 col-span-2 sm:col-span-1">
-              <label className="block text-[11px] font-bold text-navy-950 mb-1">
-                Pre-Set Target <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                required
-                value={preSetTarget}
-                onChange={e => setPreSetTarget(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full text-base font-extrabold text-navy-950 bg-white border border-navy-300 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-              />
-              <span className="text-[10px] text-navy-600 block mt-1 font-medium">Faith goal</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-navy-50/80 rounded-2xl border border-navy-200 shadow-2xs flex flex-col justify-between">
+              <div>
+                <label className="block text-xs font-bold text-navy-950 mb-1">
+                  Pre-Set Target <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={preSetTarget}
+                  onChange={e => setPreSetTarget(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full text-xl font-black text-navy-950 bg-white border border-navy-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
+                />
+              </div>
+              <span className="text-[11px] text-navy-700 mt-1.5 block font-medium">
+                Faith goal set before outreach
+              </span>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                People Spoken To
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={peopleSpokenTo}
-                onChange={e => setPeopleSpokenTo(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-              />
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  People Spoken To
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={peopleSpokenTo}
+                  onChange={e => setPeopleSpokenTo(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
+                />
+              </div>
+              <span className="text-[11px] text-slate-500 mt-1.5 block font-medium">
+                Individuals engaged with the Gospel
+              </span>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                Contacts Captured
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={contactsCaptured}
-                onChange={e => setContactsCaptured(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-              />
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Contacts Captured
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={contactsCaptured}
+                  onChange={e => setContactsCaptured(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
+                />
+              </div>
+              <span className="text-[11px] text-slate-500 mt-1.5 block font-medium">
+                Phone & WhatsApp numbers taken
+              </span>
             </div>
 
-            <div className="p-3 bg-gold-50/70 rounded-2xl border border-gold-200">
-              <label className="block text-[11px] font-bold text-gold-950 mb-1">
-                Conversions / Souls
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={conversions}
-                onChange={e => setConversions(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full text-base font-extrabold text-gold-700 bg-white border border-gold-300 rounded-xl p-2 focus:ring-1 focus:ring-gold-500"
-              />
+            <div className="p-4 bg-gold-50/70 rounded-2xl border border-gold-300 shadow-2xs flex flex-col justify-between">
+              <div>
+                <label className="block text-xs font-bold text-[#8C6D23] mb-1">
+                  Conversions / Souls
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={conversions}
+                  onChange={e => setConversions(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full text-xl font-black text-amber-900 bg-white border border-gold-400 rounded-xl p-2.5 focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                />
+              </div>
+              <span className="text-[11px] text-amber-800 mt-1.5 block font-semibold">
+                Souls accepted Christ on the field
+              </span>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                Interested
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={interestedInMinistry}
-                onChange={e => setInterestedInMinistry(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-              />
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Interested
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={interestedInMinistry}
+                  onChange={e => setInterestedInMinistry(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
+                />
+              </div>
+              <span className="text-[11px] text-slate-500 mt-1.5 block font-medium">
+                Open to joining cell fellowship
+              </span>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                Follow-ups
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={potentialFollowUps}
-                onChange={e => setPotentialFollowUps(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-              />
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Follow-ups
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={potentialFollowUps}
+                  onChange={e => setPotentialFollowUps(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
+                />
+              </div>
+              <span className="text-[11px] text-slate-500 mt-1.5 block font-medium">
+                Prospects requiring discipleship contact
+              </span>
             </div>
           </div>
         </div>
