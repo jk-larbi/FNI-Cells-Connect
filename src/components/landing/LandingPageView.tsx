@@ -93,7 +93,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#E3E8EF] shadow-xs bg-[#142B4A] flex items-center justify-center shrink-0">
               <img
-                src="/fni-official-logo.jpg"
+                src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
                 alt="Forerunners Network International Official Logo"
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -659,7 +659,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#E3E8EF] bg-[#142B4A] flex items-center justify-center shrink-0">
                   <img
-                    src="/fni-official-logo.jpg"
+                    src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
                     alt="FNI Ministry Logo"
                     className="w-full h-full object-cover"
                   />
