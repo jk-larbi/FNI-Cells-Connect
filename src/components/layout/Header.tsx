@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Open left navigation menu"
         >
           <Menu className="w-4 h-4 text-[#C6A45A]" />
-          <span className="text-xs font-bold tracking-wide">Menu</span>
+          <span className="hidden sm:inline text-xs font-bold tracking-wide">Menu</span>
         </button>
 
         {canGoBack && onGoBack && (
@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
           aria-label="Sign out"
         >
           <LogOut className="w-3.5 h-3.5 text-[#C74646]" />
-          <span className="font-bold">Logout</span>
+          <span className="hidden sm:inline font-bold">Logout</span>
         </button>
       </div>
     </header>
