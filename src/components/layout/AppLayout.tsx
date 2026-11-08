@@ -4,7 +4,15 @@ import { Header } from './Header';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { AppNavTab } from '../../types';
-import { ArrowLeft } from 'lucide-react';
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  Building,
+  FileCheck,
+  PlusCircle,
+  MessageSquare,
+  Bell,
+} from 'lucide-react';
 
 // Administrator Portal Views
 import { DashboardView } from '../dashboard/DashboardView';
@@ -32,6 +40,15 @@ import { TeachingMaterialsView } from '../materials/TeachingMaterialsView';
 import { MessagingView } from '../communication/MessagingView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
+
+interface MobileNavItem {
+  id: AppNavTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
+  isPrimary?: boolean;
+  action?: () => void;
+}
 
 export const AppLayout: React.FC = () => {
   const { currentUser, isAdmin } = useAuth();
@@ -109,6 +126,34 @@ export const AppLayout: React.FC = () => {
     currentTab === 'finance'
   ) ? 'my-dashboard' : currentTab;
 
+  // Mobile Bottom Dock Tabs (Optimized for thumb reach on smartphones)
+  interface MobileNavItem {
+    id: AppNavTab;
+    label: string;
+    icon: any;
+    badge?: number;
+    isPrimary?: boolean;
+    action?: () => void;
+  }
+
+  const adminMobileTabs: MobileNavItem[] = [
+    { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'report-review' as AppNavTab, label: 'Accept/Decline', icon: FileCheck },
+    { id: 'cell-management' as AppNavTab, label: 'Cells', icon: Building },
+    { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
+    { id: 'notifications' as AppNavTab, label: 'Alerts', icon: Bell, badge: unreadCount, action: () => setIsNotifModalOpen(true) },
+  ];
+
+  const tutorMobileTabs: MobileNavItem[] = [
+    { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard },
+    { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building },
+    { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit', icon: PlusCircle, isPrimary: true },
+    { id: 'my-reports' as AppNavTab, label: 'Reports', icon: FileCheck },
+    { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
+  ];
+
+  const mobileNavItems: MobileNavItem[] = isAdmin ? adminMobileTabs : tutorMobileTabs;
+
   return (
     <div className="min-h-screen bg-white flex flex-col text-[#182230]">
       <div className="flex flex-1">
@@ -134,7 +179,7 @@ export const AppLayout: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-24 md:pb-8">
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
@@ -302,6 +347,53 @@ export const AppLayout: React.FC = () => {
         isOpen={isAccountSettingsOpen}
         onClose={() => setIsAccountSettingsOpen(false)}
       />
+
+      {/* Native Mobile Bottom Navigation Bar (Phones only, hidden on md+) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E3E8EF] px-1 py-1.5 flex items-center justify-around md:hidden shadow-lg safe-bottom">
+        {mobileNavItems.map(item => {
+          const Icon = item.icon;
+          const isActive = effectiveTab === item.id;
+          const isPrimary = (item as any).isPrimary;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                if ((item as any).action) {
+                  (item as any).action();
+                } else {
+                  navigateToTab(item.id);
+                }
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all cursor-pointer relative min-h-[46px] ${
+                isActive ? 'text-[#142B4A]' : 'text-[#667085] hover:text-[#182230]'
+              }`}
+            >
+              <div className="relative">
+                {isPrimary ? (
+                  <div className="w-10 h-10 rounded-full bg-[#142B4A] text-[#C6A45A] flex items-center justify-center shadow-md -mt-3.5 border-2 border-white">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                ) : (
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-[#C6A45A]' : ''}`} />
+                )}
+                {item.badge && item.badge > 0 ? (
+                  <span className="absolute -top-1 -right-2 px-1 py-0.2 min-w-[16px] h-4 rounded-full bg-[#C74646] text-white text-[9px] font-bold flex items-center justify-center">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                ) : null}
+              </div>
+              <span className={`text-[10px] mt-0.5 font-semibold truncate ${isActive ? 'font-extrabold text-[#142B4A]' : ''}`}>
+                {item.label}
+              </span>
+              {isActive && !isPrimary && (
+                <span className="w-1 h-1 rounded-full bg-[#C6A45A] mt-0.5" />
+              )}
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 };

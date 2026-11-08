@@ -11,7 +11,30 @@
   body {
     @apply bg-canvas text-slate-800 font-sans antialiased selection:bg-gold-100 selection:text-navy-900;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* Prevent awkward iOS form input auto-zoom on mobile phone focus */
+  @media screen and (max-width: 768px) {
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="date"],
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+}
+
+/* Mobile Safe Areas for Modern Phones (iPhone & Android) */
+.safe-bottom {
+  padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
+}
+.safe-top {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
 }
 
 /* Global Smooth Scrollbar Styling */

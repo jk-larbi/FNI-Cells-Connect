@@ -519,18 +519,18 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
-              <Clock className="w-4 h-4 text-gold-500" />
-              <span>Deadline: Sunday 6:00 PM Ghana Time (Africa/Accra)</span>
+              <Clock className="w-4 h-4 text-gold-500 shrink-0" />
+              <span>Deadline: Sunday 6:00 PM GMT (Africa/Accra)</span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
               {onCancel && (
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer text-center"
                 >
                   Cancel
                 </button>
@@ -542,9 +542,9 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                 size="md"
                 isLoading={isSubmitting}
                 leftIcon={<Send className="w-4 h-4" />}
-                className="rounded-xl px-6"
+                className="flex-1 sm:flex-initial rounded-xl px-6 py-2.5"
               >
-                Submit Cell Meeting Report
+                Submit Meeting Report
               </Button>
             </div>
           </div>

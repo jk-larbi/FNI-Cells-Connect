@@ -26,12 +26,12 @@ export const Header: React.FC<HeaderProps> = ({
   const deadlineInfo = getCurrentDeadlineInfo();
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-4 sm:px-6 bg-white/90 backdrop-blur-md border-b border-[#E3E8EF] transition-all">
+    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-3 sm:px-6 bg-white/95 backdrop-blur-md border-b border-[#E3E8EF] transition-all safe-top">
       {/* Left: Mobile toggle & Back button & Deadline badge */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
         <button
           onClick={onToggleSidebar}
-          className="md:hidden p-2 rounded-xl bg-[#F5F7FA] text-[#667085] hover:text-[#142B4A] transition-colors"
+          className="md:hidden p-2.5 rounded-xl bg-[#F5F7FA] text-[#667085] hover:text-[#142B4A] transition-colors cursor-pointer shrink-0"
           aria-label="Toggle navigation"
         >
           <Menu className="w-5 h-5" />
@@ -41,20 +41,23 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onGoBack}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#142B4A]/5 hover:bg-[#142B4A]/10 text-[#142B4A] text-xs font-bold transition-all border border-[#142B4A]/15 cursor-pointer group shadow-2xs shrink-0"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3 rounded-xl bg-[#142B4A]/5 hover:bg-[#142B4A]/10 text-[#142B4A] text-xs font-bold transition-all border border-[#142B4A]/15 cursor-pointer group shadow-2xs shrink-0"
             title="Go back to previous screen"
             aria-label="Go back to previous screen"
           >
-            <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-            <span className="font-semibold">Back</span>
+            <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform shrink-0" />
+            <span className="font-semibold hidden xs:inline">Back</span>
           </button>
         )}
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#142B4A] font-semibold text-xs border border-[#E3E8EF]">
-            <Calendar className="w-3.5 h-3.5 text-[#C6A45A]" />
-            <span>Cycle: <strong>{deadlineInfo.periodName}</strong></span>
-            <span className="w-2 h-2 rounded-full bg-[#23845B] animate-pulse ml-0.5" />
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-[#F5F7FA] text-[#142B4A] font-semibold text-[11px] sm:text-xs border border-[#E3E8EF] shrink-0">
+            <Calendar className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
+            <span>
+              <span className="hidden sm:inline">Cycle: </span>
+              <strong>{deadlineInfo.periodName}</strong>
+            </span>
+            <span className="w-2 h-2 rounded-full bg-[#23845B] animate-pulse ml-0.5 shrink-0" />
           </div>
 
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#667085] font-medium text-xs border border-[#E3E8EF]">

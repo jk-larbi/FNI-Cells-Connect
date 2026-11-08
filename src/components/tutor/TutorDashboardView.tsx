@@ -181,17 +181,17 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => onNavigateToTab('submit-cell-meeting-report')}
-            className="px-3.5 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-1.5"
+            className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 text-[#C6A45A]" />
-            <span>Submit Meeting Return</span>
+            <span>Submit Meeting</span>
           </button>
           <button
             onClick={() => onNavigateToTab('submit-evangelism-report')}
-            className="px-3.5 py-2 rounded-xl bg-[#23845B] text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5"
+            className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-[#23845B] text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Flame className="w-3.5 h-3.5" />
             <span>Submit Evangelism</span>

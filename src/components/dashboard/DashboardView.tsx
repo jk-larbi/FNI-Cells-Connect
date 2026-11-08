@@ -622,7 +622,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
 
-        <div className="table-scroll-container">
+        {/* Desktop Table View */}
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
@@ -752,6 +753,70 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </tbody>
           </table>
         </div>
+        {/* Mobile Cells Breakdown Cards (Visible on Phones only, hidden on md+) */}
+        <div className="block md:hidden divide-y divide-[#E3E8EF]">
+          {cellPerformance.length === 0 ? (
+            <div className="py-10 px-4 text-center text-[#667085]">
+              <div className="w-12 h-12 rounded-2xl bg-[#F5F7FA] text-[#C6A45A] flex items-center justify-center mx-auto mb-2 border border-[#E3E8EF]">
+                <Building className="w-6 h-6 text-[#C6A45A]" />
+              </div>
+              <p className="text-xs font-bold text-[#142B4A]">No registered cells found.</p>
+              <p className="text-[11px] text-[#667085] mt-0.5">Cells appear here dynamically as tutors register.</p>
+            </div>
+          ) : (
+            cellPerformance.map(cell => (
+              <div
+                key={cell.id}
+                onClick={() => onNavigateToTab('cell-management')}
+                className="p-4 bg-white hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                      {cell.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-extrabold text-xs text-[#182230] truncate">{cell.name}</h4>
+                      <p className="text-[11px] text-[#667085] truncate">
+                        Leader: {cell.leaderName} {cell.leaderPhone ? `(${cell.leaderPhone})` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
+                    cell.status === 'On Track' ? 'bg-emerald-50 text-[#23845B] border border-emerald-200' :
+                    cell.status === 'Awaiting Review' ? 'bg-amber-50 text-[#D99A32] border border-amber-200' :
+                    'bg-rose-50 text-[#C74646] border border-rose-200'
+                  }`}>
+                    {cell.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                    <span className="text-[10px] text-[#667085] font-semibold block">Attendance</span>
+                    <span className="font-extrabold text-[#182230] text-sm">{cell.totalAttendance}</span>
+                  </div>
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                    <span className="text-[10px] text-[#667085] font-semibold block">Souls Won</span>
+                    <span className="font-extrabold text-[#23845B] text-sm">+{cell.soulsWon}</span>
+                  </div>
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                    <span className="text-[10px] text-[#667085] font-semibold block">Offerings</span>
+                    <span className="font-extrabold text-[#182230] text-sm">GHS {cell.offeringsGhs.toLocaleString()}</span>
+                  </div>
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                    <span className="text-[10px] text-[#667085] font-semibold block">Compliance</span>
+                    <span className={`font-extrabold text-sm ${cell.compliance >= 80 ? 'text-[#23845B]' : cell.compliance >= 50 ? 'text-[#D99A32]' : 'text-[#C74646]'}`}>
+                      {cell.compliance}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
       </div>
 
       {/* RECENT SUBMISSIONS TABLE (Styled directly after the Reference Image!) */}
@@ -775,8 +840,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
 
-        {/* Reference Image Styled Table */}
-        <div className="table-scroll-container">
+        {/* Desktop Table View */}
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
@@ -1004,6 +1069,137 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </tbody>
           </table>
         </div>
+        {/* Mobile Submissions Cards (Visible on Phones only, hidden on md+) */}
+        <div className="block md:hidden divide-y divide-[#E3E8EF]">
+          {recentQueue.length === 0 ? (
+            <div className="py-10 px-4 text-center text-[#667085]">
+              <div className="w-12 h-12 rounded-2xl bg-[#F5F7FA] text-[#C6A45A] flex items-center justify-center mx-auto mb-2 border border-[#E3E8EF]">
+                <FileCheck className="w-6 h-6 text-[#C6A45A]" />
+              </div>
+              <p className="text-xs font-bold text-[#142B4A]">No reports submitted yet.</p>
+              <p className="text-[11px] text-[#667085] mt-0.5">When tutors submit weekly returns, they will appear here.</p>
+            </div>
+          ) : (
+            recentQueue.map(item => {
+              const isNeedsCorrection = item.status === 'Needs Correction' || item.status === 'needs_revision';
+              const isApproved = item.status === 'Approved' || item.status === 'approved';
+
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => {
+                    if (onOpenReport) onOpenReport(item.id);
+                    else onNavigateToTab('report-review');
+                  }}
+                  className={`p-4 transition-colors cursor-pointer ${
+                    isNeedsCorrection ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]' : 'bg-white hover:bg-[#F8FAFC]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        {item.tutorName ? item.tutorName.split(' ').map(n => n[0]).slice(0, 2).join('') : 'TL'}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-xs text-[#182230] truncate">{item.tutorName}</h4>
+                        <p className="text-[11px] text-[#667085] truncate">{item.cellName}</p>
+                      </div>
+                    </div>
+
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
+                      isApproved ? 'bg-emerald-50 text-[#23845B] border border-emerald-200' :
+                      isNeedsCorrection ? 'bg-rose-50 text-[#C74646] border border-rose-200' :
+                      'bg-amber-50 text-[#D99A32] border border-amber-200'
+                    }`}>
+                      {isApproved ? 'Accepted' : isNeedsCorrection ? 'Declined' : 'Pending'}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-[#667085] bg-[#F5F7FA] px-2.5 py-1.5 rounded-xl border border-[#E3E8EF]">
+                    <span className="font-bold text-[#142B4A] flex items-center gap-1">
+                      {item.reportType === 'meeting' ? <FileText className="w-3 h-3 text-[#142B4A]" /> : <Flame className="w-3 h-3 text-[#C6A45A]" />}
+                      {item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'}
+                    </span>
+                    <span className={item.late ? 'text-[#C74646] font-bold' : 'text-[#23845B] font-semibold'}>
+                      {item.late ? 'Late' : 'On-Time'}
+                    </span>
+                  </div>
+
+                  <div className="mt-2.5 p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF] flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-[#667085] font-semibold">Key Metric:</span>
+                    <span className="font-extrabold text-[#182230]">
+                      {item.reportType === 'meeting'
+                        ? `${item.attendance} Attended • ${item.members} Members`
+                        : `+${item.conversions} Souls • ${item.peopleSpokenTo} Reached`}
+                    </span>
+                  </div>
+
+                  {/* Touch Action Bar */}
+                  <div className="mt-3 pt-2.5 border-t border-[#E3E8EF] flex items-center gap-2">
+                    {!isApproved && (
+                      <button
+                        onClick={async e => {
+                          e.stopPropagation();
+                          await ReportService.reviewReport(
+                            item.id,
+                            item.reportType,
+                            'Approved',
+                            'Accepted by Administrator from Dashboard',
+                            currentUser.id,
+                            currentUser.full_name
+                          );
+                          dispatchNotification(
+                            `Report Accepted: ${item.cellName}`,
+                            `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been accepted.`,
+                            'report_approved',
+                            'in_app'
+                          );
+                          const [updatedStats, updatedQueue] = await Promise.all([
+                            AnalyticsService.getDashboardStats('admin'),
+                            ReportService.getUnifiedReviewQueue(),
+                          ]);
+                          setStats(updatedStats);
+                          setRecentQueue(updatedQueue.slice(0, 5));
+                        }}
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-50 text-[#23845B] hover:bg-emerald-100 font-extrabold text-xs flex items-center justify-center gap-1 border border-emerald-200 shadow-2xs cursor-pointer min-h-[40px]"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Accept</span>
+                      </button>
+                    )}
+
+                    {!isNeedsCorrection && (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (onOpenReport) onOpenReport(item.id);
+                          else onNavigateToTab('report-review');
+                        }}
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-rose-50 text-[#C74646] hover:bg-rose-100 font-extrabold text-xs flex items-center justify-center gap-1 border border-rose-200 shadow-2xs cursor-pointer min-h-[40px]"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Decline</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (onOpenReport) onOpenReport(item.id);
+                        else onNavigateToTab('report-review');
+                      }}
+                      className="py-2 px-3 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] font-bold text-xs flex items-center justify-center gap-1 shadow-2xs cursor-pointer min-h-[40px]"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Details</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
       </div>
 
       {/* Feature 6: Soul-Winning Target Interactive Breakdown Modal */}

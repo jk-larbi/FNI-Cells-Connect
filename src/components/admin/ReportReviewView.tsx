@@ -892,7 +892,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           </div>
         </div>
 
-        <div className="table-scroll-container">
+        {/* Desktop Table View (Hidden on mobile phones) */}
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
@@ -1190,6 +1191,174 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             </tbody>
           </table>
         </div>
+        {/* Mobile Touch Cards View (Optimized for smartphones, hidden on md+) */}
+        <div className="block md:hidden divide-y divide-[#E3E8EF]">
+          {isLoading ? (
+            <div className="py-12 text-center text-[#667085]">
+              <RefreshCw className="w-7 h-7 text-[#C6A45A] animate-spin mx-auto mb-2" />
+              <p className="text-xs font-semibold">Loading live report queue...</p>
+            </div>
+          ) : filteredReports.length === 0 ? (
+            <div className="py-12 px-4 text-center text-[#667085]">
+              <div className="w-14 h-14 rounded-2xl bg-[#F5F7FA] text-[#142B4A] flex items-center justify-center mx-auto mb-3 border border-[#E3E8EF] shadow-2xs">
+                <FileCheck className="w-7 h-7 text-[#C6A45A]" />
+              </div>
+              <h3 className="text-sm font-bold text-[#142B4A]">
+                {reports.length === 0 ? 'No Reports Submitted Yet' : 'No Submissions Match Filters'}
+              </h3>
+              <p className="text-xs text-[#667085] mt-1">
+                {reports.length === 0
+                  ? 'When cell tutors submit reports, they will appear here.'
+                  : 'Try adjusting your search criteria or resetting filters.'}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="mt-3 px-4 py-1.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredReports.map(item => {
+              const isNeedsCorrection = item.status === 'Needs Correction' || item.status === 'needs_revision';
+              const isApproved = item.status === 'Approved' || item.status === 'approved';
+              const isSelected = selectedIds.has(item.id);
+              const cellMeta = getCellForReport(item);
+              const cleanPhone = cellMeta?.leader_phone?.replace(/[^0-9]/g, '') || '';
+              const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
+              const isQuickProcessing = quickActionProcessingId === item.id;
+
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => setInspectingItem(item)}
+                  className={`p-4 transition-colors cursor-pointer ${
+                    isNeedsCorrection ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]' : isSelected ? 'bg-[#F0F5FA]' : 'bg-white hover:bg-[#F8FAFC]'
+                  }`}
+                >
+                  {/* Top: Tutor info, checkbox, status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        onClick={e => {
+                          e.stopPropagation();
+                          toggleSelectOne(item.id);
+                        }}
+                        className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 cursor-pointer ${
+                          isSelected ? 'bg-[#142B4A] border-[#142B4A] text-white' : 'border-[#CBD5E1]'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                      <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        {item.tutorName ? item.tutorName.split(' ').map(n => n[0]).slice(0, 2).join('') : 'TL'}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-xs text-[#182230] truncate">{item.tutorName}</h4>
+                        <p className="text-[11px] text-[#667085] truncate">{item.cellName}</p>
+                      </div>
+                    </div>
+
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
+                      isApproved ? 'bg-emerald-50 text-[#23845B] border border-emerald-200' :
+                      isNeedsCorrection ? 'bg-rose-50 text-[#C74646] border border-rose-200' :
+                      'bg-amber-50 text-[#D99A32] border border-amber-200'
+                    }`}>
+                      {isApproved ? 'Accepted' : isNeedsCorrection ? 'Declined' : 'Pending'}
+                    </span>
+                  </div>
+
+                  {/* Category & Date Bar */}
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-[#667085] bg-[#F5F7FA] px-2.5 py-1.5 rounded-xl border border-[#E3E8EF]">
+                    <span className="font-bold text-[#142B4A] flex items-center gap-1">
+                      {item.reportType === 'meeting' ? <FileText className="w-3 h-3 text-[#142B4A]" /> : <Flame className="w-3 h-3 text-[#C6A45A]" />}
+                      {item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'}
+                    </span>
+                    <span>{item.reportType === 'meeting' ? item.meetingDate : item.date}</span>
+                    <span className={item.late ? 'text-[#C74646] font-bold' : 'text-[#23845B] font-semibold'}>
+                      {item.late ? 'Late' : 'On-Time'}
+                    </span>
+                  </div>
+
+                  {/* Metrics 2x2 grid */}
+                  <div className="grid grid-cols-2 gap-2 mt-2.5 text-xs">
+                    <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                      <span className="text-[10px] text-[#667085] font-semibold block">
+                        {item.reportType === 'meeting' ? 'Attendance' : 'Conversions'}
+                      </span>
+                      <span className="font-extrabold text-[#182230] text-sm">
+                        {item.reportType === 'meeting' ? `${item.attendance} Present` : `+${item.conversions} Souls`}
+                      </span>
+                    </div>
+                    <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                      <span className="text-[10px] text-[#667085] font-semibold block">
+                        {item.reportType === 'meeting' ? 'Offering' : 'Contacts'}
+                      </span>
+                      <span className="font-extrabold text-[#182230] text-sm">
+                        {item.reportType === 'meeting' ? (item.offering ? `GHS ${item.offering}` : 'None') : `${item.contactsCaptured} Captured`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Touch Action Bar (Thumb-sized buttons) */}
+                  <div className="mt-3 pt-2.5 border-t border-[#E3E8EF] flex items-center gap-1.5">
+                    {!isApproved && (
+                      <button
+                        type="button"
+                        disabled={isQuickProcessing}
+                        onClick={e => handleQuickApprove(item, e)}
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-50 text-[#23845B] hover:bg-emerald-100 font-extrabold text-xs flex items-center justify-center gap-1 border border-emerald-200 shadow-2xs cursor-pointer min-h-[40px]"
+                      >
+                        {isQuickProcessing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                        <span>Accept</span>
+                      </button>
+                    )}
+
+                    {!isNeedsCorrection && (
+                      <button
+                        type="button"
+                        onClick={e => handleQuickReturn(item, e)}
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-rose-50 text-[#C74646] hover:bg-rose-100 font-extrabold text-xs flex items-center justify-center gap-1 border border-rose-200 shadow-2xs cursor-pointer min-h-[40px]"
+                      >
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Decline</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        setInspectingItem(item);
+                      }}
+                      className="py-2 px-3 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] font-bold text-xs flex items-center justify-center gap-1 shadow-2xs cursor-pointer min-h-[40px]"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">Details</span>
+                    </button>
+
+                    {whatsappUrl && (
+                      <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center border border-emerald-200 shadow-2xs cursor-pointer min-h-[40px] min-w-[40px]"
+                        title="WhatsApp Tutor"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
       </div>
 
       {/* FULL REPORT INSPECTION & REVIEW DOSSIER MODAL */}

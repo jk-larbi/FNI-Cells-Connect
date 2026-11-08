@@ -128,7 +128,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
 
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mt-2 mb-1">
               <div className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                5,000 Souls
+                {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : '3,000 Souls'}
               </div>
               <div className="text-xs sm:text-sm font-bold text-[#C6A45A]">
                 {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Live Harvest Stream'}

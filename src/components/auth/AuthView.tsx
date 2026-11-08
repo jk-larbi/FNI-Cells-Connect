@@ -222,7 +222,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
         {/* Animated Card Container for Current View */}
         <div
-          className={`w-full mt-5 bg-white rounded-3xl border-2 border-[#142B4A]/15 shadow-xl shadow-slate-200/60 p-6 sm:p-7 text-left transition-all duration-700 delay-300 transform ${
+          className={`w-full mt-4 sm:mt-5 bg-white rounded-3xl border-2 border-[#142B4A]/15 shadow-xl shadow-slate-200/60 p-4 sm:p-7 text-left transition-all duration-700 delay-300 transform ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
         >

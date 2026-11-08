@@ -594,12 +594,12 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-2.5">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer text-center"
             >
               Cancel
             </button>
@@ -611,7 +611,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
             size="md"
             isLoading={isSubmitting}
             leftIcon={<Send className="w-4 h-4" />}
-            className="rounded-xl px-6"
+            className="w-full sm:w-auto rounded-xl px-6 py-2.5"
           >
             Submit Evangelism Report
           </Button>
