@@ -21,6 +21,7 @@ import {
   ArrowLeft,
   Building,
   Lock,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -412,15 +413,35 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
           </div>
         </div>
 
-        {/* Section 3: Harvest Metrics & Statistics */}
+        {/* Section 3: Message / Scriptural Theme Proclaimed (Taught first to souls) */}
+        <div className="pt-2 border-t border-slate-100 space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-1 flex items-center gap-1.5">
+            <BookOpen className="w-4 h-4 text-gold-500" />
+            3. Message & Scriptural Theme Proclaimed
+          </h3>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Scriptural Theme / Message Shared
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Reconciliation through Christ (2 Cor 5:17-20), Salvation & New Creation..."
+              value={messageUsed}
+              onChange={e => setMessageUsed(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+            />
+          </div>
+        </div>
+
+        {/* Section 4: Harvest Metrics & Statistics (Field Results from the Word) */}
         <div className="pt-2 border-t border-slate-100">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 flex items-center gap-1.5">
               <Flame className="w-4 h-4 text-gold-500" />
-              3. Harvest & Soul-Winning Metrics
+              4. Harvest & Soul-Winning Metrics
             </h3>
             <span className="text-[11px] font-medium text-slate-500">
-              Pre-set faith target is mandatory before harvest return
+              Pre-set faith target set before field harvest
             </span>
           </div>
 
@@ -504,54 +525,6 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                 className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
               />
             </div>
-          </div>
-        </div>
-
-        {/* Section 4: Message Used & Field Notes */}
-        <div className="pt-2 border-t border-slate-100 space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-1 flex items-center gap-1.5">
-            <MessageSquare className="w-4 h-4 text-gold-500" />
-            4. Message & Outreach Summary
-          </h3>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Message / Scriptural Theme Used
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Reconciliation through Christ (2 Cor 5:17-20), Hope in the Gospel"
-              value={messageUsed}
-              onChange={e => setMessageUsed(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Field Notes from Evangelism (General atmosphere, logistics & observations)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Provide a brief summary of how the outreach went..."
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A45A]" />
-              <span>Testimonies & Experiences Encountered (Optional)</span>
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Record any testimonies, miraculous healings, confessions of faith, answered prayers, or spiritual encounters during this outreach..."
-              value={testimonies}
-              onChange={e => setTestimonies(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
-            />
           </div>
         </div>
 
@@ -645,6 +618,36 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Section 6: Testimonies & Field Experiences */}
+        <div className="pt-2 border-t border-slate-100 space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-1 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-[#C6A45A]" />
+            6. Field Testimonies & Experiences Encountered (Optional)
+          </h3>
+          <textarea
+            rows={2}
+            placeholder="Record specific testimonies, miraculous healings, confessions of faith, answered prayers, or spiritual encounters during this outreach..."
+            value={testimonies}
+            onChange={e => setTestimonies(e.target.value)}
+            className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 leading-relaxed"
+          />
+        </div>
+
+        {/* Section 7: Field Notes & Outreach Assessment */}
+        <div className="pt-2 border-t border-slate-100 space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-1 flex items-center gap-1.5">
+            <MessageSquare className="w-4 h-4 text-gold-500" />
+            7. Field Notes & Outreach Assessment
+          </h3>
+          <textarea
+            rows={2}
+            placeholder="Provide a brief summary of how the outreach went: field atmosphere, logistics, challenges, and shepherd observations..."
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 leading-relaxed"
+          />
         </div>
 
         {/* Footer Actions */}
