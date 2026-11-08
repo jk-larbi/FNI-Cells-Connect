@@ -227,60 +227,86 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Comparative Trend Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-          {timeDimension === 'weekly' && [
-            { label: 'Week 1 (Oct)', val: selectedMetric === 'souls' ? 4 : selectedMetric === 'attendance' ? 48 : selectedMetric === 'offerings' ? 'GHS 420.00' : '92%', delta: '+12%' },
-            { label: 'Week 2 (Oct)', val: selectedMetric === 'souls' ? 7 : selectedMetric === 'attendance' ? 56 : selectedMetric === 'offerings' ? 'GHS 510.00' : '95%', delta: '+16%' },
-            { label: 'Week 3 (Oct)', val: selectedMetric === 'souls' ? 6 : selectedMetric === 'attendance' ? 59 : selectedMetric === 'offerings' ? 'GHS 490.00' : '91%', delta: '-4%' },
-            { label: 'Week 4 (Current)', val: selectedMetric === 'souls' ? stats.soulsWon : selectedMetric === 'attendance' ? stats.totalAttendance : selectedMetric === 'offerings' ? 'GHS 620.00' : `${stats.complianceRate}%`, delta: '+18%' },
-          ].map((item, idx) => (
-            <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
-              <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
-              <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
-              <span className="text-[10px] text-emerald-700 font-bold mt-0.5 inline-block">{item.delta} vs prev cycle</span>
-            </div>
-          ))}
+        {/* Comparative Trend Cards (Live Real-Time Data from Submitted Returns) */}
+        {(() => {
+          const totalOfferings = cellStats.reduce((sum, c) => sum + c.offeringsGhs, 0);
+          const activeCellStat = selectedCell !== 'All' ? cellStats.find(c => c.name === selectedCell) : null;
+          
+          const currentSouls = activeCellStat ? activeCellStat.soulsWon : stats.soulsWon;
+          const currentAttendance = activeCellStat ? activeCellStat.totalAttendance : stats.totalAttendance;
+          const currentOfferings = activeCellStat ? activeCellStat.offeringsGhs : totalOfferings;
+          const currentCompliance = activeCellStat ? `${activeCellStat.compliance}%` : `${stats.complianceRate}%`;
 
-          {timeDimension === 'monthly' && [
-            { label: 'August 2026', val: selectedMetric === 'souls' ? 24 : selectedMetric === 'attendance' ? 190 : selectedMetric === 'offerings' ? 'GHS 1,850.00' : '88%', delta: 'Base' },
-            { label: 'September 2026', val: selectedMetric === 'souls' ? 31 : selectedMetric === 'attendance' ? 218 : selectedMetric === 'offerings' ? 'GHS 2,100.00' : '92%', delta: '+29%' },
-            { label: 'October 2026', val: selectedMetric === 'souls' ? 38 : selectedMetric === 'attendance' ? 245 : selectedMetric === 'offerings' ? 'GHS 2,450.00' : '94%', delta: '+22%' },
-            { label: 'November (MTD)', val: selectedMetric === 'souls' ? stats.soulsWon : selectedMetric === 'attendance' ? stats.totalAttendance : selectedMetric === 'offerings' ? 'GHS 1,220.00' : `${stats.complianceRate}%`, delta: 'In Progress' },
-          ].map((item, idx) => (
-            <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
-              <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
-              <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
-              <span className="text-[10px] text-navy-700 font-bold mt-0.5 inline-block">{item.delta}</span>
-            </div>
-          ))}
+          const formatMetricVal = (valNum: number, isOffering = false, isCompliance = false) => {
+            if (isCompliance) return currentCompliance;
+            if (isOffering) return `GHS ${valNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            return valNum.toString();
+          };
 
-          {timeDimension === 'quarterly' && [
-            { label: 'Q1 2026', val: selectedMetric === 'souls' ? 82 : selectedMetric === 'attendance' ? 620 : selectedMetric === 'offerings' ? 'GHS 6,400.00' : '90%', delta: '+14%' },
-            { label: 'Q2 2026', val: selectedMetric === 'souls' ? 98 : selectedMetric === 'attendance' ? 710 : selectedMetric === 'offerings' ? 'GHS 7,150.00' : '93%', delta: '+19%' },
-            { label: 'Q3 2026', val: selectedMetric === 'souls' ? 112 : selectedMetric === 'attendance' ? 790 : selectedMetric === 'offerings' ? 'GHS 8,200.00' : '95%', delta: '+14%' },
-            { label: 'Q4 2026 (Projected)', val: selectedMetric === 'souls' ? 130 : selectedMetric === 'attendance' ? 850 : selectedMetric === 'offerings' ? 'GHS 9,000.00' : '96%', delta: '+16%' },
-          ].map((item, idx) => (
-            <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
-              <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
-              <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
-              <span className="text-[10px] text-emerald-700 font-bold mt-0.5 inline-block">{item.delta}</span>
-            </div>
-          ))}
+          const currentVal = selectedMetric === 'souls' 
+            ? currentSouls 
+            : selectedMetric === 'attendance' 
+            ? currentAttendance 
+            : selectedMetric === 'offerings' 
+            ? `GHS ${currentOfferings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+            : currentCompliance;
 
-          {timeDimension === 'ytd' && [
-            { label: '2025 Full Year (Prior)', val: selectedMetric === 'souls' ? 295 : selectedMetric === 'attendance' ? 2100 : selectedMetric === 'offerings' ? 'GHS 21,500.00' : '87%', delta: 'Historical' },
-            { label: '2026 Target Goal', val: selectedMetric === 'souls' ? soulTarget : selectedMetric === 'attendance' ? 3500 : selectedMetric === 'offerings' ? 'GHS 35,000.00' : '100%', delta: 'Benchmark' },
-            { label: '2026 YTD Actual', val: selectedMetric === 'souls' ? stats.soulsWon : selectedMetric === 'attendance' ? stats.totalAttendance : selectedMetric === 'offerings' ? 'GHS 23,200.00' : `${stats.complianceRate}%`, delta: '+38% vs 2025' },
-            { label: 'Year-End Forecast', val: selectedMetric === 'souls' ? Math.round(stats.soulsWon * 1.4) : selectedMetric === 'attendance' ? 3100 : selectedMetric === 'offerings' ? 'GHS 31,000.00' : '94%', delta: 'On Track' },
-          ].map((item, idx) => (
-            <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
-              <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
-              <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
-              <span className="text-[10px] text-gold-700 font-bold mt-0.5 inline-block">{item.delta}</span>
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+              {timeDimension === 'weekly' && [
+                { label: 'Week 43 (Historic)', val: '0', delta: 'No returns filed' },
+                { label: 'Week 44 (Prior)', val: '0', delta: 'No returns filed' },
+                { label: 'Week 45 (Current)', val: currentVal, delta: currentSouls > 0 ? 'Live verified returns' : 'Awaiting returns' },
+                { label: 'Week 46 (Upcoming)', val: '0', delta: 'Cycle pending' },
+              ].map((item, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
+                  <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
+                  <span className="text-[10px] text-emerald-700 font-bold mt-0.5 inline-block">{item.delta}</span>
+                </div>
+              ))}
+
+              {timeDimension === 'monthly' && [
+                { label: 'September 2026', val: '0', delta: 'Pre-launch period' },
+                { label: 'October 2026', val: '0', delta: 'No returns logged' },
+                { label: 'November (Current MTD)', val: currentVal, delta: currentSouls > 0 ? 'Active month returns' : 'In progress' },
+                { label: 'December 2026', val: '0', delta: 'Upcoming' },
+              ].map((item, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
+                  <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
+                  <span className="text-[10px] text-navy-700 font-bold mt-0.5 inline-block">{item.delta}</span>
+                </div>
+              ))}
+
+              {timeDimension === 'quarterly' && [
+                { label: 'Q1 2026', val: '0', delta: 'Past period' },
+                { label: 'Q2 2026', val: '0', delta: 'Past period' },
+                { label: 'Q3 2026', val: '0', delta: 'Past period' },
+                { label: 'Q4 2026 (Active)', val: currentVal, delta: currentSouls > 0 ? 'Active quarter returns' : 'In progress' },
+              ].map((item, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
+                  <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
+                  <span className="text-[10px] text-emerald-700 font-bold mt-0.5 inline-block">{item.delta}</span>
+                </div>
+              ))}
+
+              {timeDimension === 'ytd' && [
+                { label: '2026 Annual Target', val: selectedMetric === 'souls' ? soulTarget.toLocaleString() : selectedMetric === 'attendance' ? 'Goal' : selectedMetric === 'offerings' ? 'Goal' : '100%', delta: 'Kingdom Benchmark' },
+                { label: '2026 YTD Harvested', val: currentVal, delta: currentSouls > 0 ? 'Live verified' : 'Awaiting returns' },
+                { label: 'Registered Cells', val: stats.totalCells.toString(), delta: 'Active Directory' },
+                { label: 'Remaining to Target', val: Math.max(0, soulTarget - (typeof currentSouls === 'number' ? currentSouls : 0)).toLocaleString(), delta: 'Goal Target' },
+              ].map((item, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
+                  <div className="text-lg font-black text-navy-950 mt-1">{item.val}</div>
+                  <span className="text-[10px] text-gold-700 font-bold mt-0.5 inline-block">{item.delta}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </div>
 
       {/* Cells Breakdown & Compliance (Live Operational Tracking for Signed-up Cells) */}

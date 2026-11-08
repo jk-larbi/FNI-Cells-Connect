@@ -585,48 +585,7 @@ export class ReportService {
   }
 
   static async getRegions(): Promise<Region[]> {
-    const list = getStored<Region[]>(STORAGE_KEYS.REGIONS, [
-      {
-        id: 'reg-lagos',
-        name: 'Lagos Central Region',
-        code: 'FNI-REG-LOS',
-        country: 'Nigeria',
-        state_province: 'Lagos',
-        total_cells: 0,
-        active_cells: 0,
-        created_at: '2026-01-01T00:00:00Z',
-      },
-      {
-        id: 'reg-abuja',
-        name: 'Abuja Capital Region',
-        code: 'FNI-REG-ABJ',
-        country: 'Nigeria',
-        state_province: 'FCT Abuja',
-        total_cells: 0,
-        active_cells: 0,
-        created_at: '2026-01-01T00:00:00Z',
-      },
-      {
-        id: 'reg-london',
-        name: 'London Diaspora Region',
-        code: 'FNI-REG-LON',
-        country: 'United Kingdom',
-        state_province: 'Greater London',
-        total_cells: 0,
-        active_cells: 0,
-        created_at: '2026-01-01T00:00:00Z',
-      },
-      {
-        id: 'reg-accra',
-        name: 'Accra Hub Region',
-        code: 'FNI-REG-ACC',
-        country: 'Ghana',
-        state_province: 'Greater Accra',
-        total_cells: 0,
-        active_cells: 0,
-        created_at: '2026-01-01T00:00:00Z',
-      },
-    ]);
+    const list = getStored<Region[]>(STORAGE_KEYS.REGIONS, []);
     return list;
   }
 
