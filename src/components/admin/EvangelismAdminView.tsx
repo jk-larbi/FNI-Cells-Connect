@@ -324,10 +324,27 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
               </div>
             </div>
 
-            {inspectingReport.messageUsed && (
-              <div className="p-3.5 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF] text-xs">
-                <div className="font-bold text-[#182230] mb-1">Gospel Scripture / Message Used</div>
-                <p className="text-[#667085] whitespace-pre-wrap">{inspectingReport.messageUsed}</p>
+            {(inspectingReport.scripturalTheme || inspectingReport.scripturesUsed || inspectingReport.messageUsed) && (
+              <div className="p-3.5 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF] text-xs space-y-1.5">
+                <div className="font-bold text-[#182230]">Message & Scriptural Theme Proclaimed</div>
+                {(inspectingReport.scripturalTheme || inspectingReport.scripturesUsed) ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {inspectingReport.scripturalTheme && (
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-[#667085] block">Theme / Message Shared</span>
+                        <span className="font-bold text-[#142B4A]">{inspectingReport.scripturalTheme}</span>
+                      </div>
+                    )}
+                    {inspectingReport.scripturesUsed && (
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-[#667085] block">Scriptures Used</span>
+                        <span className="font-bold text-[#142B4A]">{inspectingReport.scripturesUsed}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[#667085] whitespace-pre-wrap">{inspectingReport.messageUsed}</p>
+                )}
               </div>
             )}
 

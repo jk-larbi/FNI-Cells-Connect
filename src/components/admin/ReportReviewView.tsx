@@ -1615,16 +1615,39 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   </div>
                 </div>
 
-                {/* Tutor Meeting Notes */}
-                {(inspectingItem as any).tutorNotes && (
-                  <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
-                    <div className="text-[11px] text-[#142B4A] font-extrabold uppercase mb-1 flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-[#C6A45A]" />
-                      <span>Tutor Meeting Notes & Observations</span>
+                {/* Word Ministered, Scriptural Theme & Tutor Notes */}
+                {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed || (inspectingItem as any).tutorNotes) && (
+                  <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-2">
+                    <div className="text-[11px] text-[#142B4A] font-extrabold uppercase flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-[#C6A45A]" />
+                      <span>Word Ministered & Scriptural Theme</span>
                     </div>
-                    <p className="text-xs text-[#182230] whitespace-pre-wrap leading-relaxed">
-                      {(inspectingItem as any).tutorNotes}
-                    </p>
+                    {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-1 border-b border-slate-200/60">
+                        {(inspectingItem as any).scripturalTheme && (
+                          <div className="text-xs">
+                            <span className="text-[10px] uppercase font-bold text-[#667085] block">Theme / Message Topic</span>
+                            <span className="font-bold text-[#142B4A]">{(inspectingItem as any).scripturalTheme}</span>
+                          </div>
+                        )}
+                        {(inspectingItem as any).scripturesUsed && (
+                          <div className="text-xs">
+                            <span className="text-[10px] uppercase font-bold text-[#667085] block">Scriptures Used</span>
+                            <span className="font-bold text-[#142B4A]">{(inspectingItem as any).scripturesUsed}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {(inspectingItem as any).tutorNotes && (
+                      <div>
+                        {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed) && (
+                          <span className="text-[10px] uppercase font-bold text-[#667085] block mb-0.5">Lesson Outline / Notes</span>
+                        )}
+                        <p className="text-xs text-[#182230] whitespace-pre-wrap leading-relaxed">
+                          {(inspectingItem as any).tutorNotes}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1716,15 +1739,33 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   </div>
                 )}
 
-                {/* Gospel Message / Scripture */}
-                {(inspectingItem as any).messageUsed && (
-                  <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
-                    <div className="text-[11px] text-[#142B4A] font-extrabold uppercase mb-1">
-                      Gospel Message / Scriptures Preached
+                {/* Gospel Message & Scriptural Theme Proclaimed */}
+                {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed || (inspectingItem as any).messageUsed) && (
+                  <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-2">
+                    <div className="text-[11px] text-[#142B4A] font-extrabold uppercase flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-[#C6A45A]" />
+                      <span>Message & Scriptural Theme Proclaimed</span>
                     </div>
-                    <p className="text-xs text-[#182230] whitespace-pre-wrap leading-relaxed">
-                      {(inspectingItem as any).messageUsed}
-                    </p>
+                    {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed) ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {(inspectingItem as any).scripturalTheme && (
+                          <div className="text-xs">
+                            <span className="text-[10px] uppercase font-bold text-[#667085] block">Scriptural Theme / Message Shared</span>
+                            <span className="font-bold text-[#142B4A]">{(inspectingItem as any).scripturalTheme}</span>
+                          </div>
+                        )}
+                        {(inspectingItem as any).scripturesUsed && (
+                          <div className="text-xs">
+                            <span className="text-[10px] uppercase font-bold text-[#667085] block">Scriptures Used / Bible Passages</span>
+                            <span className="font-bold text-[#142B4A]">{(inspectingItem as any).scripturesUsed}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[#182230] whitespace-pre-wrap leading-relaxed">
+                        {(inspectingItem as any).messageUsed}
+                      </p>
+                    )}
                   </div>
                 )}
 

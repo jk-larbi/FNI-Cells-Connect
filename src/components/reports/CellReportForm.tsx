@@ -55,7 +55,9 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
   const [absentees, setAbsentees] = useState<number>(initialReport?.visitors_count || 0);
   const [followUpNeeded, setFollowUpNeeded] = useState<number>(initialReport?.follow_ups_conducted || 0);
   const [offering, setOffering] = useState<string>(initialReport?.offering_amount ? String(initialReport.offering_amount) : '');
-  const [tutorNotes, setTutorNotes] = useState<string>(initialReport?.additional_remarks || initialReport?.meeting_topic || '');
+  const [scripturalTheme, setScripturalTheme] = useState<string>((initialReport as any)?.scripturalTheme || initialReport?.meeting_topic || '');
+  const [scripturesUsed, setScripturesUsed] = useState<string>((initialReport as any)?.scripturesUsed || '');
+  const [tutorNotes, setTutorNotes] = useState<string>(initialReport?.additional_remarks || '');
   const [testimonies, setTestimonies] = useState<string>((initialReport as any)?.testimonies || '');
   const [tutorExperience, setTutorExperience] = useState<string>((initialReport as any)?.tutorExperience || '');
 
@@ -173,6 +175,8 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
         absentees: Number(absentees) || 0,
         followUpNeeded: Number(followUpNeeded) || 0,
         offering: offering ? Number(offering) : undefined,
+        scripturalTheme: scripturalTheme.trim(),
+        scripturesUsed: scripturesUsed.trim(),
         tutorNotes: tutorNotes.trim(),
         testimonies: testimonies.trim(),
         tutorExperience: tutorExperience.trim(),
@@ -416,19 +420,49 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
             </div>
 
             <div className="space-y-4">
-              {/* Step 1: Scripture / Lesson Taught (First during the meeting) */}
-              <div>
-                <label className="block text-xs font-bold text-[#182230] mb-1 flex items-center gap-1.5">
-                  <BookOpen className="w-4 h-4 text-[#C6A45A]" />
-                  <span>Scripture / Lesson Taught (Optional)</span>
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Outline key scripture passages or message taught during the cell meeting (e.g. Romans 8:28, Walking in Faith)..."
-                  value={tutorNotes}
-                  onChange={e => setTutorNotes(e.target.value)}
-                  className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] leading-relaxed"
-                />
+              {/* Step 1: Word Ministered & Scriptural Theme */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                  <div>
+                    <label className="block text-xs font-bold text-[#182230] mb-1.5 flex items-center gap-1.5 sm:min-h-[28px] items-end">
+                      <BookOpen className="w-4 h-4 text-[#C6A45A] shrink-0" />
+                      <span>Scriptural Theme / Message Topic</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Walking in Supernatural Faith, The Ministry of Reconciliation"
+                      value={scripturalTheme}
+                      onChange={e => setScripturalTheme(e.target.value)}
+                      className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#182230] mb-1.5 flex items-center gap-1.5 sm:min-h-[28px] items-end">
+                      <BookOpen className="w-4 h-4 text-[#142B4A] shrink-0" />
+                      <span>Scriptures Used / Bible Passages</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Romans 8:28, Hebrews 11:1-6, James 5:16"
+                      value={scripturesUsed}
+                      onChange={e => setScripturesUsed(e.target.value)}
+                      className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Lesson Outline & Key Truths Taught (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Outline key scripture insights or spiritual message imparted to members during fellowship..."
+                    value={tutorNotes}
+                    onChange={e => setTutorNotes(e.target.value)}
+                    className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] leading-relaxed"
+                  />
+                </div>
               </div>
 
               {/* Step 2: Member Testimonies (Signs, Healings, Answered Prayers & Breakthroughs) */}

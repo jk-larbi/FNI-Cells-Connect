@@ -774,12 +774,30 @@ export const ReportHistoryTable: React.FC<ReportHistoryTableProps> = ({
                     </div>
                   </div>
 
-                  {inspectingItem.tutorNotes && (
-                    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                  {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed || inspectingItem.tutorNotes) && (
+                    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                       <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                        Tutor's Meeting Remarks & Notes
+                        Word Ministered & Scriptural Theme
                       </span>
-                      <p className="text-slate-700 leading-relaxed">{inspectingItem.tutorNotes}</p>
+                      {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-1 border-b border-slate-200/60">
+                          {(inspectingItem as any).scripturalTheme && (
+                            <div className="text-xs">
+                              <span className="text-[10px] uppercase font-bold text-slate-500 block">Theme / Message Topic</span>
+                              <span className="font-bold text-navy-950">{(inspectingItem as any).scripturalTheme}</span>
+                            </div>
+                          )}
+                          {(inspectingItem as any).scripturesUsed && (
+                            <div className="text-xs">
+                              <span className="text-[10px] uppercase font-bold text-slate-500 block">Scriptures Used</span>
+                              <span className="font-bold text-navy-950">{(inspectingItem as any).scripturesUsed}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {inspectingItem.tutorNotes && (
+                        <p className="text-slate-700 leading-relaxed text-xs">{inspectingItem.tutorNotes}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -810,10 +828,27 @@ export const ReportHistoryTable: React.FC<ReportHistoryTableProps> = ({
                     <span className="font-semibold text-navy-950">{inspectingItem.location}</span>
                   </div>
 
-                  {inspectingItem.messageUsed && (
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Message / Tract Used</span>
-                      <p className="text-slate-700">{inspectingItem.messageUsed}</p>
+                  {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed || inspectingItem.messageUsed) && (
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Message & Scriptural Theme Proclaimed</span>
+                      {((inspectingItem as any).scripturalTheme || (inspectingItem as any).scripturesUsed) ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          {(inspectingItem as any).scripturalTheme && (
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-500 block">Theme / Message Shared</span>
+                              <span className="font-bold text-navy-950">{(inspectingItem as any).scripturalTheme}</span>
+                            </div>
+                          )}
+                          {(inspectingItem as any).scripturesUsed && (
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-500 block">Scriptures Used</span>
+                              <span className="font-bold text-navy-950">{(inspectingItem as any).scripturesUsed}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-slate-700 text-xs">{inspectingItem.messageUsed}</p>
+                      )}
                     </div>
                   )}
 

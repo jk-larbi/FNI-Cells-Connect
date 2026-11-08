@@ -125,6 +125,8 @@ export interface CellMeetingReport {
   absentees: number;
   followUpNeeded: number;
   offering?: number;
+  scripturalTheme?: string;
+  scripturesUsed?: string;
   tutorNotes?: string;
   testimonies?: string;
   tutorExperience?: string;
@@ -154,6 +156,8 @@ export interface EvangelismReport {
   verifiedSoulsWon?: number;
   interestedInMinistry: number;
   potentialFollowUps: number;
+  scripturalTheme?: string;
+  scripturesUsed?: string;
   messageUsed: string;
   notes: string;
   testimonies?: string;

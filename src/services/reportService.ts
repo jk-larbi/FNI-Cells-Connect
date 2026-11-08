@@ -102,6 +102,8 @@ export class ReportService {
     absentees: number;
     followUpNeeded: number;
     offering?: number;
+    scripturalTheme?: string;
+    scripturesUsed?: string;
     tutorNotes?: string;
     testimonies?: string;
     tutorExperience?: string;
@@ -136,6 +138,8 @@ export class ReportService {
       absentees: Number(data.absentees || 0),
       followUpNeeded: Number(data.followUpNeeded || 0),
       offering: data.offering ? Number(data.offering) : undefined,
+      scripturalTheme: data.scripturalTheme || '',
+      scripturesUsed: data.scripturesUsed || '',
       tutorNotes: data.tutorNotes || '',
       testimonies: data.testimonies || '',
       tutorExperience: data.tutorExperience || '',
@@ -271,7 +275,9 @@ export class ReportService {
     verifiedSoulsWon?: number;
     interestedInMinistry: number;
     potentialFollowUps: number;
-    messageUsed: string;
+    scripturalTheme?: string;
+    scripturesUsed?: string;
+    messageUsed?: string;
     notes: string;
     testimonies?: string;
   }): Promise<EvangelismReport> {
@@ -296,7 +302,9 @@ export class ReportService {
       verifiedSoulsWon: data.verifiedSoulsWon !== undefined ? Number(data.verifiedSoulsWon) : Number(data.conversions || 0),
       interestedInMinistry: Number(data.interestedInMinistry || 0),
       potentialFollowUps: Number(data.potentialFollowUps || 0),
-      messageUsed: data.messageUsed || '',
+      scripturalTheme: data.scripturalTheme || '',
+      scripturesUsed: data.scripturesUsed || '',
+      messageUsed: data.messageUsed || (data.scripturalTheme ? `${data.scripturalTheme}${data.scripturesUsed ? ` (${data.scripturesUsed})` : ''}` : ''),
       notes: data.notes || '',
       testimonies: data.testimonies || '',
       status: 'Newly Submitted',
