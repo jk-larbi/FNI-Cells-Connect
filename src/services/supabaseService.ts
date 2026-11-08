@@ -6,9 +6,18 @@
  * for all 12 platform modules. Seamlessly integrates with the dual-backend
  * architecture, falling back gracefully to Firebase/LocalStorage if Supabase
  * is unconfigured or unavailable.
+ * 
+ * Features:
+ * - Reconciles 'offerings' and 'offering_records'
+ * - Reconciles 'soul_target_configs' and 'soul_targets'
+ * - Reconciles 'review_logs' status/action and comment/comments
+ * - Complete notification schema alignment (user_id, recipient_target, date, type, channel)
+ * - Strict identity alignment: profiles.id TEXT + supabase_user_id UUID
+ * - Resilient dual-write synchronization via SyncStateService
  */
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { SyncStateService } from './syncStateService';
 import {
   Cell,
   CellMeetingReport,
@@ -223,11 +232,11 @@ function mapTeachingMaterialFromDb(row: any): TeachingMaterial {
 function mapNotificationFromDb(row: any): NotificationItem {
   return {
     id: row.id,
-    user_id: row.recipient_target,
+    user_id: row.user_id || row.recipient_target,
     title: row.title || 'Notification',
     message: row.message,
-    type: (row.notification_type || 'system_alert') as any,
-    channel: 'in_app',
+    type: (row.type || row.notification_type || 'system_alert') as any,
+    channel: row.channel || 'in_app',
     is_read: Boolean(row.is_read),
     metadata: row.metadata || {},
     created_at: row.created_at || new Date().toISOString(),
@@ -283,40 +292,53 @@ export class SupabaseService {
 
   static async upsertCell(cell: Cell): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    try {
-      const payload: any = {
-        name: cell.name,
-        normalized_name: cell.normalized_name || cell.name.trim().toLowerCase().replace(/[^a-z0-9]/g, ''),
-        location: cell.location || cell.venue_address || '',
-        meeting_location: cell.meeting_location || '',
-        tutor_uid: cell.tutorUid || '',
-        code: cell.code || null,
-        region_id: cell.region_id || null,
-        region_name: cell.region_name || '',
-        leader_name: cell.leader_name || '',
-        leader_phone: cell.leader_phone || '',
-        meeting_day: cell.meeting_day || 'Wednesday',
-        meeting_time: cell.meeting_time || '18:30:00',
-        venue_address: cell.venue_address || 'Fellowship Venue',
-        total_members: cell.total_members || 0,
-        active_members: cell.active_members || 0,
-        new_members: cell.new_members || 0,
-        requiring_follow_up: cell.requiring_follow_up || 0,
-        status: cell.status || 'Active',
-        is_active: cell.is_active ?? true,
-        firebase_id: cell.id,
-      };
+    const payload: any = {
+      name: cell.name,
+      normalized_name: cell.normalized_name || cell.name.trim().toLowerCase().replace(/[^a-z0-9]/g, ''),
+      location: cell.location || cell.venue_address || '',
+      meeting_location: cell.meeting_location || '',
+      tutor_uid: cell.tutorUid || '',
+      code: cell.code || null,
+      region_id: cell.region_id || null,
+      region_name: cell.region_name || '',
+      leader_name: cell.leader_name || '',
+      leader_phone: cell.leader_phone || '',
+      meeting_day: cell.meeting_day || 'Wednesday',
+      meeting_time: cell.meeting_time || '18:30:00',
+      venue_address: cell.venue_address || 'Fellowship Venue',
+      total_members: cell.total_members || 0,
+      active_members: cell.active_members || 0,
+      new_members: cell.new_members || 0,
+      requiring_follow_up: cell.requiring_follow_up || 0,
+      status: cell.status || 'Active',
+      is_active: cell.is_active ?? true,
+      firebase_id: cell.id,
+    };
 
+    try {
       const { error } = await supabase!
         .from('cells')
         .upsert(payload, { onConflict: 'firebase_id' });
       if (error) {
         console.warn('Supabase upsertCell error:', error.message);
+        SyncStateService.recordFailedSync({
+          table: 'cells',
+          id: cell.id,
+          payload,
+          errorMessage: error.message,
+        });
         return false;
       }
+      SyncStateService.recordSuccessfulSync('cells', cell.id);
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Supabase upsertCell exception:', err);
+      SyncStateService.recordFailedSync({
+        table: 'cells',
+        id: cell.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -342,46 +364,59 @@ export class SupabaseService {
 
   static async upsertCellMeetingReport(report: CellMeetingReport): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    try {
-      const payload = {
-        id: report.id,
-        cell_id: report.cellId,
-        tutor_uid: report.tutorUid,
-        cell_name: report.cellName,
-        meeting_date: report.meetingDate,
-        meeting_location: report.meetingLocation || null,
-        tutor_name: report.tutorName,
-        members: report.members || 0,
-        active_members: report.activeMembers || 0,
-        attendance: report.attendance || 0,
-        new_members: report.newMembers || 0,
-        absentees: report.absentees || 0,
-        follow_up_needed: report.followUpNeeded || 0,
-        offering: report.offering !== undefined ? report.offering : 0,
-        scriptural_theme: report.scripturalTheme || null,
-        scriptures_used: report.scripturesUsed || null,
-        tutor_notes: report.tutorNotes || null,
-        testimonies: report.testimonies || null,
-        tutor_experience: report.tutorExperience || null,
-        status: report.status,
-        submitted_at: report.submittedAt || new Date().toISOString(),
-        late: Boolean(report.late),
-        reviewer_comment: report.reviewerComment || null,
-        reviewed_by: report.reviewedBy || null,
-        reviewed_by_name: report.reviewedByName || null,
-        reviewed_at: report.reviewedAt || null,
-      };
+    const payload = {
+      id: report.id,
+      cell_id: report.cellId,
+      tutor_uid: report.tutorUid,
+      cell_name: report.cellName,
+      meeting_date: report.meetingDate,
+      meeting_location: report.meetingLocation || null,
+      tutor_name: report.tutorName,
+      members: report.members || 0,
+      active_members: report.activeMembers || 0,
+      attendance: report.attendance || 0,
+      new_members: report.newMembers || 0,
+      absentees: report.absentees || 0,
+      follow_up_needed: report.followUpNeeded || 0,
+      offering: report.offering !== undefined ? report.offering : 0,
+      scriptural_theme: report.scripturalTheme || null,
+      scriptures_used: report.scripturesUsed || null,
+      tutor_notes: report.tutorNotes || null,
+      testimonies: report.testimonies || null,
+      tutor_experience: report.tutorExperience || null,
+      status: report.status,
+      submitted_at: report.submittedAt || new Date().toISOString(),
+      late: Boolean(report.late),
+      reviewer_comment: report.reviewerComment || null,
+      reviewed_by: report.reviewedBy || null,
+      reviewed_by_name: report.reviewedByName || null,
+      reviewed_at: report.reviewedAt || null,
+    };
 
+    try {
       const { error } = await supabase!
         .from('cell_meeting_reports')
         .upsert(payload, { onConflict: 'id' });
       if (error) {
         console.warn('Supabase upsertCellMeetingReport error:', error.message);
+        SyncStateService.recordFailedSync({
+          table: 'cell_meeting_reports',
+          id: report.id,
+          payload,
+          errorMessage: error.message,
+        });
         return false;
       }
+      SyncStateService.recordSuccessfulSync('cell_meeting_reports', report.id);
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Supabase upsertCellMeetingReport exception:', err);
+      SyncStateService.recordFailedSync({
+        table: 'cell_meeting_reports',
+        id: report.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -407,47 +442,60 @@ export class SupabaseService {
 
   static async upsertEvangelismReport(report: EvangelismReport): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    try {
-      const payload = {
-        id: report.id,
-        cell_id: report.cellId,
-        tutor_uid: report.tutorUid,
-        cell_name: report.cellName,
-        tutor_name: report.tutorName,
-        date: report.date,
-        location: report.location,
-        team_members: report.teamMembers || [],
-        pre_set_target: report.preSetTarget || 0,
-        people_spoken_to: report.peopleSpokenTo || 0,
-        contacts_captured: report.contactsCaptured || 0,
-        conversions: report.conversions || 0,
-        verified_souls_won: report.verifiedSoulsWon || 0,
-        interested_in_ministry: report.interestedInMinistry || 0,
-        potential_follow_ups: report.potentialFollowUps || 0,
-        scriptural_theme: report.scripturalTheme || null,
-        scriptures_used: report.scripturesUsed || null,
-        message_used: report.messageUsed || '',
-        notes: report.notes || '',
-        testimonies: report.testimonies || null,
-        status: report.status,
-        submitted_at: report.submittedAt || new Date().toISOString(),
-        late: Boolean(report.late),
-        reviewer_comment: report.reviewerComment || null,
-        reviewed_by: report.reviewedBy || null,
-        reviewed_by_name: report.reviewedByName || null,
-        reviewed_at: report.reviewedAt || null,
-      };
+    const payload = {
+      id: report.id,
+      cell_id: report.cellId,
+      tutor_uid: report.tutorUid,
+      cell_name: report.cellName,
+      tutor_name: report.tutorName,
+      date: report.date,
+      location: report.location,
+      team_members: report.teamMembers || [],
+      pre_set_target: report.preSetTarget || 0,
+      people_spoken_to: report.peopleSpokenTo || 0,
+      contacts_captured: report.contactsCaptured || 0,
+      conversions: report.conversions || 0,
+      verified_souls_won: report.verifiedSoulsWon || 0,
+      interested_in_ministry: report.interestedInMinistry || 0,
+      potential_follow_ups: report.potentialFollowUps || 0,
+      scriptural_theme: report.scripturalTheme || null,
+      scriptures_used: report.scripturesUsed || null,
+      message_used: report.messageUsed || '',
+      notes: report.notes || '',
+      testimonies: report.testimonies || null,
+      status: report.status,
+      submitted_at: report.submittedAt || new Date().toISOString(),
+      late: Boolean(report.late),
+      reviewer_comment: report.reviewerComment || null,
+      reviewed_by: report.reviewedBy || null,
+      reviewed_by_name: report.reviewedByName || null,
+      reviewed_at: report.reviewedAt || null,
+    };
 
+    try {
       const { error } = await supabase!
         .from('evangelism_reports')
         .upsert(payload, { onConflict: 'id' });
       if (error) {
         console.warn('Supabase upsertEvangelismReport error:', error.message);
+        SyncStateService.recordFailedSync({
+          table: 'evangelism_reports',
+          id: report.id,
+          payload,
+          errorMessage: error.message,
+        });
         return false;
       }
+      SyncStateService.recordSuccessfulSync('evangelism_reports', report.id);
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Supabase upsertEvangelismReport exception:', err);
+      SyncStateService.recordFailedSync({
+        table: 'evangelism_reports',
+        id: report.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -473,39 +521,52 @@ export class SupabaseService {
 
   static async upsertEvangelismContact(contact: EvangelismContact): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    try {
-      const payload = {
-        id: contact.id,
-        contact_name: contact.contactName || contact.name || 'Unnamed Soul',
-        phone: contact.phone || null,
-        whatsapp_number: contact.whatsappNumber || null,
-        email: contact.email || null,
-        date_captured: contact.dateCaptured || new Date().toISOString().split('T')[0],
-        evangelism_report_id: contact.evangelismReportId || null,
-        location: contact.location || contact.evangelismLocation || null,
-        cell_id: contact.cellId,
-        cell_name: contact.cellName,
-        tutor_uid: contact.tutorUid || null,
-        tutor_name: contact.tutorName || null,
-        assigned_to_name: contact.assignedToName || null,
-        follow_up_status: contact.followUpStatus || 'Contacted',
-        notes: contact.notes || null,
-        follow_up_notes: contact.followUpNotes || null,
-        last_follow_up_date: contact.lastFollowUpDate || null,
-        next_follow_up_date: contact.nextFollowUpDate || null,
-        history: contact.history || [],
-      };
+    const payload = {
+      id: contact.id,
+      contact_name: contact.contactName || contact.name || 'Unnamed Soul',
+      phone: contact.phone || null,
+      whatsapp_number: contact.whatsappNumber || null,
+      email: contact.email || null,
+      date_captured: contact.dateCaptured || new Date().toISOString().split('T')[0],
+      evangelism_report_id: contact.evangelismReportId || null,
+      location: contact.location || contact.evangelismLocation || null,
+      cell_id: contact.cellId,
+      cell_name: contact.cellName,
+      tutor_uid: contact.tutorUid || null,
+      tutor_name: contact.tutorName || null,
+      assigned_to_name: contact.assignedToName || null,
+      follow_up_status: contact.followUpStatus || 'Contacted',
+      notes: contact.notes || null,
+      follow_up_notes: contact.followUpNotes || null,
+      last_follow_up_date: contact.lastFollowUpDate || null,
+      next_follow_up_date: contact.nextFollowUpDate || null,
+      history: contact.history || [],
+    };
 
+    try {
       const { error } = await supabase!
         .from('evangelism_contacts')
         .upsert(payload, { onConflict: 'id' });
       if (error) {
         console.warn('Supabase upsertEvangelismContact error:', error.message);
+        SyncStateService.recordFailedSync({
+          table: 'evangelism_contacts',
+          id: contact.id,
+          payload,
+          errorMessage: error.message,
+        });
         return false;
       }
+      SyncStateService.recordSuccessfulSync('evangelism_contacts', contact.id);
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Supabase upsertEvangelismContact exception:', err);
+      SyncStateService.recordFailedSync({
+        table: 'evangelism_contacts',
+        id: contact.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -514,17 +575,46 @@ export class SupabaseService {
     if (!this.isAvailable()) return false;
     try {
       const { error } = await supabase!.from('evangelism_contacts').delete().eq('id', id);
-      return !error;
-    } catch (err) {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'evangelism_contacts',
+          id,
+          action: 'DELETE',
+          payload: { id },
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('evangelism_contacts', id);
+      return true;
+    } catch (err: any) {
       console.warn('Supabase deleteEvangelismContact exception:', err);
+      SyncStateService.recordFailedSync({
+        table: 'evangelism_contacts',
+        id,
+        action: 'DELETE',
+        payload: { id },
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
 
-  // --- Offerings ---
+  // --- Offerings (Dual-Table Reconciliation: 'offerings' <-> 'offering_records') ---
   static async getOfferingRecords(): Promise<OfferingRecord[] | null> {
     if (!this.isAvailable()) return null;
     try {
+      // 1. Primary Live Table: 'offerings'
+      const { data: offData, error: offError } = await supabase!
+        .from('offerings')
+        .select('*')
+        .order('meeting_date', { ascending: false });
+
+      if (!offError && offData) {
+        return offData.map(mapOfferingRecordFromDb);
+      }
+
+      // 2. Compatibility Fallback: 'offering_records'
       const { data, error } = await supabase!
         .from('offering_records')
         .select('*')
@@ -542,28 +632,63 @@ export class SupabaseService {
 
   static async upsertOfferingRecord(offering: OfferingRecord): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    try {
-      const payload = {
-        id: offering.id,
-        report_id: offering.reportId,
-        cell_id: offering.cellId,
-        cell_name: offering.cellName,
-        tutor_uid: offering.tutorUid || null,
-        tutor_name: offering.tutorName || null,
-        amount: offering.amount || 0,
-        currency: offering.currency || 'GHS',
-        meeting_date: offering.meetingDate,
-        week_label: offering.weekLabel || null,
-        submitted_at: offering.submittedAt || new Date().toISOString(),
-        status: offering.status,
-      };
+    const payload = {
+      id: offering.id,
+      report_id: offering.reportId,
+      cell_id: offering.cellId,
+      cell_name: offering.cellName,
+      tutor_uid: offering.tutorUid || null,
+      tutor_name: offering.tutorName || null,
+      amount: offering.amount || 0,
+      currency: offering.currency || 'GHS',
+      meeting_date: offering.meetingDate,
+      week_label: offering.weekLabel || null,
+      submitted_at: offering.submittedAt || new Date().toISOString(),
+      status: offering.status,
+    };
 
-      const { error } = await supabase!
+    try {
+      // Upsert to primary table 'offerings'
+      const { error: offErr } = await supabase!
+        .from('offerings')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (!offErr) {
+        SyncStateService.recordSuccessfulSync('offerings', offering.id);
+        // Also keep offering_records synchronized if present
+        try {
+          await supabase!.from('offering_records').upsert(payload, { onConflict: 'id' });
+        } catch {}
+        return true;
+      }
+
+      // Fallback to 'offering_records'
+      const { error: recErr } = await supabase!
         .from('offering_records')
         .upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch (err) {
+
+      if (!recErr) {
+        SyncStateService.recordSuccessfulSync('offering_records', offering.id);
+        return true;
+      }
+
+      const errMsg = offErr?.message || recErr?.message || 'Failed upserting offering';
+      console.warn('Supabase upsertOfferingRecord error:', errMsg);
+      SyncStateService.recordFailedSync({
+        table: 'offerings',
+        id: offering.id,
+        payload,
+        errorMessage: errMsg,
+      });
+      return false;
+    } catch (err: any) {
       console.warn('Supabase upsertOfferingRecord exception:', err);
+      SyncStateService.recordFailedSync({
+        table: 'offerings',
+        id: offering.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -586,24 +711,41 @@ export class SupabaseService {
 
   static async sendPrivateMessage(msg: PrivateMessage): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const payload = {
+      id: msg.id,
+      sender_uid: msg.senderUid,
+      sender_name: msg.senderName,
+      sender_role: msg.senderRole,
+      recipient_uid: msg.recipientUid,
+      recipient_name: msg.recipientName,
+      cell_id: msg.cellId || null,
+      cell_name: msg.cellName || null,
+      content: msg.content,
+      is_read: Boolean(msg.isRead),
+      read_at: msg.readAt || null,
+      reply_to: msg.replyTo || null,
+    };
+
     try {
-      const payload = {
-        id: msg.id,
-        sender_uid: msg.senderUid,
-        sender_name: msg.senderName,
-        sender_role: msg.senderRole,
-        recipient_uid: msg.recipientUid,
-        recipient_name: msg.recipientName,
-        cell_id: msg.cellId || null,
-        cell_name: msg.cellName || null,
-        content: msg.content,
-        is_read: Boolean(msg.isRead),
-        read_at: msg.readAt || null,
-        reply_to: msg.replyTo || null,
-      };
       const { error } = await supabase!.from('private_messages').upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch (err) {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'private_messages',
+          id: msg.id,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('private_messages', msg.id);
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'private_messages',
+        id: msg.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -626,22 +768,39 @@ export class SupabaseService {
 
   static async sendCommunityMessage(msg: CommunityMessage): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const payload = {
+      id: msg.id,
+      sender_uid: msg.senderUid,
+      sender_name: msg.senderName,
+      sender_role: msg.senderRole,
+      cell_name: msg.cellName || null,
+      content: msg.content,
+      category: msg.category || 'general',
+      reply_to: msg.replyTo || null,
+      mentions: msg.mentions || [],
+      reactions: msg.reactions || {},
+    };
+
     try {
-      const payload = {
-        id: msg.id,
-        sender_uid: msg.senderUid,
-        sender_name: msg.senderName,
-        sender_role: msg.senderRole,
-        cell_name: msg.cellName || null,
-        content: msg.content,
-        category: msg.category || 'general',
-        reply_to: msg.replyTo || null,
-        mentions: msg.mentions || [],
-        reactions: msg.reactions || {},
-      };
       const { error } = await supabase!.from('community_messages').upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch (err) {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'community_messages',
+          id: msg.id,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('community_messages', msg.id);
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'community_messages',
+        id: msg.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -663,33 +822,69 @@ export class SupabaseService {
 
   static async upsertTeachingMaterial(material: TeachingMaterial): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const payload = {
+      id: material.id,
+      title: material.title,
+      description: material.description || '',
+      week_label: material.weekLabel,
+      document_url: material.documentUrl || null,
+      file_name: material.fileName || null,
+      file_size: material.fileSize || null,
+      file_type: material.fileType || null,
+      text_content: material.textContent || null,
+      status: material.status || 'published',
+      published_at: material.publishedAt || null,
+      uploaded_by: material.uploadedBy,
+      uploaded_by_name: material.uploadedByName,
+    };
+
     try {
-      const payload = {
-        id: material.id,
-        title: material.title,
-        description: material.description || '',
-        week_label: material.weekLabel,
-        document_url: material.documentUrl || null,
-        file_name: material.fileName || null,
-        file_size: material.fileSize || null,
-        file_type: material.fileType || null,
-        text_content: material.textContent || null,
-        status: material.status || 'published',
-        published_at: material.publishedAt || null,
-        uploaded_by: material.uploadedBy,
-        uploaded_by_name: material.uploadedByName,
-      };
       const { error } = await supabase!.from('teaching_materials').upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch (err) {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'teaching_materials',
+          id: material.id,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('teaching_materials', material.id);
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'teaching_materials',
+        id: material.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
 
-  // --- Soul Target Config ---
+  // --- Soul Target Config (Dual-Table Reconciliation: 'soul_target_configs' <-> 'soul_targets') ---
   static async getSoulTargetConfig(year: number = 2026): Promise<SoulTargetConfig | null> {
     if (!this.isAvailable()) return null;
     try {
+      // 1. Primary Live Table: 'soul_target_configs'
+      const { data: cfgData, error: cfgError } = await supabase!
+        .from('soul_target_configs')
+        .select('*')
+        .eq('year', year)
+        .maybeSingle();
+
+      if (!cfgError && cfgData) {
+        return {
+          id: cfgData.id,
+          year: cfgData.year,
+          annualTarget: cfgData.annual_target,
+          auditHistory: Array.isArray(cfgData.audit_history) ? cfgData.audit_history : [],
+          updatedAt: cfgData.updated_at,
+          updatedBy: cfgData.updated_by || 'Administrator',
+        };
+      }
+
+      // 2. Compatibility Fallback: 'soul_targets'
       const { data, error } = await supabase!
         .from('soul_targets')
         .select('*')
@@ -711,18 +906,48 @@ export class SupabaseService {
 
   static async upsertSoulTargetConfig(config: SoulTargetConfig): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const payload = {
+      id: config.id,
+      year: config.year,
+      annual_target: config.annualTarget,
+      audit_history: config.auditHistory || [],
+      description: `National Soul-Winning Milestone Target for ${config.year}`,
+      updated_by: config.updatedBy || '',
+    };
+
     try {
-      const payload = {
-        id: config.id,
-        year: config.year,
-        annual_target: config.annualTarget,
-        audit_history: config.auditHistory || [],
-        description: `National Soul-Winning Milestone Target for ${config.year}`,
-        updated_by: config.updatedBy || '',
-      };
+      // Upsert to soul_target_configs
+      const { error: cfgErr } = await supabase!.from('soul_target_configs').upsert(payload, { onConflict: 'year' });
+      if (!cfgErr) {
+        SyncStateService.recordSuccessfulSync('soul_target_configs', String(config.year));
+        // Also keep soul_targets synchronized if present
+        try {
+          await supabase!.from('soul_targets').upsert(payload, { onConflict: 'year' });
+        } catch {}
+        return true;
+      }
+
+      // Fallback to soul_targets
       const { error } = await supabase!.from('soul_targets').upsert(payload, { onConflict: 'year' });
-      return !error;
-    } catch (err) {
+      if (!error) {
+        SyncStateService.recordSuccessfulSync('soul_targets', String(config.year));
+        return true;
+      }
+
+      SyncStateService.recordFailedSync({
+        table: 'soul_target_configs',
+        id: String(config.year),
+        payload,
+        errorMessage: error.message,
+      });
+      return false;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'soul_target_configs',
+        id: String(config.year),
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -753,34 +978,51 @@ export class SupabaseService {
 
   static async upsertSystemSettings(settings: SystemSettings): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const payload = {
+      id: 'global',
+      ministry_name: 'Forerunners Network International (FNI)',
+      vision: settings.vision,
+      mission: settings.mission,
+      submission_deadline_day: 'Sunday',
+      submission_deadline_time: '18:00',
+      annual_soul_target: settings.annualSoulWinningTarget,
+      enable_email_notifications: true,
+      enable_whatsapp_notifications: true,
+      updated_by: settings.updatedBy || '',
+    };
+
     try {
-      const payload = {
-        id: 'global',
-        ministry_name: 'Forerunners Network International (FNI)',
-        vision: settings.vision,
-        mission: settings.mission,
-        submission_deadline_day: 'Sunday',
-        submission_deadline_time: '18:00',
-        annual_soul_target: settings.annualSoulWinningTarget,
-        enable_email_notifications: true,
-        enable_whatsapp_notifications: true,
-        updated_by: settings.updatedBy || '',
-      };
       const { error } = await supabase!.from('system_settings').upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch (err) {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'system_settings',
+          id: 'global',
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('system_settings', 'global');
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'system_settings',
+        id: 'global',
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
 
-  // --- Notifications ---
+  // --- Notifications (Multi-Field Alignment) ---
   static async getNotifications(recipientTarget: string): Promise<NotificationItem[] | null> {
     if (!this.isAvailable()) return null;
     try {
       const { data, error } = await supabase!
         .from('notifications')
         .select('*')
-        .or(`recipient_target.eq.${recipientTarget},recipient_target.eq.all`)
+        .or(`recipient_target.eq.${recipientTarget},recipient_target.eq.all,user_id.eq.${recipientTarget},user_id.eq.all`)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) return null;
@@ -792,20 +1034,47 @@ export class SupabaseService {
 
   static async insertNotification(item: NotificationItem): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const target = item.user_id || (item as any).recipient_target || 'all';
+    const notifType = (item.type || (item as any).notification_type || 'system_alert') as any;
+    const payload = {
+      id: item.id,
+      user_id: target,
+      recipient_target: target,
+      sender_id: (item as any).sender_id || (item as any).senderId || null,
+      sender_name: (item as any).sender_name || (item as any).senderName || null,
+      title: item.title,
+      message: item.message,
+      date: item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      notification_type: notifType,
+      type: notifType,
+      channel: (item.channel || 'in_app') as any,
+      status: 'delivered',
+      is_read: Boolean(item.is_read),
+      read_at: item.is_read ? new Date().toISOString() : null,
+      metadata: item.metadata || {},
+      created_at: item.created_at || new Date().toISOString(),
+    };
+
     try {
-      const payload = {
-        id: item.id,
-        recipient_target: item.user_id,
-        title: item.title,
-        message: item.message,
-        date: item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-        is_read: Boolean(item.is_read),
-        notification_type: item.type || 'system_alert',
-        metadata: item.metadata || {},
-      };
       const { error } = await supabase!.from('notifications').upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch (err) {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'notifications',
+          id: item.id,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('notifications', item.id);
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'notifications',
+        id: item.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -818,38 +1087,78 @@ export class SupabaseService {
         .from('profiles')
         .update({ avatar_url: avatarUrl })
         .or(`id.eq.${userId},firebase_uid.eq.${userId}`);
-      return !error;
-    } catch (err) {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'profiles',
+          id: userId,
+          payload: { avatar_url: avatarUrl },
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('profiles', userId);
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'profiles',
+        id: userId,
+        payload: { avatar_url: avatarUrl },
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
 
-  // --- Review Logs & Follow-Ups ---
+  // --- Review Logs & Follow-Ups (Dual Field Reconciliation: status/action & comment/comments) ---
   static async insertReviewLog(log: {
     id?: string;
     reportId: string;
     reportType: string;
     reviewerUid: string;
     reviewerName: string;
-    action: string;
+    action?: string;
+    status?: string;
     comments?: string;
+    comment?: string;
     createdAt?: string;
   }): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const actionVal = log.action || log.status || 'Reviewed';
+    const commentVal = log.comments || log.comment || null;
+    const logId = log.id || `rev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const payload = {
+      id: logId,
+      report_id: log.reportId,
+      report_type: log.reportType,
+      reviewer_uid: log.reviewerUid,
+      reviewer_name: log.reviewerName,
+      action: actionVal,
+      status: actionVal,
+      comments: commentVal,
+      comment: commentVal,
+      created_at: log.createdAt || new Date().toISOString(),
+    };
+
     try {
-      const payload = {
-        id: log.id || `rev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        report_id: log.reportId,
-        report_type: log.reportType,
-        reviewer_uid: log.reviewerUid,
-        reviewer_name: log.reviewerName,
-        action: log.action,
-        comments: log.comments || null,
-        created_at: log.createdAt || new Date().toISOString(),
-      };
       const { error } = await supabase!.from('review_logs').upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'review_logs',
+          id: logId,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('review_logs', logId);
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'review_logs',
+        id: logId,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -862,7 +1171,19 @@ export class SupabaseService {
         query = query.eq('report_id', reportId);
       }
       const { data, error } = await query;
-      return error ? null : data;
+      if (error || !data) return null;
+      return data.map(r => ({
+        id: r.id,
+        reportId: r.report_id,
+        reportType: r.report_type,
+        reviewerUid: r.reviewer_uid,
+        reviewerName: r.reviewer_name,
+        action: r.action || r.status || 'Reviewed',
+        status: r.status || r.action || 'Reviewed',
+        comments: r.comments || r.comment || '',
+        comment: r.comment || r.comments || '',
+        createdAt: r.created_at,
+      }));
     } catch {
       return null;
     }
@@ -879,20 +1200,38 @@ export class SupabaseService {
     status?: string;
   }): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const followUpId = followUp.id || `flw-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const payload = {
+      id: followUpId,
+      contact_id: followUp.contactId,
+      cell_id: followUp.cellId || null,
+      tutor_uid: followUp.tutorUid || null,
+      notes: followUp.notes || null,
+      follow_up_date: followUp.followUpDate || new Date().toISOString().split('T')[0],
+      next_follow_up_date: followUp.nextFollowUpDate || null,
+      status: followUp.status || 'Completed',
+    };
+
     try {
-      const payload = {
-        id: followUp.id || `flw-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        contact_id: followUp.contactId,
-        cell_id: followUp.cellId || null,
-        tutor_uid: followUp.tutorUid || null,
-        notes: followUp.notes || null,
-        follow_up_date: followUp.followUpDate || new Date().toISOString().split('T')[0],
-        next_follow_up_date: followUp.nextFollowUpDate || null,
-        status: followUp.status || 'Completed',
-      };
       const { error } = await supabase!.from('follow_ups').upsert(payload, { onConflict: 'id' });
-      return !error;
-    } catch {
+      if (error) {
+        SyncStateService.recordFailedSync({
+          table: 'follow_ups',
+          id: followUpId,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('follow_ups', followUpId);
+      return true;
+    } catch (err: any) {
+      SyncStateService.recordFailedSync({
+        table: 'follow_ups',
+        id: followUpId,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }
@@ -911,30 +1250,55 @@ export class SupabaseService {
     }
   }
 
+  // --- Profiles (Preserving profiles.id TEXT + supabase_user_id UUID) ---
   static async upsertProfile(profile: Profile): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const payload: any = {
+      id: profile.id, // Primary key: Alphanumeric TEXT (e.g. "usr-admin" or Firebase UID)
+      firebase_uid: profile.id,
+      email: profile.email,
+      full_name: profile.full_name,
+      phone_number: profile.phone_number || null,
+      role: profile.role,
+      region_id: profile.region_id || null,
+      region_name: profile.region_name || null,
+      cell_id: profile.cell_id || null,
+      cell_name: profile.cell_name || null,
+      avatar_url: profile.avatar_url || null,
+      is_active: profile.is_active,
+      is_onboarded: profile.is_onboarded,
+      must_change_password: Boolean(profile.must_change_password),
+      auth_provider: profile.auth_provider || 'credentials',
+    };
+
+    if ((profile as any).supabase_user_id) {
+      payload.supabase_user_id = (profile as any).supabase_user_id;
+    }
+
     try {
-      const payload: any = {
-        firebase_uid: profile.id,
-        email: profile.email,
-        full_name: profile.full_name,
-        phone_number: profile.phone_number || null,
-        role: profile.role,
-        region_id: profile.region_id || null,
-        region_name: profile.region_name || null,
-        cell_id: profile.cell_id || null,
-        cell_name: profile.cell_name || null,
-        avatar_url: profile.avatar_url || null,
-        is_active: profile.is_active,
-        is_onboarded: profile.is_onboarded,
-        must_change_password: Boolean(profile.must_change_password),
-        auth_provider: profile.auth_provider || 'credentials',
-      };
       const { error } = await supabase!
         .from('profiles')
-        .upsert(payload, { onConflict: 'firebase_uid' });
-      return !error;
-    } catch (err) {
+        .upsert(payload, { onConflict: 'id' });
+      if (error) {
+        console.warn('Supabase upsertProfile error:', error.message);
+        SyncStateService.recordFailedSync({
+          table: 'profiles',
+          id: profile.id,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync('profiles', profile.id);
+      return true;
+    } catch (err: any) {
+      console.warn('Supabase upsertProfile exception:', err);
+      SyncStateService.recordFailedSync({
+        table: 'profiles',
+        id: profile.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
       return false;
     }
   }

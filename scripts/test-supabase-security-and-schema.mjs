@@ -57,8 +57,37 @@ assert(
 );
 
 assert(
+  migrationSql.includes('id TEXT PRIMARY KEY') && migrationSql.includes('supabase_user_id UUID REFERENCES auth.users(id)'),
+  'public.profiles preserves alphanumeric TEXT primary key with supabase_user_id UUID reference to auth.users(id).'
+);
+
+assert(
   migrationSql.includes('ADD COLUMN IF NOT EXISTS firebase_uid TEXT UNIQUE'),
   'public.profiles includes firebase_uid TEXT UNIQUE for legacy identity bridging.'
+);
+
+assert(
+  migrationSql.includes('CREATE TABLE IF NOT EXISTS public.offerings (') &&
+  migrationSql.includes('CREATE TABLE IF NOT EXISTS public.offering_records ('),
+  'Both offerings and offering_records tables are defined for dual compatibility.'
+);
+
+assert(
+  migrationSql.includes('CREATE TABLE IF NOT EXISTS public.soul_target_configs (') &&
+  migrationSql.includes('CREATE TABLE IF NOT EXISTS public.soul_targets ('),
+  'Both soul_target_configs and soul_targets tables are defined for dual compatibility.'
+);
+
+assert(
+  migrationSql.includes('status TEXT') && migrationSql.includes('action TEXT') &&
+  migrationSql.includes('comment TEXT') && migrationSql.includes('comments TEXT'),
+  'review_logs defines both status/action and comment/comments for complete schema reconciliation.'
+);
+
+assert(
+  migrationSql.includes('recipient_target TEXT') && migrationSql.includes('user_id TEXT') &&
+  migrationSql.includes('notification_type notification_type') && migrationSql.includes('type notification_type'),
+  'notifications defines all recipient and type fields for complete live database compatibility.'
 );
 
 assert(
@@ -79,20 +108,32 @@ const requiredRlsTables = [
   'cell_meeting_reports',
   'evangelism_reports',
   'evangelism_contacts',
+  'offerings',
   'offering_records',
   'private_messages',
   'community_messages',
+  'invitation_codes',
   'teaching_materials',
   'system_settings',
   'soul_targets',
+  'soul_target_configs',
   'device_tokens',
+  'notifications',
   'audit_logs',
+  'follow_ups',
+  'review_logs',
+  'cell_reports',
+  'report_reviews',
 ];
 
 for (const tbl of requiredRlsTables) {
   assert(
     migrationSql.includes(`ALTER TABLE public.${tbl} ENABLE ROW LEVEL SECURITY;`),
     `RLS is explicitly enabled on public.${tbl}.`
+  );
+  assert(
+    migrationSql.includes(`ON public.${tbl}`),
+    `Explicit RLS policies are attached to public.${tbl} (0 unprotected tables in Supabase Advisor).`
   );
 }
 

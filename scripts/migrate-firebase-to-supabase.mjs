@@ -361,7 +361,7 @@ export async function importToSupabase(supabase, sourceData) {
     console.log(`   ✅ ${tableName.padEnd(24)}: Successfully upserted ${imported} / ${rows.length} records`);
   }
 
-  // 1. Profiles (with GoTrue Auth User provisioning if service role is available)
+  // 1. Profiles (Preserving profiles.id TEXT primary key + supabase_user_id UUID)
   if (sourceData.profiles?.length > 0) {
     if (isServiceRole && supabase.auth?.admin) {
       console.log('   🔑 Provisioning Supabase auth.users entities for profiles...');
@@ -378,24 +378,22 @@ export async function importToSupabase(supabase, sourceData) {
           // Ignore if user already exists
         }
       }
-      const payload = sourceData.profiles.map(p => ({
-        id: getDeterministicUuid(p.id),
-        firebase_uid: p.id,
-        email: p.email || `${p.id}@fnicells.org`,
-        full_name: p.full_name || 'Member',
-        phone_number: p.phone_number || null,
-        role: p.role || 'cell_leader',
-        region_name: p.region_name || null,
-        cell_name: p.cell_name || null,
-        avatar_url: p.avatar_url || null,
-        is_active: p.is_active ?? true,
-        is_onboarded: p.is_onboarded ?? true,
-      }));
-      await upsertBatch('profiles', payload, 'firebase_uid');
-    } else {
-      console.log('   ℹ️ Profile import requires SUPABASE_SERVICE_ROLE_KEY to satisfy foreign key profiles.id REFERENCES auth.users(id).');
-      console.log('      Preserved all source profile documents in data/migration_source_dump.json.');
     }
+    const payload = sourceData.profiles.map(p => ({
+      id: p.id, // Primary key: Alphanumeric TEXT ID preserved!
+      supabase_user_id: getDeterministicUuid(p.id), // UUID reference to auth.users(id)
+      firebase_uid: p.id,
+      email: p.email || `${p.id}@fnicells.org`,
+      full_name: p.full_name || 'Member',
+      phone_number: p.phone_number || null,
+      role: p.role || 'cell_leader',
+      region_name: p.region_name || null,
+      cell_name: p.cell_name || null,
+      avatar_url: p.avatar_url || null,
+      is_active: p.is_active ?? true,
+      is_onboarded: p.is_onboarded ?? true,
+    }));
+    await upsertBatch('profiles', payload, 'id');
   }
 
   // 2. Regions
@@ -555,7 +553,7 @@ export async function importToSupabase(supabase, sourceData) {
     await upsertBatch('follow_ups', payload, 'id');
   }
 
-  // 9. Offering Records
+  // 9. Offering Records & Offerings (Dual-Table Reconciliation)
   if (sourceData.offering_records?.length > 0) {
     const payload = sourceData.offering_records.map(o => ({
       id: o.id,
@@ -571,10 +569,11 @@ export async function importToSupabase(supabase, sourceData) {
       submitted_at: o.submittedAt || o.submitted_at || new Date().toISOString(),
       status: o.status || 'Newly Submitted',
     }));
+    await upsertBatch('offerings', payload, 'id');
     await upsertBatch('offering_records', payload, 'id');
   }
 
-  // 10. Review Logs
+  // 10. Review Logs (Dual-Field Reconciliation: action/status & comments/comment)
   if (sourceData.review_logs?.length > 0) {
     const payload = sourceData.review_logs.map(r => ({
       id: r.id,
@@ -582,8 +581,10 @@ export async function importToSupabase(supabase, sourceData) {
       report_type: r.reportType || r.report_type || 'cell_meeting',
       reviewer_uid: r.reviewerUid || r.reviewer_uid,
       reviewer_name: r.reviewerName || r.reviewer_name,
-      action: r.action,
-      comments: r.comments || null,
+      action: r.action || r.status || 'Reviewed',
+      status: r.status || r.action || 'Reviewed',
+      comments: r.comments || r.comment || null,
+      comment: r.comment || r.comments || null,
       created_at: r.createdAt || r.created_at || new Date().toISOString(),
     }));
     await upsertBatch('review_logs', payload, 'id');
@@ -669,26 +670,34 @@ export async function importToSupabase(supabase, sourceData) {
     await upsertBatch('system_settings', sourceData.system_settings, 'id');
   }
   if (sourceData.soul_targets?.length > 0) {
+    await upsertBatch('soul_target_configs', sourceData.soul_targets, 'id');
     await upsertBatch('soul_targets', sourceData.soul_targets, 'id');
   }
 
-  // 15. Notifications
+  // 15. Notifications (Multi-Field Alignment: user_id, recipient_target, date, type, channel)
   if (sourceData.notifications?.length > 0) {
-    const payload = sourceData.notifications.map(n => ({
-      id: n.id,
-      recipient_target: n.recipientTarget || n.recipient_target || n.userId || n.user_id,
-      sender_id: n.senderId || n.sender_id || null,
-      sender_name: n.senderName || n.sender_name || null,
-      title: n.title,
-      message: n.message,
-      type: n.type || 'system_alert',
-      channel: n.channel || 'in_app',
-      status: n.status || 'delivered',
-      is_read: Boolean(n.isRead || n.is_read),
-      read_at: n.readAt || n.read_at || null,
-      metadata: n.metadata || {},
-      created_at: n.createdAt || n.created_at || new Date().toISOString(),
-    }));
+    const payload = sourceData.notifications.map(n => {
+      const target = n.recipientTarget || n.recipient_target || n.userId || n.user_id;
+      const notifType = n.type || n.notification_type || 'system_alert';
+      return {
+        id: n.id,
+        user_id: target,
+        recipient_target: target,
+        sender_id: n.senderId || n.sender_id || null,
+        sender_name: n.senderName || n.sender_name || null,
+        title: n.title,
+        message: n.message,
+        date: n.date || (n.createdAt ? n.createdAt.split('T')[0] : (n.created_at ? n.created_at.split('T')[0] : new Date().toISOString().split('T')[0])),
+        type: notifType,
+        notification_type: notifType,
+        channel: n.channel || 'in_app',
+        status: n.status || 'delivered',
+        is_read: Boolean(n.isRead || n.is_read),
+        read_at: n.readAt || n.read_at || null,
+        metadata: n.metadata || {},
+        created_at: n.createdAt || n.created_at || new Date().toISOString(),
+      };
+    });
     await upsertBatch('notifications', payload, 'id');
   }
 
@@ -784,19 +793,39 @@ export async function fetchAllDestinationRows(supabase, tableName) {
   const pageSize = 1000;
   let page = 0;
   let allRows = [];
-  while (true) {
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
-    const { data, error } = await supabase.from(tableName).select('*').range(from, to);
-    if (error) {
-      return { data: null, error };
+
+  const tableCandidates = [tableName];
+  if (tableName === 'offering_records') tableCandidates.push('offerings');
+  if (tableName === 'offerings') tableCandidates.push('offering_records');
+  if (tableName === 'soul_targets') tableCandidates.push('soul_target_configs');
+  if (tableName === 'soul_target_configs') tableCandidates.push('soul_targets');
+
+  let lastError = null;
+
+  for (const tName of tableCandidates) {
+    page = 0;
+    allRows = [];
+    let candidateSuccess = true;
+    while (true) {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error } = await supabase.from(tName).select('*').range(from, to);
+      if (error) {
+        lastError = error;
+        candidateSuccess = false;
+        break;
+      }
+      if (!data || data.length === 0) break;
+      allRows.push(...data);
+      if (data.length < pageSize) break;
+      page++;
     }
-    if (!data || data.length === 0) break;
-    allRows.push(...data);
-    if (data.length < pageSize) break;
-    page++;
+    if (candidateSuccess) {
+      return { data: allRows, error: null };
+    }
   }
-  return { data: allRows, error: null };
+
+  return { data: null, error: lastError };
 }
 
 // -----------------------------------------------------------------------------

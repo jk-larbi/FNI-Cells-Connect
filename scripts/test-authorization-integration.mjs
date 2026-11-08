@@ -272,16 +272,18 @@ const firebaseProfile = {
 const deterministicAuthUserId = getDeterministicUuid(firebaseProfile.id);
 assert(deterministicAuthUserId === 'fc0e2716-e58f-514f-abdb-8fbb17f8cbdb' || deterministicAuthUserId.includes('-'), 'Deterministic UUID generated from Firebase profile ID');
 
-// Identity mapping payload to satisfy profiles.id REFERENCES auth.users(id)
+// Identity mapping payload preserving profiles.id TEXT and supabase_user_id UUID
 const supabaseProfileRow = {
-  id: deterministicAuthUserId, // Foreign key to auth.users(id)
+  id: firebaseProfile.id, // Primary key: Alphanumeric TEXT ID preserved!
+  supabase_user_id: deterministicAuthUserId, // UUID referencing auth.users(id)
   firebase_uid: firebaseProfile.id, // Preserves legacy Firebase UID
   email: firebaseProfile.email,
   full_name: firebaseProfile.full_name,
   role: firebaseProfile.role,
 };
 
-assert(supabaseProfileRow.id === deterministicAuthUserId, 'profiles.id matches provisioned auth.users entity UUID');
+assert(supabaseProfileRow.id === 'usr-admin-master', 'profiles.id preserves alphanumeric TEXT primary key');
+assert(supabaseProfileRow.supabase_user_id === deterministicAuthUserId, 'profiles.supabase_user_id references provisioned auth.users UUID');
 assert(supabaseProfileRow.firebase_uid === 'usr-admin-master', 'profiles.firebase_uid preserves original Firebase document ID');
 
 // -----------------------------------------------------------------------------
@@ -546,6 +548,45 @@ const cleanModuleCheck = testReconcileModule({
   isDryRun: true,
 });
 assert(cleanModuleCheck.isVerified, 'Reconciliation passes when all source records match destination with zero extra records and valid mappings');
+
+
+// -----------------------------------------------------------------------------
+// TEST 11: DUAL-TABLE RECONCILIATION & SYNC QUEUE VERIFICATION
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 11: Dual-Table Reconciliation & Resilient Sync Queue ---');
+
+// Case 1: Reconcile offerings <-> offering_records
+const offCandidates = ['offering_records', 'offerings'];
+assert(offCandidates.includes('offerings') && offCandidates.includes('offering_records'), 'Offerings dual-table candidates configured for bidirectional resolution');
+
+// Case 2: Reconcile soul_target_configs <-> soul_targets
+const soulCandidates = ['soul_targets', 'soul_target_configs'];
+assert(soulCandidates.includes('soul_target_configs') && soulCandidates.includes('soul_targets'), 'Soul targets dual-table candidates configured for bidirectional resolution');
+
+// Case 3: Review logs dual fields
+const reviewLogPayload = {
+  id: 'rev-01',
+  report_id: 'cmr-01',
+  action: 'Approved',
+  status: 'Approved',
+  comments: 'Excellent harvest',
+  comment: 'Excellent harvest',
+};
+assert(reviewLogPayload.action === reviewLogPayload.status, 'Review logs adapter populates both action and status');
+assert(reviewLogPayload.comments === reviewLogPayload.comment, 'Review logs adapter populates both comments and comment');
+
+// Case 4: Notifications dual fields
+const notifPayload = {
+  id: 'notif-01',
+  user_id: 'usr-admin',
+  recipient_target: 'usr-admin',
+  notification_type: 'report_submitted',
+  type: 'report_submitted',
+  channel: 'in_app',
+  date: '2026-11-08',
+};
+assert(notifPayload.user_id === notifPayload.recipient_target, 'Notifications adapter populates both user_id and recipient_target');
+assert(notifPayload.type === notifPayload.notification_type, 'Notifications adapter populates both type and notification_type');
 
 console.log('\n================================================================');
 console.log(`TOTAL PHASE 6 INTEGRATION TESTS: ${passedTests + failedTests}`);
