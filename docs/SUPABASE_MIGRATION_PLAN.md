@@ -73,6 +73,80 @@ Design normalized tables for profiles, cells, regions, reporting periods, meetin
 - Keep Firebase exports and the live Firebase services available through the agreed observation period.
 - Only decommission an individual Firebase service after explicit verification and a restorable backup.
 
+
+## Expanded code inventory completed (repository `main` snapshot)
+
+### Firestore collections identified in deployed rules and application code
+
+- Identity/profile: `profiles`, `users`, `internal_tutor_auth`, `systemSecurity`.
+- Ministry structure: `cells`, `regions`, `systemSettings`.
+- Reports and review workflow: `cellMeetingReports`, `evangelismReports`, `cell_reports`, `report_reviews`, `reviewLogs`, `audit_logs`, `reportingPeriods`, `reporting_periods`.
+- Follow-up: `evangelismContacts`, `followUps`.
+- Communications: `privateMessages`, `communityMessages`, `communityMembers`, `invitationCodes`.
+- Notifications and device registration: `notifications`, `deviceTokens`.
+- Finance: `offerings`.
+
+Some collections are identified from Firestore rules and Cloud Functions, while others are confirmed by client services. Actual production document counts and whether each collection currently contains records remain unverified.
+
+### Firebase Cloud Functions identified
+
+Callable functions:
+- `registerTutor`, `loginTutor`, `loginAdmin`, `changeAdminPassword`.
+- `registerDeviceToken`, `unregisterDeviceToken`.
+
+Scheduled function:
+- `checkWeeklyReportsDeadline`.
+
+Firestore-triggered functions:
+- `onCellMeetingReportCreated`, `onEvangelismReportCreated`.
+- `onPrivateMessageCreated`, `onCommunityMessageCreated`.
+- `onTeachingMaterialCreated`, `onReviewLogCreated`, `onCellCreated`.
+
+These functions implement authentication/registration, deadline reminders, FCM device-token management, and notifications triggered by reports, messages, teaching materials, review logs, and new cells. Their behavior must be recreated and tested before any Firebase function is disabled.
+
+### Client service inventory
+
+Firebase-backed services observed:
+- `authService.ts`: callable registration/login/admin security operations, Firestore profile and cell writes, and local profile/session/credential fallback.
+- `cellService.ts`: cell reads and writes, plus local cache/fallback.
+- `reportService.ts`: meeting and evangelism reports, reporting periods, review logs, with local fallback stores.
+- `followUpService.ts`: evangelism contacts and follow-ups, with local fallback.
+- `notificationService.ts`: notification writes, read-state updates and realtime Firestore subscription, with local fallback.
+- `messagingService.ts`: private/community messages, invitation codes, community membership, with local fallback.
+- `financeService.ts`: offerings, with local fallback.
+- `pushNotificationService.ts`: FCM token registration/removal and local notification preferences/device-token fallback.
+- `firebase.ts` / `firebaseService.ts`: Firebase initialization and shared data operations.
+- `NotificationContext.tsx`: app notification state integration.
+
+Other service modules include analytics, settings, soul targets, and teaching materials; their full persistence paths should be checked during implementation.
+
+### Firebase configuration and security assets
+
+- `firebase.json` configures Firebase Hosting, Firestore rules, and Cloud Functions.
+- `firestore.rules` contains role-aware access rules for the collections listed above. These rules are a key source for designing equivalent Supabase Row Level Security policies; do not translate them mechanically without reviewing role semantics.
+- `public/firebase-messaging-sw.js` and FCM client code support web push notifications.
+- `.env.example` documents Firebase web configuration. No Firebase service-account secret should be placed in the repository.
+- No Firebase Storage bucket/rules configuration was found in `firebase.json`. Profile-photo upload currently processes images into data URLs through the uploader callback; inspect the profile persistence path before deciding whether Supabase Storage is required.
+- `firebase.json` currently has no Storage rules entry.
+
+### Supabase security finding — action taken
+
+The Supabase security advisor reported that `public.rls_auto_enable()` (a SECURITY DEFINER event-trigger function used by the `ensure_rls` DDL event trigger) was executable by `anon` and `authenticated`. Inspection confirmed its purpose is to enable RLS on newly created public tables. We preserved the function and its event trigger, but revoked direct execution from `PUBLIC`, `anon`, and `authenticated`. This does not remove the event trigger; PostgreSQL invokes its trigger function through the DDL event mechanism. Re-run the Supabase security advisor after the change to confirm the warning is cleared.
+
+### Not yet verified — requires Firebase Console/export access
+
+The GitHub repository cannot reveal live Firebase production data or console configuration. The following require a Firebase Admin export or project-console inspection:
+- Exact Firebase project ID used by the live deployment and whether it matches the project referenced by the deployed app.
+- Auth user count, providers enabled, verified email/phone coverage, and user metadata.
+- Firestore collection document counts, nested subcollections, document IDs, timestamps, and actual production contents.
+- Cloud Functions deployed versions, regions, runtime, schedules, environment configuration, and invocation status.
+- FCM registered device tokens and delivery health.
+- Whether Firebase Storage contains any objects, even though no Storage integration was found in the repository snapshot.
+- Firebase Hosting deployment target and live environment variables.
+
+Do not treat source-code collection names as proof that a live collection exists or contains data.
+
+
 ## Current next action
 
 Finish the repository-wide inventory of Firestore usage, Cloud Functions, Storage, messaging, local-storage keys, and role/permission checks. Then prepare a reviewed schema migration file. No production data or Firebase resources have been changed by this audit.
