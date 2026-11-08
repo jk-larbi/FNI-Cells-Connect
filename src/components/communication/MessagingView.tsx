@@ -25,7 +25,6 @@ import {
   Heart,
 } from 'lucide-react';
 import { Button } from '../common/Button';
-import { AppleEmoji, renderWithAppleEmojis } from '../../utils/appleEmoji';
 
 export interface MessagingViewProps {
   initialConversationId?: string;
@@ -312,7 +311,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </span>
         );
       }
-      return <React.Fragment key={idx}>{renderWithAppleEmojis(part, 19)}</React.Fragment>;
+      return <React.Fragment key={idx}>{part}</React.Fragment>;
     });
   };
 
@@ -521,7 +520,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               }`}
                               title={reactors.join(', ')}
                             >
-                              <AppleEmoji emoji={emoji} size={16} />
+                              <span className="text-sm leading-none">{emoji}</span>
                               <span>{reactors.length}</span>
                             </button>
                           );
@@ -533,10 +532,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             <button
                               key={emoji}
                               onClick={() => handleReaction(msg.id, emoji)}
-                              className="hover:scale-125 transition-transform p-0.5 cursor-pointer flex items-center justify-center"
+                              className="hover:scale-125 transition-transform p-0.5 cursor-pointer flex items-center justify-center text-sm"
                               title={`React with ${emoji}`}
                             >
-                              <AppleEmoji emoji={emoji} size={17} />
+                              <span>{emoji}</span>
                             </button>
                           ))}
                         </div>
@@ -648,7 +647,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           className="w-10 h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer"
                           title={emoji}
                         >
-                          <AppleEmoji emoji={emoji} size={26} />
+                          <span className="text-2xl leading-none">{emoji}</span>
                         </button>
                       ))}
                     </div>
@@ -680,7 +679,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 ))}
               </div>
 
-              {/* Quick Emojis Bar (Standard iPhone Apple Emojis) */}
+              {/* Quick Emojis Bar */}
               <div className="flex items-center gap-1.5 bg-[#F5F7FA] px-2.5 py-1 rounded-xl border border-[#E3E8EF]">
                 {QUICK_EMOJIS.map(emoji => (
                   <button
@@ -690,10 +689,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       setCommunityText(prev => prev + emoji);
                       communityInputRef.current?.focus();
                     }}
-                    className="hover:scale-125 transition-transform p-0.5 cursor-pointer flex items-center justify-center"
+                    className="hover:scale-125 transition-transform p-0.5 cursor-pointer flex items-center justify-center text-base"
                     title={`Insert ${emoji}`}
                   >
-                    <AppleEmoji emoji={emoji} size={19} />
+                    <span>{emoji}</span>
                   </button>
                 ))}
               </div>
@@ -938,7 +937,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     className="w-10 h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer"
                     title={emoji}
                   >
-                    <AppleEmoji emoji={emoji} size={24} />
+                    <span className="text-xl leading-none">{emoji}</span>
                   </button>
                 ))}
               </div>

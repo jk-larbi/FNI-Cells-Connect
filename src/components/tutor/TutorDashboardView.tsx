@@ -8,7 +8,6 @@ import { FollowUpService } from '../../services/followUpService';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact, SoulTargetMetrics } from '../../types';
 import { SoulTargetService } from '../../services/soulTargetService';
-import { AppleEmoji } from '../../utils/appleEmoji';
 import {
   Users,
   Flame,
@@ -574,7 +573,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
                 &ldquo;For God is not unjust to forget your work and labor of love which you have shown toward His name, in that you have ministered to the saints, and do minister.&rdquo;
               </p>
               <div className="text-right text-xs font-bold text-[#C6A45A] mt-2 flex items-center justify-end gap-1.5">
-                <AppleEmoji emoji="📖" size={16} />
+                <span className="text-sm">📖</span>
                 <span>Hebrews 6:10</span>
               </div>
             </div>
