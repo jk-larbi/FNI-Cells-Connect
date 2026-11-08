@@ -146,7 +146,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                   setProviderBusy(provider); setProviderMessage('');
                   const result = await linkRecoveryProvider(provider);
                   setProviderBusy(null);
-                  setProviderMessage(result.success ? (provider === 'google' ? 'Google account linked successfully.' : 'Apple ID linked successfully.') : (result.error || 'Could not link account.'));
+                  setProviderMessage(result.success ? (result.pending ? 'Redirecting to finish linking your account…' : (provider === 'google' ? 'Google account linked successfully.' : 'Apple ID linked successfully.')) : (result.error || 'Could not link account.'));
                 }} className="w-full rounded-xl border border-[#D7DEE8] px-3 py-2.5 text-xs font-bold text-[#142B4A] hover:bg-slate-50 disabled:opacity-50">
                   {providerBusy === provider ? 'Connecting…' : (provider === 'google' ? 'Link Google account' : 'Link Apple ID')}
                 </button>
