@@ -289,7 +289,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
               className="h-10 sm:h-11 px-4 sm:px-4.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold transition-all border border-white/20 backdrop-blur-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <Flame className="w-4 h-4 text-[#C6A45A] shrink-0" />
-              <span>Submit Outreach</span>
+              <span>Submit Evangelism</span>
             </button>
           </div>
         </div>
