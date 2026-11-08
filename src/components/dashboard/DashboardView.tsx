@@ -795,8 +795,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {recentQueue.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[#667085]">
-                    <FileText className="w-8 h-8 text-[#CBD5E1] mx-auto mb-2" />
-                    <p className="text-xs font-semibold">No reports submitted yet.</p>
+                    <div className="w-12 h-12 rounded-2xl bg-[#F5F7FA] text-[#C6A45A] flex items-center justify-center mx-auto mb-2.5 border border-[#E3E8EF] shadow-2xs">
+                      <FileCheck className="w-6 h-6 text-[#C6A45A]" />
+                    </div>
+                    <p className="text-xs font-bold text-[#142B4A]">No reports submitted yet.</p>
                     <p className="text-[11px] text-[#667085] mt-0.5">
                       When tutors submit weekly returns, they will appear here in the review stream.
                     </p>

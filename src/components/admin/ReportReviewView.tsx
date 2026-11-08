@@ -30,7 +30,6 @@ import {
   ChevronRight,
   Phone,
   RefreshCw,
-  Sparkles,
   ExternalLink,
   MessageCircle,
   Check,
@@ -918,8 +917,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               ) : filteredReports.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-[#667085]">
-                    <div className="w-14 h-14 rounded-2xl bg-[#FAF6EE] text-[#C6A45A] flex items-center justify-center mx-auto mb-3 border border-[#C6A45A]/20">
-                      <Sparkles className="w-7 h-7" />
+                    <div className="w-14 h-14 rounded-2xl bg-[#F5F7FA] text-[#142B4A] flex items-center justify-center mx-auto mb-3 border border-[#E3E8EF] shadow-2xs">
+                      <FileCheck className="w-7 h-7 text-[#C6A45A]" />
                     </div>
                     <h3 className="text-sm font-bold text-[#142B4A]">
                       {reports.length === 0
@@ -1440,7 +1439,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                 {(inspectingItem as any).testimonies && (
                   <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200">
                     <div className="text-[11px] text-[#23845B] font-extrabold uppercase mb-1.5 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-[#23845B]" />
+                      <CheckCircle2 className="w-4 h-4 text-[#23845B]" />
                       <span>Testimonies & Experiences Encountered</span>
                     </div>
                     <p className="text-xs text-[#182230] whitespace-pre-wrap italic leading-relaxed">
@@ -1552,7 +1551,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                 {(inspectingItem as any).testimonies && (
                   <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200">
                     <div className="text-[11px] text-[#23845B] font-extrabold uppercase mb-1.5 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-[#23845B]" />
+                      <CheckCircle2 className="w-4 h-4 text-[#23845B]" />
                       <span>Testimonies & Experiences Encountered</span>
                     </div>
                     <p className="text-xs text-[#182230] whitespace-pre-wrap italic leading-relaxed">
