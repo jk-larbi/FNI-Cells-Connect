@@ -525,7 +525,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     const result = await loginWithProvider(provider);
                     setProviderLoading(null);
                     if (!result.success) setErrorMessage(result.error || 'Sign-in failed.');
-                    else if (onSuccess) onSuccess();
+                    else if (onSuccess && !result.pending) onSuccess();
                   }} className="w-full rounded-xl border border-[#D7DEE8] bg-white py-2.5 text-xs font-bold text-[#142B4A] hover:bg-slate-50 disabled:opacity-50">
                     {providerLoading === provider ? 'Signing in…' : (provider === 'google' ? 'Continue with Google' : 'Continue with Apple')}
                   </button>
