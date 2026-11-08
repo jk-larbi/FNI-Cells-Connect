@@ -32,6 +32,7 @@ import {
   OfferingRecord,
   PrivateMessage,
   CommunityMessage,
+  InvitationCode,
   TeachingMaterial,
   SoulTargetConfig,
   NotificationItem,
@@ -212,6 +213,21 @@ function mapCommunityMessageFromDb(row: any): CommunityMessage {
     replyTo: row.reply_to,
     mentions: Array.isArray(row.mentions) ? row.mentions : [],
     reactions: typeof row.reactions === 'object' && row.reactions !== null ? row.reactions : {},
+  };
+}
+
+function mapInvitationCodeFromDb(row: any): InvitationCode {
+  return {
+    id: row.id,
+    code: row.code,
+    createdBy: row.created_by || "",
+    createdByName: row.created_by_name || "",
+    createdAt: row.created_at || new Date().toISOString(),
+    expiresAt: row.expires_at || new Date().toISOString(),
+    expiryMinutes: row.expiry_minutes || 60,
+    maxUses: row.max_uses || undefined,
+    usedCount: row.used_count || 0,
+    isRevoked: Boolean(row.is_revoked),
   };
 }
 
@@ -811,6 +827,65 @@ export class SupabaseService {
     }
   }
 
+  // --- Invitation Codes ---
+  static async getInvitationCodes(): Promise<InvitationCode[] | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("invitation_codes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.warn("Supabase getInvitationCodes error:", error.message);
+        return null;
+      }
+      return data ? data.map(mapInvitationCodeFromDb) : [];
+    } catch (err) {
+      console.warn("Supabase getInvitationCodes exception:", err);
+      return null;
+    }
+  }
+
+  static async upsertInvitationCode(code: InvitationCode): Promise<boolean> {
+    if (!isSupabaseConfigured || !supabase) return false;
+    const payload = {
+      id: code.id,
+      code: code.code,
+      created_by: code.createdBy,
+      created_by_name: code.createdByName,
+      created_at: code.createdAt,
+      expires_at: code.expiresAt,
+      expiry_minutes: code.expiryMinutes,
+      max_uses: code.maxUses || 1,
+      used_count: code.usedCount || 0,
+      is_revoked: Boolean(code.isRevoked),
+    };
+    try {
+      const { error } = await supabase.from("invitation_codes").upsert(payload, { onConflict: "id" });
+      if (error) {
+        console.warn("Supabase upsertInvitationCode error:", error.message);
+        SyncStateService.recordFailedSync({
+          table: "invitation_codes",
+          id: code.id,
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
+      }
+      SyncStateService.recordSuccessfulSync("invitation_codes", code.id);
+      return true;
+    } catch (err: any) {
+      console.warn("Supabase upsertInvitationCode exception:", err);
+      SyncStateService.recordFailedSync({
+        table: "invitation_codes",
+        id: code.id,
+        payload,
+        errorMessage: err?.message || String(err),
+      });
+      return false;
+    }
+  }
+
   // --- Teaching Materials ---
   static async getTeachingMaterials(): Promise<TeachingMaterial[] | null> {
     if (!this.isAvailable()) return null;
@@ -1017,6 +1092,46 @@ export class SupabaseService {
         payload,
         errorMessage: err?.message || String(err),
       });
+      return false;
+    }
+  }
+
+  // --- Device Tokens ---
+  static async upsertDeviceToken(data: { id: string; userId: string; token: string; device?: string; platform?: string }): Promise<boolean> {
+    if (!isSupabaseConfigured || !supabase) return false;
+    const payload = {
+      id: data.id,
+      user_id: data.userId,
+      token: data.token,
+      device_type: data.device || "Web",
+      platform: data.platform || "Web",
+      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "Unknown",
+      last_active: new Date().toISOString(),
+    };
+    try {
+      const { error } = await supabase.from("device_tokens").upsert(payload, { onConflict: "token" });
+      if (error) {
+        console.warn("Supabase upsertDeviceToken error:", error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn("Supabase upsertDeviceToken exception:", err);
+      return false;
+    }
+  }
+
+  static async deleteDeviceToken(tokenId: string): Promise<boolean> {
+    if (!isSupabaseConfigured || !supabase) return false;
+    try {
+      const { error } = await supabase.from("device_tokens").delete().eq("id", tokenId);
+      if (error) {
+        console.warn("Supabase deleteDeviceToken error:", error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn("Supabase deleteDeviceToken exception:", err);
       return false;
     }
   }
@@ -1257,6 +1372,171 @@ export class SupabaseService {
   }
 
   // --- Profiles (Preserving profiles.id TEXT + supabase_user_id UUID) ---
+  static async getProfile(userId: string): Promise<Profile | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('profiles')
+        .select('*')
+        .or(`id.eq.${userId},supabase_user_id.eq.${userId}`)
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return {
+        id: data.id,
+        email: data.email,
+        full_name: data.full_name,
+        phone_number: data.phone_number || undefined,
+        role: data.role,
+        region_id: data.region_id || undefined,
+        region_name: data.region_name || undefined,
+        cell_id: data.cell_id || undefined,
+        cell_name: data.cell_name || undefined,
+        avatar_url: data.avatar_url || undefined,
+        is_active: data.is_active ?? true,
+        is_onboarded: data.is_onboarded ?? true,
+        must_change_password: Boolean(data.must_change_password),
+        auth_provider: data.auth_provider || 'credentials',
+        created_at: data.created_at,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  static async getProfiles(): Promise<Profile[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error || !data) return null;
+      return data.map((d: any) => ({
+        id: d.id,
+        email: d.email,
+        full_name: d.full_name,
+        phone_number: d.phone_number || undefined,
+        role: d.role,
+        region_id: d.region_id || undefined,
+        region_name: d.region_name || undefined,
+        cell_id: d.cell_id || undefined,
+        cell_name: d.cell_name || undefined,
+        avatar_url: d.avatar_url || undefined,
+        is_active: d.is_active ?? true,
+        is_onboarded: d.is_onboarded ?? true,
+        must_change_password: Boolean(d.must_change_password),
+        auth_provider: d.auth_provider || 'credentials',
+        created_at: d.created_at,
+      }));
+    } catch {
+      return null;
+    }
+  }
+
+  // --- Regions ---
+  static async getRegions(): Promise<Region[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('regions')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error || !data) return null;
+      return data.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        country: r.country,
+        state_province: r.state_province || undefined,
+        leader_id: r.leader_id || undefined,
+        leader_name: r.leader_name || undefined,
+        total_cells: r.total_cells || 0,
+        active_cells: r.active_cells || 0,
+        created_at: r.created_at,
+      }));
+    } catch {
+      return null;
+    }
+  }
+
+  // --- Reporting Periods ---
+  static async getReportingPeriods(): Promise<ReportingPeriod[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('reporting_periods')
+        .select('*')
+        .order('year', { ascending: false })
+        .order('week_number', { ascending: false });
+
+      if (error || !data) return null;
+      return data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        year: p.year,
+        week_number: p.week_number,
+        start_date: p.start_date,
+        end_date: p.end_date,
+        submission_deadline: p.submission_deadline,
+        is_open: Boolean(p.is_open),
+        created_at: p.created_at,
+      }));
+    } catch {
+      return null;
+    }
+  }
+
+  // --- Audit Logs ---
+  static async getAuditLogs(): Promise<any[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      return error ? null : data;
+    } catch {
+      return null;
+    }
+  }
+
+  static async insertAuditLog(log: {
+    id?: string;
+    action: string;
+    entity_type: string;
+    entity_id?: string;
+    user_id?: string;
+    user_name?: string;
+    user_role?: string;
+    details?: Record<string, any>;
+    ip_address?: string;
+  }): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    const payload = {
+      id: log.id || `aud-${Date.now()}`,
+      action: log.action,
+      entity_type: log.entity_type,
+      entity_id: log.entity_id || null,
+      user_id: log.user_id || null,
+      user_name: log.user_name || null,
+      user_role: log.user_role || null,
+      details: log.details || {},
+      ip_address: log.ip_address || null,
+      created_at: new Date().toISOString(),
+    };
+    try {
+      const { error } = await supabase!.from('audit_logs').insert(payload);
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
   static async upsertProfile(profile: Profile): Promise<boolean> {
     if (!this.isAvailable()) return false;
     const payload: any = {

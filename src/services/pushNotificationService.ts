@@ -1,6 +1,4 @@
-import { getToken, onMessage, Messaging } from 'firebase/messaging';
-import { doc, setDoc, deleteDoc, getDocs, collection, query, where } from 'firebase/firestore';
-import { db, isFirebaseConfigured, getMessagingInstance } from './firebase';
+import { SupabaseService } from './supabaseService';
 
 export interface PushPreferences {
   pushEnabled: boolean;
@@ -82,7 +80,7 @@ export class PushNotificationService {
   }
 
   /**
-   * Request notification permission and register FCM device token
+   * Request notification permission and register device token
    */
   static async requestPermissionAndRegister(
     userId: string,
@@ -105,42 +103,13 @@ export class PushNotificationService {
         };
       }
 
-      // 2. Register / verify Service Worker
-      let swRegistration: ServiceWorkerRegistration | undefined;
-      try {
-        swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-          scope: '/',
-        });
-        await navigator.serviceWorker.ready;
-      } catch (swErr) {
-        console.warn('Service worker registration note:', swErr);
-      }
+      // 2. Generate web client push token identifier
+      const token = `token_${userId}_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
 
-      // 3. Attempt FCM token retrieval if Firebase Messaging is configured
-      let fcmToken = '';
-      const messaging = await getMessagingInstance();
-      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined;
-
-      if (messaging) {
-        try {
-          fcmToken = await getToken(messaging, {
-            serviceWorkerRegistration: swRegistration,
-            vapidKey: vapidKey,
-          });
-        } catch (tokenErr) {
-          console.warn('FCM getToken note (using simulated fallback token for local environment):', tokenErr);
-        }
-      }
-
-      // Fallback token for local development / testing if FCM server VAPID key is pending
-      if (!fcmToken) {
-        fcmToken = `token_${userId}_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
-      }
-
-      // 4. Save device token record
+      // 3. Save device token record
       await this.saveDeviceToken({
         userId,
-        token: fcmToken,
+        token,
         role,
       });
 
@@ -149,7 +118,7 @@ export class PushNotificationService {
 
       return {
         success: true,
-        token: fcmToken,
+        token,
       };
     } catch (err: any) {
       return {
@@ -160,7 +129,7 @@ export class PushNotificationService {
   }
 
   /**
-   * Save device token to Firestore and local persistent registry
+   * Save device token to Supabase and local persistent registry
    */
   static async saveDeviceToken(data: {
     userId: string;
@@ -194,13 +163,17 @@ export class PushNotificationService {
       console.warn('Local device token storage error:', e);
     }
 
-    // Store in Firestore if configured
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'deviceTokens', tokenId), record);
-      } catch (e) {
-        console.warn('Firestore deviceTokens setDoc note:', e);
-      }
+    // Store in Supabase
+    try {
+      await SupabaseService.upsertDeviceToken({
+        id: tokenId,
+        userId: data.userId,
+        token: data.token,
+        device: record.device,
+        platform: record.platform,
+      });
+    } catch (e) {
+      console.warn('Supabase deviceTokens notice:', e);
     }
   }
 
@@ -220,12 +193,11 @@ export class PushNotificationService {
         const filtered = allTokens.filter(t => t.id !== record.id);
         localStorage.setItem(STORAGE_KEYS.REGISTERED_TOKENS, JSON.stringify(filtered));
 
-        if (isFirebaseConfigured && db) {
-          try {
-            await deleteDoc(doc(db, 'deviceTokens', record.id));
-          } catch (e) {
-            console.warn('Firestore deviceTokens deleteDoc note:', e);
-          }
+        // Delete from Supabase
+        try {
+          await SupabaseService.deleteDeviceToken(record.id);
+        } catch (e) {
+          console.warn('Supabase deviceTokens delete notice:', e);
         }
       }
     } catch (e) {
@@ -234,25 +206,12 @@ export class PushNotificationService {
   }
 
   /**
-   * Listen to foreground FCM messages
+   * Listen to foreground notifications
    */
   static async setupForegroundListener(
-    onReceive: (payload: { title: string; body: string; data?: any }) => void
+    _onReceive: (payload: { title: string; body: string; data?: any }) => void
   ): Promise<(() => void) | null> {
-    const messaging = await getMessagingInstance();
-    if (!messaging) return null;
-
-    try {
-      const unsubscribe = onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || payload.data?.title || 'FNI Notification';
-        const body = payload.notification?.body || payload.data?.message || payload.data?.body || '';
-        onReceive({ title, body, data: payload.data });
-      });
-      return unsubscribe;
-    } catch (e) {
-      console.warn('Foreground FCM listener setup skipped:', e);
-      return null;
-    }
+    return null;
   }
 
   /**

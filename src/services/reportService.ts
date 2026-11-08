@@ -1,17 +1,11 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  setDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-  query,
-  where,
-  orderBy,
-} from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
+/**
+ * Forerunners Network International (FNI) - Digital Reporting System
+ * Report Submission, Review, and Unified Queue Service
+ * 
+ * Supabase-first reporting service with local storage caching for offline resilience.
+ * Zero Firebase dependencies.
+ */
+
 import {
   CellMeetingReport,
   EvangelismReport,
@@ -70,24 +64,6 @@ export class ReportService {
       if (filters?.status) filtered = filtered.filter(r => r.status === filters.status);
       setStored(STORAGE_KEYS.MEETING_REPORTS, filtered);
       return filtered;
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        const ref = collection(db, 'cellMeetingReports');
-        let q = query(ref, orderBy('submittedAt', 'desc'));
-        if (filters?.cellId) q = query(ref, where('cellId', '==', filters.cellId));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          let list = snap.docs.map(d => ({ id: d.id, ...d.data() } as CellMeetingReport));
-          if (filters?.tutorUid) list = list.filter(r => r.tutorUid === filters.tutorUid);
-          if (filters?.status) list = list.filter(r => r.status === filters.status);
-          setStored(STORAGE_KEYS.MEETING_REPORTS, list);
-          return list;
-        }
-      } catch (e) {
-        console.warn('Firebase getCellMeetingReports error', e);
-      }
     }
 
     let reports = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
@@ -158,22 +134,11 @@ export class ReportService {
       late: timing.isLate,
     };
 
-    // Dual-write to Supabase
+    // Save to Supabase
     try {
       await SupabaseService.upsertCellMeetingReport(report);
     } catch (err) {
       console.warn('Supabase meeting report sync notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'cellMeetingReports', reportId), {
-          ...report,
-          serverTimestamp: serverTimestamp(),
-        });
-      } catch (e) {
-        console.warn('Firebase setDoc cellMeetingReports error', e);
-      }
     }
 
     const list = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
@@ -185,7 +150,7 @@ export class ReportService {
     }
     setStored(STORAGE_KEYS.MEETING_REPORTS, list);
 
-    // Feature 2: Auto-record offering in finance system without duplicates
+    // Auto-record offering in finance system without duplicates
     if (report.offering && report.offering > 0) {
       const { FinanceService } = await import('./financeService');
       await FinanceService.recordOfferingFromReport({
@@ -260,24 +225,6 @@ export class ReportService {
       return filtered;
     }
 
-    if (isFirebaseConfigured && db) {
-      try {
-        const ref = collection(db, 'evangelismReports');
-        let q = query(ref, orderBy('submittedAt', 'desc'));
-        if (filters?.cellId) q = query(ref, where('cellId', '==', filters.cellId));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          let list = snap.docs.map(d => ({ id: d.id, ...d.data() } as EvangelismReport));
-          if (filters?.tutorUid) list = list.filter(r => r.tutorUid === filters.tutorUid);
-          if (filters?.status) list = list.filter(r => r.status === filters.status);
-          setStored(STORAGE_KEYS.EVANGELISM_REPORTS, list);
-          return list;
-        }
-      } catch (e) {
-        console.warn('Firebase getEvangelismReports error', e);
-      }
-    }
-
     let reports = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
     if (filters?.cellId) reports = reports.filter(r => r.cellId === filters.cellId);
     if (filters?.tutorUid) reports = reports.filter(r => r.tutorUid === filters.tutorUid);
@@ -338,22 +285,11 @@ export class ReportService {
       late: timing.isLate,
     };
 
-    // Dual-write to Supabase
+    // Save to Supabase
     try {
       await SupabaseService.upsertEvangelismReport(report);
     } catch (err) {
       console.warn('Supabase evangelism report sync notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'evangelismReports', reportId), {
-          ...report,
-          serverTimestamp: serverTimestamp(),
-        });
-      } catch (e) {
-        console.warn('Firebase setDoc evangelismReports error', e);
-      }
     }
 
     const list = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
@@ -490,7 +426,7 @@ export class ReportService {
     const nowIso = new Date().toISOString();
     const collectionName = reportType === 'meeting' ? 'cellMeetingReports' : 'evangelismReports';
 
-    // Dual-write to Supabase
+    // Save review to Supabase
     try {
       if (reportType === 'meeting') {
         const meetingList = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
@@ -531,33 +467,6 @@ export class ReportService {
       });
     } catch (err) {
       console.warn('Supabase report review sync notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, collectionName, reportId), {
-          status,
-          reviewerComment: comment,
-          reviewedBy: reviewerUid,
-          reviewedByName: reviewerName,
-          reviewedAt: nowIso,
-          serverReviewedAt: serverTimestamp(),
-        });
-
-        // Record in reviewLogs
-        await addDoc(collection(db, 'reviewLogs'), {
-          reportId,
-          reportType,
-          status,
-          comment,
-          reviewerUid,
-          reviewerName,
-          timestamp: serverTimestamp(),
-          createdAt: nowIso,
-        });
-      } catch (e) {
-        console.warn('Firebase reviewReport error', e);
-      }
     }
 
     let updatedReport: any = null;
@@ -669,8 +578,12 @@ export class ReportService {
   }
 
   static async getRegions(): Promise<Region[]> {
-    const list = getStored<Region[]>(STORAGE_KEYS.REGIONS, []);
-    return list;
+    const supaRegions = await SupabaseService.getRegions();
+    if (supaRegions && supaRegions.length > 0) {
+      setStored(STORAGE_KEYS.REGIONS, supaRegions);
+      return supaRegions;
+    }
+    return getStored<Region[]>(STORAGE_KEYS.REGIONS, []);
   }
 
   static async addRegion(region: Region): Promise<void> {
@@ -679,20 +592,10 @@ export class ReportService {
   }
 
   static async getPeriods(): Promise<ReportingPeriod[]> {
-    if (isFirebaseConfigured && db) {
-      try {
-        let snap = await getDocs(collection(db, 'reportingPeriods'));
-        if (snap.empty) {
-          snap = await getDocs(collection(db, 'reporting_periods'));
-        }
-        if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ReportingPeriod));
-          setStored(STORAGE_KEYS.PERIODS, list);
-          return list;
-        }
-      } catch (e) {
-        console.warn('Firebase getPeriods error', e);
-      }
+    const supaPeriods = await SupabaseService.getReportingPeriods();
+    if (supaPeriods && supaPeriods.length > 0) {
+      setStored(STORAGE_KEYS.PERIODS, supaPeriods);
+      return supaPeriods;
     }
     return getStored<ReportingPeriod[]>(STORAGE_KEYS.PERIODS, [
       {
@@ -710,13 +613,6 @@ export class ReportService {
   }
 
   static async addPeriod(period: ReportingPeriod): Promise<void> {
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'reportingPeriods', period.id), period);
-      } catch (e) {
-        console.warn('Firebase addPeriod error', e);
-      }
-    }
     const list = await this.getPeriods();
     setStored(STORAGE_KEYS.PERIODS, [period, ...list]);
   }
@@ -816,6 +712,11 @@ export class ReportService {
 
   // Audit Logs
   static async getAuditLogs(): Promise<AuditLog[]> {
+    const supaLogs = await SupabaseService.getAuditLogs();
+    if (supaLogs && supaLogs.length > 0) {
+      setStored(STORAGE_KEYS.AUDIT, supaLogs);
+      return supaLogs;
+    }
     return getStored<AuditLog[]>(STORAGE_KEYS.AUDIT, []);
   }
 
@@ -827,6 +728,7 @@ export class ReportService {
       created_at: new Date().toISOString(),
     };
     setStored(STORAGE_KEYS.AUDIT, [newLog, ...currentLogs]);
+    SupabaseService.insertAuditLog(newLog).catch(() => {});
   }
 
   static resetToCleanSlate(): void {

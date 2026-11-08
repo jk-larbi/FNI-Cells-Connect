@@ -1,6 +1,5 @@
-import { collection, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
 import { SupabaseService } from './supabaseService';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { SoulTargetConfig, SoulTargetMetrics } from '../types';
 import { ReportService } from './reportService';
 import { CellService } from './cellService';
@@ -47,23 +46,16 @@ export class SoulTargetService {
 
   static async getConfig(): Promise<SoulTargetConfig> {
     // 1. Primary: Try Supabase
-    const supaConfig = await SupabaseService.getSoulTargetConfig();
-    if (supaConfig) {
-      setStoredConfig(supaConfig);
-      return supaConfig;
-    }
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDoc(doc(db, 'soulTargets', 'target-2026'));
-        if (snap.exists()) {
-          const data = { id: snap.id, ...snap.data() } as SoulTargetConfig;
-          setStoredConfig(data);
-          return data;
-        }
-      } catch (e) {
-        console.warn('Firebase getConfig notice:', e);
+    try {
+      const supaConfig = await SupabaseService.getSoulTargetConfig();
+      if (supaConfig) {
+        setStoredConfig(supaConfig);
+        return supaConfig;
       }
+    } catch (e) {
+      console.warn('Notice loading Supabase soul target config:', e);
     }
+
     return getStoredConfig();
   }
 
@@ -89,12 +81,11 @@ export class SoulTargetService {
 
     setStoredConfig(updated);
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'soulTargets', 'target-2026'), updated);
-      } catch (e) {
-        console.warn('Firebase save target notice:', e);
-      }
+    // Primary write to Supabase
+    try {
+      await SupabaseService.upsertSoulTargetConfig(updated);
+    } catch (e) {
+      console.warn('Supabase save target notice:', e);
     }
 
     // Push live update to all listeners
@@ -263,7 +254,7 @@ export class SoulTargetService {
 
   /**
    * Real-Time Live Tracking Subscription:
-   * Attaches live snapshot listeners to Firestore and storage events.
+   * Attaches live subscription to Supabase Realtime and storage events.
    * Both cell reports and evangelism reports trigger instantaneous metric updates.
    */
   static subscribeToLiveSoulTracking(callback: (metrics: SoulTargetMetrics) => void): () => void {
@@ -278,24 +269,27 @@ export class SoulTargetService {
       })
       .catch(console.warn);
 
-    // Real-time Firestore snapshot listeners
-    let unsubMeetings: (() => void) | null = null;
-    let unsubEvang: (() => void) | null = null;
-    let unsubSettings: (() => void) | null = null;
-
-    if (isFirebaseConfigured && db) {
+    // Supabase Realtime channel listeners
+    let channel: any = null;
+    if (isSupabaseConfigured && supabase) {
       try {
-        unsubMeetings = onSnapshot(collection(db, 'cellMeetingReports'), () => {
-          this.notifySubscribers();
-        });
-        unsubEvang = onSnapshot(collection(db, 'evangelismReports'), () => {
-          this.notifySubscribers();
-        });
-        unsubSettings = onSnapshot(doc(db, 'settings', 'system'), () => {
-          this.notifySubscribers();
-        });
+        channel = supabase
+          .channel('public:soul_tracking')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'cell_meeting_reports' }, () => {
+            this.notifySubscribers();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'evangelism_reports' }, () => {
+            this.notifySubscribers();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings' }, () => {
+            this.notifySubscribers();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'soul_target_configs' }, () => {
+            this.notifySubscribers();
+          })
+          .subscribe();
       } catch (e) {
-        console.warn('Live snapshot setup notice:', e);
+        console.warn('Supabase Realtime soul tracking setup notice:', e);
       }
     }
 
@@ -317,9 +311,9 @@ export class SoulTargetService {
 
     return () => {
       this.liveListeners.delete(callback);
-      if (unsubMeetings) unsubMeetings();
-      if (unsubEvang) unsubEvang();
-      if (unsubSettings) unsubSettings();
+      if (channel && supabase) {
+        supabase.removeChannel(channel).catch(() => {});
+      }
       if (typeof window !== 'undefined') {
         window.removeEventListener('storage', handleStorage);
       }

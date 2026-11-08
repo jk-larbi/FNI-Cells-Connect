@@ -1,5 +1,3 @@
-import { collection, doc, setDoc, getDocs, query, where, orderBy, getDoc, updateDoc } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
 import { SupabaseService } from './supabaseService';
 import { PrivateMessage, CommunityMessage, InvitationCode, UserRole, MessageReply } from '../types';
 
@@ -61,19 +59,11 @@ export class MessagingService {
       replyTo: data.replyTo,
     };
 
-    // Dual-write to Supabase
+    // Primary write to Supabase
     try {
       await SupabaseService.sendPrivateMessage(msg);
     } catch (err) {
       console.warn('Supabase private message notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'privateMessages', id), msg);
-      } catch (e) {
-        console.warn('Firebase private message sync notice:', e);
-      }
     }
 
     const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
@@ -100,22 +90,16 @@ export class MessagingService {
   }
 
   static async getPrivateConversation(tutorUid: string): Promise<PrivateMessage[]> {
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'privateMessages'), orderBy('createdAt', 'asc'))
-        );
-        if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as PrivateMessage));
-          const filtered = list.filter(
-            m => m.senderUid === tutorUid || m.recipientUid === tutorUid
-          );
-          setStored(STORAGE_KEYS.PRIVATE, list);
-          return filtered;
-        }
-      } catch (e) {
-        console.warn('Firebase getPrivateConversation notice:', e);
+    try {
+      const supaMsgs = await SupabaseService.getPrivateMessages(tutorUid);
+      if (supaMsgs && supaMsgs.length > 0) {
+        setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
+        return supaMsgs
+          .filter(m => m.senderUid === tutorUid || m.recipientUid === tutorUid)
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       }
+    } catch (e) {
+      console.warn('Notice querying Supabase private conversation:', e);
     }
 
     const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
@@ -127,7 +111,19 @@ export class MessagingService {
   static async getAdminConversations(): Promise<
     Array<{ tutorUid: string; tutorName: string; cellName?: string; lastMessage: string; lastTimestamp: string; unreadCount: number }>
   > {
-    const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
+    let all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
+
+    try {
+      // Refresh messages from Supabase if possible
+      const supaMsgs = await SupabaseService.getPrivateMessages('');
+      if (supaMsgs && supaMsgs.length > 0) {
+        all = supaMsgs;
+        setStored(STORAGE_KEYS.PRIVATE, all);
+      }
+    } catch (e) {
+      // Local fallback
+    }
+
     const groups = new Map<string, PrivateMessage[]>();
 
     for (const msg of all) {
@@ -162,20 +158,16 @@ export class MessagingService {
     const updated = all.map(m => {
       if ((m.senderUid === tutorUid || m.recipientUid === tutorUid) && m.senderUid !== readerUid && !m.isRead) {
         modified = true;
-        return { ...m, isRead: true, readAt: new Date().toISOString() };
+        const readMsg = { ...m, isRead: true, readAt: new Date().toISOString() };
+        // Sync read status to Supabase
+        SupabaseService.sendPrivateMessage(readMsg).catch(() => {});
+        return readMsg;
       }
       return m;
     });
 
     if (modified) {
       setStored(STORAGE_KEYS.PRIVATE, updated);
-      if (isFirebaseConfigured && db) {
-        for (const m of updated) {
-          if (m.isRead && !m.readAt) {
-            updateDoc(doc(db, 'privateMessages', m.id), { isRead: true, readAt: new Date().toISOString() }).catch(() => {});
-          }
-        }
-      }
     }
   }
 
@@ -210,19 +202,11 @@ export class MessagingService {
       reactions: {},
     };
 
-    // Dual-write to Supabase
+    // Primary write to Supabase
     try {
       await SupabaseService.sendCommunityMessage(msg);
     } catch (err) {
       console.warn('Supabase community message notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'communityMessages', id), msg);
-      } catch (e) {
-        console.warn('Firebase community message sync notice:', e);
-      }
     }
 
     const all = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
@@ -248,19 +232,14 @@ export class MessagingService {
   }
 
   static async getCommunityMessages(): Promise<CommunityMessage[]> {
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'communityMessages'), orderBy('createdAt', 'asc'))
-        );
-        if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as CommunityMessage));
-          setStored(STORAGE_KEYS.COMMUNITY, list);
-          return list;
-        }
-      } catch (e) {
-        console.warn('Firebase getCommunityMessages notice:', e);
+    try {
+      const supaMsgs = await SupabaseService.getCommunityMessages();
+      if (supaMsgs && supaMsgs.length > 0) {
+        setStored(STORAGE_KEYS.COMMUNITY, supaMsgs);
+        return supaMsgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       }
+    } catch (e) {
+      console.warn('Notice querying Supabase community messages:', e);
     }
 
     const all = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
@@ -299,12 +278,11 @@ export class MessagingService {
       isRevoked: false,
     };
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'invitationCodes', id), record);
-      } catch (e) {
-        console.warn('Firebase invite code save notice:', e);
-      }
+    // Primary write to Supabase
+    try {
+      await SupabaseService.upsertInvitationCode(record);
+    } catch (e) {
+      console.warn('Supabase invite code save notice:', e);
     }
 
     const all = getStored<InvitationCode[]>(STORAGE_KEYS.INVITES, []);
@@ -315,19 +293,14 @@ export class MessagingService {
   }
 
   static async getInvitationCodes(): Promise<InvitationCode[]> {
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'invitationCodes'), orderBy('createdAt', 'desc'))
-        );
-        if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as InvitationCode));
-          setStored(STORAGE_KEYS.INVITES, list);
-          return list;
-        }
-      } catch (e) {
-        console.warn('Firebase getInvitationCodes notice:', e);
+    try {
+      const supaCodes = await SupabaseService.getInvitationCodes();
+      if (supaCodes && supaCodes.length > 0) {
+        setStored(STORAGE_KEYS.INVITES, supaCodes);
+        return supaCodes;
       }
+    } catch (e) {
+      console.warn('Notice querying Supabase invitation codes:', e);
     }
 
     return getStored<InvitationCode[]>(STORAGE_KEYS.INVITES, []);
@@ -374,17 +347,11 @@ export class MessagingService {
       setStored(STORAGE_KEYS.COMMUNITY_ACCESS, authorizedUsers);
     }
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, 'invitationCodes', matched.id), { usedCount: matched.usedCount });
-        await setDoc(doc(db, 'communityMembers', tutorUid), {
-          uid: tutorUid,
-          joinedAt: new Date().toISOString(),
-          codeUsed: matched.code,
-        });
-      } catch (e) {
-        console.warn('Firebase redeem code notice:', e);
-      }
+    // Primary write to Supabase
+    try {
+      await SupabaseService.upsertInvitationCode(matched);
+    } catch (e) {
+      console.warn('Supabase redeem code notice:', e);
     }
 
     return { valid: true };
@@ -416,12 +383,11 @@ export class MessagingService {
     }
 
     setStored(STORAGE_KEYS.COMMUNITY, all);
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, 'communityMessages', messageId), { reactions: target.reactions });
-      } catch (e) {
-        console.warn('Firebase react notice:', e);
-      }
+    // Sync to Supabase
+    try {
+      await SupabaseService.sendCommunityMessage(target);
+    } catch (e) {
+      console.warn('Supabase react notice:', e);
     }
 
     return target;

@@ -4,7 +4,7 @@ import { ReportService } from '../../services/reportService';
 import { Shield, CheckCircle2, UserCheck, LayoutDashboard, RotateCcw } from 'lucide-react';
 
 export const RoleSwitcherBanner: React.FC = () => {
-  const { currentRole, switchRole, currentUser, isFirebaseActive } = useAuth();
+  const { currentRole, switchRole, currentUser, isSupabaseActive } = useAuth();
 
   const handleResetData = () => {
     if (confirm('Reset portal data to fresh initial state (clears all reports)?')) {
@@ -24,9 +24,9 @@ export const RoleSwitcherBanner: React.FC = () => {
           Active: <strong className="text-white font-semibold">{currentUser?.full_name}</strong>{' '}
           <span className="text-slate-400">({currentRole === 'admin' ? 'Admin Panel' : 'Tutor Portal'})</span>
         </span>
-        {isFirebaseActive ? (
+        {isSupabaseActive ? (
           <span className="flex items-center gap-1 text-[11px] text-emerald-400 ml-2 font-medium">
-            <CheckCircle2 className="w-3 h-3" /> Firebase Live
+            <CheckCircle2 className="w-3 h-3" /> Supabase Live
           </span>
         ) : (
           <span className="text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-md ml-2 font-medium">

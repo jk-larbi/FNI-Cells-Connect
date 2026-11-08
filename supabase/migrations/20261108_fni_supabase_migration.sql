@@ -1246,3 +1246,59 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE NOTICE 'Realtime publication notice: %', SQLERRM;
 END $$;
+
+-- ==============================================================================
+-- AUTOMATIC PROFILE PROVISIONING TRIGGER ON AUTH.USERS SIGNUP
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_full_name TEXT;
+    v_cell_name TEXT;
+BEGIN
+    v_full_name := COALESCE(
+        NEW.raw_user_meta_data->>'full_name',
+        NEW.raw_user_meta_data->>'name',
+        SPLIT_PART(NEW.email, '@', 1)
+    );
+    v_cell_name := NEW.raw_user_meta_data->>'cell_name';
+
+    INSERT INTO public.profiles (
+        id,
+        supabase_user_id,
+        email,
+        full_name,
+        cell_name,
+        role,
+        is_active,
+        is_onboarded,
+        must_change_password,
+        auth_provider
+    )
+    VALUES (
+        NEW.id::text,
+        NEW.id,
+        NEW.email,
+        v_full_name,
+        v_cell_name,
+        'tutor', -- STRICT: Never elevate to admin on self-signup
+        true,
+        true,
+        false,
+        COALESCE(NEW.raw_app_meta_data->>'provider', 'email')
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
+        cell_name = COALESCE(EXCLUDED.cell_name, public.profiles.cell_name),
+        updated_at = timezone('utc'::text, now());
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_handle_new_auth_user ON auth.users;
+CREATE TRIGGER trg_handle_new_auth_user
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+

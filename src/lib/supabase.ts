@@ -1,7 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * Forerunners Network International (FNI) - Digital Reporting System
+ * Supabase Client & Backend Configuration
+ * 
+ * Configured as the primary and only authoritative backend for FNI Cells Connect.
+ * Uses native Supabase Auth with persistent session lifecycle, automatic token refresh,
+ * and seamless PostgREST / Realtime communication.
+ */
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cjskjazsrrbfyjepwyxa.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_0nQJMgCvgruw3CXX9YpBIg_Jq2rAx-Q';
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
@@ -10,51 +19,38 @@ export const isSupabaseConfigured = Boolean(
   supabaseAnonKey !== 'your-anon-key-here'
 );
 
-// Active in-memory access token minted by the verified Firebase-to-Supabase token bridge
-let activeSupabaseAccessToken: string | null = null;
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'fni_supabase_auth_session_v1',
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+});
 
 /**
- * Sets or clears the active Supabase access token in memory.
- * Also configures the Supabase Realtime client authentication.
+ * Helper to obtain the active user's access token for authenticated operations.
+ */
+export async function getSupabaseAccessToken(): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token || null;
+}
+
+/**
+ * Backward compatibility helper for legacy auth callers
  */
 export function setSupabaseAccessToken(token: string | null): void {
-  activeSupabaseAccessToken = token;
-  if (supabase?.realtime) {
+  if (token && supabase?.realtime) {
     try {
-      supabase.realtime.setAuth(token || supabaseAnonKey);
+      supabase.realtime.setAuth(token);
     } catch (e) {
       console.warn('Realtime setAuth notice:', e);
     }
   }
 }
-
-/**
- * Retrieves the currently active Supabase access token.
- */
-export function getSupabaseAccessToken(): string | null {
-  return activeSupabaseAccessToken;
-}
-
-/**
- * Supabase client configured for external Firebase Auth token bridge:
- * - autoRefreshToken: false (avoids GoTrue 400 Bad Request on external JWTs)
- * - persistSession: false (session lifecycle is mastered by Firebase Auth)
- * - global.fetch: dynamically injects Authorization: Bearer <token> on every request
- */
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-      global: {
-        fetch: (url, options = {}) => {
-          const headers = new Headers(options.headers || {});
-          if (activeSupabaseAccessToken) {
-            headers.set('Authorization', `Bearer ${activeSupabaseAccessToken}`);
-          }
-          return fetch(url, { ...options, headers });
-        },
-      },
-    })
-  : null;

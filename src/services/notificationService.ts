@@ -1,16 +1,5 @@
 import { SupabaseService } from './supabaseService';
-import {
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  updateDoc,
-} from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { NotificationItem, NotificationType, NotificationChannel, UserRole } from '../types';
 import { PushNotificationService } from './pushNotificationService';
 
@@ -115,20 +104,11 @@ export class NotificationService {
       created_at: nowIso,
     };
 
-    // 0. Dual-write to Supabase if configured
+    // 1. Primary write to Supabase
     try {
       await SupabaseService.insertNotification(newNotif);
     } catch (err) {
       console.warn('Supabase notification sync notice:', err);
-    }
-
-    // 1. Persist to Firestore if available
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'notifications', id), newNotif);
-      } catch (e) {
-        console.warn('Firestore createNotification note:', e);
-      }
     }
 
     // 2. Persist to local storage
@@ -279,7 +259,7 @@ export class NotificationService {
   }
 
   /**
-   * 4. PRIVATE TUTOR-ADMIN CHAT NOTIFICATIONS
+   * 3. PRIVATE TUTOR-ADMIN CHAT NOTIFICATIONS
    */
   static async notifyPrivateMessage(params: {
     messageId: string;
@@ -321,7 +301,7 @@ export class NotificationService {
   }
 
   /**
-   * 3. TUTOR COMMUNITY CHAT NOTIFICATIONS
+   * 4. TUTOR COMMUNITY CHAT NOTIFICATIONS
    */
   static async notifyCommunityMessage(params: {
     messageId: string;
@@ -354,7 +334,7 @@ export class NotificationService {
   }
 
   /**
-   * 2. ADMIN → TUTOR: Teaching Notes Publication
+   * 5. ADMIN → TUTOR: Teaching Notes Publication
    */
   static async notifyTeachingNotes(params: {
     materialId: string;
@@ -387,11 +367,11 @@ export class NotificationService {
     const updated = current.map(n => (n.id === id ? { ...n, is_read: true } : n));
     setStoredNotifications(updated);
 
-    if (isFirebaseConfigured && db) {
+    if (isSupabaseConfigured && supabase) {
       try {
-        await updateDoc(doc(db, 'notifications', id), { is_read: true });
+        await supabase.from('notifications').update({ is_read: true }).eq('id', id);
       } catch (e) {
-        console.warn('Firestore markAsRead note:', e);
+        console.warn('Supabase markAsRead note:', e);
       }
     }
   }
@@ -407,15 +387,14 @@ export class NotificationService {
     const updated = current.map(n => (userIdsToMark.has(n.id) ? { ...n, is_read: true } : n));
     setStoredNotifications(updated);
 
-    if (isFirebaseConfigured && db) {
+    if (isSupabaseConfigured && supabase) {
       try {
-        for (const notif of userNotifs) {
-          if (!notif.is_read) {
-            updateDoc(doc(db, 'notifications', notif.id), { is_read: true }).catch(() => {});
-          }
-        }
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .or(`user_id.eq.${userId},recipient_target.eq.${userId},recipient_target.eq.all`);
       } catch (e) {
-        console.warn('Firestore markAllAsRead note:', e);
+        console.warn('Supabase markAllAsRead note:', e);
       }
     }
   }
@@ -431,13 +410,36 @@ export class NotificationService {
     // 1. Initial emission from local storage
     callback(this.filterForUser(getStoredNotifications(), userId, role));
 
-    // 2. Register local broadcast subscriber
+    // 2. Fetch from Supabase
+    if (isSupabaseConfigured && supabase) {
+      SupabaseService.getNotifications(userId)
+        .then(remoteItems => {
+          if (remoteItems && remoteItems.length > 0) {
+            const local = getStoredNotifications();
+            const map = new Map<string, NotificationItem>();
+            remoteItems.forEach(item => map.set(item.id, item));
+            local.forEach(item => {
+              if (!map.has(item.id)) map.set(item.id, item);
+            });
+            const merged = Array.from(map.values()).sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+            setStoredNotifications(merged);
+            callback(this.filterForUser(merged, userId, role));
+          }
+        })
+        .catch(err => {
+          console.warn('Supabase notifications initial fetch notice:', err);
+        });
+    }
+
+    // 3. Register local broadcast subscriber
     const localCallback = (all: NotificationItem[]) => {
       callback(this.filterForUser(all, userId, role));
     };
     SUBSCRIBERS.add(localCallback);
 
-    // 3. Register window storage event listener (for cross-tab synchronization)
+    // 4. Register window storage event listener (for cross-tab synchronization)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
@@ -450,35 +452,42 @@ export class NotificationService {
       window.addEventListener('storage', handleStorage);
     }
 
-    // 4. Register Firestore onSnapshot listener if configured
-    let unsubscribeFirestore: (() => void) | null = null;
-    if (isFirebaseConfigured && db) {
+    // 5. Supabase Realtime channel subscription if configured
+    let channel: any = null;
+    if (isSupabaseConfigured && supabase) {
       try {
-        const notifRef = collection(db, 'notifications');
-        const q = query(notifRef, orderBy('created_at', 'desc'));
-        unsubscribeFirestore = onSnapshot(
-          q,
-          snapshot => {
-            const remoteItems = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as NotificationItem));
-            // Merge with local items by ID
-            const local = getStoredNotifications();
-            const map = new Map<string, NotificationItem>();
-            remoteItems.forEach(item => map.set(item.id, item));
-            local.forEach(item => {
-              if (!map.has(item.id)) map.set(item.id, item);
-            });
-            const merged = Array.from(map.values()).sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            setStoredNotifications(merged);
-            callback(this.filterForUser(merged, userId, role));
-          },
-          err => {
-            console.warn('Firestore notifications onSnapshot notice:', err);
-          }
-        );
+        channel = supabase
+          .channel('public:notifications')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'notifications' },
+            payload => {
+              if (payload.new && (payload.new as any).id) {
+                const item = payload.new as any;
+                const notifItem: NotificationItem = {
+                  id: item.id,
+                  user_id: item.user_id || item.recipient_target || 'all',
+                  title: item.title || 'Notification',
+                  message: item.message || '',
+                  type: item.notification_type || item.type || 'system_alert',
+                  channel: item.channel || 'in_app',
+                  is_read: Boolean(item.is_read),
+                  metadata: item.metadata || {},
+                  created_at: item.created_at || new Date().toISOString(),
+                };
+                const local = getStoredNotifications();
+                const filtered = local.filter(n => n.id !== notifItem.id);
+                const updated = [notifItem, ...filtered].sort(
+                  (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                );
+                setStoredNotifications(updated);
+                callback(this.filterForUser(updated, userId, role));
+              }
+            }
+          )
+          .subscribe();
       } catch (e) {
-        console.warn('Failed to initialize Firestore onSnapshot listener:', e);
+        console.warn('Supabase Realtime notifications subscription note:', e);
       }
     }
 
@@ -488,8 +497,8 @@ export class NotificationService {
       if (typeof window !== 'undefined') {
         window.removeEventListener('storage', handleStorage);
       }
-      if (unsubscribeFirestore) {
-        unsubscribeFirestore();
+      if (channel && supabase) {
+        supabase.removeChannel(channel).catch(() => {});
       }
     };
   }

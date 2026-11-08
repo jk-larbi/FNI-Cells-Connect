@@ -1,16 +1,11 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  setDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-  query,
-  where,
-} from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
+/**
+ * Forerunners Network International (FNI) - Digital Reporting System
+ * Cell Fellowship Management Service
+ * 
+ * Supabase-first data management with local storage caching for offline resilience.
+ * Zero Firebase dependencies.
+ */
+
 import { SupabaseService } from './supabaseService';
 import { Cell } from '../types';
 
@@ -39,47 +34,23 @@ export function normalizeCellName(name: string): string {
 
 export class CellService {
   static async getCells(): Promise<Cell[]> {
-    // 1. Primary: Try Supabase
+    // 1. Primary: Supabase
     const supaCells = await SupabaseService.getCells();
     if (supaCells && supaCells.length > 0) {
       saveStoredCells(supaCells);
       return supaCells;
     }
 
-    // 2. Secondary: Preserved Firebase
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDocs(collection(db, 'cells'));
-        if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Cell));
-          saveStoredCells(list);
-          return list;
-        }
-      } catch (e) {
-        console.warn('Firebase getCells error, falling back to local storage', e);
-      }
-    }
-
-    // 3. Offline / LocalStorage fallback
+    // 2. Offline / LocalStorage cache
     return getStoredCells();
   }
 
   static async getCellById(cellId: string): Promise<Cell | null> {
-    // 1. Primary: Try Supabase
+    // 1. Primary: Supabase
     const supaCell = await SupabaseService.getCellById(cellId);
     if (supaCell) return supaCell;
 
-    // 2. Secondary: Preserved Firebase
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDoc(doc(db, 'cells', cellId));
-        if (snap.exists()) {
-          return { id: snap.id, ...snap.data() } as Cell;
-        }
-      } catch (e) {
-        console.warn('Firebase getCellById error', e);
-      }
-    }
+    // 2. Cache
     const all = getStoredCells();
     return all.find(c => c.id === cellId) || null;
   }
@@ -163,7 +134,7 @@ export class CellService {
     const rawName = data.name.trim();
     const normalized = normalizeCellName(rawName);
 
-    // 1. Fetch current cells from Firebase or local
+    // 1. Fetch current cells from Supabase or local cache
     const allCells = await this.getCells();
 
     // 2. Strong duplicate detection via normalized string comparison
@@ -187,28 +158,7 @@ export class CellService {
         target_attendance: data.targetAttendance || existing.target_attendance,
       };
 
-      if (isFirebaseConfigured && db) {
-        try {
-          await updateDoc(doc(db, 'cells', existing.id), {
-            tutorUid: updated.tutorUid,
-            leader_id: updated.leader_id,
-            leader_name: updated.leader_name,
-            leader_phone: updated.leader_phone,
-            location: updated.location,
-            venue_address: updated.venue_address,
-            updatedAt: serverTimestamp(),
-          });
-        } catch (e) {
-          console.warn('Firebase cell update error', e);
-        }
-      }
-
-      // Dual-write to Supabase
-      try {
-        await SupabaseService.upsertCell(updated);
-      } catch (err) {
-        console.warn('Supabase cell update notice:', err);
-      }
+      await SupabaseService.upsertCell(updated);
 
       const list = allCells.map(c => (c.id === existing.id ? updated : c));
       saveStoredCells(list);
@@ -241,23 +191,7 @@ export class CellService {
       created_at: nowIso,
     };
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'cells', cellId), {
-          ...newCell,
-          createdAt: serverTimestamp(),
-        });
-      } catch (e) {
-        console.warn('Firebase setDoc cell error', e);
-      }
-    }
-
-    // Dual-write to Supabase
-    try {
-      await SupabaseService.upsertCell(newCell);
-    } catch (err) {
-      console.warn('Supabase new cell notice:', err);
-    }
+    await SupabaseService.upsertCell(newCell);
 
     const list = [newCell, ...allCells];
     saveStoredCells(list);
@@ -266,20 +200,7 @@ export class CellService {
   }
 
   static async updateCell(cell: Cell): Promise<void> {
-    // Dual-write to Supabase
-    try {
-      await SupabaseService.upsertCell(cell);
-    } catch (err) {
-      console.warn('Supabase update cell notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'cells', cell.id), cell, { merge: true });
-      } catch (e) {
-        console.warn('Firebase updateCell error', e);
-      }
-    }
+    await SupabaseService.upsertCell(cell);
     const all = getStoredCells();
     const updated = all.map(c => (c.id === cell.id ? cell : c));
     saveStoredCells(updated);

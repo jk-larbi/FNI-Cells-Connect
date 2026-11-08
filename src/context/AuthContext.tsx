@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Profile, TutorRegistrationInput, TutorLoginInput } from '../types';
 import { AuthService } from '../services/authService';
-import { auth, isFirebaseConfigured } from '../lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface AuthContextType {
   currentUser: Profile;
@@ -20,7 +19,7 @@ interface AuthContextType {
   canSubmitReport: boolean;
   loginAdmin: (password: string) => Promise<{ success: boolean; error?: string }>;
   loginTutor: (input: TutorLoginInput) => Promise<{ success: boolean; error?: string }>;
-  registerTutor: (input: TutorRegistrationInput) => Promise<{ success: boolean; error?: string }>;
+  registerTutor: (input: TutorRegistrationInput) => Promise<{ success: boolean; error?: string; verificationNotice?: string }>;
   completeOnboarding: (input: any) => Promise<{ success: boolean; isExistingCellAssociated?: boolean; error?: string }>;
   changePassword: (newPass: string) => Promise<{ success: boolean; error?: string }>;
   updateAvatar: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
@@ -28,6 +27,7 @@ interface AuthContextType {
   showLoginView: () => void;
   refreshProfile: () => void;
   isFirebaseActive: boolean;
+  isSupabaseActive: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,19 +35,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<Profile>(() => AuthService.getCurrentProfile());
   const [isLoggedOut, setIsLoggedOut] = useState<boolean>(() => {
-    return !localStorage.getItem('fni_active_session_v5_clean_prod');
+    return !localStorage.getItem('fni_active_session_v6_strict');
   });
 
-  // Listen to Firebase Auth state changes if active
+  // Listen to Supabase Auth state changes (native GoTrue session lifecycle)
   useEffect(() => {
-    if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-        if (fbUser) {
-          localStorage.setItem('fni_active_session_v5_clean_prod', fbUser.uid);
+    if (isSupabaseConfigured && supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          localStorage.setItem('fni_active_session_v6_strict', session.user.id);
           setIsLoggedOut(false);
+          const profile = await AuthService.fetchProfileById(session.user.id);
+          if (profile) setCurrentUser(profile);
+        } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('fni_active_session_v6_strict');
+          setIsLoggedOut(true);
         }
       });
-      return () => unsubscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
     }
   }, []);
 
@@ -58,20 +66,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const switchRole = (role: 'admin' | 'cell_leader') => {
     const updated = AuthService.switchDemoRole(role);
-    localStorage.setItem('fni_active_session_v5_clean_prod', updated.id);
+    localStorage.setItem('fni_active_session_v6_strict', updated.id);
     setCurrentUser(updated);
     setIsLoggedOut(false);
   };
 
   const showLoginView = () => {
-    localStorage.removeItem('fni_active_session_v5_clean_prod');
+    localStorage.removeItem('fni_active_session_v6_strict');
     setIsLoggedOut(true);
   };
 
   const loginAdmin = async (password: string) => {
     const result = await AuthService.signInAdmin(password);
     if (result.profile) {
-      localStorage.setItem('fni_active_session_v5_clean_prod', result.profile.id);
+      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true };
@@ -82,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginTutor = async (input: TutorLoginInput) => {
     const result = await AuthService.signInTutor(input);
     if (result.profile) {
-      localStorage.setItem('fni_active_session_v5_clean_prod', result.profile.id);
+      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true };
@@ -93,10 +101,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const registerTutor = async (input: TutorRegistrationInput) => {
     const result = await AuthService.registerTutor(input);
     if (!result.error && result.profile) {
-      localStorage.setItem('fni_active_session_v5_clean_prod', result.profile.id);
+      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
-      return { success: true };
+      return { success: true, verificationNotice: result.verificationNotice };
     }
     return { success: false, error: result.error || 'Tutor registration failed' };
   };
@@ -104,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeOnboarding = async (input: any) => {
     try {
       const result = await AuthService.completeCellLeaderOnboarding(input);
-      localStorage.setItem('fni_active_session_v5_clean_prod', result.profile.id);
+      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true, isExistingCellAssociated: result.isExistingCellAssociated };
@@ -133,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await AuthService.signOut();
-    localStorage.removeItem('fni_active_session_v5_clean_prod');
+    localStorage.removeItem('fni_active_session_v6_strict');
     setIsLoggedOut(true);
   };
 
@@ -179,7 +187,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         showLoginView,
         refreshProfile,
-        isFirebaseActive: isFirebaseConfigured,
+        isFirebaseActive: false,
+        isSupabaseActive: true,
       }}
     >
       {children}

@@ -1,5 +1,3 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
 import { SupabaseService } from './supabaseService';
 import { SystemSettings } from '../types';
 
@@ -17,22 +15,14 @@ export const DEFAULT_SETTINGS: SystemSettings = {
 export class SettingsService {
   static async getSettings(): Promise<SystemSettings> {
     // 1. Primary: Try Supabase
-    const supaSettings = await SupabaseService.getSystemSettings();
-    if (supaSettings) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(supaSettings));
-      return supaSettings;
-    }
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDoc(doc(db, 'systemSettings', 'general'));
-        if (snap.exists()) {
-          const data = { id: snap.id, ...snap.data() } as SystemSettings;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          return data;
-        }
-      } catch (e) {
-        console.warn('Firebase getSettings error', e);
+    try {
+      const supaSettings = await SupabaseService.getSystemSettings();
+      if (supaSettings) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(supaSettings));
+        return supaSettings;
       }
+    } catch (e) {
+      console.warn('Notice loading Supabase system settings:', e);
     }
 
     try {
@@ -52,22 +42,11 @@ export class SettingsService {
       updatedBy: updatedBy || current.updatedBy,
     };
 
-    // Dual-write to Supabase
+    // Primary write to Supabase
     try {
       await SupabaseService.upsertSystemSettings(updated);
     } catch (err) {
       console.warn('Supabase settings sync notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'systemSettings', 'general'), {
-          ...updated,
-          serverUpdatedAt: serverTimestamp(),
-        });
-      } catch (e) {
-        console.warn('Firebase updateSettings error', e);
-      }
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));

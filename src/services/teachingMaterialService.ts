@@ -1,5 +1,3 @@
-import { collection, doc, setDoc, getDocs, updateDoc, query, orderBy, deleteDoc } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
 import { SupabaseService } from './supabaseService';
 import { TeachingMaterial } from '../types';
 
@@ -27,24 +25,14 @@ function setStoredMaterials(items: TeachingMaterial[]): void {
 export class TeachingMaterialService {
   static async getMaterials(isAdmin = false): Promise<TeachingMaterial[]> {
     // 1. Primary: Try Supabase
-    const supaMaterials = await SupabaseService.getTeachingMaterials();
-    if (supaMaterials && supaMaterials.length > 0) {
-      setStoredMaterials(supaMaterials);
-      return isAdmin ? supaMaterials : supaMaterials.filter(m => m.status === 'published');
-    }
-    if (isFirebaseConfigured && db) {
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'teachingMaterials'), orderBy('createdAt', 'desc'))
-        );
-        if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as TeachingMaterial));
-          setStoredMaterials(list);
-          return isAdmin ? list : list.filter(m => m.status === 'published');
-        }
-      } catch (e) {
-        console.warn('Firebase getMaterials notice:', e);
+    try {
+      const supaMaterials = await SupabaseService.getTeachingMaterials();
+      if (supaMaterials && supaMaterials.length > 0) {
+        setStoredMaterials(supaMaterials);
+        return isAdmin ? supaMaterials : supaMaterials.filter(m => m.status === 'published');
       }
+    } catch (e) {
+      console.warn('Notice loading Supabase teaching materials:', e);
     }
 
     const all = getStoredMaterials();
@@ -84,19 +72,11 @@ export class TeachingMaterialService {
       updatedAt: nowIso,
     };
 
-    // Dual-write to Supabase
+    // Primary write to Supabase
     try {
       await SupabaseService.upsertTeachingMaterial(record);
     } catch (err) {
       console.warn('Supabase teaching material notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'teachingMaterials', id), record);
-      } catch (e) {
-        console.warn('Firebase save material notice:', e);
-      }
     }
 
     const all = getStoredMaterials();
@@ -135,6 +115,13 @@ export class TeachingMaterialService {
       item.publishedAt = item.updatedAt;
     }
 
+    // Sync to Supabase
+    try {
+      await SupabaseService.upsertTeachingMaterial(item);
+    } catch (e) {
+      console.warn('Supabase update material status notice:', e);
+    }
+
     setStoredMaterials(all);
 
     if (newStatus === 'published') {
@@ -148,18 +135,6 @@ export class TeachingMaterialService {
         });
       } catch (e) {
         console.warn('Teaching material notification notice:', e);
-      }
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, 'teachingMaterials', materialId), {
-          status: newStatus,
-          updatedAt: item.updatedAt,
-          publishedAt: item.publishedAt,
-        });
-      } catch (e) {
-        console.warn('Firebase update material notice:', e);
       }
     }
 

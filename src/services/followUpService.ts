@@ -1,16 +1,3 @@
-import {
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-  query,
-  where,
-  orderBy,
-} from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
 import { SupabaseService } from './supabaseService';
 import { EvangelismContact, FollowUpStatus } from '../types';
 
@@ -47,44 +34,19 @@ export class FollowUpService {
       targetTutorUid = filter.tutorUid;
     }
 
-    // 1. Primary: Try Supabase
-    const supaContacts = await SupabaseService.getEvangelismContacts({ cellId: targetCellId, tutorUid: targetTutorUid });
-    if (supaContacts && supaContacts.length > 0) {
-      saveStoredContacts(supaContacts);
-      return supaContacts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-    }
-
-    let all: EvangelismContact[] = [];
-
-    if (isFirebaseConfigured && db) {
-      try {
-        const contactsRef = collection(db, 'evangelismContacts');
-        let snap = await getDocs(contactsRef);
-        if (snap.empty) {
-          const followUpsRef = collection(db, 'followUps');
-          snap = await getDocs(followUpsRef);
-        }
-        if (!snap.empty) {
-          all = snap.docs.map(d => ({ id: d.id, ...d.data() } as EvangelismContact));
-          saveStoredContacts(all);
-        }
-      } catch (e) {
-        console.warn('Firebase getContacts error, falling back to local storage', e);
+    // 1. Primary: Load from Supabase
+    try {
+      const supaContacts = await SupabaseService.getEvangelismContacts({ cellId: targetCellId, tutorUid: targetTutorUid });
+      if (supaContacts && supaContacts.length > 0) {
+        saveStoredContacts(supaContacts);
+        return supaContacts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       }
+    } catch (e) {
+      console.warn('Notice querying Supabase contacts:', e);
     }
 
-    if (all.length === 0) {
-      all = getStoredContacts();
-    } else {
-      // Merge any local contacts that might not have synced to cloud yet
-      const local = getStoredContacts();
-      const existingIds = new Set(all.map(c => c.id));
-      for (const item of local) {
-        if (!existingIds.has(item.id)) {
-          all.push(item);
-        }
-      }
-    }
+    // 2. Fallback to locally stored contacts
+    let all: EvangelismContact[] = getStoredContacts();
 
     if (targetCellId || targetTutorUid) {
       all = all.filter(c => {
@@ -134,26 +96,11 @@ export class FollowUpService {
       updatedAt: nowIso,
     };
 
-    // Dual-write to Supabase
+    // Primary write to Supabase
     try {
       await SupabaseService.upsertEvangelismContact(newContact);
     } catch (err) {
-      console.warn('Supabase addContact sync notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        const payload = {
-          ...newContact,
-          serverCreatedAt: serverTimestamp(),
-        };
-        await Promise.all([
-          setDoc(doc(db, 'evangelismContacts', id), payload),
-          setDoc(doc(db, 'followUps', id), payload),
-        ]);
-      } catch (e) {
-        console.warn('Firebase addContact error', e);
-      }
+      console.warn('Supabase addContact notice:', err);
     }
 
     const all = getStoredContacts();
@@ -194,28 +141,11 @@ export class FollowUpService {
       updatedAt: nowIso,
     };
 
-    // Dual-write to Supabase
+    // Primary write to Supabase
     try {
       await SupabaseService.upsertEvangelismContact(merged);
     } catch (err) {
-      console.warn('Supabase updateContact sync notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        const updatePayload = {
-          ...updates,
-          history,
-          updatedAt: nowIso,
-          serverUpdatedAt: serverTimestamp(),
-        };
-        await Promise.all([
-          updateDoc(doc(db, 'evangelismContacts', contactId), updatePayload).catch(() => {}),
-          updateDoc(doc(db, 'followUps', contactId), updatePayload).catch(() => {}),
-        ]);
-      } catch (e) {
-        console.warn('Firebase updateContact error', e);
-      }
+      console.warn('Supabase updateContact notice:', err);
     }
 
     if (index >= 0) {

@@ -1,5 +1,3 @@
-import { collection, getDocs, doc, getDoc, setDoc, query, where, orderBy } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
 import { SupabaseService } from './supabaseService';
 import { OfferingRecord, OfferingAggregation, UserRole } from '../types';
 import { ReportService } from './reportService';
@@ -61,19 +59,11 @@ export class FinanceService {
       status: data.status,
     };
 
-    // Dual-write to Supabase
+    // Primary write to Supabase
     try {
       await SupabaseService.upsertOfferingRecord(record);
     } catch (err) {
       console.warn('Supabase offering sync notice:', err);
-    }
-
-    if (isFirebaseConfigured && db) {
-      try {
-        await setDoc(doc(db, 'offerings', id), record, { merge: true });
-      } catch (e) {
-        console.warn('Firebase offering sync notice:', e);
-      }
     }
 
     const localList = getStoredOfferings();
@@ -97,36 +87,50 @@ export class FinanceService {
       userRole === 'national_admin' ||
       userRole === 'regional_leader';
 
-    // Also pull directly from meeting reports to guarantee real-time synchronization
-    const meetingReports = await ReportService.getCellMeetingReports();
     const map = new Map<string, OfferingRecord>();
 
-    // Load from local/firebase cache first
+    // 1. Load from local cache first
     const cached = getStoredOfferings();
     cached.forEach(c => map.set(c.reportId, c));
 
-    // Synchronize every meeting report with an offering
-    meetingReports.forEach(r => {
-      if (r.offering && Number(r.offering) > 0) {
-        const id = `off-${r.id}`;
-        const dateObj = new Date(r.meetingDate || r.submittedAt || Date.now());
-        const weekNum = Math.ceil(dateObj.getDate() / 7);
-        map.set(r.id, {
-          id,
-          reportId: r.id,
-          cellId: r.cellId,
-          cellName: r.cellName,
-          tutorUid: r.tutorUid,
-          tutorName: r.tutorName,
-          amount: Number(r.offering),
-          currency: 'GHS',
-          meetingDate: r.meetingDate,
-          weekLabel: `Week ${weekNum} (${dateObj.toLocaleString('default', { month: 'short' })})`,
-          submittedAt: r.submittedAt,
-          status: r.status,
-        });
+    // 2. Query live Supabase offering records
+    try {
+      const supaRecords = await SupabaseService.getOfferingRecords();
+      if (supaRecords && supaRecords.length > 0) {
+        supaRecords.forEach(r => map.set(r.reportId, r));
+        setStoredOfferings(Array.from(map.values()));
       }
-    });
+    } catch (e) {
+      console.warn('Notice loading Supabase offerings:', e);
+    }
+
+    // 3. Also pull directly from meeting reports to guarantee real-time synchronization
+    try {
+      const meetingReports = await ReportService.getCellMeetingReports();
+      meetingReports.forEach(r => {
+        if (r.offering && Number(r.offering) > 0) {
+          const id = `off-${r.id}`;
+          const dateObj = new Date(r.meetingDate || r.submittedAt || Date.now());
+          const weekNum = Math.ceil(dateObj.getDate() / 7);
+          map.set(r.id, {
+            id,
+            reportId: r.id,
+            cellId: r.cellId,
+            cellName: r.cellName,
+            tutorUid: r.tutorUid,
+            tutorName: r.tutorName,
+            amount: Number(r.offering),
+            currency: 'GHS',
+            meetingDate: r.meetingDate,
+            weekLabel: `Week ${weekNum} (${dateObj.toLocaleString('default', { month: 'short' })})`,
+            submittedAt: r.submittedAt,
+            status: r.status,
+          });
+        }
+      });
+    } catch (e) {
+      console.warn('Notice syncing meeting reports for offerings:', e);
+    }
 
     let all = Array.from(map.values()).sort(
       (a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime()
