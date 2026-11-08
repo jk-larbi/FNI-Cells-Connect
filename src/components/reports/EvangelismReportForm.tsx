@@ -576,35 +576,51 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
           </div>
 
           {showAddContact && (
-            <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-2.5 mb-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-3.5 mb-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
-                  placeholder="Full Name *"
+                  placeholder="e.g. Brother Samuel Mensah"
                   value={newContactName}
                   onChange={e => setNewContactName(e.target.value)}
-                  className="text-xs rounded-xl border border-[#E3E8EF] bg-white p-2.5 text-[#182230] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number (e.g. 0244123456)"
-                  value={newContactPhone}
-                  onChange={e => setNewContactPhone(e.target.value)}
-                  className="text-xs rounded-xl border border-[#E3E8EF] bg-white p-2.5 text-[#182230] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
-                />
-                <input
-                  type="tel"
-                  placeholder="WhatsApp Number (optional)"
-                  value={newContactWhatsApp}
-                  onChange={e => setNewContactWhatsApp(e.target.value)}
-                  className="text-xs rounded-xl border border-[#E3E8EF] bg-white p-2.5 text-[#182230] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
+                  className="w-full h-11 text-xs rounded-xl border border-[#E3E8EF] bg-white px-3.5 text-[#182230] font-semibold focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 shadow-2xs"
                 />
               </div>
-              <div className="flex justify-end">
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Phone Number (e.g. 0244123456)
+                </label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 0244123456"
+                  value={newContactPhone}
+                  onChange={e => setNewContactPhone(e.target.value)}
+                  className="w-full h-11 text-xs rounded-xl border border-[#E3E8EF] bg-white px-3.5 text-[#182230] font-semibold focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 shadow-2xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  WhatsApp Number (optional)
+                </label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 0244123456 (leave blank if same as phone)"
+                  value={newContactWhatsApp}
+                  onChange={e => setNewContactWhatsApp(e.target.value)}
+                  className="w-full h-11 text-xs rounded-xl border border-[#E3E8EF] bg-white px-3.5 text-[#182230] font-semibold focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 shadow-2xs"
+                />
+              </div>
+
+              <div className="flex justify-end pt-1">
                 <button
                   type="button"
                   onClick={handleAddQuickContact}
-                  className="px-4 py-2 bg-[#142B4A] text-white text-xs font-bold rounded-xl hover:bg-[#203D63] transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#142B4A] text-white text-xs font-bold rounded-xl hover:bg-[#203D63] transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
                 >
                   <Plus className="w-3.5 h-3.5 text-[#C6A45A]" />
                   <span>Add to Evangelism Contacts Pipeline</span>
