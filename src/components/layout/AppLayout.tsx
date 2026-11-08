@@ -151,7 +151,7 @@ export const AppLayout: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-8">
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-24 md:pb-8">
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
@@ -307,6 +307,53 @@ export const AppLayout: React.FC = () => {
           </main>
         </div>
       </div>
+
+
+      {/* Thumb-friendly mobile navigation */}
+      <nav
+        aria-label="Mobile navigation"
+        className="mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid grid-cols-5 border-t border-[#E3E8EF] bg-white/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)]"
+      >
+        {(isAdmin
+          ? [
+              { id: 'dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard },
+              { id: 'cell-management' as AppNavTab, label: 'Cells', icon: Building },
+              { id: 'report-review' as AppNavTab, label: 'Reports', icon: FileCheck },
+              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
+              { id: 'notifications' as AppNavTab, label: 'Alerts', icon: Bell },
+            ]
+          : [
+              { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard },
+              { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building },
+              { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Report', icon: PlusCircle },
+              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
+              { id: 'notifications' as AppNavTab, label: 'Alerts', icon: Bell },
+            ]
+        ).map(item => {
+          const Icon = item.icon;
+          const active = effectiveTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => navigateToTab(item.id)}
+              aria-current={active ? 'page' : undefined}
+              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-semibold transition-colors ${active ? 'text-[#142B4A]' : 'text-[#667085]'}`}
+            >
+              <span className={`flex h-7 w-10 items-center justify-center rounded-xl ${active ? 'bg-[#142B4A]/[0.07]' : ''}`}>
+                <Icon className={`h-5 w-5 ${active ? 'text-[#C6A45A]' : ''}`} />
+                {item.id === 'notifications' && unreadCount > 0 && (
+                  <span className="absolute top-1 right-[calc(50%-18px)] min-w-4 h-4 px-1 rounded-full bg-[#C74646] text-white text-[9px] leading-4">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </span>
+              <span>{item.label}</span>
+              {active && <span className="absolute bottom-0 h-0.5 w-8 rounded-full bg-[#C6A45A]" />}
+            </button>
+          );
+        })}
+      </nav>
 
       {/* Global Modals */}
       <NotificationCenterModal
