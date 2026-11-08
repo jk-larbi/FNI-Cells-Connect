@@ -212,20 +212,6 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   const hasSubmittedCurrentCycle = meetingReports.length > 0;
   const isLateSubmission = latestMeeting ? latestMeeting.late : false;
 
-  // Testimonies extraction
-  const recentTestimonies = [
-    ...meetingReports.filter(m => m.testimonies && m.testimonies.trim().length > 3).map(m => ({
-      type: 'Meeting Praise',
-      date: m.meetingDate,
-      text: m.testimonies!,
-    })),
-    ...evangReports.filter(e => e.testimonies && e.testimonies.trim().length > 3).map(e => ({
-      type: 'Soul Encounter',
-      date: e.date,
-      text: e.testimonies!,
-    })),
-  ];
-
   // Pastoral Care Radar: Contacts needing care
   const careContacts = contacts
     .filter(
@@ -715,37 +701,6 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
                     </div>
                   );
                 })
-              )}
-            </div>
-          </div>
-
-          {/* DIVINE ENCOUNTERS & CELL TESTIMONY SPOTLIGHT */}
-          <div className="bg-white rounded-3xl border border-[#E3E8EF] p-5 sm:p-6 shadow-xs space-y-3.5">
-            <div className="flex items-center gap-2 pb-3.5 border-b border-[#E3E8EF]">
-              <Sparkles className="w-4 h-4 text-[#C6A45A] shrink-0" />
-              <h3 className="text-xs sm:text-sm font-bold text-[#142B4A] uppercase tracking-wider">
-                Divine Encounters & Praise Reports
-              </h3>
-            </div>
-
-            <div>
-              {recentTestimonies.length > 0 ? (
-                <div className="p-4 rounded-2xl bg-[#F5F7FA] border border-[#E3E8EF] text-xs sm:text-sm space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#667085]">
-                    <span className="text-[#142B4A]">{recentTestimonies[0].type}</span>
-                    <span>{recentTestimonies[0].date}</span>
-                  </div>
-                  <p className="text-[#182230] italic font-medium leading-relaxed">
-                    &ldquo;{recentTestimonies[0].text}&rdquo;
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-[#F5F7FA] border border-[#E3E8EF] text-center text-xs sm:text-sm text-[#667085] space-y-1.5">
-                  <div className="font-bold text-[#182230]">Expect the Miraculous in Your Cell!</div>
-                  <p className="text-xs leading-relaxed">
-                    Every gathering is pregnant with miracles. Record answered prayers and healing testimonies when submitting your weekly meeting return!
-                  </p>
-                </div>
               )}
             </div>
           </div>
