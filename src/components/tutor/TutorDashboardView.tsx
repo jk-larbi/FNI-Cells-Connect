@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { PushNotificationService } from '../../services/pushNotificationService';
 import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
@@ -21,19 +23,60 @@ import {
   FileText,
   MapPin,
   Compass,
+  Bell,
+  BookOpen,
+  MessageSquare,
+  History,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface TutorDashboardViewProps {
   onNavigateToTab: (tab: any) => void;
+  onOpenReport?: (reportId: string) => void;
 }
 
-export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({ onNavigateToTab }) => {
+export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
+  onNavigateToTab,
+  onOpenReport,
+}) => {
   const { currentUser } = useAuth();
   const [cell, setCell] = useState<Cell | null>(null);
   const [meetingReports, setMeetingReports] = useState<CellMeetingReport[]>([]);
   const [evangReports, setEvangReports] = useState<EvangelismReport[]>([]);
   const [contacts, setContacts] = useState<EvangelismContact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Push Notifications state
+  const { isPushEnabled, isPushSupported, requestPushPermission } = useNotifications();
+  const [pushStatusMsg, setPushStatusMsg] = useState<string | null>(null);
+  const [isRequestingPush, setIsRequestingPush] = useState(false);
+
+  const handleEnablePush = async () => {
+    setIsRequestingPush(true);
+    try {
+      const res = await requestPushPermission();
+      if (res.success) {
+        setPushStatusMsg('Push notifications successfully enabled on your device!');
+      } else {
+        setPushStatusMsg(res.error || 'Failed to enable push notifications');
+      }
+    } finally {
+      setIsRequestingPush(false);
+    }
+  };
+
+  const handleTestPush = () => {
+    const success = PushNotificationService.showLocalNotification('FNI CELLS CONNECT Tutor Alert', {
+      body: 'Verified: Tutor notifications active for review feedback and announcements!',
+      tag: 'tutor-test-' + Date.now(),
+      data: { targetTab: 'my-reports' },
+    });
+    if (success) {
+      setPushStatusMsg('Test notification delivered to your browser / device!');
+    } else {
+      setPushStatusMsg('Push notification blocked by browser permissions.');
+    }
+  };
 
   const deadlineInfo = getCurrentDeadlineInfo();
 
@@ -228,52 +271,80 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({ onNaviga
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3.5">
           {/* Total Members */}
-          <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm">
+          <div
+            onClick={() => onNavigateToTab('my-cell')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all"
+            title="Update your cell membership, location and meeting times"
+          >
             <div className="text-[11px] font-semibold text-[#667085]">Total Members</div>
             <div className="text-xl font-black text-[#182230] mt-1">{totalMembers}</div>
-            <div className="text-[10px] text-[#667085] mt-0.5">Registered Souls</div>
+            <div className="text-[10px] text-[#142B4A] font-semibold mt-0.5">Cell Details &rarr;</div>
           </div>
 
           {/* Active Members */}
-          <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm">
+          <div
+            onClick={() => onNavigateToTab('my-cell')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#23845B] hover:shadow-md cursor-pointer transition-all"
+            title="View regular active attendees"
+          >
             <div className="text-[11px] font-semibold text-[#667085]">Active Members</div>
             <div className="text-xl font-black text-[#23845B] mt-1">{activeMembers}</div>
-            <div className="text-[10px] text-[#23845B] mt-0.5">Regular Attendees</div>
+            <div className="text-[10px] text-[#23845B] font-semibold mt-0.5">Regular Attendees &rarr;</div>
           </div>
 
           {/* Latest Attendance */}
-          <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm">
+          <div
+            onClick={() => onNavigateToTab('my-reports')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all"
+            title="Inspect submitted meeting returns"
+          >
             <div className="text-[11px] font-semibold text-[#667085]">Latest Attendance</div>
             <div className="text-xl font-black text-[#142B4A] mt-1">{latestAttendance}</div>
-            <div className="text-[10px] text-[#667085] mt-0.5">Last Fellowship</div>
+            <div className="text-[10px] text-[#667085] font-semibold mt-0.5">Last Fellowship &rarr;</div>
           </div>
 
           {/* New Members */}
-          <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm">
+          <div
+            onClick={() => onNavigateToTab('my-cell')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all"
+            title="Review new cell members"
+          >
             <div className="text-[11px] font-semibold text-[#667085]">New Members</div>
             <div className="text-xl font-black text-[#C6A45A] mt-1">+{newMembersCount}</div>
-            <div className="text-[10px] text-[#C6A45A] mt-0.5">Added to Cell</div>
+            <div className="text-[10px] text-[#C6A45A] font-semibold mt-0.5">Added to Cell &rarr;</div>
           </div>
 
           {/* Evangelism Activities */}
-          <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm">
+          <div
+            onClick={() => onNavigateToTab('my-reports')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all"
+            title="View submitted evangelism reports"
+          >
             <div className="text-[11px] font-semibold text-[#667085]">Outreaches Held</div>
             <div className="text-xl font-black text-[#182230] mt-1">{totalEvangelismActivities}</div>
-            <div className="text-[10px] text-[#667085] mt-0.5">Missions Filed</div>
+            <div className="text-[10px] text-[#667085] font-semibold mt-0.5">Missions Filed &rarr;</div>
           </div>
 
           {/* Conversions */}
-          <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm">
+          <div
+            onClick={() => onNavigateToTab('evangelism-contacts')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#23845B] hover:shadow-md cursor-pointer transition-all"
+            title="View list of souls won and contacts"
+          >
             <div className="text-[11px] font-semibold text-[#667085]">Souls Won</div>
             <div className="text-xl font-black text-[#23845B] mt-1">+{conversions}</div>
-            <div className="text-[10px] text-[#23845B] mt-0.5">Conversions</div>
+            <div className="text-[10px] text-[#23845B] font-semibold mt-0.5">Conversions &rarr;</div>
           </div>
 
           {/* People Reached */}
-          <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm">
+          <div
+            onClick={() => onNavigateToTab('evangelism-contacts')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all"
+            title="View outreach witness contacts"
+          >
             <div className="text-[11px] font-semibold text-[#667085]">People Spoken To</div>
             <div className="text-xl font-black text-[#182230] mt-1">{peopleReached}</div>
-            <div className="text-[10px] text-[#667085] mt-0.5">Gospel Witness</div>
+            <div className="text-[10px] text-[#667085] font-semibold mt-0.5">Gospel Witness &rarr;</div>
           </div>
 
           {/* Contacts Requiring Follow-Up */}
@@ -328,6 +399,241 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({ onNaviga
         </div>
       </div>
 
+      {/* Real-time Push Notification Readiness Card for Tutors */}
+      <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 border border-[#142B4A]/10 flex items-center justify-center text-[#C6A45A] shrink-0">
+            <Bell className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#142B4A]">
+                Tutor Push Notification Alerts
+              </span>
+              {isPushEnabled ? (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Active on this device
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                  Enable for Live Updates
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-[#667085] mt-0.5">
+              {isPushEnabled
+                ? 'Your device will receive instant alerts when administrators review or approve your reports, request corrections, or publish teaching notes.'
+                : 'Enable device alerts to never miss administrator feedback, report review notifications, or weekly teaching notes.'}
+            </p>
+            {pushStatusMsg && (
+              <p className="text-[11px] text-[#203D63] bg-blue-50/70 px-2 py-1 rounded-md mt-1.5 border border-blue-100">
+                {pushStatusMsg}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+          {isPushEnabled ? (
+            <button
+              type="button"
+              onClick={handleTestPush}
+              className="px-3.5 py-2 rounded-xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] text-xs font-bold transition-colors border border-[#E3E8EF] flex items-center gap-1.5 cursor-pointer"
+            >
+              <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>Test Alert</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleEnablePush}
+              disabled={isRequestingPush}
+              className="px-3.5 py-2 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>{isRequestingPush ? 'Registering...' : 'Enable Push Alerts'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Fellowship Operations & Discipleship Hub */}
+      <div>
+        <h3 className="text-xs font-bold text-[#667085] uppercase tracking-wider mb-3">
+          Fellowship Operations & Discipleship Tools
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* My Cell Management */}
+          <div
+            onClick={() => onNavigateToTab('my-cell')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#142B4A] shrink-0">
+                <Building className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#203D63] transition-colors">
+                  My Cell Fellowship
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Venue, Day & Total Members
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Submit Meeting Return */}
+          <div
+            onClick={() => onNavigateToTab('submit-cell-meeting-report')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D99A32] shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#203D63] transition-colors">
+                  Submit Meeting Return
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Attendance, Absent & Offering
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Submit Evangelism */}
+          <div
+            onClick={() => onNavigateToTab('submit-evangelism-report')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#23845B] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#23845B] shrink-0">
+                <Flame className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-emerald-700 transition-colors">
+                  Evangelism Outreach
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Record Souls Won & Contacts
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Teaching Outlines */}
+          <div
+            onClick={() => onNavigateToTab('materials')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gold-50 border border-[#C6A45A]/20 flex items-center justify-center text-[#C6A45A] shrink-0">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-gold-700 transition-colors">
+                  Teaching Outlines
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Official Weekly Sermon Notes
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Follow-up Pipeline */}
+          <div
+            onClick={() => onNavigateToTab('follow-ups')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-indigo-700 transition-colors">
+                  Discipleship Pipeline
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Follow-ups & Cell Integration
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Communications Hub */}
+          <div
+            onClick={() => onNavigateToTab('messages')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-sky-700 transition-colors">
+                  Tutor Community & Admin
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Private Admin Line & Peer Chat
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* My Submitted Reports */}
+          <div
+            onClick={() => onNavigateToTab('my-reports')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#23845B] shrink-0">
+                <FileCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#23845B] transition-colors">
+                  My Returns & Feedback
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Review Status & Admin Notes
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Cell Activity History */}
+          <div
+            onClick={() => onNavigateToTab('cell-activity-history')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-[#667085] shrink-0">
+                <History className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#142B4A] transition-colors">
+                  Cell Activity History
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Chronological Fellowship Growth
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+        </div>
+      </div>
+
       {/* Recent Submissions List for this Cell (Reference Image Styled!) */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
         <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center justify-between">
@@ -358,7 +664,13 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({ onNaviga
               return (
                 <div
                   key={report.id}
-                  onClick={() => onNavigateToTab('my-reports')}
+                  onClick={() => {
+                    if (onOpenReport) {
+                      onOpenReport(report.id);
+                    } else {
+                      onNavigateToTab('my-reports');
+                    }
+                  }}
                   className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
                     isNeedsCorrection
                       ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]'

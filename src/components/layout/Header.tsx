@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import { Menu, Bell, PlusCircle, Calendar, Clock, Flame } from 'lucide-react';
 
 interface HeaderProps {
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
+  const deadlineInfo = getCurrentDeadlineInfo();
 
   return (
     <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-white/90 backdrop-blur-md border-b border-[#E3E8EF] transition-all">
@@ -34,13 +36,13 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#142B4A] font-semibold text-xs border border-[#E3E8EF]">
             <Calendar className="w-3.5 h-3.5 text-[#C6A45A]" />
-            <span>Cycle: <strong>Week 45</strong></span>
+            <span>Cycle: <strong>{deadlineInfo.periodName}</strong></span>
             <span className="w-2 h-2 rounded-full bg-[#23845B] animate-pulse ml-0.5" />
           </div>
 
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#667085] font-medium text-xs border border-[#E3E8EF]">
             <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
-            <span>Deadline: <strong className="text-[#142B4A]">Sunday 6:00 PM GMT</strong> (Africa/Accra)</span>
+            <span>Deadline: <strong className="text-[#142B4A]">{deadlineInfo.deadlineFormatted}</strong></span>
           </div>
         </div>
       </div>

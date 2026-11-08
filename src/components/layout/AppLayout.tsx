@@ -45,6 +45,7 @@ export const AppLayout: React.FC = () => {
   // Deep-linking target parameters
   const [highlightedReportId, setHighlightedReportId] = useState<string | undefined>(undefined);
   const [targetConversationId, setTargetConversationId] = useState<string | undefined>(undefined);
+  const [editingMeetingReport, setEditingMeetingReport] = useState<any | null>(null);
 
   // Handle external / service worker notification click targets
   React.useEffect(() => {
@@ -110,7 +111,13 @@ export const AppLayout: React.FC = () => {
             {isAdmin && (
               <>
                 {effectiveTab === 'dashboard' && (
-                  <DashboardView onNavigateToTab={tab => setCurrentTab(tab)} />
+                  <DashboardView
+                    onNavigateToTab={tab => setCurrentTab(tab)}
+                    onOpenReport={reportId => {
+                      setHighlightedReportId(reportId);
+                      setCurrentTab('report-review');
+                    }}
+                  />
                 )}
                 {effectiveTab === 'cell-management' && <CellManagementView />}
                 {effectiveTab === 'cell-leaders' && <CellLeadersView />}
@@ -136,13 +143,38 @@ export const AppLayout: React.FC = () => {
             {!isAdmin && (
               <>
                 {effectiveTab === 'my-dashboard' && (
-                  <TutorDashboardView onNavigateToTab={tab => setCurrentTab(tab)} />
+                  <TutorDashboardView
+                    onNavigateToTab={tab => setCurrentTab(tab)}
+                    onOpenReport={reportId => {
+                      setHighlightedReportId(reportId);
+                      setCurrentTab('my-reports');
+                    }}
+                  />
                 )}
                 {effectiveTab === 'my-cell' && <MyCellView />}
                 {effectiveTab === 'submit-cell-meeting-report' && (
                   <CellReportForm
-                    onSuccess={() => setCurrentTab('my-reports')}
-                    onCancel={() => setCurrentTab('my-dashboard')}
+                    initialReport={editingMeetingReport ? {
+                      id: editingMeetingReport.id,
+                      cell_id: editingMeetingReport.cellId || editingMeetingReport.cell_id,
+                      meeting_date: editingMeetingReport.meetingDate || editingMeetingReport.meeting_date,
+                      total_attendance: editingMeetingReport.attendance || editingMeetingReport.total_attendance,
+                      members_present: editingMeetingReport.activeMembers || editingMeetingReport.members_present || editingMeetingReport.attendance,
+                      visitors_count: editingMeetingReport.absentees || editingMeetingReport.visitors_count || 0,
+                      first_timers_contacted: editingMeetingReport.newMembers || editingMeetingReport.first_timers_contacted || 0,
+                      offering_amount: editingMeetingReport.offeringAmount || editingMeetingReport.offering_amount || 0,
+                      additional_remarks: editingMeetingReport.tutorNotes || editingMeetingReport.additional_remarks || '',
+                      testimonies: editingMeetingReport.testimonies || '',
+                      tutorExperience: editingMeetingReport.tutorExperience || '',
+                    } as any : null}
+                    onSuccess={() => {
+                      setEditingMeetingReport(null);
+                      setCurrentTab('my-reports');
+                    }}
+                    onCancel={() => {
+                      setEditingMeetingReport(null);
+                      setCurrentTab('my-dashboard');
+                    }}
                   />
                 )}
                 {effectiveTab === 'submit-evangelism-report' && (
@@ -151,7 +183,16 @@ export const AppLayout: React.FC = () => {
                     onCancel={() => setCurrentTab('my-dashboard')}
                   />
                 )}
-                {effectiveTab === 'my-reports' && <MyReportsView />}
+                {effectiveTab === 'my-reports' && (
+                  <MyReportsView
+                    initialReportId={highlightedReportId}
+                    onClearInitialReportId={() => setHighlightedReportId(undefined)}
+                    onEditMeetingReport={report => {
+                      setEditingMeetingReport(report);
+                      setCurrentTab('submit-cell-meeting-report');
+                    }}
+                  />
+                )}
                 {effectiveTab === 'evangelism-contacts' && <EvangelismContactsView />}
                 {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
                 {effectiveTab === 'materials' && <TeachingMaterialsView />}

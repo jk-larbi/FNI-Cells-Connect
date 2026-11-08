@@ -289,7 +289,22 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
             </div>
           ) : (
             filteredNotifs.map(n => {
-              const hasAction = Boolean(n.metadata?.targetTab || n.type === 'report_submitted');
+              const hasAction = true;
+              const actionLabel =
+                n.type === 'report_submitted'
+                  ? (isAdmin ? 'Inspect Report' : 'View Return')
+                  : n.type === 'report_approved' || n.type === 'revision_requested' || n.type === 'report_rejected'
+                  ? 'View Submission & Feedback'
+                  : n.type === 'direct_message' || n.type === 'community_message'
+                  ? 'Open Conversation'
+                  : n.type === 'teaching_notes'
+                  ? 'Open Teaching Outlines'
+                  : n.type === 'deadline_reminder' || n.type === 'overdue_notice'
+                  ? (isAdmin ? 'Inspect Cell Reports' : 'Submit Return Now')
+                  : n.type === 'follow_up_assigned' || n.type === 'follow_up_reminder'
+                  ? 'Open Discipleship Follow-ups'
+                  : 'View Details';
+
               return (
                 <div
                   key={n.id}
@@ -338,11 +353,9 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {hasAction && (
-                        <span className="text-[#142B4A] font-semibold group-hover:underline">
-                          View details →
-                        </span>
-                      )}
+                      <span className="text-[#142B4A] font-semibold group-hover:underline">
+                        {actionLabel} &rarr;
+                      </span>
                       {!n.is_read && (
                         <button
                           onClick={(e) => {

@@ -19,11 +19,15 @@ import {
 } from 'lucide-react';
 
 interface MyReportsViewProps {
+  initialReportId?: string;
+  onClearInitialReportId?: () => void;
   onEditMeetingReport?: (report: CellMeetingReport) => void;
   onEditEvangelismReport?: (report: EvangelismReport) => void;
 }
 
 export const MyReportsView: React.FC<MyReportsViewProps> = ({
+  initialReportId,
+  onClearInitialReportId,
   onEditMeetingReport,
   onEditEvangelismReport,
 }) => {
@@ -44,6 +48,15 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
         tutorUid: currentUser.id,
       });
       setReports(queue);
+      if (initialReportId) {
+        const found = queue.find(r => r.id === initialReportId);
+        if (found) {
+          setInspectingItem(found);
+          if (onClearInitialReportId) {
+            onClearInitialReportId();
+          }
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -52,6 +65,18 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
   useEffect(() => {
     loadData();
   }, [typeFilter, currentUser]);
+
+  useEffect(() => {
+    if (initialReportId && reports.length > 0) {
+      const found = reports.find(r => r.id === initialReportId);
+      if (found) {
+        setInspectingItem(found);
+        if (onClearInitialReportId) {
+          onClearInitialReportId();
+        }
+      }
+    }
+  }, [initialReportId, reports]);
 
   const filtered = reports.filter(r => {
     const q = searchQuery.toLowerCase();
@@ -368,11 +393,26 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
               </div>
             )}
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-3 flex items-center justify-between gap-3 border-t border-[#E3E8EF]">
+              {(inspectingItem.status === 'Needs Correction' || inspectingItem.status === 'needs_revision') && onEditMeetingReport && inspectingItem.reportType === 'meeting' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const rep = inspectingItem as any;
+                    onEditMeetingReport(rep);
+                    setInspectingItem(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#C74646] hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit & Resubmit Return</span>
+                </button>
+              ) : <div />}
+
               <button
                 type="button"
                 onClick={() => setInspectingItem(null)}
-                className="px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63]"
+                className="px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors cursor-pointer"
               >
                 Close
               </button>

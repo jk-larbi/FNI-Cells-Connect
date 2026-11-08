@@ -267,28 +267,52 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Determine target tab and metadata
     const meta = notif.metadata || {};
-    const targetTab = meta.targetTab || (
-      notif.type === 'report_submitted'
-        ? (isAdmin ? 'report-review' : 'my-reports')
-        : notif.type === 'report_approved' || notif.type === 'revision_requested'
-        ? 'my-reports'
-        : notif.type === 'direct_message' || notif.type === 'community_message'
-        ? 'messages'
-        : notif.type === 'teaching_notes'
-        ? 'materials'
-        : ''
-    );
+    let targetTab = meta.targetTab;
+
+    if (!targetTab) {
+      switch (notif.type) {
+        case 'report_submitted':
+          targetTab = isAdmin ? 'report-review' : 'my-reports';
+          break;
+        case 'report_approved':
+        case 'revision_requested':
+        case 'report_rejected':
+          targetTab = 'my-reports';
+          break;
+        case 'direct_message':
+        case 'community_message':
+        case 'announcement':
+          targetTab = 'messages';
+          break;
+        case 'teaching_notes':
+          targetTab = 'materials';
+          break;
+        case 'deadline_reminder':
+        case 'overdue_notice':
+          targetTab = isAdmin ? 'report-review' : 'submit-cell-meeting-report';
+          break;
+        case 'follow_up_assigned':
+        case 'follow_up_reminder':
+          targetTab = 'follow-ups';
+          break;
+        default:
+          targetTab = isAdmin ? 'dashboard' : 'my-dashboard';
+      }
+    }
 
     if (targetTab) {
       setActiveNavigationTarget({
         targetTab,
         reportId: meta.reportId,
-        conversationId: meta.conversationId,
+        conversationId: meta.conversationId || (notif.type === 'community_message' ? 'community' : undefined),
         materialId: meta.materialId,
       });
 
       if (onNavigate) {
-        onNavigate(targetTab, meta);
+        onNavigate(targetTab, {
+          ...meta,
+          conversationId: meta.conversationId || (notif.type === 'community_message' ? 'community' : undefined),
+        });
       }
     }
   };

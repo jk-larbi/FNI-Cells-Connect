@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { PushNotificationService } from '../../services/pushNotificationService';
 import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
@@ -26,6 +28,12 @@ import {
   Eye,
   AlertCircle,
   FileText,
+  DollarSign,
+  MessageSquare,
+  BookOpen,
+  Settings,
+  Bell,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -44,6 +52,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
   const [showSoulModal, setShowSoulModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Push Notifications state
+  const { isPushEnabled, isPushSupported, requestPushPermission } = useNotifications();
+  const [pushStatusMsg, setPushStatusMsg] = useState<string | null>(null);
+  const [isRequestingPush, setIsRequestingPush] = useState(false);
+
+  const handleEnablePush = async () => {
+    setIsRequestingPush(true);
+    try {
+      const res = await requestPushPermission();
+      if (res.success) {
+        setPushStatusMsg('Push notifications successfully enabled for administrator device!');
+      } else {
+        setPushStatusMsg(res.error || 'Failed to enable push notifications');
+      }
+    } finally {
+      setIsRequestingPush(false);
+    }
+  };
+
+  const handleTestPush = () => {
+    const success = PushNotificationService.showLocalNotification('FNI CELLS CONNECT Admin Alert', {
+      body: 'Verified: Leadership push notifications active for tutor report submissions!',
+      tag: 'admin-test-' + Date.now(),
+      data: { targetTab: 'report-review' },
+    });
+    if (success) {
+      setPushStatusMsg('Test push notification delivered to your system!');
+    } else {
+      setPushStatusMsg('Push notification blocked by browser permissions.');
+    }
+  };
 
   // Settings modal inline state
   const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -370,6 +410,157 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* Real-time Leadership Alerts & Device Push Notification Readiness */}
+      <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 border border-[#142B4A]/10 flex items-center justify-center text-[#C6A45A] shrink-0">
+            <Bell className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#142B4A]">
+                Real-Time Administrator Push Notifications
+              </span>
+              {isPushEnabled ? (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Active on this device
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                  Permission Required
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-[#667085] mt-0.5">
+              {isPushEnabled
+                ? 'Your device is actively registered to receive immediate push notifications whenever tutors submit weekly returns or message leadership.'
+                : 'Enable device push alerts so you are notified immediately when cell tutors file returns, even when this browser tab is closed.'}
+            </p>
+            {pushStatusMsg && (
+              <p className="text-[11px] text-[#203D63] bg-blue-50/70 px-2 py-1 rounded-md mt-1.5 border border-blue-100">
+                {pushStatusMsg}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+          {isPushEnabled ? (
+            <button
+              type="button"
+              onClick={handleTestPush}
+              className="px-3.5 py-2 rounded-xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] text-xs font-bold transition-colors border border-[#E3E8EF] flex items-center gap-1.5 cursor-pointer"
+            >
+              <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>Test Push Alert</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleEnablePush}
+              disabled={isRequestingPush}
+              className="px-3.5 py-2 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>{isRequestingPush ? 'Registering...' : 'Enable Push Alerts'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Administrative Operations & Operational Hubs */}
+      <div>
+        <h3 className="text-xs font-bold text-[#667085] uppercase tracking-wider mb-3">
+          Ministry Systems & Operational Hubs
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Finance / Offering Aggregation */}
+          <div
+            onClick={() => onNavigateToTab('finance')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gold-50 border border-[#C6A45A]/20 flex items-center justify-center text-[#C6A45A] shrink-0">
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-gold-700 transition-colors">
+                  Offering Aggregation
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Weekly & Annual Ministry Totals
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Communications Hub */}
+          <div
+            onClick={() => onNavigateToTab('messages')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#142B4A] shrink-0">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#203D63] transition-colors">
+                  Communications Hub
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  1-on-1 Chats & Community
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Teaching Outlines */}
+          <div
+            onClick={() => onNavigateToTab('materials')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#23845B] shrink-0">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-emerald-700 transition-colors">
+                  Teaching Outlines
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Publish Weekly Discipleship Notes
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* System Settings */}
+          <div
+            onClick={() => onNavigateToTab('settings')}
+            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-[#667085] shrink-0">
+                <Settings className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#142B4A] transition-colors">
+                  System Settings
+                </div>
+                <div className="text-[11px] text-[#667085]">
+                  Rules, Deadlines & Audit Trail
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+          </div>
+        </div>
+      </div>
+
       {/* RECENT SUBMISSIONS TABLE (Styled directly after the Reference Image!) */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
         {/* Table Header Section */}
@@ -429,7 +620,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   return (
                     <tr
                       key={item.id}
-                      onClick={() => onNavigateToTab('report-review')}
+                      onClick={() => {
+                        if (onOpenReport) {
+                          onOpenReport(item.id);
+                        } else {
+                          onNavigateToTab('report-review');
+                        }
+                      }}
                       className={`cursor-pointer transition-colors ${
                         isNeedsCorrection
                           ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]' // Exact reference image highlight row!
@@ -541,7 +738,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <button
                           onClick={e => {
                             e.stopPropagation();
-                            onNavigateToTab('report-review');
+                            if (onOpenReport) {
+                              onOpenReport(item.id);
+                            } else {
+                              onNavigateToTab('report-review');
+                            }
                           }}
                           className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 inline-flex items-center justify-center transition-colors shadow-2xs"
                           title="Review Report"

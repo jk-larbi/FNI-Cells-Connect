@@ -54,6 +54,24 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [generatedCodes, setGeneratedCodes] = useState<InvitationCode[]>([]);
   const [newCodeSuccess, setNewCodeSuccess] = useState<string | null>(null);
 
+  // Sync when initialConversationId changes externally (e.g. notification click)
+  useEffect(() => {
+    if (initialConversationId) {
+      if (initialConversationId === 'community') {
+        setActiveTab('community');
+      } else {
+        setActiveTab('private');
+        setSelectedTutorId(initialConversationId);
+      }
+    }
+  }, [initialConversationId]);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   useEffect(() => {
     async function init() {
       if (isAdmin) {
