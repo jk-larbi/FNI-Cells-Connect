@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { auth } from '../../lib/firebase';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
@@ -142,13 +143,13 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
               <div className="flex items-center gap-2 text-[#142B4A] font-bold"><Link2 className="w-4 h-4 text-[#C6A45A]" /> Account recovery</div>
               <p className="text-[11px] text-slate-500">Link a Google account or Apple ID while signed in. You can then use that same account to sign in to this FNI profile without your FNI password.</p>
               {(['google', 'apple'] as const).map(provider => (
-                <button key={provider} type="button" disabled={!!providerBusy} onClick={async () => {
+                <button key={provider} type="button" disabled={!!providerBusy || !!auth?.currentUser?.providerData.some(item => item.providerId === (provider === 'google' ? 'google.com' : 'apple.com'))} onClick={async () => {
                   setProviderBusy(provider); setProviderMessage('');
                   const result = await linkRecoveryProvider(provider);
                   setProviderBusy(null);
                   setProviderMessage(result.success ? (result.pending ? 'Redirecting to finish linking your account…' : (provider === 'google' ? 'Google account linked successfully.' : 'Apple ID linked successfully.')) : (result.error || 'Could not link account.'));
                 }} className="w-full rounded-xl border border-[#D7DEE8] px-3 py-2.5 text-xs font-bold text-[#142B4A] hover:bg-slate-50 disabled:opacity-50">
-                  {providerBusy === provider ? 'Connecting…' : (provider === 'google' ? 'Link Google account' : 'Link Apple ID')}
+                  {providerBusy === provider ? 'Connecting…' : auth?.currentUser?.providerData.some(item => item.providerId === (provider === 'google' ? 'google.com' : 'apple.com')) ? (provider === 'google' ? 'Google account linked' : 'Apple ID linked') : (provider === 'google' ? 'Link Google account' : 'Link Apple ID')}
                 </button>
               ))}
               {providerMessage && <p role="status" className="text-[11px] text-[#142B4A] bg-[#F5F7FA] rounded-lg p-2">{providerMessage}</p>}
