@@ -6,7 +6,8 @@ import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
-import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact } from '../../types';
+import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact, SoulTargetMetrics } from '../../types';
+import { SoulTargetService } from '../../services/soulTargetService';
 import {
   Users,
   Building,
@@ -28,6 +29,7 @@ import {
   MessageSquare,
   History,
   ShieldCheck,
+  Target,
 } from 'lucide-react';
 
 interface TutorDashboardViewProps {
@@ -45,6 +47,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   const [evangReports, setEvangReports] = useState<EvangelismReport[]>([]);
   const [contacts, setContacts] = useState<EvangelismContact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
 
   // Push Notifications state
   const { isPushEnabled, isPushSupported, requestPushPermission } = useNotifications();
@@ -79,6 +82,15 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   };
 
   const deadlineInfo = getCurrentDeadlineInfo();
+
+  useEffect(() => {
+    // Live Soul Target Tracking Subscription
+    const unsubSoul = SoulTargetService.subscribeToLiveSoulTracking(liveM => {
+      setSoulMetrics(liveM);
+    });
+
+    return () => unsubSoul();
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -143,6 +155,13 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
 
   const hasSubmittedCurrentCycle = meetingReports.length > 0;
   const isLateSubmission = latestMeeting ? latestMeeting.late : false;
+
+  const myCellContribution = soulMetrics?.cellContributions.find(
+    c => c.cellId === cell?.id || c.cellName.toLowerCase() === (cell?.name || currentUser.cell_name || '').toLowerCase()
+  )?.souls || 0;
+  const myCellPercent = soulMetrics?.cellContributions.find(
+    c => c.cellId === cell?.id || c.cellName.toLowerCase() === (cell?.name || currentUser.cell_name || '').toLowerCase()
+  )?.percentage || 0;
 
   return (
     <div className="space-y-6">
@@ -237,6 +256,54 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
                 <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
               </button>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* 2026 ANNUAL SOUL-WINNING TARGET LIVE TRACKER */}
+      <div className="bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white rounded-2xl p-5 shadow-sm border border-[#142B4A]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#C6A45A] text-[#142B4A] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#C6A45A]">
+                  2026 Kingdom Soul-Winning Target
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full border border-white/20 uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live Harvest
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white mt-0.5">
+                {soulMetrics ? `${soulMetrics.verifiedSoulsWon.toLocaleString()} Souls Harvested` : '0 Souls Harvested'}
+                <span className="text-sm font-normal text-slate-300 ml-2">
+                  / {soulMetrics?.annualTarget.toLocaleString() || '5,000'} Goal ({soulMetrics?.percentageAchieved || 0}%)
+                </span>
+              </h2>
+              <p className="text-xs text-slate-300 mt-1">
+                Your Fellowship Contribution: <strong className="text-white">+{myCellContribution} souls</strong> ({myCellPercent}% of ministry total)
+              </p>
+            </div>
+          </div>
+
+          <div className="w-full md:w-64 space-y-2">
+            <div className="flex justify-between text-xs text-slate-300">
+              <span>Ministry Progress</span>
+              <span className="font-bold text-[#C6A45A]">{soulMetrics?.percentageAchieved || 0}% Achieved</span>
+            </div>
+            <div className="w-full bg-black/40 rounded-full h-3 overflow-hidden border border-white/10">
+              <div
+                className="bg-gradient-to-r from-[#C6A45A] to-emerald-400 h-full rounded-full transition-all duration-700 shadow-sm"
+                style={{ width: `${soulMetrics?.percentageAchieved || 0}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-300">
+              <span>Remaining: <strong className="text-white">{soulMetrics?.remainingSouls.toLocaleString() || '5,000'}</strong></span>
+              <span>Cell Meetings & Outreach</span>
+            </div>
           </div>
         </div>
       </div>

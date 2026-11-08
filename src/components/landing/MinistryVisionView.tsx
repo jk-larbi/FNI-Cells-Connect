@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Flame, Target, Eye, Compass } from 'lucide-react';
+import { SoulTargetService } from '../../services/soulTargetService';
+import { SoulTargetMetrics } from '../../types';
 
 interface MinistryVisionViewProps {
   onProceed: () => void;
@@ -7,10 +9,17 @@ interface MinistryVisionViewProps {
 
 export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProceed }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [metrics, setMetrics] = useState<SoulTargetMetrics | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 80);
-    return () => clearTimeout(timer);
+    const unsub = SoulTargetService.subscribeToLiveSoulTracking(m => {
+      setMetrics(m);
+    });
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
   }, []);
 
   return (
@@ -96,7 +105,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
             </p>
           </div>
 
-          {/* 3. SOUL-WINNING TARGET */}
+          {/* 3. SOUL-WINNING TARGET WITH LIVE HARVEST TRACKING */}
           <div
             className={`p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white border border-[#142B4A] shadow-xl relative overflow-hidden transition-all duration-700 delay-600 transform ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
@@ -111,16 +120,39 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
                   Annual Soul-Winning Target
                 </span>
               </div>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#C6A45A] bg-white/10 px-2.5 py-0.5 rounded-full border border-[#C6A45A]/30">
-                <Flame className="w-3 h-3 text-gold-400 fill-current animate-pulse" /> 2026 Harvest
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-white bg-[#C6A45A]/25 px-2.5 py-0.5 rounded-full border border-[#C6A45A]/50 tracking-wider uppercase">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Live Tracking
               </span>
             </div>
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-1 mb-1">
-              5,000 Souls
+
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mt-2 mb-1">
+              <div className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                5,000 Souls
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-[#C6A45A]">
+                {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Live Harvest Stream'}
+              </div>
             </div>
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans">
-              Mobilizing all cell leaders and fellowship teams to evangelize, disciple, and firmly integrate 5,000 souls into the Kingdom of God this year.
-            </p>
+
+            {/* Live Progress Bar */}
+            <div className="w-full bg-black/30 rounded-full h-2.5 my-3 overflow-hidden border border-white/10">
+              <div
+                className="bg-gradient-to-r from-[#C6A45A] to-emerald-400 h-full rounded-full transition-all duration-700 shadow-sm"
+                style={{ width: `${metrics ? metrics.percentageAchieved : 0}%` }}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-300 gap-2 pt-1 border-t border-white/10">
+              <span>
+                Remaining: <strong className="text-white">{metrics ? metrics.remainingSouls.toLocaleString() : '5,000'} souls</strong>
+              </span>
+              <div className="flex items-center gap-2 text-[10px] text-[#C6A45A]">
+                <span>Outreach: +{metrics?.soulsFromEvangelism || 0}</span>
+                <span>&bull;</span>
+                <span>Cell Meetings: +{metrics?.soulsFromCells || 0}</span>
+              </div>
+            </div>
           </div>
         </div>
 

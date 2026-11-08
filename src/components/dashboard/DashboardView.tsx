@@ -114,6 +114,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   useEffect(() => {
     loadData();
+
+    // Live Soul Target Tracking Subscription (Real-time updates from cells and evangelism)
+    const unsubSoul = SoulTargetService.subscribeToLiveSoulTracking(liveM => {
+      setSoulMetrics(liveM);
+      setStats(prev => prev ? {
+        ...prev,
+        soulsWon: liveM.verifiedSoulsWon,
+      } : prev);
+    });
+
+    return () => {
+      unsubSoul();
+    };
   }, []);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -140,9 +153,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     );
   }
 
-  const soulTarget = settings.annualSoulWinningTarget || 5000;
-  const targetPercent = Math.min(100, Math.round((stats.soulsWon / soulTarget) * 100));
-  const remainingTarget = Math.max(0, soulTarget - stats.soulsWon);
+  const soulTarget = soulMetrics?.annualTarget || settings.annualSoulWinningTarget || 5000;
+  const currentSoulsWon = soulMetrics ? soulMetrics.verifiedSoulsWon : stats.soulsWon;
+  const targetPercent = Math.min(100, Math.round((currentSoulsWon / soulTarget) * 100));
+  const remainingTarget = Math.max(0, soulTarget - currentSoulsWon);
 
   return (
     <div className="space-y-6">
@@ -233,15 +247,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Soul-Winning Target
                 </h2>
               </div>
-              <span className="text-xs font-bold text-[#23845B]">
-                {targetPercent}% Achieved
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Tracking
+                </span>
+                <span className="text-xs font-bold text-[#23845B]">
+                  {targetPercent}% Achieved
+                </span>
+              </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex justify-between items-baseline">
                 <span className="text-xs text-[#667085]">Conversions Recorded</span>
-                <span className="text-2xl font-black text-[#142B4A]">{stats.soulsWon}</span>
+                <span className="text-2xl font-black text-[#142B4A]">{currentSoulsWon}</span>
               </div>
 
               {/* Progress bar */}
@@ -259,6 +279,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div>
                   Remaining: <span className="font-bold text-[#D99A32]">{remainingTarget.toLocaleString()}</span>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-[#667085] pt-1 bg-[#F5F7FA] p-2 rounded-lg border border-[#E3E8EF]">
+                <span>Outreach: <strong className="text-[#182230]">+{soulMetrics?.soulsFromEvangelism || 0}</strong></span>
+                <span>Cell Meetings: <strong className="text-[#182230]">+{soulMetrics?.soulsFromCells || 0}</strong></span>
               </div>
             </div>
           </div>
@@ -844,7 +869,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {soulMetrics && soulMetrics.cellContributions.length > 0 ? (
                   soulMetrics.cellContributions.map(c => (
                     <div key={c.cellId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
-                      <span className="font-semibold text-navy-950">{c.cellName}</span>
+                      <div>
+                        <span className="font-semibold text-navy-950 block">{c.cellName}</span>
+                        <span className="text-[10px] text-slate-500">
+                          Outreach: +{c.fromEvangelism || 0} &bull; Meetings: +{c.fromCells || 0}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-navy-900">+{c.souls} souls</span>
                         <span className="text-[10px] text-gold-700 bg-gold-50 px-1.5 py-0.5 rounded font-bold">
@@ -862,7 +892,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span className="italic">Only verified souls from approved evangelism reports are counted.</span>
+              <span className="italic">Live tracking verified from weekly cell meeting returns & field evangelism reports.</span>
               <button
                 onClick={() => setShowSoulModal(false)}
                 className="px-4 py-1.5 bg-navy-950 text-white rounded-xl font-bold text-xs hover:bg-navy-900"

@@ -210,6 +210,14 @@ export class ReportService {
       console.warn('Report submission notification dispatch notice:', notifErr);
     }
 
+    // Live Soul Target Tracking Trigger
+    try {
+      const { SoulTargetService } = await import('./soulTargetService');
+      SoulTargetService.notifySubscribers();
+    } catch (e) {
+      console.warn('Soul target live update notice:', e);
+    }
+
     return report;
   }
 
@@ -347,6 +355,14 @@ export class ReportService {
       });
     } catch (notifErr) {
       console.warn('Evangelism submission notification dispatch notice:', notifErr);
+    }
+
+    // Live Soul Target Tracking Trigger
+    try {
+      const { SoulTargetService } = await import('./soulTargetService');
+      SoulTargetService.notifySubscribers();
+    } catch (e) {
+      console.warn('Soul target live update notice:', e);
     }
 
     return report;
@@ -522,6 +538,14 @@ export class ReportService {
       }
     } catch (notifErr) {
       console.warn('Report review notification dispatch notice:', notifErr);
+    }
+
+    // Live Soul Target Tracking Trigger
+    try {
+      const { SoulTargetService } = await import('./soulTargetService');
+      SoulTargetService.notifySubscribers();
+    } catch (e) {
+      console.warn('Soul target live update notice:', e);
     }
 
     return updatedReport;

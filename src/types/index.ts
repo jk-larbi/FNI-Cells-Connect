@@ -350,10 +350,12 @@ export interface SoulTargetMetrics {
   verifiedSoulsWon: number;
   remainingSouls: number;
   percentageAchieved: number;
+  soulsFromEvangelism: number;
+  soulsFromCells: number;
   weeklyProgress: Array<{ week: string; souls: number }>;
   monthlyProgress: Array<{ month: string; souls: number }>;
   quarterlyProgress: Array<{ quarter: string; souls: number }>;
-  cellContributions: Array<{ cellId: string; cellName: string; souls: number; percentage: number }>;
+  cellContributions: Array<{ cellId: string; cellName: string; souls: number; percentage: number; fromEvangelism?: number; fromCells?: number }>;
   teamContributions: Array<{ leaderName: string; souls: number; outings: number }>;
 }
 
