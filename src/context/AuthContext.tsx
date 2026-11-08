@@ -44,18 +44,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Listen to Firebase Auth state changes if active
   useEffect(() => {
     if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      const firebaseAuth = auth;
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (fbUser) => {
         if (fbUser) {
           localStorage.setItem('fni_active_session_v5_clean_prod', fbUser.uid);
           setIsLoggedOut(false);
         }
       });
       // Complete OAuth redirect flows used by mobile browsers.
-      getRedirectResult(auth).then(async (result) => {
+      getRedirectResult(firebaseAuth).then(async (result) => {
         if (!result || !db) return;
         const profileSnap = await getDoc(doc(db, 'profiles', result.user.uid));
         if (!profileSnap.exists()) {
-          await firebaseSignOut(auth);
+          await firebaseSignOut(firebaseAuth);
           localStorage.removeItem('fni_active_session_v5_clean_prod');
           setIsLoggedOut(true);
           return;
