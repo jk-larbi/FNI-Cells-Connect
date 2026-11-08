@@ -16,17 +16,20 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
 export interface MessagingViewProps {
   initialConversationId?: string;
   initialTab?: 'private' | 'community';
+  onBack?: () => void;
 }
 
 export const MessagingView: React.FC<MessagingViewProps> = ({
   initialConversationId,
   initialTab,
+  onBack,
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'private' | 'community'>(() => initialTab || 'private');
@@ -203,6 +206,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Previous</span>
+            </button>
+          )}
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-navy-50 text-navy-900 border border-navy-200 mb-1">
             <Lock className="w-3 h-3 text-gold-500" />
             Confidential & Fellowship Communications

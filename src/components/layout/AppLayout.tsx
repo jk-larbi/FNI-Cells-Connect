@@ -4,6 +4,7 @@ import { Header } from './Header';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { AppNavTab } from '../../types';
+import { ArrowLeft } from 'lucide-react';
 
 // Administrator Portal Views
 import { DashboardView } from '../dashboard/DashboardView';
@@ -38,6 +39,7 @@ export const AppLayout: React.FC = () => {
 
   // Role-based initial tab
   const [currentTab, setCurrentTab] = useState<AppNavTab>(() => (isAdmin ? 'dashboard' : 'my-dashboard'));
+  const [navHistory, setNavHistory] = useState<AppNavTab[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
@@ -47,10 +49,34 @@ export const AppLayout: React.FC = () => {
   const [targetConversationId, setTargetConversationId] = useState<string | undefined>(undefined);
   const [editingMeetingReport, setEditingMeetingReport] = useState<any | null>(null);
 
+  // Navigation with history tracking
+  const navigateToTab = (newTab: AppNavTab, replace = false) => {
+    if (newTab === currentTab) return;
+    if (!replace) {
+      setNavHistory(prev => [...prev, currentTab]);
+    }
+    setCurrentTab(newTab);
+  };
+
+  const handleGoBack = () => {
+    if (navHistory.length > 0) {
+      const prevTab = navHistory[navHistory.length - 1];
+      setNavHistory(prev => prev.slice(0, prev.length - 1));
+      setCurrentTab(prevTab);
+    } else {
+      const homeTab: AppNavTab = isAdmin ? 'dashboard' : 'my-dashboard';
+      if (currentTab !== homeTab) {
+        setCurrentTab(homeTab);
+      }
+    }
+  };
+
+  const canGoBack = navHistory.length > 0 || currentTab !== (isAdmin ? 'dashboard' : 'my-dashboard');
+
   // Handle external / service worker notification click targets
   React.useEffect(() => {
     if (activeNavigationTarget?.targetTab) {
-      setCurrentTab(activeNavigationTarget.targetTab as AppNavTab);
+      navigateToTab(activeNavigationTarget.targetTab as AppNavTab);
       if (activeNavigationTarget.reportId) {
         setHighlightedReportId(activeNavigationTarget.reportId);
       }
@@ -62,7 +88,7 @@ export const AppLayout: React.FC = () => {
   }, [activeNavigationTarget]);
 
   const handleNavigateFromNotification = (tab: string, meta?: any) => {
-    setCurrentTab(tab as AppNavTab);
+    navigateToTab(tab as AppNavTab);
     setIsNotifModalOpen(false);
     if (meta?.reportId) {
       setHighlightedReportId(meta.reportId);
@@ -89,7 +115,7 @@ export const AppLayout: React.FC = () => {
         {/* Navigation Sidebar */}
         <Sidebar
           currentTab={effectiveTab}
-          onSelectTab={tab => setCurrentTab(tab)}
+          onSelectTab={tab => navigateToTab(tab)}
           isOpen={isSidebarOpen}
           onCloseMobile={() => setIsSidebarOpen(false)}
           unreadCount={unreadCount}
@@ -102,8 +128,10 @@ export const AppLayout: React.FC = () => {
           <Header
             onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
             onOpenNotifications={() => setIsNotifModalOpen(true)}
-            onNavigateToForm={() => setCurrentTab(isAdmin ? 'report-review' : 'submit-cell-meeting-report')}
+            onNavigateToForm={() => navigateToTab(isAdmin ? 'report-review' : 'submit-cell-meeting-report')}
             onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+            canGoBack={canGoBack}
+            onGoBack={handleGoBack}
           />
 
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
@@ -112,30 +140,50 @@ export const AppLayout: React.FC = () => {
               <>
                 {effectiveTab === 'dashboard' && (
                   <DashboardView
-                    onNavigateToTab={tab => setCurrentTab(tab)}
+                    onNavigateToTab={tab => navigateToTab(tab)}
                     onOpenReport={reportId => {
                       setHighlightedReportId(reportId);
-                      setCurrentTab('report-review');
+                      navigateToTab('report-review');
                     }}
                   />
                 )}
-                {effectiveTab === 'cell-management' && <CellManagementView />}
-                {effectiveTab === 'cell-leaders' && <CellLeadersView />}
+                {effectiveTab === 'cell-management' && (
+                  <CellManagementView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'cell-leaders' && (
+                  <CellLeadersView onBack={handleGoBack} />
+                )}
                 {effectiveTab === 'report-review' && (
                   <ReportReviewView
                     initialReportId={highlightedReportId}
                     onClearInitialReportId={() => setHighlightedReportId(undefined)}
+                    onBack={handleGoBack}
                   />
                 )}
-                {effectiveTab === 'evangelism' && <EvangelismAdminView />}
-                {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
-                {effectiveTab === 'finance' && <FinanceView />}
-                {effectiveTab === 'materials' && <TeachingMaterialsView />}
-                {effectiveTab === 'messages' && (
-                  <MessagingView initialConversationId={targetConversationId} />
+                {effectiveTab === 'evangelism' && (
+                  <EvangelismAdminView onBack={handleGoBack} />
                 )}
-                {effectiveTab === 'analytics' && <AnalyticsView />}
-                {effectiveTab === 'settings' && <AdminSettingsView />}
+                {effectiveTab === 'follow-ups' && (
+                  <FollowUpManagementView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'finance' && (
+                  <FinanceView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'materials' && (
+                  <TeachingMaterialsView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'messages' && (
+                  <MessagingView
+                    initialConversationId={targetConversationId}
+                    onBack={handleGoBack}
+                  />
+                )}
+                {effectiveTab === 'analytics' && (
+                  <AnalyticsView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'settings' && (
+                  <AdminSettingsView onBack={handleGoBack} />
+                )}
               </>
             )}
 
@@ -144,14 +192,16 @@ export const AppLayout: React.FC = () => {
               <>
                 {effectiveTab === 'my-dashboard' && (
                   <TutorDashboardView
-                    onNavigateToTab={tab => setCurrentTab(tab)}
+                    onNavigateToTab={tab => navigateToTab(tab)}
                     onOpenReport={reportId => {
                       setHighlightedReportId(reportId);
-                      setCurrentTab('my-reports');
+                      navigateToTab('my-reports');
                     }}
                   />
                 )}
-                {effectiveTab === 'my-cell' && <MyCellView />}
+                {effectiveTab === 'my-cell' && (
+                  <MyCellView onBack={handleGoBack} />
+                )}
                 {effectiveTab === 'submit-cell-meeting-report' && (
                   <CellReportForm
                     initialReport={editingMeetingReport ? {
@@ -169,18 +219,18 @@ export const AppLayout: React.FC = () => {
                     } as any : null}
                     onSuccess={() => {
                       setEditingMeetingReport(null);
-                      setCurrentTab('my-reports');
+                      navigateToTab('my-reports');
                     }}
                     onCancel={() => {
                       setEditingMeetingReport(null);
-                      setCurrentTab('my-dashboard');
+                      handleGoBack();
                     }}
                   />
                 )}
                 {effectiveTab === 'submit-evangelism-report' && (
                   <EvangelismReportForm
-                    onSuccess={() => setCurrentTab('my-reports')}
-                    onCancel={() => setCurrentTab('my-dashboard')}
+                    onSuccess={() => navigateToTab('my-reports')}
+                    onCancel={handleGoBack}
                   />
                 )}
                 {effectiveTab === 'my-reports' && (
@@ -189,27 +239,49 @@ export const AppLayout: React.FC = () => {
                     onClearInitialReportId={() => setHighlightedReportId(undefined)}
                     onEditMeetingReport={report => {
                       setEditingMeetingReport(report);
-                      setCurrentTab('submit-cell-meeting-report');
+                      navigateToTab('submit-cell-meeting-report');
                     }}
+                    onBack={handleGoBack}
                   />
                 )}
-                {effectiveTab === 'evangelism-contacts' && <EvangelismContactsView />}
-                {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
-                {effectiveTab === 'materials' && <TeachingMaterialsView />}
-                {effectiveTab === 'messages' && (
-                  <MessagingView initialConversationId={targetConversationId} />
+                {effectiveTab === 'evangelism-contacts' && (
+                  <EvangelismContactsView onBack={handleGoBack} />
                 )}
-                {effectiveTab === 'cell-activity-history' && <CellActivityHistoryView />}
-                {effectiveTab === 'my-account' && <MyAccountView />}
+                {effectiveTab === 'follow-ups' && (
+                  <FollowUpManagementView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'materials' && (
+                  <TeachingMaterialsView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'messages' && (
+                  <MessagingView
+                    initialConversationId={targetConversationId}
+                    onBack={handleGoBack}
+                  />
+                )}
+                {effectiveTab === 'cell-activity-history' && (
+                  <CellActivityHistoryView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'my-account' && (
+                  <MyAccountView onBack={handleGoBack} />
+                )}
               </>
             )}
 
             {/* Shared notifications tab */}
             {effectiveTab === 'notifications' && (
-              <div className="max-w-2xl mx-auto">
+              <div className="max-w-2xl mx-auto space-y-4">
+                <button
+                  type="button"
+                  onClick={handleGoBack}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] text-xs font-bold transition-all border border-[#E3E8EF] cursor-pointer group shadow-2xs"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+                  <span>Back to Previous</span>
+                </button>
                 <NotificationCenterModal
                   isOpen={true}
-                  onClose={() => setCurrentTab(isAdmin ? 'dashboard' : 'my-dashboard')}
+                  onClose={handleGoBack}
                   onNavigate={handleNavigateFromNotification}
                 />
               </div>

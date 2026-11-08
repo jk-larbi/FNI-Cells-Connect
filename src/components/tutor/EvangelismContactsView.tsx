@@ -17,6 +17,7 @@ import {
   X,
   Save,
   MessageSquare,
+  ArrowLeft,
 } from 'lucide-react';
 
 const STATUS_LIST: FollowUpStatus[] = [
@@ -29,7 +30,11 @@ const STATUS_LIST: FollowUpStatus[] = [
   'Unreachable',
 ];
 
-export const EvangelismContactsView: React.FC = () => {
+interface EvangelismContactsViewProps {
+  onBack?: () => void;
+}
+
+export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ onBack }) => {
   const { currentUser } = useAuth();
   const [contacts, setContacts] = useState<EvangelismContact[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -152,6 +157,16 @@ export const EvangelismContactsView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Previous</span>
+            </button>
+          )}
           <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
             Evangelism Outreach Contacts
           </h1>

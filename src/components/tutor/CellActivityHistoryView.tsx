@@ -13,6 +13,7 @@ import {
   Calendar,
   AlertCircle,
   Building,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface TimelineEvent {
@@ -25,7 +26,11 @@ interface TimelineEvent {
   isAlert?: boolean;
 }
 
-export const CellActivityHistoryView: React.FC = () => {
+interface CellActivityHistoryViewProps {
+  onBack?: () => void;
+}
+
+export const CellActivityHistoryView: React.FC<CellActivityHistoryViewProps> = ({ onBack }) => {
   const { currentUser } = useAuth();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,6 +99,16 @@ export const CellActivityHistoryView: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Previous</span>
+          </button>
+        )}
         <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
           Cell Activity History & Timeline
         </h1>

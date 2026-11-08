@@ -22,9 +22,14 @@ import {
   FileText,
   Flame,
   UserCheck,
+  ArrowLeft,
 } from 'lucide-react';
 
-export const CellManagementView: React.FC = () => {
+interface CellManagementViewProps {
+  onBack?: () => void;
+}
+
+export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }) => {
   const [cells, setCells] = useState<Cell[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Suspended' | 'Deactivated'>('All');
@@ -143,6 +148,16 @@ export const CellManagementView: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Previous</span>
+            </button>
+          )}
           <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
             Cell Management
           </h1>

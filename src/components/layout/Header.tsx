@@ -2,13 +2,15 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
-import { Menu, Bell, PlusCircle, Calendar, Clock, Flame } from 'lucide-react';
+import { Menu, Bell, PlusCircle, Calendar, Clock, Flame, ArrowLeft } from 'lucide-react';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
   onOpenNotifications: () => void;
   onNavigateToForm?: () => void;
   onOpenAccountSettings?: () => void;
+  canGoBack?: boolean;
+  onGoBack?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,15 +18,17 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNotifications,
   onNavigateToForm,
   onOpenAccountSettings,
+  canGoBack = false,
+  onGoBack,
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
   const deadlineInfo = getCurrentDeadlineInfo();
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-white/90 backdrop-blur-md border-b border-[#E3E8EF] transition-all">
-      {/* Left: Mobile toggle & Deadline badge */}
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-4 sm:px-6 bg-white/90 backdrop-blur-md border-b border-[#E3E8EF] transition-all">
+      {/* Left: Mobile toggle & Back button & Deadline badge */}
+      <div className="flex items-center gap-2.5">
         <button
           onClick={onToggleSidebar}
           className="md:hidden p-2 rounded-xl bg-[#F5F7FA] text-[#667085] hover:text-[#142B4A] transition-colors"
@@ -32,6 +36,19 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {canGoBack && onGoBack && (
+          <button
+            type="button"
+            onClick={onGoBack}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#142B4A]/5 hover:bg-[#142B4A]/10 text-[#142B4A] text-xs font-bold transition-all border border-[#142B4A]/15 cursor-pointer group shadow-2xs shrink-0"
+            title="Go back to previous screen"
+            aria-label="Go back to previous screen"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+            <span className="font-semibold">Back</span>
+          </button>
+        )}
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F7FA] text-[#142B4A] font-semibold text-xs border border-[#E3E8EF]">

@@ -16,9 +16,14 @@ import {
   Target,
   Bell,
   History,
+  ArrowLeft,
 } from 'lucide-react';
 
-export const AdminSettingsView: React.FC = () => {
+interface AdminSettingsViewProps {
+  onBack?: () => void;
+}
+
+export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) => {
   const { currentUser, changePassword } = useAuth();
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -115,6 +120,16 @@ export const AdminSettingsView: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Previous</span>
+          </button>
+        )}
         <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
           System Administration & Settings
         </h1>

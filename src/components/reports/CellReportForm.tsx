@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Flame,
   Clock,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -198,6 +199,17 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
 
   return (
     <div className="space-y-4">
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+          <span>Back to Previous</span>
+        </button>
+      )}
+
       {/* Module Switcher Header */}
       <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center text-xs font-bold text-slate-600 shadow-inner max-w-md">
         <button

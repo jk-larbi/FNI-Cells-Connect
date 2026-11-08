@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Plus,
   Trash2,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -205,8 +206,20 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-card overflow-hidden">
-      {/* Header Banner */}
+    <div className="space-y-4">
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+          <span>Back to Previous</span>
+        </button>
+      )}
+
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-card overflow-hidden">
+        {/* Header Banner */}
       <div className="bg-navy-950 text-white p-6 sm:p-7 border-b border-navy-800">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -604,6 +617,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
           </Button>
         </div>
       </form>
+    </div>
     </div>
   );
 };

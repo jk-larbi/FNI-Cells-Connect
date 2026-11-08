@@ -13,10 +13,15 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
-export const FinanceView: React.FC = () => {
+interface FinanceViewProps {
+  onBack?: () => void;
+}
+
+export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
   const { currentUser, isAdmin } = useAuth();
   const [aggregation, setAggregation] = useState<OfferingAggregation | null>(null);
   const [records, setRecords] = useState<OfferingRecord[]>([]);
@@ -86,6 +91,16 @@ export const FinanceView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Previous</span>
+            </button>
+          )}
           <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold bg-gold-50 text-gold-700 border border-gold-200 mb-1">
             FNI Financial Stewardship
           </div>

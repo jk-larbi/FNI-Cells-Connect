@@ -16,6 +16,7 @@ import {
   FileText,
   Flame,
   MessageSquare,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface MyReportsViewProps {
@@ -23,6 +24,7 @@ interface MyReportsViewProps {
   onClearInitialReportId?: () => void;
   onEditMeetingReport?: (report: CellMeetingReport) => void;
   onEditEvangelismReport?: (report: EvangelismReport) => void;
+  onBack?: () => void;
 }
 
 export const MyReportsView: React.FC<MyReportsViewProps> = ({
@@ -30,6 +32,7 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
   onClearInitialReportId,
   onEditMeetingReport,
   onEditEvangelismReport,
+  onBack,
 }) => {
   const { currentUser } = useAuth();
   const [reports, setReports] = useState<UnifiedReportItem[]>([]);
@@ -99,6 +102,16 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Previous</span>
+            </button>
+          )}
           <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
             My Submitted Returns
           </h1>
