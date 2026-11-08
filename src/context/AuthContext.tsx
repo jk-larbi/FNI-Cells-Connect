@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Profile, TutorRegistrationInput, TutorLoginInput } from '../types';
 import { AuthService } from '../services/authService';
-import { auth, isFirebaseConfigured } from '../lib/firebase';
-import { onAuthStateChanged, linkWithPopup, signInWithPopup } from 'firebase/auth';
+import { auth, db, isFirebaseConfigured, googleProvider, appleProvider } from '../lib/firebase';
+import { onAuthStateChanged, linkWithPopup, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { googleProvider, appleProvider } from '../lib/firebase';
 
 interface AuthContextType {
   currentUser: Profile;
@@ -148,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const credential = await signInWithPopup(auth, provider === 'google' ? googleProvider : appleProvider);
       const profileSnap = await getDoc(doc(db, 'profiles', credential.user.uid));
-      if (!profileSnap.exists()) { await auth.signOut(); return { success: false, error: 'No FNI account is linked to this Google or Apple ID. Ask your cell administrator for help.' }; }
+      if (!profileSnap.exists()) { await firebaseSignOut(auth); return { success: false, error: 'No FNI account is linked to this Google or Apple ID. Ask your cell administrator for help.' }; }
       const profile = profileSnap.data() as Profile;
       if (profile.is_active === false || (profile as any).status === 'Suspended') { await auth.signOut(); return { success: false, error: 'This FNI account is suspended. Please contact the administration.' }; }
       AuthService.setCurrentProfile(profile); localStorage.setItem('fni_active_session_v5_clean_prod', profile.id); setCurrentUser(profile); setIsLoggedOut(false); return { success: true };
