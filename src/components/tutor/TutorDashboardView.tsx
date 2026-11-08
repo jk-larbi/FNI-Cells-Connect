@@ -19,6 +19,7 @@ import {
   Bell,
   Heart,
   Sparkles,
+  BookOpen,
   Phone,
   MessageCircle,
   Target,
@@ -573,9 +574,11 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
         <div className="lg:col-span-5 space-y-6">
           {/* PASTORAL WORD & DEVOTIONAL INSPIRATION */}
           <div className="bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white rounded-3xl p-5 sm:p-6 shadow-xs border border-[#142B4A] relative overflow-hidden">
-            <Quote className="w-16 h-16 text-[#C6A45A]/15 absolute -right-2 -bottom-2 pointer-events-none" />
+            <BookOpen className="w-20 h-20 text-[#C6A45A]/15 absolute -right-2 -bottom-2 pointer-events-none" />
             <div className="flex items-center gap-2 text-[#C6A45A] text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-4 h-4 shrink-0" />
+              <span className="p-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] flex items-center justify-center shrink-0">
+                <BookOpen className="w-4 h-4" />
+              </span>
               <span>Word of the Week for Tutors</span>
             </div>
 
@@ -583,8 +586,9 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
               <p className="text-sm sm:text-base font-serif italic text-slate-100 leading-relaxed">
                 &ldquo;For God is not unjust to forget your work and labor of love which you have shown toward His name, in that you have ministered to the saints, and do minister.&rdquo;
               </p>
-              <div className="text-right text-xs font-bold text-[#C6A45A] mt-2">
-                &mdash; Hebrews 6:10
+              <div className="text-right text-xs font-bold text-[#C6A45A] mt-2 flex items-center justify-end gap-1.5">
+                <span>📖</span>
+                <span>Hebrews 6:10</span>
               </div>
             </div>
 
