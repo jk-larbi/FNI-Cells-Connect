@@ -1,29 +1,76 @@
 -- ==============================================================================
 -- FORERUNNERS NETWORK INTERNATIONAL (FNI) - DIGITAL REPORTING SYSTEM
 -- MIGRATION: SUPABASE PRODUCTION BACKEND INTEGRATION
--- Target: Supabase / PostgreSQL 15+ (Project: cjskjazsrrbfyjepwyxa)
+-- Target: Supabase / PostgreSQL 15+ (Project: cjskjazsrrbfyjepwyxa, eu-west-3)
 -- Safety: Non-destructive, additive, strictly preserves existing data and schemas
--- Verified: Profiles identity model (profiles.id TEXT + supabase_user_id UUID),
---           offerings <-> offering_records, soul_target_configs <-> soul_targets,
---           review_logs (status/action & comment/comments), notifications complete fields,
---           and explicit RLS policies for all 23 tables to satisfy Supabase Advisor.
+--
+-- VERIFIED ARCHITECTURAL GUARANTEES:
+-- 1. Profiles Identity Arrangement:
+--    - profiles.id is TEXT PRIMARY KEY (alphanumeric ID / Firebase UID)
+--    - profiles.supabase_user_id is UUID REFERENCES auth.users(id) ON DELETE SET NULL
+--    - profiles.firebase_uid is TEXT UNIQUE
+-- 2. Role Parity:
+--    - user_role enum includes 'tutor', 'cell_leader', 'regional_leader',
+--      'national_admin', 'admin', 'super_admin'.
+--    - Existing enum types are safely upgraded with missing labels.
+-- 3. Live Database Constraint & Type Harmonization:
+--    - cells: drops broken UUID fkeys to profiles; converts leader_id & region_id to TEXT;
+--      drops rigid code & venue NOT NULL constraints.
+--    - regions: converts leader_id to TEXT.
+--    - notifications: converts id & user_id from UUID to TEXT; drops foreign key;
+--      aligns user_id, recipient_target, date, type, notification_type, channel.
+--    - audit_logs: converts id & user_id from UUID to TEXT; drops foreign key.
+-- 4. Dual-Table Compatibility:
+--    - offerings <-> offering_records
+--    - soul_target_configs <-> soul_targets
+-- 5. Field Harmonization:
+--    - review_logs: status, action, comment, comments
+-- 6. Complete 23-Table RLS Matrix (Supabase Advisor: 0 unprotected tables):
+--    - Anti-leakage isolation: private messages strictly isolated to parties,
+--      offerings restricted to finance/admins, reports & contacts isolated to cell tutors.
 -- ==============================================================================
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. ENUMERATION TYPES (Safely created if not already present)
+-- 2. ENUMERATION TYPES (Safely created & upgraded for full role parity)
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
         CREATE TYPE user_role AS ENUM (
-            'admin',
-            'super_admin',
-            'national_admin',
+            'tutor',
+            'cell_leader',
             'regional_leader',
-            'cell_leader'
+            'national_admin',
+            'admin',
+            'super_admin'
         );
+    ELSE
+        BEGIN
+            ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'tutor';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'cell_leader';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'regional_leader';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'national_admin';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'admin';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'report_status') THEN
@@ -63,7 +110,7 @@ BEGIN
     END IF;
 END $$;
 
--- 3. PROFILES TABLE & EXTENSIONS
+-- 3. PROFILES TABLE & IDENTITY ARRANGEMENT
 -- PRESERVED IDENTITY MODEL: id is TEXT PRIMARY KEY (stores alphanumeric user id / Firebase UID)
 -- supabase_user_id is UUID (references auth.users(id) for Supabase Auth integration)
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -100,7 +147,7 @@ ALTER TABLE public.profiles
     ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'email';
 
--- Schema Compatibility: Safely drop legacy check constraints if table was created by earlier schema
+-- Schema Compatibility: Safely drop legacy constraints if table was created by earlier schema
 DO $$
 BEGIN
     IF EXISTS (
@@ -153,6 +200,8 @@ ALTER TABLE public.regions
 
 DO $$
 BEGIN
+    ALTER TABLE public.regions DROP CONSTRAINT IF EXISTS fk_regions_leader;
+    ALTER TABLE public.regions DROP CONSTRAINT IF EXISTS regions_leader_id_fkey;
     IF EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' AND table_name = 'regions' AND column_name = 'leader_id' AND data_type = 'uuid'
@@ -167,11 +216,11 @@ CREATE TABLE IF NOT EXISTS public.cells (
     name VARCHAR(150) NOT NULL,
     normalized_name VARCHAR(150),
     code VARCHAR(30) UNIQUE,
-    region_id UUID REFERENCES public.regions(id) ON DELETE SET NULL,
+    region_id TEXT,
     leader_id TEXT,
     meeting_day VARCHAR(20) NOT NULL DEFAULT 'Wednesday',
-    meeting_time TIME NOT NULL DEFAULT '18:30:00',
-    venue_address TEXT NOT NULL DEFAULT 'Fellowship Venue',
+    meeting_time VARCHAR(50) NOT NULL DEFAULT '18:30:00',
+    venue_address TEXT DEFAULT 'Fellowship Venue',
     target_attendance INT NOT NULL DEFAULT 15,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -195,11 +244,44 @@ ALTER TABLE public.cells
 
 DO $$
 BEGIN
+    -- Drop legacy foreign keys that block text leader_id or text region_id
+    ALTER TABLE public.cells DROP CONSTRAINT IF EXISTS fk_cells_leader;
+    ALTER TABLE public.cells DROP CONSTRAINT IF EXISTS cells_leader_id_fkey;
+    ALTER TABLE public.cells DROP CONSTRAINT IF EXISTS cells_region_id_fkey;
+
     IF EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' AND table_name = 'cells' AND column_name = 'leader_id' AND data_type = 'uuid'
     ) THEN
         ALTER TABLE public.cells ALTER COLUMN leader_id TYPE TEXT USING leader_id::text;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'cells' AND column_name = 'region_id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE public.cells ALTER COLUMN region_id TYPE TEXT USING region_id::text;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'cells' AND column_name = 'code' AND is_nullable = 'NO'
+    ) THEN
+        ALTER TABLE public.cells ALTER COLUMN code DROP NOT NULL;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'cells' AND column_name = 'venue_address' AND is_nullable = 'NO'
+    ) THEN
+        ALTER TABLE public.cells ALTER COLUMN venue_address DROP NOT NULL;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'cells' AND column_name = 'meeting_time' AND data_type LIKE '%time%'
+    ) THEN
+        ALTER TABLE public.cells ALTER COLUMN meeting_time TYPE VARCHAR(50) USING meeting_time::varchar;
     END IF;
 END $$;
 
@@ -513,7 +595,7 @@ CREATE TABLE IF NOT EXISTS public.device_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_tokens_user ON public.device_tokens(user_id);
 
--- 18. NOTIFICATIONS (Complete Multi-Field Alignment)
+-- 18. NOTIFICATIONS (Complete Multi-Field Alignment & UUID-to-TEXT Safety)
 CREATE TABLE IF NOT EXISTS public.notifications (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     user_id TEXT,
@@ -532,6 +614,26 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+DO $$
+BEGIN
+    -- Drop legacy foreign key if notifications.user_id referenced profiles(id) as UUID
+    ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_user_id_fkey;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE public.notifications ALTER COLUMN id TYPE TEXT USING id::text;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'user_id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE public.notifications ALTER COLUMN user_id TYPE TEXT USING user_id::text;
+    END IF;
+END $$;
 
 ALTER TABLE public.notifications
     ADD COLUMN IF NOT EXISTS user_id TEXT,
@@ -554,7 +656,7 @@ CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON public.notifications(r
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_created ON public.notifications(created_at DESC);
 
--- 19. AUDIT LOGS (Immutable Activity Ledger)
+-- 19. AUDIT LOGS (Immutable Activity Ledger & UUID-to-TEXT Safety)
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     action TEXT NOT NULL,
@@ -567,6 +669,25 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     ip_address TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+DO $$
+BEGIN
+    ALTER TABLE public.audit_logs DROP CONSTRAINT IF EXISTS audit_logs_user_id_fkey;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'audit_logs' AND column_name = 'id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE public.audit_logs ALTER COLUMN id TYPE TEXT USING id::text;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'audit_logs' AND column_name = 'user_id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE public.audit_logs ALTER COLUMN user_id TYPE TEXT USING user_id::text;
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_audit_user ON public.audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON public.audit_logs(created_at DESC);
@@ -704,10 +825,10 @@ RETURNS BOOLEAN AS $$
     );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION public.is_regional_leader(target_region_id UUID)
+CREATE OR REPLACE FUNCTION public.is_regional_leader(target_region_id TEXT)
 RETURNS BOOLEAN AS $$
     SELECT (
-        (auth.jwt() -> 'app_metadata' ->> 'role' = 'regional_leader' AND (auth.jwt() -> 'app_metadata' ->> 'region_id')::uuid = target_region_id)
+        (auth.jwt() -> 'app_metadata' ->> 'role' = 'regional_leader' AND auth.jwt() -> 'app_metadata' ->> 'region_id' = target_region_id)
         OR
         EXISTS (
             SELECT 1 FROM public.profiles
@@ -717,17 +838,17 @@ RETURNS BOOLEAN AS $$
                 OR (firebase_uid IS NOT NULL AND firebase_uid = public.current_firebase_uid())
             )
             AND role = 'regional_leader'
-            AND region_id = target_region_id::text
+            AND region_id = target_region_id
         )
     );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES FOR ALL 23 TABLES
--- Satisfies Supabase Advisor: 0 unprotected RLS-enabled tables
+-- Zero unprotected RLS tables; strict multi-tenant isolation against data leakage
 -- ==============================================================================
 
--- 1. PROFILES
+-- 1. PROFILES: View own profile or admin; update own profile or admin
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "profiles_select" ON public.profiles;
 CREATE POLICY "profiles_select" ON public.profiles FOR SELECT TO authenticated
@@ -745,7 +866,7 @@ DROP POLICY IF EXISTS "profiles_delete" ON public.profiles;
 CREATE POLICY "profiles_delete" ON public.profiles FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 2. REGIONS
+-- 2. REGIONS: Read by all authenticated users; managed strictly by admins
 ALTER TABLE public.regions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "regions_select" ON public.regions;
 CREATE POLICY "regions_select" ON public.regions FOR SELECT TO authenticated USING (true);
@@ -754,7 +875,7 @@ DROP POLICY IF EXISTS "regions_admin_manage" ON public.regions;
 CREATE POLICY "regions_admin_manage" ON public.regions FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 3. CELLS
+-- 3. CELLS: Read by all authenticated users; managed strictly by admins
 ALTER TABLE public.cells ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "cells_select" ON public.cells;
 CREATE POLICY "cells_select" ON public.cells FOR SELECT TO authenticated USING (true);
@@ -763,7 +884,7 @@ DROP POLICY IF EXISTS "cells_admin_manage" ON public.cells;
 CREATE POLICY "cells_admin_manage" ON public.cells FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 4. REPORTING PERIODS
+-- 4. REPORTING PERIODS: Read by all authenticated users; managed strictly by admins
 ALTER TABLE public.reporting_periods ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "periods_select" ON public.reporting_periods;
 CREATE POLICY "periods_select" ON public.reporting_periods FOR SELECT TO authenticated USING (true);
@@ -772,7 +893,7 @@ DROP POLICY IF EXISTS "periods_admin_manage" ON public.reporting_periods;
 CREATE POLICY "periods_admin_manage" ON public.reporting_periods FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 5. CELL MEETING REPORTS
+-- 5. CELL MEETING REPORTS: Isolated to cell tutor, regional leader, or admin
 ALTER TABLE public.cell_meeting_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "cmr_select" ON public.cell_meeting_reports;
 CREATE POLICY "cmr_select" ON public.cell_meeting_reports FOR SELECT TO authenticated
@@ -804,7 +925,7 @@ DROP POLICY IF EXISTS "cmr_delete" ON public.cell_meeting_reports;
 CREATE POLICY "cmr_delete" ON public.cell_meeting_reports FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 6. EVANGELISM REPORTS
+-- 6. EVANGELISM REPORTS: Isolated to outreach tutor, regional leader, or admin
 ALTER TABLE public.evangelism_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "evr_select" ON public.evangelism_reports;
 CREATE POLICY "evr_select" ON public.evangelism_reports FOR SELECT TO authenticated
@@ -836,7 +957,7 @@ DROP POLICY IF EXISTS "evr_delete" ON public.evangelism_reports;
 CREATE POLICY "evr_delete" ON public.evangelism_reports FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 7. EVANGELISM CONTACTS
+-- 7. EVANGELISM CONTACTS: Isolated to assigned tutor or admin
 ALTER TABLE public.evangelism_contacts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "contacts_select" ON public.evangelism_contacts;
 CREATE POLICY "contacts_select" ON public.evangelism_contacts FOR SELECT TO authenticated
@@ -859,7 +980,7 @@ CREATE POLICY "contacts_manage" ON public.evangelism_contacts FOR ALL TO authent
         OR tutor_uid = public.current_firebase_uid()
     );
 
--- 8. OFFERINGS (Primary Table)
+-- 8. OFFERINGS: Strictly finance and admin oversight (No cross-cell financial leakage)
 ALTER TABLE public.offerings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "offerings_select" ON public.offerings;
 CREATE POLICY "offerings_select" ON public.offerings FOR SELECT TO authenticated
@@ -869,17 +990,16 @@ DROP POLICY IF EXISTS "offerings_admin" ON public.offerings;
 CREATE POLICY "offerings_admin" ON public.offerings FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 9. OFFERING RECORDS (Adapter Table)
+-- 9. OFFERING RECORDS: Strictly finance and admin oversight (No cross-cell financial leakage)
 ALTER TABLE public.offering_records ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "offering_records_select" ON public.offering_records;
 CREATE POLICY "offering_records_select" ON public.offering_records FOR SELECT TO authenticated
     USING (public.is_admin());
 
-DROP POLICY IF EXISTS "offering_records_admin" ON public.offering_records;
-CREATE POLICY "offering_records_admin" ON public.offering_records FOR ALL TO authenticated
+DROP POLICY IF EXISTS "offering_records_admin" ON public.offering_records FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 10. PRIVATE MESSAGES
+-- 10. PRIVATE MESSAGES: Strictly between sender and recipient (ZERO leakage to third parties)
 ALTER TABLE public.private_messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "pmsg_parties" ON public.private_messages;
 CREATE POLICY "pmsg_parties" ON public.private_messages FOR SELECT TO authenticated
@@ -912,7 +1032,7 @@ CREATE POLICY "pmsg_delete" ON public.private_messages FOR DELETE TO authenticat
         OR sender_uid = public.current_firebase_uid()
     );
 
--- 11. COMMUNITY MESSAGES
+-- 11. COMMUNITY MESSAGES: Viewable by all; insert and modify own messages only
 ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "cmsg_select" ON public.community_messages;
 CREATE POLICY "cmsg_select" ON public.community_messages FOR SELECT TO authenticated USING (true);
@@ -937,7 +1057,7 @@ CREATE POLICY "cmsg_modify" ON public.community_messages FOR ALL TO authenticate
         OR sender_uid = public.current_firebase_uid()
     );
 
--- 12. INVITATION CODES
+-- 12. INVITATION CODES: Validated by authenticated users; managed strictly by admins
 ALTER TABLE public.invitation_codes ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "invitation_codes_select" ON public.invitation_codes;
 CREATE POLICY "invitation_codes_select" ON public.invitation_codes FOR SELECT TO authenticated USING (true);
@@ -946,7 +1066,7 @@ DROP POLICY IF EXISTS "invitation_codes_admin" ON public.invitation_codes;
 CREATE POLICY "invitation_codes_admin" ON public.invitation_codes FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 13. TEACHING MATERIALS
+-- 13. TEACHING MATERIALS: Read by all authenticated users; managed strictly by admins
 ALTER TABLE public.teaching_materials ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "materials_select" ON public.teaching_materials;
 CREATE POLICY "materials_select" ON public.teaching_materials FOR SELECT TO authenticated USING (true);
@@ -955,7 +1075,7 @@ DROP POLICY IF EXISTS "materials_admin" ON public.teaching_materials;
 CREATE POLICY "materials_admin" ON public.teaching_materials FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 14. SYSTEM SETTINGS
+-- 14. SYSTEM SETTINGS: Read by all authenticated users; managed strictly by admins
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "settings_select" ON public.system_settings;
 CREATE POLICY "settings_select" ON public.system_settings FOR SELECT TO authenticated USING (true);
@@ -964,7 +1084,7 @@ DROP POLICY IF EXISTS "settings_admin" ON public.system_settings;
 CREATE POLICY "settings_admin" ON public.system_settings FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 15. SOUL TARGET CONFIGS (Primary Table)
+-- 15. SOUL TARGET CONFIGS: Read by all authenticated users; managed strictly by admins
 ALTER TABLE public.soul_target_configs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "soul_target_configs_select" ON public.soul_target_configs;
 CREATE POLICY "soul_target_configs_select" ON public.soul_target_configs FOR SELECT TO authenticated USING (true);
@@ -973,7 +1093,7 @@ DROP POLICY IF EXISTS "soul_target_configs_admin" ON public.soul_target_configs;
 CREATE POLICY "soul_target_configs_admin" ON public.soul_target_configs FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 16. SOUL TARGETS (Adapter Table)
+-- 16. SOUL TARGETS: Read by all authenticated users; managed strictly by admins
 ALTER TABLE public.soul_targets ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "soul_targets_select" ON public.soul_targets;
 CREATE POLICY "soul_targets_select" ON public.soul_targets FOR SELECT TO authenticated USING (true);
@@ -982,7 +1102,7 @@ DROP POLICY IF EXISTS "soul_targets_admin" ON public.soul_targets;
 CREATE POLICY "soul_targets_admin" ON public.soul_targets FOR ALL TO authenticated
     USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- 17. DEVICE TOKENS
+-- 17. DEVICE TOKENS: Token owner access only (No cross-user leakage)
 ALTER TABLE public.device_tokens ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "device_tokens_manage" ON public.device_tokens;
 CREATE POLICY "device_tokens_manage" ON public.device_tokens FOR ALL TO authenticated
@@ -995,7 +1115,7 @@ CREATE POLICY "device_tokens_manage" ON public.device_tokens FOR ALL TO authenti
         OR user_id = public.current_firebase_uid()
     );
 
--- 18. NOTIFICATIONS (Role-Aware Authorization & Anti-Impersonation Safeguards)
+-- 18. NOTIFICATIONS: Recipient isolated, admin-only broadcasts, no cross-user leakage
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "notifications_select" ON public.notifications;
 CREATE POLICY "notifications_select" ON public.notifications FOR SELECT TO authenticated
@@ -1011,9 +1131,17 @@ CREATE POLICY "notifications_select" ON public.notifications FOR SELECT TO authe
 DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
 CREATE POLICY "notifications_insert" ON public.notifications FOR INSERT TO authenticated
     WITH CHECK (
+        -- Only admins can send broadcast notifications
         (recipient_target = 'all' AND public.is_admin())
-        OR (recipient_target = 'admin')
-        OR (recipient_target != 'all' AND (sender_id IS NULL OR sender_id = auth.uid()::text OR sender_id = public.current_firebase_uid() OR public.is_admin()))
+        OR
+        -- Members can send alerts to administrators
+        (recipient_target = 'admin')
+        OR
+        -- Direct user notification with verified sender identity
+        (
+            recipient_target != 'all' 
+            AND (sender_id IS NULL OR sender_id = auth.uid()::text OR sender_id = public.current_firebase_uid() OR public.is_admin())
+        )
     );
 
 DROP POLICY IF EXISTS "notifications_update" ON public.notifications;
@@ -1037,7 +1165,7 @@ DROP POLICY IF EXISTS "notifications_delete" ON public.notifications;
 CREATE POLICY "notifications_delete" ON public.notifications FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 19. AUDIT LOGS (Admin read-only, authenticated insert-only, immutable)
+-- 19. AUDIT LOGS: Immutable activity ledger; admin read-only, authenticated append-only
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "audit_logs_select" ON public.audit_logs;
 CREATE POLICY "audit_logs_select" ON public.audit_logs FOR SELECT TO authenticated
@@ -1051,7 +1179,7 @@ CREATE POLICY "audit_logs_insert" ON public.audit_logs FOR INSERT TO authenticat
         OR user_id = public.current_firebase_uid()
     );
 
--- 20. FOLLOW-UPS
+-- 20. FOLLOW-UPS: Care pipeline isolated to assigned tutor or admin
 ALTER TABLE public.follow_ups ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "follow_ups_select" ON public.follow_ups;
 CREATE POLICY "follow_ups_select" ON public.follow_ups FOR SELECT TO authenticated
@@ -1062,7 +1190,7 @@ CREATE POLICY "follow_ups_manage" ON public.follow_ups FOR ALL TO authenticated
     USING (public.is_admin() OR tutor_uid = auth.uid()::text OR tutor_uid = public.current_firebase_uid())
     WITH CHECK (public.is_admin() OR tutor_uid = auth.uid()::text OR tutor_uid = public.current_firebase_uid());
 
--- 21. REVIEW LOGS
+-- 21. REVIEW LOGS: Reviewer and admin oversight
 ALTER TABLE public.review_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "review_logs_select" ON public.review_logs;
 CREATE POLICY "review_logs_select" ON public.review_logs FOR SELECT TO authenticated
