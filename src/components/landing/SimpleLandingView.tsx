@@ -79,7 +79,7 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
           {/* Logo Frame: High-End Emblem Glass-Pillar Frame */}
           <div className="w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 rounded-3xl overflow-hidden border-2 border-white shadow-2xl bg-gradient-to-b from-[#142B4A] to-[#0D1E35] flex items-center justify-center p-1 relative z-10 group hover:scale-[1.04] transition-transform duration-500 cursor-pointer">
             <img
-              src="/fni-official-logo.jpg"
+              src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
               alt="Forerunners Network International Official Logo"
               className="w-full h-full object-contain rounded-2xl drop-shadow-md"
             />
