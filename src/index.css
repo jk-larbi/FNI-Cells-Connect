@@ -205,3 +205,62 @@
   animation: goldWave 6s ease infinite;
 }
 
+
+
+/* Mobile-first application safeguards */
+html, body, #root {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
+
+img, video, canvas, svg {
+  max-width: 100%;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+.mobile-bottom-nav {
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 767px) {
+  #root {
+    overflow-x: clip;
+  }
+
+  main {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Keep wide data grids usable without breaking the page width. */
+  table {
+    min-width: 100%;
+  }
+
+  .table-scroll-container {
+    max-width: 100%;
+    border-radius: 0.75rem;
+  }
+
+  /* Avoid clipped form controls on narrow screens. */
+  input, select, textarea {
+    max-width: 100%;
+  }
+
+  /* Respect reduced-motion preferences on phones as well. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
