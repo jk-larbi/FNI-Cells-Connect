@@ -26,6 +26,24 @@ function normalize(str: string): string {
 }
 
 /**
+ * Deterministic UUID generator for Supabase Auth identity bridge
+ */
+export function getDeterministicUuid(uid: string): string {
+  const hash = crypto.createHash('sha1').update('fni:user:' + uid).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-5${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+/**
+ * Signs standard Supabase JWT using HS256 algorithm
+ */
+export function signSupabaseJwt(payload: Record<string, any>, secret: string): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+/**
  * Backend Callable: Register Tutor (Full Name, Cell Name, Password)
  * Enforces cell duplicate prevention, hashes password, assigns tutor role, issues custom token
  */
@@ -270,6 +288,63 @@ export const changeAdminPassword = onCall(async (request: CallableRequest<any>) 
   });
 
   return { success: true };
+});
+
+/**
+ * Backend Callable: Firebase-to-Supabase Token Exchange
+ * Verifies caller's Firebase Auth state, generates deterministic UUID, and issues verified Supabase session JWT
+ */
+export const getSupabaseAuthToken = onCall(async (request: CallableRequest<any>) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated with Firebase to obtain a Supabase session token.');
+  }
+
+  const firebaseUid = request.auth.uid;
+  const secret = process.env.SUPABASE_JWT_SECRET;
+  if (!secret) {
+    throw new HttpsError('failed-precondition', 'SUPABASE_JWT_SECRET is not configured on the server.');
+  }
+
+  // 1. Fetch user profile from Firestore to obtain verified role
+  const profileSnap = await db.collection('profiles').doc(firebaseUid).get();
+  const profileData = profileSnap.exists ? profileSnap.data() : null;
+  const userRole = profileData?.role || 'cell_leader';
+  const fullName = profileData?.full_name || request.auth.token.name || 'Member';
+
+  // 2. Generate deterministic UUID
+  const supabaseUuid = getDeterministicUuid(firebaseUid);
+
+  // 3. Construct verified claims
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    aud: 'authenticated',
+    role: 'authenticated',
+    sub: supabaseUuid,
+    firebase_uid: firebaseUid,
+    email: request.auth.token.email || `${firebaseUid}@fnicells.org`,
+    app_metadata: {
+      provider: 'firebase',
+      role: userRole,
+      firebase_uid: firebaseUid,
+    },
+    user_metadata: {
+      full_name: fullName,
+      role: userRole,
+      firebase_uid: firebaseUid,
+    },
+    iat: now,
+    exp: now + 86400, // 24 hours
+  };
+
+  const token = signSupabaseJwt(payload, secret);
+
+  return {
+    token,
+    supabaseUuid,
+    firebaseUid,
+    role: userRole,
+    expiresAt: now + 86400,
+  };
 });
 
 /**

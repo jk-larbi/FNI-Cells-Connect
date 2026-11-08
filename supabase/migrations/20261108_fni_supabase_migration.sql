@@ -426,71 +426,223 @@ ALTER TABLE public.device_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Helper security functions
+CREATE OR REPLACE FUNCTION public.current_firebase_uid()
+RETURNS TEXT AS $$
+    SELECT COALESCE(
+        auth.jwt() ->> 'firebase_uid',
+        auth.jwt() -> 'app_metadata' ->> 'firebase_uid',
+        auth.jwt() -> 'user_metadata' ->> 'firebase_uid',
+        (SELECT firebase_uid FROM public.profiles WHERE id = auth.uid())
+    );
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.current_user_role()
+RETURNS TEXT AS $$
+    SELECT COALESCE(
+        auth.jwt() -> 'app_metadata' ->> 'role',
+        auth.jwt() -> 'user_metadata' ->> 'role',
+        (SELECT role::text FROM public.profiles WHERE id = auth.uid() OR (firebase_uid IS NOT NULL AND firebase_uid = public.current_firebase_uid()))
+    );
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM public.profiles
-        WHERE (id = auth.uid() OR firebase_uid = auth.uid()::text)
-        AND role IN ('admin', 'super_admin', 'national_admin')
+    SELECT (
+        (auth.jwt() -> 'app_metadata' ->> 'role' IN ('admin', 'super_admin', 'national_admin'))
+        OR
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE (
+                id = auth.uid() 
+                OR (firebase_uid IS NOT NULL AND firebase_uid = public.current_firebase_uid())
+            )
+            AND role IN ('admin', 'super_admin', 'national_admin')
+        )
+    );
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.is_regional_leader(target_region_id UUID)
+RETURNS BOOLEAN AS $$
+    SELECT (
+        (auth.jwt() -> 'app_metadata' ->> 'role' = 'regional_leader' AND (auth.jwt() -> 'app_metadata' ->> 'region_id')::uuid = target_region_id)
+        OR
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE (
+                id = auth.uid() 
+                OR (firebase_uid IS NOT NULL AND firebase_uid = public.current_firebase_uid())
+            )
+            AND role = 'regional_leader'
+            AND region_id = target_region_id
+        )
     );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
 -- Profiles: Own profile or Admin
 DROP POLICY IF EXISTS "profiles_select" ON public.profiles;
 CREATE POLICY "profiles_select" ON public.profiles FOR SELECT TO authenticated
-    USING (id = auth.uid() OR public.is_admin());
+    USING (id = auth.uid() OR (firebase_uid IS NOT NULL AND firebase_uid = public.current_firebase_uid()) OR public.is_admin());
 
 DROP POLICY IF EXISTS "profiles_update" ON public.profiles;
 CREATE POLICY "profiles_update" ON public.profiles FOR UPDATE TO authenticated
-    USING (id = auth.uid() OR public.is_admin());
+    USING (id = auth.uid() OR (firebase_uid IS NOT NULL AND firebase_uid = public.current_firebase_uid()) OR public.is_admin());
+
+DROP POLICY IF EXISTS "profiles_insert" ON public.profiles;
+CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT TO authenticated
+    WITH CHECK (id = auth.uid() OR public.is_admin());
 
 -- Cells & Regions: Viewable by all authenticated members; Manageable by Admins
 DROP POLICY IF EXISTS "cells_select" ON public.cells;
 CREATE POLICY "cells_select" ON public.cells FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "cells_admin_manage" ON public.cells;
+CREATE POLICY "cells_admin_manage" ON public.cells FOR ALL TO authenticated
+    USING (public.is_admin()) WITH CHECK (public.is_admin());
+
 DROP POLICY IF EXISTS "regions_select" ON public.regions;
 CREATE POLICY "regions_select" ON public.regions FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "regions_admin_manage" ON public.regions;
+CREATE POLICY "regions_admin_manage" ON public.regions FOR ALL TO authenticated
+    USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "periods_select" ON public.reporting_periods;
 CREATE POLICY "periods_select" ON public.reporting_periods FOR SELECT TO authenticated USING (true);
 
--- Cell Meeting Reports: Leaders view/edit their own; Admins oversee all
+DROP POLICY IF EXISTS "periods_admin_manage" ON public.reporting_periods;
+CREATE POLICY "periods_admin_manage" ON public.reporting_periods FOR ALL TO authenticated
+    USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- Cell Meeting Reports: Leaders view/edit their own; Regional leaders view their region; Admins oversee all
 DROP POLICY IF EXISTS "cmr_select" ON public.cell_meeting_reports;
 CREATE POLICY "cmr_select" ON public.cell_meeting_reports FOR SELECT TO authenticated
-    USING (public.is_admin() OR tutor_uid = auth.uid()::text);
+    USING (
+        public.is_admin() 
+        OR tutor_uid = auth.uid()::text 
+        OR tutor_uid = public.current_firebase_uid()
+        OR EXISTS (
+            SELECT 1 FROM public.cells c 
+            WHERE (c.id::text = cell_meeting_reports.cell_id OR c.firebase_id = cell_meeting_reports.cell_id)
+            AND public.is_regional_leader(c.region_id)
+        )
+    );
 
 DROP POLICY IF EXISTS "cmr_insert" ON public.cell_meeting_reports;
 CREATE POLICY "cmr_insert" ON public.cell_meeting_reports FOR INSERT TO authenticated
-    WITH CHECK (public.is_admin() OR tutor_uid = auth.uid()::text);
+    WITH CHECK (
+        public.is_admin() 
+        OR tutor_uid = auth.uid()::text 
+        OR tutor_uid = public.current_firebase_uid()
+    );
 
 DROP POLICY IF EXISTS "cmr_update" ON public.cell_meeting_reports;
 CREATE POLICY "cmr_update" ON public.cell_meeting_reports FOR UPDATE TO authenticated
-    USING (public.is_admin() OR (tutor_uid = auth.uid()::text AND status = 'Needs Correction'));
+    USING (
+        public.is_admin() 
+        OR (
+            (tutor_uid = auth.uid()::text OR tutor_uid = public.current_firebase_uid()) 
+            AND status IN ('Needs Correction', 'draft', 'Newly Submitted')
+        )
+    );
 
--- Evangelism Reports
+DROP POLICY IF EXISTS "cmr_delete" ON public.cell_meeting_reports;
+CREATE POLICY "cmr_delete" ON public.cell_meeting_reports FOR DELETE TO authenticated
+    USING (public.is_admin());
+
+-- Evangelism Reports: Leaders view/edit their own; Regional leaders view their region; Admins oversee all
 DROP POLICY IF EXISTS "evr_select" ON public.evangelism_reports;
 CREATE POLICY "evr_select" ON public.evangelism_reports FOR SELECT TO authenticated
-    USING (public.is_admin() OR tutor_uid = auth.uid()::text);
+    USING (
+        public.is_admin() 
+        OR tutor_uid = auth.uid()::text 
+        OR tutor_uid = public.current_firebase_uid()
+        OR EXISTS (
+            SELECT 1 FROM public.cells c 
+            WHERE (c.id::text = evangelism_reports.cell_id OR c.firebase_id = evangelism_reports.cell_id)
+            AND public.is_regional_leader(c.region_id)
+        )
+    );
 
 DROP POLICY IF EXISTS "evr_insert" ON public.evangelism_reports;
 CREATE POLICY "evr_insert" ON public.evangelism_reports FOR INSERT TO authenticated
-    WITH CHECK (public.is_admin() OR tutor_uid = auth.uid()::text);
+    WITH CHECK (
+        public.is_admin() 
+        OR tutor_uid = auth.uid()::text 
+        OR tutor_uid = public.current_firebase_uid()
+    );
+
+DROP POLICY IF EXISTS "evr_update" ON public.evangelism_reports;
+CREATE POLICY "evr_update" ON public.evangelism_reports FOR UPDATE TO authenticated
+    USING (
+        public.is_admin() 
+        OR (
+            (tutor_uid = auth.uid()::text OR tutor_uid = public.current_firebase_uid()) 
+            AND status IN ('Needs Correction', 'draft', 'Newly Submitted')
+        )
+    );
+
+DROP POLICY IF EXISTS "evr_delete" ON public.evangelism_reports;
+CREATE POLICY "evr_delete" ON public.evangelism_reports FOR DELETE TO authenticated
+    USING (public.is_admin());
 
 -- Contacts Pipeline
 DROP POLICY IF EXISTS "contacts_select" ON public.evangelism_contacts;
 CREATE POLICY "contacts_select" ON public.evangelism_contacts FOR SELECT TO authenticated
-    USING (public.is_admin() OR tutor_uid = auth.uid()::text);
+    USING (
+        public.is_admin() 
+        OR tutor_uid = auth.uid()::text 
+        OR tutor_uid = public.current_firebase_uid()
+        OR EXISTS (
+            SELECT 1 FROM public.cells c 
+            WHERE (c.id::text = evangelism_contacts.cell_id OR c.firebase_id = evangelism_contacts.cell_id)
+            AND public.is_regional_leader(c.region_id)
+        )
+    );
 
 DROP POLICY IF EXISTS "contacts_all" ON public.evangelism_contacts;
 CREATE POLICY "contacts_all" ON public.evangelism_contacts FOR ALL TO authenticated
-    USING (public.is_admin() OR tutor_uid = auth.uid()::text)
-    WITH CHECK (public.is_admin() OR tutor_uid = auth.uid()::text);
+    USING (
+        public.is_admin() 
+        OR tutor_uid = auth.uid()::text 
+        OR tutor_uid = public.current_firebase_uid()
+    )
+    WITH CHECK (
+        public.is_admin() 
+        OR tutor_uid = auth.uid()::text 
+        OR tutor_uid = public.current_firebase_uid()
+    );
 
 -- Private Messages: Strictly sender and recipient only!
 DROP POLICY IF EXISTS "pmsg_parties" ON public.private_messages;
-CREATE POLICY "pmsg_parties" ON public.private_messages FOR ALL TO authenticated
-    USING (sender_uid = auth.uid()::text OR recipient_uid = auth.uid()::text)
-    WITH CHECK (sender_uid = auth.uid()::text);
+CREATE POLICY "pmsg_parties" ON public.private_messages FOR SELECT TO authenticated
+    USING (
+        sender_uid = auth.uid()::text 
+        OR sender_uid = public.current_firebase_uid() 
+        OR recipient_uid = auth.uid()::text 
+        OR recipient_uid = public.current_firebase_uid()
+    );
+
+DROP POLICY IF EXISTS "pmsg_insert" ON public.private_messages;
+CREATE POLICY "pmsg_insert" ON public.private_messages FOR INSERT TO authenticated
+    WITH CHECK (
+        sender_uid = auth.uid()::text 
+        OR sender_uid = public.current_firebase_uid()
+    );
+
+DROP POLICY IF EXISTS "pmsg_update" ON public.private_messages;
+CREATE POLICY "pmsg_update" ON public.private_messages FOR UPDATE TO authenticated
+    USING (
+        recipient_uid = auth.uid()::text 
+        OR recipient_uid = public.current_firebase_uid()
+    );
+
+DROP POLICY IF EXISTS "pmsg_delete" ON public.private_messages;
+CREATE POLICY "pmsg_delete" ON public.private_messages FOR DELETE TO authenticated
+    USING (
+        public.is_admin() 
+        OR sender_uid = auth.uid()::text 
+        OR sender_uid = public.current_firebase_uid()
+    );
 
 -- Community Messages: Read all, post own
 DROP POLICY IF EXISTS "cmsg_select" ON public.community_messages;
@@ -498,7 +650,23 @@ CREATE POLICY "cmsg_select" ON public.community_messages FOR SELECT TO authentic
 
 DROP POLICY IF EXISTS "cmsg_insert" ON public.community_messages;
 CREATE POLICY "cmsg_insert" ON public.community_messages FOR INSERT TO authenticated
-    WITH CHECK (sender_uid = auth.uid()::text);
+    WITH CHECK (
+        sender_uid = auth.uid()::text 
+        OR sender_uid = public.current_firebase_uid()
+    );
+
+DROP POLICY IF EXISTS "cmsg_modify" ON public.community_messages;
+CREATE POLICY "cmsg_modify" ON public.community_messages FOR ALL TO authenticated
+    USING (
+        public.is_admin() 
+        OR sender_uid = auth.uid()::text 
+        OR sender_uid = public.current_firebase_uid()
+    )
+    WITH CHECK (
+        public.is_admin() 
+        OR sender_uid = auth.uid()::text 
+        OR sender_uid = public.current_firebase_uid()
+    );
 
 -- Teaching Materials, Settings, Soul Targets: View all, Admins manage
 DROP POLICY IF EXISTS "materials_select" ON public.teaching_materials;
@@ -511,8 +679,16 @@ CREATE POLICY "materials_admin" ON public.teaching_materials FOR ALL TO authenti
 DROP POLICY IF EXISTS "settings_select" ON public.system_settings;
 CREATE POLICY "settings_select" ON public.system_settings FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "settings_admin" ON public.system_settings;
+CREATE POLICY "settings_admin" ON public.system_settings FOR ALL TO authenticated
+    USING (public.is_admin()) WITH CHECK (public.is_admin());
+
 DROP POLICY IF EXISTS "soul_targets_select" ON public.soul_targets;
 CREATE POLICY "soul_targets_select" ON public.soul_targets FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "soul_targets_admin" ON public.soul_targets;
+CREATE POLICY "soul_targets_admin" ON public.soul_targets FOR ALL TO authenticated
+    USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Offering Records: Strict Admin & Finance Governance (Confidential from cross-cell viewing)
 DROP POLICY IF EXISTS "offerings_select" ON public.offering_records;
@@ -526,7 +702,12 @@ CREATE POLICY "offerings_admin" ON public.offering_records FOR ALL TO authentica
 -- Notifications: Recipient, Broadcast, or Administrator
 DROP POLICY IF EXISTS "notifications_select" ON public.notifications;
 CREATE POLICY "notifications_select" ON public.notifications FOR SELECT TO authenticated
-    USING (recipient_target = 'all' OR recipient_target = auth.uid()::text OR (recipient_target = 'admin' AND public.is_admin()));
+    USING (
+        recipient_target = 'all' 
+        OR recipient_target = auth.uid()::text 
+        OR recipient_target = public.current_firebase_uid() 
+        OR (recipient_target = 'admin' AND public.is_admin())
+    );
 
 DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
 CREATE POLICY "notifications_insert" ON public.notifications FOR INSERT TO authenticated
@@ -534,12 +715,23 @@ CREATE POLICY "notifications_insert" ON public.notifications FOR INSERT TO authe
 
 DROP POLICY IF EXISTS "notifications_update" ON public.notifications;
 CREATE POLICY "notifications_update" ON public.notifications FOR UPDATE TO authenticated
-    USING (recipient_target = auth.uid()::text OR public.is_admin());
+    USING (
+        recipient_target = auth.uid()::text 
+        OR recipient_target = public.current_firebase_uid() 
+        OR public.is_admin()
+    );
 
 -- Device Tokens: User own token only
 DROP POLICY IF EXISTS "device_tokens_user" ON public.device_tokens;
 CREATE POLICY "device_tokens_user" ON public.device_tokens FOR ALL TO authenticated
-    USING (user_id = auth.uid()::text) WITH CHECK (user_id = auth.uid()::text);
+    USING (
+        user_id = auth.uid()::text 
+        OR user_id = public.current_firebase_uid()
+    ) 
+    WITH CHECK (
+        user_id = auth.uid()::text 
+        OR user_id = public.current_firebase_uid()
+    );
 
 -- Audit Logs: Admin read-only, append-only
 DROP POLICY IF EXISTS "audit_logs_select" ON public.audit_logs;

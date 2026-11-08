@@ -203,6 +203,7 @@ export class AuthService {
 
         if (result.data?.customToken && auth) {
           await signInWithCustomToken(auth, result.data.customToken);
+          await this.syncSupabaseSession();
         }
 
         if (result.data?.profile) {
@@ -347,6 +348,7 @@ export class AuthService {
 
         if (result.data?.customToken && auth) {
           await signInWithCustomToken(auth, result.data.customToken);
+          await this.syncSupabaseSession();
         }
 
         if (result.data?.profile) {
@@ -487,6 +489,7 @@ export class AuthService {
 
         if (result.data?.customToken && auth) {
           await signInWithCustomToken(auth, result.data.customToken);
+          await this.syncSupabaseSession();
         }
 
         if (result.data?.profile) {
@@ -726,6 +729,43 @@ export class AuthService {
     }
 
     return updatedProfile;
+  }
+
+
+  /**
+   * Secure Firebase-to-Supabase Authentication Bridge
+   * Invokes the verified Cloud Function to exchange Firebase Auth credentials for a signed Supabase JWT.
+   * Sets the Supabase session, ensuring Supabase RLS receives the authenticated user identity without
+   * trusting client headers or exposing service-role keys.
+   */
+  static async syncSupabaseSession(): Promise<boolean> {
+    if (!isFirebaseConfigured || !firebaseApp || !auth?.currentUser) {
+      return false;
+    }
+
+    try {
+      const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
+      if (!isSupabaseConfigured || !supabase) return false;
+
+      const functions = getFunctions(firebaseApp);
+      const getSupabaseTokenCallable = httpsCallable(functions, 'getSupabaseAuthToken');
+      const result: any = await getSupabaseTokenCallable();
+
+      if (result.data?.token) {
+        const { error } = await supabase.auth.setSession({
+          access_token: result.data.token,
+          refresh_token: result.data.token,
+        });
+        if (error) {
+          console.warn('Supabase setSession notice:', error.message);
+          return false;
+        }
+        return true;
+      }
+    } catch (err: any) {
+      console.warn('Supabase auth bridge session sync notice:', err.message);
+    }
+    return false;
   }
 
   // --- SIGN OUT ---

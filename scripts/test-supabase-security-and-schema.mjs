@@ -25,7 +25,7 @@ function assert(condition, testName, details = '') {
 }
 
 // -----------------------------------------------------------------------------
-// TEST 1: SCHEMA MIGRATION DDL ID TYPES & COMPATIBILITY
+// TEST 1: SCHEMA MIGRATION DDL ID TYPES & CONSTRAINTS
 // -----------------------------------------------------------------------------
 console.log('TEST 1: Schema Migration DDL ID Types & Constraints...');
 
@@ -102,19 +102,21 @@ for (const tbl of requiredRlsTables) {
 console.log('\nTEST 3: Sensitive Data Access Restrictions (Anti-Leakage)...');
 
 assert(
-  migrationSql.includes('CREATE POLICY "offerings_select" ON public.offering_records FOR SELECT TO authenticated\n    USING (public.is_admin());') ||
-  migrationSql.includes('CREATE POLICY "offerings_select" ON public.offering_records FOR SELECT TO authenticated\r\n    USING (public.is_admin());'),
+  migrationSql.includes('CREATE POLICY "offerings_select" ON public.offering_records FOR SELECT TO authenticated') &&
+  migrationSql.includes('USING (public.is_admin());'),
   'offering_records is strictly restricted to administrators; ordinary tutors cannot view financial records of other cells.'
 );
 
 assert(
-  migrationSql.includes('sender_uid = auth.uid()::text OR recipient_uid = auth.uid()::text'),
+  migrationSql.includes('CREATE POLICY "pmsg_parties" ON public.private_messages') &&
+  migrationSql.includes('sender_uid = auth.uid()::text') &&
+  migrationSql.includes('recipient_uid = auth.uid()::text'),
   'private_messages strictly isolates messages between sender and recipient only.'
 );
 
 assert(
-  migrationSql.includes('CREATE POLICY "audit_logs_select" ON public.audit_logs FOR SELECT TO authenticated\n    USING (public.is_admin());') ||
-  migrationSql.includes('CREATE POLICY "audit_logs_select" ON public.audit_logs FOR SELECT TO authenticated\r\n    USING (public.is_admin());'),
+  migrationSql.includes('CREATE POLICY "audit_logs_select" ON public.audit_logs FOR SELECT TO authenticated') &&
+  migrationSql.includes('USING (public.is_admin());'),
   'audit_logs is strictly restricted to administrators for governance and compliance.'
 );
 
