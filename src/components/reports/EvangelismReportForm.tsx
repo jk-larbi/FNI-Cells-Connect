@@ -419,39 +419,39 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
           </div>
         </div>
 
-        {/* Section 3: Message & Scriptural Theme Proclaimed */}
-        <div className="pt-2 border-t border-slate-100 space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-2 flex items-center gap-1.5">
+        {/* Section 3: Message & Scriptural Theme Proclaimed (Chronological Order) */}
+        <div className="pt-2 border-t border-slate-100 space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-1 flex items-center gap-1.5">
             <BookOpen className="w-4 h-4 text-gold-500" />
             3. Message & Scriptural Theme Proclaimed
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+          <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5 sm:min-h-[28px] flex items-end">
-                <span>Scriptural Theme / Message Shared</span>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Scriptural Theme / Message Shared
               </label>
               <input
                 type="text"
                 placeholder="e.g. Reconciliation through Christ, Salvation & New Creation"
                 value={scripturalTheme}
                 onChange={e => setScripturalTheme(e.target.value)}
-                className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold shadow-2xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5 sm:min-h-[28px] flex items-end">
-                <span>Scriptures Used / Bible Passages Referenced</span>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Scriptures Used / Bible Passages Referenced
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <BookOpen className="w-3.5 h-3.5" />
                 </div>
                 <input
                   type="text"
-                  placeholder="e.g. 2 Corinthians 5:17-21, John 3:16, Romans 10:9-10"
+                  placeholder="e.g. Romans 8:28, Hebrews 11:1-6, James 5:16"
                   value={scripturesUsed}
                   onChange={e => setScripturesUsed(e.target.value)}
-                  className="w-full h-11 pl-9 pr-3 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                  className="w-full h-11 pl-10 pr-3.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold shadow-2xs"
                 />
               </div>
             </div>

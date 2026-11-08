@@ -420,39 +420,38 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
             </div>
 
             <div className="space-y-4">
-              {/* Step 1: Word Ministered & Scriptural Theme */}
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                  <div>
-                    <label className="block text-xs font-bold text-[#182230] mb-1.5 flex items-center gap-1.5 sm:min-h-[28px] items-end">
-                      <BookOpen className="w-4 h-4 text-[#C6A45A] shrink-0" />
-                      <span>Scriptural Theme / Message Topic</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Walking in Supernatural Faith, The Ministry of Reconciliation"
-                      value={scripturalTheme}
-                      onChange={e => setScripturalTheme(e.target.value)}
-                      className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#182230] mb-1.5 flex items-center gap-1.5 sm:min-h-[28px] items-end">
-                      <BookOpen className="w-4 h-4 text-[#142B4A] shrink-0" />
-                      <span>Scriptures Used / Bible Passages</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Romans 8:28, Hebrews 11:1-6, James 5:16"
-                      value={scripturesUsed}
-                      onChange={e => setScripturesUsed(e.target.value)}
-                      className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
-                    />
-                  </div>
+              {/* Step 1: Word Ministered & Scriptural Theme (Chronological Order) */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#182230] mb-1.5 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-[#C6A45A] shrink-0" />
+                    <span>Scriptural Theme / Message Topic</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Walking in Supernatural Faith, The Ministry of Reconciliation"
+                    value={scripturalTheme}
+                    onChange={e => setScripturalTheme(e.target.value)}
+                    className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold shadow-2xs"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-[#182230] mb-1.5 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-[#142B4A] shrink-0" />
+                    <span>Scriptures Used / Bible Passages</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Romans 8:28, Hebrews 11:1-6, James 5:16"
+                    value={scripturesUsed}
+                    onChange={e => setScripturesUsed(e.target.value)}
+                    className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-[#182230] focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold shadow-2xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Lesson Outline & Key Truths Taught (Optional)
                   </label>
                   <textarea
@@ -460,7 +459,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                     placeholder="Outline key scripture insights or spiritual message imparted to members during fellowship..."
                     value={tutorNotes}
                     onChange={e => setTutorNotes(e.target.value)}
-                    className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] leading-relaxed"
+                    className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 p-3 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] leading-relaxed shadow-2xs"
                   />
                 </div>
               </div>
