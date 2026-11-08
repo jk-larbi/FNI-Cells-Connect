@@ -28,7 +28,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
   onBackToLanding,
   onSuccess,
 }) => {
-  const { loginAdmin, loginTutor, registerTutor } = useAuth();
+  const { loginAdmin, loginTutor, registerTutor, loginWithProvider } = useAuth();
   const [currentView, setCurrentView] = useState<AuthFlowView>(initialView);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -55,6 +55,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
+  const [providerLoading, setProviderLoading] = useState<'google' | 'apple' | null>(null);
 
   // 1. Handle Tutor Registration
   const handleTutorSignUp = async (e: React.FormEvent) => {
@@ -514,6 +515,22 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </form>
+
+
+              <div className="pt-3 border-t border-[#E3E8EF] space-y-2">
+                <p className="text-center text-[11px] text-[#667085]">Already linked a recovery account?</p>
+                {(['google', 'apple'] as const).map(provider => (
+                  <button key={provider} type="button" disabled={isLoading || !!providerLoading} onClick={async () => {
+                    setErrorMessage(''); setProviderLoading(provider);
+                    const result = await loginWithProvider(provider);
+                    setProviderLoading(null);
+                    if (!result.success) setErrorMessage(result.error || 'Sign-in failed.');
+                    else if (onSuccess && !result.pending) onSuccess();
+                  }} className="w-full rounded-xl border border-[#D7DEE8] bg-white py-2.5 text-xs font-bold text-[#142B4A] hover:bg-slate-50 disabled:opacity-50">
+                    {providerLoading === provider ? 'Signing in…' : (provider === 'google' ? 'Continue with Google' : 'Continue with Apple')}
+                  </button>
+                ))}
+              </div>
 
               {/* New tutor link */}
               <div className="pt-3 border-t border-[#E3E8EF] text-center">
