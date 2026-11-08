@@ -89,6 +89,8 @@ ALTER TABLE public.profiles
     ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'email';
 
+CREATE INDEX IF NOT EXISTS idx_profiles_firebase_uid ON public.profiles(firebase_uid);
+
 -- 4. REGIONS EXTENSIONS
 CREATE TABLE IF NOT EXISTS public.regions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -423,6 +425,36 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_audit_user ON public.audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON public.audit_logs(created_at DESC);
+
+
+-- 16d. FOLLOW-UPS (Evangelism Soul-Winning Care Pipeline)
+CREATE TABLE IF NOT EXISTS public.follow_ups (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    contact_id TEXT NOT NULL,
+    cell_id TEXT,
+    tutor_uid TEXT,
+    notes TEXT,
+    follow_up_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    next_follow_up_date DATE,
+    status TEXT NOT NULL DEFAULT 'Completed',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_followups_contact ON public.follow_ups(contact_id);
+
+-- 16e. REVIEW LOGS (Report Review & Audit Decisions)
+CREATE TABLE IF NOT EXISTS public.review_logs (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    report_id TEXT NOT NULL,
+    report_type TEXT NOT NULL DEFAULT 'cell_meeting',
+    reviewer_uid TEXT NOT NULL,
+    reviewer_name TEXT NOT NULL,
+    action TEXT NOT NULL,
+    comments TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviewlogs_report ON public.review_logs(report_id);
 
 -- 17. AUTOMATED TIMESTAMP & NORMALIZATION TRIGGERS
 CREATE OR REPLACE FUNCTION public.auto_update_timestamp()
@@ -804,6 +836,29 @@ CREATE POLICY "audit_logs_insert" ON public.audit_logs FOR INSERT TO authenticat
         OR user_id = auth.uid()::text 
         OR user_id = public.current_firebase_uid()
     );
+
+
+ALTER TABLE public.follow_ups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.review_logs ENABLE ROW LEVEL SECURITY;
+
+-- Follow-Ups Policies: Assigned Leader, Tutor, or Admin
+DROP POLICY IF EXISTS "follow_ups_select" ON public.follow_ups;
+CREATE POLICY "follow_ups_select" ON public.follow_ups FOR SELECT TO authenticated
+    USING (public.is_admin() OR tutor_uid = auth.uid()::text OR tutor_uid = public.current_firebase_uid());
+
+DROP POLICY IF EXISTS "follow_ups_manage" ON public.follow_ups;
+CREATE POLICY "follow_ups_manage" ON public.follow_ups FOR ALL TO authenticated
+    USING (public.is_admin() OR tutor_uid = auth.uid()::text OR tutor_uid = public.current_firebase_uid())
+    WITH CHECK (public.is_admin() OR tutor_uid = auth.uid()::text OR tutor_uid = public.current_firebase_uid());
+
+-- Review Logs Policies: Visible to involved tutor and admins; Insertable by admins
+DROP POLICY IF EXISTS "review_logs_select" ON public.review_logs;
+CREATE POLICY "review_logs_select" ON public.review_logs FOR SELECT TO authenticated
+    USING (public.is_admin() OR reviewer_uid = auth.uid()::text OR reviewer_uid = public.current_firebase_uid());
+
+DROP POLICY IF EXISTS "review_logs_insert" ON public.review_logs;
+CREATE POLICY "review_logs_insert" ON public.review_logs FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
 
 -- 19. ENABLE REALTIME PUBLICATION
 DO $$

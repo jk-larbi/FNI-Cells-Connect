@@ -756,8 +756,9 @@ export class AuthService {
   /**
    * Secure Firebase-to-Supabase Authentication Bridge
    * Invokes the verified Cloud Function to exchange Firebase Auth credentials for a signed Supabase JWT.
-   * Sets the Supabase session, ensuring Supabase RLS receives the authenticated user identity without
-   * trusting client headers or exposing service-role keys.
+   * Sets the in-memory access token for dynamic request injection, ensuring Supabase RLS receives the
+   * authenticated user identity without trusting client headers, inventing invalid refresh tokens, or
+   * exposing service-role keys.
    */
   static async syncSupabaseSession(): Promise<boolean> {
     if (!isFirebaseConfigured || !firebaseApp || !auth?.currentUser) {
@@ -765,32 +766,43 @@ export class AuthService {
     }
 
     try {
-      const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
-      if (!isSupabaseConfigured || !supabase) return false;
+      const { isSupabaseConfigured, setSupabaseAccessToken } = await import('../lib/supabase');
+      if (!isSupabaseConfigured) return false;
 
       const functions = getFunctions(firebaseApp);
       const getSupabaseTokenCallable = httpsCallable(functions, 'getSupabaseAuthToken');
       const result: any = await getSupabaseTokenCallable();
 
       if (result.data?.token) {
-        const { error } = await supabase.auth.setSession({
-          access_token: result.data.token,
-          refresh_token: result.data.token,
-        });
-        if (error) {
-          console.warn('Supabase setSession notice:', error.message);
-          return false;
-        }
+        // Set active in-memory token for PostgREST dynamic fetch & Realtime auth
+        setSupabaseAccessToken(result.data.token);
+
+        // Schedule proactive token renewal prior to expiry
+        const expiresAt = result.data.expiresAt || (Math.floor(Date.now() / 1000) + 86400);
+        scheduleSupabaseRenewal(expiresAt);
         return true;
       }
     } catch (err: any) {
       console.warn('Supabase auth bridge session sync notice:', err.message);
+      // If user account is disabled, revoked, or unauthenticated, immediately terminate session
+      if (err.code === 'functions/unauthenticated' || err.code === 'functions/permission-denied') {
+        const { setSupabaseAccessToken } = await import('../lib/supabase');
+        setSupabaseAccessToken(null);
+        if (renewalTimeoutId) {
+          clearTimeout(renewalTimeoutId);
+          renewalTimeoutId = null;
+        }
+      }
     }
     return false;
   }
 
   // --- SIGN OUT ---
   static async signOut(): Promise<void> {
+    if (renewalTimeoutId) {
+      clearTimeout(renewalTimeoutId);
+      renewalTimeoutId = null;
+    }
     if (isFirebaseConfigured && auth) {
       try {
         await fbSignOut(auth);
@@ -798,7 +810,33 @@ export class AuthService {
         console.warn('Firebase signout notice', e);
       }
     }
+    try {
+      const { setSupabaseAccessToken } = await import('../lib/supabase');
+      setSupabaseAccessToken(null);
+    } catch (e) {
+      console.warn('Supabase token clear notice', e);
+    }
     localStorage.removeItem(STORAGE_KEYS.CURRENT_PROFILE);
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+  }
+}
+
+// Initialize proactive listener for Firebase identity token changes / renewals / revocations
+if (typeof window !== 'undefined' && isFirebaseConfigured && auth) {
+  try {
+    onIdTokenChanged(auth, async (user) => {
+      if (!user) {
+        if (renewalTimeoutId) {
+          clearTimeout(renewalTimeoutId);
+          renewalTimeoutId = null;
+        }
+        const { setSupabaseAccessToken } = await import('../lib/supabase');
+        setSupabaseAccessToken(null);
+      } else {
+        await AuthService.syncSupabaseSession();
+      }
+    });
+  } catch (e) {
+    console.warn('Firebase onIdTokenChanged initialization notice:', e);
   }
 }

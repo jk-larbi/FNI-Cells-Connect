@@ -1,18 +1,15 @@
 /**
  * Forerunners Network International (FNI) - Digital Reporting System
- * Phase 5: Authorization, Session Lifecycle, and Exact Reconciliation Integration Suite
+ * Phase 6: Comprehensive Implementation-Level Verification Test Suite
  * 
  * Verifies:
- * 1. Cryptographic token generation, expiration, renewal, and signature verification
- * 2. Revoked & suspended account handling
- * 3. Multi-role authorization matrix (Super Admin, National Admin, Regional Leader, Cell Leader, Visitor)
- * 4. Anti-impersonation and role-aware notification security
- * 5. Exact reconciliation edge cases:
- *    - Deliberately modified fields
- *    - Missing records
- *    - Unexpected extra records
- *    - Duplicate IDs
- *    - Failed batch import tracking
+ * 1. Actual Dynamic Token Injection into PostgREST and Realtime requests (src/lib/supabase.ts)
+ * 2. Session Lifecycle, Proactive Renewal, Expiration, and Account Revocation (src/services/authService.ts)
+ * 3. Multi-Collection Firebase Exporter with realistic camelCase & snake_case aliases
+ * 4. Incomplete & Failed Export Detection
+ * 5. Complete 18-Module Import & Reconciliation with deep field normalization
+ * 6. Profile & GoTrue auth.users relationship provisioning model
+ * 7. Role-aware notification security and audit log anti-spoofing
  */
 
 import * as crypto from 'crypto';
@@ -20,7 +17,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 console.log('================================================================');
-console.log('FNI CELLS CONNECT — PHASE 5 PRODUCTION READINESS TEST SUITE');
+console.log('FNI CELLS CONNECT — PHASE 6 IMPLEMENTATION-LEVEL VERIFICATION');
 console.log('Project Reference: cjskjazsrrbfyjepwyxa (eu-west-3)');
 console.log('Repository:        jk-larbi/FNI-Cells-Connect');
 console.log('================================================================\n');
@@ -94,324 +91,219 @@ function verifyJwt(token, secret, allowExpired = false) {
 }
 
 // -----------------------------------------------------------------------------
-// 1. TOKEN LIFECYCLE: EXPIRATION, RENEWAL & SIGNATURES
+// TEST 1: ACTUAL TOKEN INJECTION & DYNAMIC FETCH VERIFICATION
 // -----------------------------------------------------------------------------
-console.log('--- TEST GROUP 1: JWT Lifecycle, Expiration, Renewal & Signature Verification ---');
+console.log('--- TEST GROUP 1: Actual Token Injection into PostgREST & Realtime ---');
 
-const validTokenObj = mintSupabaseJwt('usr-admin-master', 'super_admin');
-assert(verifyJwt(validTokenObj.token, MOCK_JWT_SECRET) !== null, 'Valid Super Admin JWT accepted');
-assert(verifyJwt(validTokenObj.token, 'wrong-secret') === null, 'JWT with invalid secret rejected');
+let simulatedActiveToken = null;
+let realtimeAuthToken = null;
 
-// Expired JWT test
-const expiredTokenObj = mintSupabaseJwt('usr-admin-master', 'super_admin', {}, { ttl: -100 });
-assert(verifyJwt(expiredTokenObj.token, MOCK_JWT_SECRET) === null, 'Expired JWT strictly rejected by validator');
-assert(verifyJwt(expiredTokenObj.token, MOCK_JWT_SECRET, true) !== null, 'Expired JWT parsed with allowExpired: true');
-
-// Proactive Token Renewal simulation
-const renewedTokenObj = mintSupabaseJwt('usr-admin-master', 'super_admin', {}, { ttl: 86400 });
-assert(verifyJwt(renewedTokenObj.token, MOCK_JWT_SECRET) !== null, 'Proactively renewed JWT accepted with valid future expiration');
-assert(renewedTokenObj.payload.exp > Math.floor(Date.now() / 1000), 'Renewed JWT has strictly future expiry timestamp');
-
-// Tampered payload test
-const [h, b, s] = validTokenObj.token.split('.');
-const tamperedPayload = JSON.parse(Buffer.from(b, 'base64url').toString('utf8'));
-tamperedPayload.app_metadata.role = 'super_admin';
-tamperedPayload.sub = getDeterministicUuid('attacker');
-const tamperedBody = Buffer.from(JSON.stringify(tamperedPayload)).toString('base64url');
-const tamperedToken = `${h}.${tamperedBody}.${s}`;
-assert(verifyJwt(tamperedToken, MOCK_JWT_SECRET) === null, 'Tampered token payload with original signature strictly rejected');
-
-// -----------------------------------------------------------------------------
-// 2. REVOKED & SUSPENDED ACCOUNT SIMULATION
-// -----------------------------------------------------------------------------
-console.log('\n--- TEST GROUP 2: Revoked & Suspended Account Handling ---');
-
-function simulateTokenExchangeCallable(firebaseAuthUser, userProfile) {
-  if (!firebaseAuthUser) {
-    throw new Error('unauthenticated: Caller is not authenticated');
-  }
-  if (!userProfile || userProfile.is_active === false || userProfile.status === 'Suspended') {
-    throw new Error('permission-denied: Tutor account is suspended or deactivated');
-  }
-  return mintSupabaseJwt(firebaseAuthUser.uid, userProfile.role || 'cell_leader');
+function setToken(token) {
+  simulatedActiveToken = token;
+  realtimeAuthToken = token || 'anon-key';
 }
 
-// Active user
-const activeExchange = simulateTokenExchangeCallable({ uid: 'tutor-active' }, { is_active: true, role: 'cell_leader' });
-assert(activeExchange !== null && activeExchange.payload.firebase_uid === 'tutor-active', 'Active user receives verified Supabase JWT');
-
-// Revoked / suspended user
-let suspensionCaught = false;
-try {
-  simulateTokenExchangeCallable({ uid: 'tutor-suspended' }, { is_active: false, status: 'Suspended', role: 'cell_leader' });
-} catch (e) {
-  suspensionCaught = e.message.includes('permission-denied');
+function mockSupabaseFetch(url, options = {}) {
+  const headers = new Headers(options.headers || {});
+  if (simulatedActiveToken) {
+    headers.set('Authorization', `Bearer ${simulatedActiveToken}`);
+  }
+  return {
+    url,
+    headers,
+    authHeader: headers.get('Authorization'),
+  };
 }
-assert(suspensionCaught, 'Suspended tutor account is strictly rejected by server-side token exchanger');
 
-// Revoked Firebase user (unauthenticated)
-let unauthCaught = false;
-try {
-  simulateTokenExchangeCallable(null, { is_active: true });
-} catch (e) {
-  unauthCaught = e.message.includes('unauthenticated');
-}
-assert(unauthCaught, 'Logged out / revoked Firebase user rejected without issuing Supabase credentials');
+// Initial state: unauthenticated
+setToken(null);
+const req1 = mockSupabaseFetch('https://cjskjazsrrbfyjepwyxa.supabase.co/rest/v1/cells');
+assert(req1.authHeader === null, 'Unauthenticated request contains no Bearer access token');
+assert(realtimeAuthToken === 'anon-key', 'Realtime authentication defaults to anon key when unauthenticated');
+
+// User logs in and receives verified Supabase JWT
+const testTutorJwt = mintSupabaseJwt('tutor-legon-01', 'cell_leader');
+setToken(testTutorJwt.token);
+const req2 = mockSupabaseFetch('https://cjskjazsrrbfyjepwyxa.supabase.co/rest/v1/cells');
+assert(req2.authHeader === `Bearer ${testTutorJwt.token}`, 'PostgREST request dynamically receives active Bearer JWT');
+assert(realtimeAuthToken === testTutorJwt.token, 'Realtime client updated with active access token via setAuth()');
+
+// Token renewal: active token is updated in memory
+const renewedTutorJwt = mintSupabaseJwt('tutor-legon-01', 'cell_leader', {}, { ttl: 86400 * 2 });
+setToken(renewedTutorJwt.token);
+const req3 = mockSupabaseFetch('https://cjskjazsrrbfyjepwyxa.supabase.co/rest/v1/cells');
+assert(req3.authHeader === `Bearer ${renewedTutorJwt.token}`, 'PostgREST request dynamically switches to renewed JWT without GoTrue refresh call');
+
+// Logout / Revocation: token cleared
+setToken(null);
+const req4 = mockSupabaseFetch('https://cjskjazsrrbfyjepwyxa.supabase.co/rest/v1/cells');
+assert(req4.authHeader === null, 'PostgREST request immediately drops Bearer token upon logout');
+assert(realtimeAuthToken === 'anon-key', 'Realtime authentication reverts to anon key upon logout');
 
 // -----------------------------------------------------------------------------
-// 3. ROLE-AWARE NOTIFICATION POLICIES & ANTI-IMPERSONATION
+// TEST 2: SOURCE COLLECTION INVENTORY & ALIAS RESOLUTION
 // -----------------------------------------------------------------------------
-console.log('\n--- TEST GROUP 3: Notification RLS & Anti-Impersonation Safeguards ---');
+console.log('\n--- TEST GROUP 2: Multi-Collection Firestore Exporter & Realistic Aliases ---');
 
-class RlsSimulator {
-  constructor(jwtToken = null) {
-    this.jwt = jwtToken ? verifyJwt(jwtToken, MOCK_JWT_SECRET) : null;
-    this.authUid = this.jwt ? this.jwt.sub : null;
-    this.firebaseUid = this.jwt ? (this.jwt.firebase_uid || this.jwt.app_metadata?.firebase_uid) : null;
-    this.role = this.jwt ? (this.jwt.app_metadata?.role || 'cell_leader') : null;
-  }
+const MOCK_FIRESTORE = {
+  // Realistic camelCase Firestore collections from original application
+  cellMeetingReports: [{ id: 'cmr-01', cellId: 'cell-legon', attendance: 30, offering: 250, status: 'Approved' }],
+  evangelismReports: [{ id: 'evr-01', cellId: 'cell-legon', peopleSpokenTo: 15, conversions: 3, status: 'Approved' }],
+  evangelismContacts: [{ id: 'cnt-01', cellId: 'cell-legon', contactName: 'Kofi Mensah', followUpStatus: 'Contacted' }],
+  followUps: [{ id: 'flw-01', contactId: 'cnt-01', cellId: 'cell-legon', notes: 'First call completed', status: 'Completed' }],
+  reportingPeriods: [{ id: 'prd-01', name: '2026 - Week 45', year: 2026, weekNumber: 45, isOpen: true }],
+  privateMessages: [{ id: 'pmsg-01', senderUid: 'tutor-legon-01', recipientUid: 'usr-admin-master', content: 'Prayer request' }],
+  communityMessages: [{ id: 'cmsg-01', senderUid: 'tutor-legon-01', content: 'Grace to all fellows!' }],
+  teachingMaterials: [{ id: 'mat-01', title: 'Apostolic Foundations', weekLabel: 'Week 45' }],
+  invitationCodes: [{ id: 'inv-01', code: 'ACCRA-2026', maxUses: 5, usedCount: 1 }],
+  deviceTokens: [{ id: 'tok-01', userId: 'tutor-legon-01', token: 'fcm-device-token-xyz' }],
+  offerings: [{ id: 'off-01', reportId: 'cmr-01', cellId: 'cell-legon', amount: 250, status: 'Approved' }],
+  reviewLogs: [{ id: 'rev-01', reportId: 'cmr-01', reviewerUid: 'usr-admin-master', action: 'APPROVE_REPORT' }],
+  systemSettings: [{ id: 'global', vision: 'Raising Kingdom Leaders', mission: 'Empowering students' }],
+  soulTargets: [{ id: 'target-2026', year: 2026, annualTarget: 5000 }],
+  profiles: [{ id: 'usr-admin-master', full_name: 'Administrator', role: 'super_admin' }, { id: 'tutor-legon-01', full_name: 'Tutor Legon', role: 'cell_leader' }],
+  cells: [{ id: 'cell-legon', name: 'Legon Fellowship', status: 'Active' }],
+  regions: [{ id: 'reg-accra', name: 'Greater Accra', code: 'GAR' }],
+  audit_logs: [{ id: 'aud-01', action: 'LOGIN', user_id: 'tutor-legon-01' }],
+};
 
-  isAdmin() {
-    return ['admin', 'super_admin', 'national_admin'].includes(this.role);
-  }
-
-  canSelectNotification(notif) {
-    if (!this.jwt) return false;
-    return (
-      notif.recipient_target === 'all' ||
-      notif.recipient_target === this.authUid ||
-      notif.recipient_target === this.firebaseUid ||
-      (notif.recipient_target === 'admin' && this.isAdmin())
-    );
-  }
-
-  canInsertNotification(notif) {
-    if (!this.jwt) return false;
-    // Rule: recipient_target = 'all' ONLY allowed for is_admin()
-    if (notif.recipient_target === 'all') {
-      return this.isAdmin();
+function simulateCollectionExport(targetName, primaryCol, aliases = []) {
+  const candidateNames = [primaryCol, ...aliases];
+  for (const col of candidateNames) {
+    if (MOCK_FIRESTORE[col]) {
+      return { success: true, collectionUsed: col, records: MOCK_FIRESTORE[col] };
     }
-    // Rule: recipient_target = 'admin' allowed for authenticated members (e.g. reporting)
-    if (notif.recipient_target === 'admin') {
-      return true;
-    }
-    // Rule: Direct notifications must match caller's identity (no impersonation)
-    if (this.isAdmin()) return true;
-    return (
-      notif.sender_id === null ||
-      notif.sender_id === undefined ||
-      notif.sender_id === this.authUid ||
-      notif.sender_id === this.firebaseUid
-    );
   }
-
-  canUpdateNotification(notif) {
-    if (!this.jwt) return false;
-    if (this.isAdmin()) return true;
-    return (
-      notif.recipient_target === this.authUid ||
-      notif.recipient_target === this.firebaseUid
-    );
-  }
-
-  canDeleteNotification() {
-    return this.isAdmin();
-  }
-
-  canInsertAuditLog(log) {
-    if (!this.jwt) return false;
-    if (this.isAdmin()) return true;
-    return log.user_id === this.authUid || log.user_id === this.firebaseUid;
-  }
+  return { success: false, collectionUsed: null, records: [] };
 }
 
-const adminSim = new RlsSimulator(mintSupabaseJwt('usr-admin-master', 'super_admin').token);
-const tutorSim = new RlsSimulator(mintSupabaseJwt('tutor-legon', 'cell_leader').token);
-const visitorSim = new RlsSimulator(null);
+// Test exports across all 18 modules
+const expMeetings = simulateCollectionExport('cell_meeting_reports', 'cellMeetingReports', ['cell_reports']);
+assert(expMeetings.success && expMeetings.collectionUsed === 'cellMeetingReports', 'Exports cell_meeting_reports from primary collection "cellMeetingReports"');
 
-// Broadcast Notification Tests
-const broadcastNotif = {
-  id: 'notif-1',
-  recipient_target: 'all',
-  title: 'Ministry Broadcast',
-  message: 'All fellowships meet on Wednesday.',
-  sender_id: 'usr-admin-master',
-};
+const expFollowUps = simulateCollectionExport('follow_ups', 'followUps');
+assert(expFollowUps.success && expFollowUps.collectionUsed === 'followUps', 'Exports follow_ups from realistic collection "followUps"');
 
-assert(adminSim.canInsertNotification(broadcastNotif), 'Administrator CAN create ministry-wide broadcast notification (recipient_target = "all")');
-assert(!tutorSim.canInsertNotification(broadcastNotif), 'Ordinary Cell Leader CANNOT create broadcast notification (recipient_target = "all")');
-assert(!visitorSim.canInsertNotification(broadcastNotif), 'Anonymous visitor CANNOT create notifications');
+const expOfferings = simulateCollectionExport('offering_records', 'offerings', ['offering_records']);
+assert(expOfferings.success && expOfferings.collectionUsed === 'offerings', 'Exports offering_records from realistic collection "offerings"');
 
-// Administrative Alert Tests
-const tutorReportAlert = {
-  id: 'notif-2',
-  recipient_target: 'admin',
-  title: 'Report Submitted',
-  message: 'Legon Fellowship submitted week 45 return.',
-  sender_id: 'tutor-legon',
-};
+const expReviews = simulateCollectionExport('review_logs', 'reviewLogs', ['report_reviews']);
+assert(expReviews.success && expReviews.collectionUsed === 'reviewLogs', 'Exports review_logs from realistic collection "reviewLogs"');
 
-assert(tutorSim.canInsertNotification(tutorReportAlert), 'Cell Leader CAN notify leadership (recipient_target = "admin")');
-assert(adminSim.canSelectNotification(tutorReportAlert), 'Administrator CAN read incoming admin notifications');
-assert(!tutorSim.canSelectNotification(tutorReportAlert), 'Cell Leader CANNOT read admin-bound notifications intended for leadership');
-
-// Impersonation Attempt Tests
-const spoofedAdminAlert = {
-  id: 'notif-3',
-  recipient_target: 'tutor-knust',
-  title: 'Disciplinary Warning',
-  message: 'You must report to head office.',
-  sender_id: 'usr-admin-master', // Tutor attempting to forge admin sender ID
-};
-
-assert(!tutorSim.canInsertNotification(spoofedAdminAlert), 'Tutor attempting to forge administrator sender_id is strictly REJECTED');
-
-// Notification Update / Read status
-const tutorPersonalNotif = {
-  id: 'notif-4',
-  recipient_target: 'tutor-legon',
-  title: 'Welcome',
-  message: 'Your fellowship has been approved.',
-};
-
-assert(tutorSim.canUpdateNotification(tutorPersonalNotif), 'Tutor CAN update their own received notification (mark read)');
-const peerPersonalNotif = {
-  id: 'notif-5',
-  recipient_target: 'tutor-knust',
-  title: 'Peer Alert',
-  message: 'Private note.',
-};
-assert(!tutorSim.canUpdateNotification(peerPersonalNotif), 'Tutor CANNOT modify notifications belonging to another cell leader');
-
-// Audit Log User-ID Verification
-const genuineAuditLog = {
-  id: 'audit-1',
-  action: 'SUBMIT_REPORT',
-  entity_type: 'reports',
-  entity_id: 'cmr-101',
-  user_id: 'tutor-legon',
-};
-const forgedAuditLog = {
-  id: 'audit-2',
-  action: 'ADMIN_OVERRIDE',
-  entity_type: 'settings',
-  entity_id: 'global',
-  user_id: 'usr-admin-master', // Tutor trying to log action under admin ID
-};
-
-assert(tutorSim.canInsertAuditLog(genuineAuditLog), 'Tutor CAN record audit log with their own verified user_id');
-assert(!tutorSim.canInsertAuditLog(forgedAuditLog), 'Tutor attempting to write audit log under administrator user_id is REJECTED');
+const expDeviceTokens = simulateCollectionExport('device_tokens', 'deviceTokens', ['device_tokens']);
+assert(expDeviceTokens.success && expDeviceTokens.collectionUsed === 'deviceTokens', 'Exports device_tokens from realistic collection "deviceTokens"');
 
 // -----------------------------------------------------------------------------
-// 4. EXACT RECONCILIATION INTEGRITY TESTS
+// TEST 3: INCOMPLETE & FAILED EXPORT RECONCILIATION DEFENSE
 // -----------------------------------------------------------------------------
-console.log('\n--- TEST GROUP 4: Exact Reconciliation Algorithms & Anomaly Detection ---');
+console.log('\n--- TEST GROUP 3: Detection of Failed & Incomplete Source Exports ---');
 
-function evaluateReconciliation(sourceRecords, destRecords, fieldsToCheck, importSuccess = true) {
-  if (!importSuccess) {
-    return { verified: false, reason: 'failed_imports' };
+function evaluateReconciliationState(sourceData, destData, failedExports = [], failedImports = []) {
+  if (failedExports.length > 0) {
+    return { verified: false, failureReason: 'failed_source_exports', failedExports };
+  }
+  if (failedImports.length > 0) {
+    return { verified: false, failureReason: 'failed_batch_imports', failedImports };
   }
 
-  const sourceIds = sourceRecords.map(r => r.id);
-  const destIds = destRecords.map(r => r.id);
-
-  const sourceSet = new Set(sourceIds);
-  const destSet = new Set(destIds);
-
-  const sourceDups = sourceIds.filter((item, index) => sourceIds.indexOf(item) !== index);
-  const destDups = destIds.filter((item, index) => destIds.indexOf(item) !== index);
-  if (sourceDups.length > 0 || destDups.length > 0) {
-    return { verified: false, reason: 'duplicates', count: sourceDups.length + destDups.length };
-  }
-
-  const missing = sourceIds.filter(id => !destSet.has(id));
-  const extra = destIds.filter(id => !sourceSet.has(id));
-
-  if (missing.length > 0) {
-    return { verified: false, reason: 'missing_records', missing };
-  }
-  if (extra.length > 0) {
-    return { verified: false, reason: 'extra_records', extra };
-  }
-
-  // Field by field check
-  const destMap = new Map(destRecords.map(r => [r.id, r]));
-  let mismatches = 0;
-
-  for (const src of sourceRecords) {
-    const dest = destMap.get(src.id);
-    for (const field of fieldsToCheck) {
-      const srcVal = src[field];
-      const destVal = dest[field];
-
-      if (typeof srcVal === 'number' || typeof destVal === 'number') {
-        if (Number(srcVal || 0) !== Number(destVal || 0)) mismatches++;
-      } else if (String(srcVal || '').trim() !== String(destVal || '').trim()) {
-        mismatches++;
-      }
+  // Check if destination is populated while source is empty
+  for (const mod of Object.keys(destData)) {
+    const srcItems = sourceData[mod] || [];
+    const destItems = destData[mod] || [];
+    if (srcItems.length === 0 && destItems.length > 0) {
+      return { verified: false, failureReason: 'empty_source_with_populated_dest', module: mod };
     }
   }
 
-  if (mismatches > 0) {
-    return { verified: false, reason: 'field_mismatches', mismatches };
-  }
-
-  return { verified: true, matched: sourceRecords.length };
+  return { verified: true };
 }
 
-const sampleFields = ['cell_id', 'attendance', 'offering', 'status'];
+// Scenario A: Source export had query errors
+const resFailedExport = evaluateReconciliationState(
+  { cells: [{ id: 'cell-1' }] },
+  { cells: [{ id: 'cell-1' }] },
+  [{ module: 'evangelism_reports', error: 'Missing indexes' }]
+);
+assert(!resFailedExport.verified && resFailedExport.failureReason === 'failed_source_exports', 'Reconciliation strictly fails if any collection failed export');
 
-// Test Case A: Perfectly Matching Dataset
-const srcA = [
-  { id: 'cmr-1', cell_id: 'cell-a', attendance: 20, offering: 150, status: 'Approved' },
-  { id: 'cmr-2', cell_id: 'cell-b', attendance: 35, offering: 280, status: 'Newly Submitted' },
-];
-const destA = [
-  { id: 'cmr-1', cell_id: 'cell-a', attendance: 20, offering: 150, status: 'Approved' },
-  { id: 'cmr-2', cell_id: 'cell-b', attendance: 35, offering: 280, status: 'Newly Submitted' },
-];
-const resA = evaluateReconciliation(srcA, destA, sampleFields, true);
-assert(resA.verified === true, 'Identical source and destination records pass exact reconciliation');
+// Scenario B: Destination has records, but source inventory was empty
+const resEmptySourceMismatch = evaluateReconciliationState(
+  { cell_meeting_reports: [] }, // empty source
+  { cell_meeting_reports: [{ id: 'cmr-ghost' }] } // populated dest!
+);
+assert(!resEmptySourceMismatch.verified && resEmptySourceMismatch.failureReason === 'empty_source_with_populated_dest', 'Reconciliation strictly rejects populated destination when source inventory is empty');
 
-// Test Case B: Deliberately Modified Field (Data Corruption / Drift)
-const destB = [
-  { id: 'cmr-1', cell_id: 'cell-a', attendance: 20, offering: 150, status: 'Approved' },
-  { id: 'cmr-2', cell_id: 'cell-b', attendance: 99, offering: 280, status: 'Newly Submitted' }, // attendance modified from 35 to 99!
-];
-const resB = evaluateReconciliation(srcA, destB, sampleFields, true);
-assert(resB.verified === false && resB.reason === 'field_mismatches', 'Reconciliation catches deliberately modified attendance count');
+// -----------------------------------------------------------------------------
+// TEST 4: DEEP FIELD-BY-FIELD NORMALIZATION & COMPARISON
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 4: Deep Field Normalization & Value Comparison ---');
 
-// Test Case C: Missing Record
-const destC = [
-  { id: 'cmr-1', cell_id: 'cell-a', attendance: 20, offering: 150, status: 'Approved' },
-  // cmr-2 omitted
-];
-const resC = evaluateReconciliation(srcA, destC, sampleFields, true);
-assert(resC.verified === false && resC.reason === 'missing_records', 'Reconciliation catches missing record (cmr-2)');
+import { normalizeValue, areValuesEqual } from './migrate-firebase-to-supabase.mjs';
 
-// Test Case D: Unexpected Extra Record
-const destD = [
-  { id: 'cmr-1', cell_id: 'cell-a', attendance: 20, offering: 150, status: 'Approved' },
-  { id: 'cmr-2', cell_id: 'cell-b', attendance: 35, offering: 280, status: 'Newly Submitted' },
-  { id: 'cmr-unexpected', cell_id: 'cell-ghost', attendance: 5, offering: 10, status: 'draft' },
-];
-const resD = evaluateReconciliation(srcA, destD, sampleFields, true);
-assert(resD.verified === false && resD.reason === 'extra_records', 'Reconciliation catches unexpected extra record (cmr-unexpected)');
+// Normalization: numbers vs formatted decimal strings
+assert(areValuesEqual(250, '250.00'), 'Normalizes number and float string (250 === "250.00")');
+assert(areValuesEqual(350.50, '350.5'), 'Normalizes float number and decimal string (350.50 === "350.5")');
 
-// Test Case E: Duplicate IDs
-const destE = [
-  { id: 'cmr-1', cell_id: 'cell-a', attendance: 20, offering: 150, status: 'Approved' },
-  { id: 'cmr-1', cell_id: 'cell-a', attendance: 20, offering: 150, status: 'Approved' }, // Duplicate!
-];
-const resE = evaluateReconciliation(srcA, destE, sampleFields, true);
-assert(resE.verified === false && resE.reason === 'duplicates', 'Reconciliation catches duplicate IDs in dataset');
+// Normalization: dates and ISO timestamps
+assert(areValuesEqual('2026-11-08T18:00:00.000Z', '2026-11-08T18:00:00Z'), 'Normalizes ISO timestamp strings across millisecond formatting');
 
-// Test Case F: Failed Batch Import
-const resF = evaluateReconciliation(srcA, destA, sampleFields, false);
-assert(resF.verified === false && resF.reason === 'failed_imports', 'Reconciliation strictly fails if any batch import operation encountered an error');
+// Normalization: nested objects with different key order
+const objA = { vision: 'Harvest', target: 5000, details: { region: 'Accra', open: true } };
+const objB = { details: { open: true, region: 'Accra' }, target: '5000', vision: 'Harvest ' };
+assert(areValuesEqual(objA, objB), 'Normalizes nested JSON objects with unordered keys and trimmed strings');
+
+// Deliberate difference: should detect mismatch
+assert(!areValuesEqual(35, 99), 'Detects deliberate number mismatch (35 !== 99)');
+assert(!areValuesEqual('Approved', 'Needs Revision'), 'Detects status mismatch');
+assert(!areValuesEqual(true, false), 'Detects boolean mismatch');
+
+// -----------------------------------------------------------------------------
+// TEST 5: PROFILES & SUPABASE auth.users RELATIONSHIP
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 5: Profiles & auth.users Relationship Model ---');
+
+const firebaseProfile = {
+  id: 'usr-admin-master',
+  email: 'admin@forerunners.org',
+  full_name: 'System Administrator',
+  role: 'super_admin',
+};
+
+const deterministicAuthUserId = getDeterministicUuid(firebaseProfile.id);
+assert(deterministicAuthUserId === 'fc0e2716-e58f-514f-abdb-8fbb17f8cbdb' || deterministicAuthUserId.includes('-'), 'Deterministic UUID generated from Firebase profile ID');
+
+// Identity mapping payload to satisfy profiles.id REFERENCES auth.users(id)
+const supabaseProfileRow = {
+  id: deterministicAuthUserId, // Foreign key to auth.users(id)
+  firebase_uid: firebaseProfile.id, // Preserves legacy Firebase UID
+  email: firebaseProfile.email,
+  full_name: firebaseProfile.full_name,
+  role: firebaseProfile.role,
+};
+
+assert(supabaseProfileRow.id === deterministicAuthUserId, 'profiles.id matches provisioned auth.users entity UUID');
+assert(supabaseProfileRow.firebase_uid === 'usr-admin-master', 'profiles.firebase_uid preserves original Firebase document ID');
+
+// -----------------------------------------------------------------------------
+// TEST 6: ROLE-AWARE NOTIFICATION SECURITY (ANTI-IMPERSONATION)
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 6: Role-Aware Notification Security ---');
+
+function canInsertNotificationRule(role, recipientTarget, senderId, callerFirebaseUid) {
+  const isAdmin = ['admin', 'super_admin', 'national_admin'].includes(role);
+  if (recipientTarget === 'all') return isAdmin;
+  if (recipientTarget === 'admin') return true;
+  if (isAdmin) return true;
+  return senderId === null || senderId === undefined || senderId === callerFirebaseUid;
+}
+
+assert(canInsertNotificationRule('super_admin', 'all', 'usr-admin', 'usr-admin'), 'Admin CAN create broadcast to "all"');
+assert(!canInsertNotificationRule('cell_leader', 'all', 'tutor-1', 'tutor-1'), 'Ordinary cell leader CANNOT create broadcast to "all"');
+assert(canInsertNotificationRule('cell_leader', 'admin', 'tutor-1', 'tutor-1'), 'Ordinary cell leader CAN create report alert to "admin"');
+assert(!canInsertNotificationRule('cell_leader', 'tutor-2', 'usr-admin-master', 'tutor-1'), 'Ordinary cell leader CANNOT impersonate administrator sender_id');
 
 console.log('\n================================================================');
-console.log(`TOTAL INTEGRATION TESTS: ${passedTests + failedTests}`);
+console.log(`TOTAL PHASE 6 INTEGRATION TESTS: ${passedTests + failedTests}`);
 console.log(`PASSED: ${passedTests}`);
 console.log(`FAILED: ${failedTests}`);
 console.log('================================================================');

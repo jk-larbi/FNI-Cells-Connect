@@ -308,11 +308,42 @@ export const getSupabaseAuthToken = onCall(async (request: CallableRequest<any>)
   // 1. Fetch user profile from Firestore to obtain verified role
   const profileSnap = await db.collection('profiles').doc(firebaseUid).get();
   const profileData = profileSnap.exists ? profileSnap.data() : null;
+
+  // Account suspension / revocation check
+  if (profileData && (profileData.is_active === false || profileData.status === 'Suspended')) {
+    throw new HttpsError('permission-denied', 'Your tutor account has been suspended by church leadership.');
+  }
+
   const userRole = profileData?.role || 'cell_leader';
   const fullName = profileData?.full_name || request.auth.token.name || 'Member';
 
   // 2. Generate deterministic UUID
   const supabaseUuid = getDeterministicUuid(firebaseUid);
+
+  // 3. Supported identity provisioning: ensure auth.users entity exists if service role configured
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (supabaseUrl && serviceRoleKey) {
+    try {
+      await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: supabaseUuid,
+          email: request.auth.token.email || `${firebaseUid}@fnicells.org`,
+          email_confirm: true,
+          user_metadata: { firebase_uid: firebaseUid, role: userRole, full_name: fullName },
+          app_metadata: { provider: 'firebase', role: userRole, firebase_uid: firebaseUid },
+        }),
+      });
+    } catch (provisionErr) {
+      console.warn('Supabase Auth user provisioning notice:', provisionErr);
+    }
+  }
 
   // 3. Construct verified claims
   const now = Math.floor(Date.now() / 1000);
