@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
-import { Menu, Bell, PlusCircle, Calendar, Clock, Flame, ArrowLeft } from 'lucide-react';
+import { Menu, Bell, PlusCircle, Calendar, Clock, Flame, ArrowLeft, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   canGoBack = false,
   onGoBack,
 }) => {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
   const deadlineInfo = getCurrentDeadlineInfo();
 
@@ -31,10 +31,12 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
         <button
           onClick={onToggleSidebar}
-          className="md:hidden p-2.5 rounded-xl bg-[#F5F7FA] text-[#667085] hover:text-[#142B4A] transition-colors cursor-pointer shrink-0"
-          aria-label="Toggle navigation"
+          className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
+          aria-label="Open left navigation menu"
+          title="Open left navigation menu"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-4 h-4 text-[#C6A45A]" />
+          <span className="text-xs font-bold tracking-wide">Menu</span>
         </button>
 
         {canGoBack && onGoBack && (
@@ -116,6 +118,17 @@ export const Header: React.FC<HeaderProps> = ({
               {isAdmin ? 'System Administrator' : currentUser?.cell_name || 'Cell Leader'}
             </div>
           </div>
+        </button>
+
+        {/* Prominent Direct Logout Button (Always visible on mobile & desktop) */}
+        <button
+          onClick={logout}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-[#FFF5F5] hover:bg-[#FEE4E2] text-[#C74646] hover:text-[#B42318] border border-[#FECDCA] text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+          title="Sign out of your account"
+          aria-label="Sign out"
+        >
+          <LogOut className="w-3.5 h-3.5 text-[#C74646]" />
+          <span className="font-bold">Logout</span>
         </button>
       </div>
     </header>
