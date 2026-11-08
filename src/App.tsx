@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppLayout } from './components/layout/AppLayout';
+import { MinistryVisionView } from './components/landing/MinistryVisionView';
 import { SimpleLandingView } from './components/landing/SimpleLandingView';
 import { LandingPageView } from './components/landing/LandingPageView';
 import { AuthView, AuthFlowView } from './components/auth/AuthView';
@@ -10,8 +11,10 @@ import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeM
 const MainContent: React.FC = () => {
   const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
 
-  // Navigation state for unauthenticated flow
-  const [entryView, setEntryView] = useState<'landing' | 'overview-landing' | AuthFlowView>('landing');
+  // Navigation state for unauthenticated visitor flow:
+  // Screen 1: 'vision-mission' (strictly Vision, Mission statements, and 5,000 Soul-Winning Target)
+  // Screen 2: 'landing' (Signup and Login portal with logo and platform name)
+  const [entryView, setEntryView] = useState<'vision-mission' | 'landing' | 'overview-landing' | AuthFlowView>('vision-mission');
 
   // 1. Unauthenticated Visitor Flow
   if (isLoggedOut || !currentUser) {
@@ -38,12 +41,21 @@ const MainContent: React.FC = () => {
       );
     }
 
-    // Landing Page A: Minimal Landing Page (logo, name, tagline, SIGN UP and LOG IN)
+    // Screen 2: Dedicated Sign Up and Log In page with Logo and Name
+    if (entryView === 'landing') {
+      return (
+        <SimpleLandingView
+          onSignUp={() => setEntryView('tutor-signup')}
+          onLogIn={() => setEntryView('login-select')}
+          onBackToVision={() => setEntryView('vision-mission')}
+        />
+      );
+    }
+
+    // Screen 1: Strictly Vision Statement, Mission Statement, and Soul-Winning Target (Nothing else)
     return (
-      <SimpleLandingView
-        onSignUp={() => setEntryView('tutor-signup')}
-        onLogIn={() => setEntryView('login-select')}
-        onViewOverview={() => setEntryView('overview-landing')}
+      <MinistryVisionView
+        onProceed={() => setEntryView('landing')}
       />
     );
   }
