@@ -180,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profileSnap = await getDoc(doc(db, 'profiles', credential.user.uid));
       if (!profileSnap.exists()) { await firebaseSignOut(auth); return { success: false, error: 'No FNI account is linked to this Google or Apple ID. Ask your cell administrator for help.' }; }
       const profile = profileSnap.data() as Profile;
-      if (profile.is_active === false || (profile as any).status === 'Suspended') { await auth.signOut(); return { success: false, error: 'This FNI account is suspended. Please contact the administration.' }; }
+      if (profile.is_active === false || (profile as any).status === 'Suspended') { await firebaseSignOut(auth); return { success: false, error: 'This FNI account is suspended. Please contact the administration.' }; }
       AuthService.setCurrentProfile(profile); localStorage.setItem('fni_active_session_v5_clean_prod', profile.id); setCurrentUser(profile); setIsLoggedOut(false); return { success: true };
     } catch (err: any) { const code = err?.code || ''; const message = code === 'auth/popup-closed-by-user' ? 'Sign-in was cancelled.' : code === 'auth/account-exists-with-different-credential' ? 'This email is registered with a different sign-in method. Use the method originally linked to your FNI account.' : err?.message || 'Could not sign in with that account.'; return { success: false, error: message }; }
   };
