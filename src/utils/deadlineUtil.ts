@@ -147,3 +147,77 @@ export function evaluateSubmissionTiming(
     label: isLate ? 'Late Submission' : 'On-Time Submission',
   };
 }
+
+export interface LiveSubmissionTracking {
+  exactTime: string;
+  timeFormatted: string;
+  dateFormatted: string;
+  relativeTime: string;
+  isJustNow: boolean;
+  minutesAgo: number;
+}
+
+/**
+ * Computes live real-time submission tracking relative to Ghana time (GMT).
+ * Evaluates live relative time ("Just now", "4m ago", "2h ago") and exact submission timestamp.
+ */
+export function formatLiveSubmissionTracking(
+  submittedAtIso?: string,
+  nowTimestamp: number = Date.now()
+): LiveSubmissionTracking {
+  if (!submittedAtIso) {
+    return {
+      exactTime: 'Time unknown',
+      timeFormatted: '—',
+      dateFormatted: '—',
+      relativeTime: 'N/A',
+      isJustNow: false,
+      minutesAgo: 0,
+    };
+  }
+
+  const submittedDate = new Date(submittedAtIso);
+  const diffMs = Math.max(0, nowTimestamp - submittedDate.getTime());
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  let relativeTime = '';
+  let isJustNow = false;
+  if (diffSecs < 45) {
+    relativeTime = 'Just now';
+    isJustNow = true;
+  } else if (diffMins < 60) {
+    relativeTime = `${diffMins}m ago`;
+  } else if (diffHours < 24) {
+    relativeTime = `${diffHours}h ${diffMins % 60}m ago`;
+  } else {
+    relativeTime = `${diffDays}d ago`;
+  }
+
+  const timeFormatted = submittedDate.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Africa/Accra',
+  });
+
+  const dateFormatted = submittedDate.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    timeZone: 'Africa/Accra',
+  });
+
+  const exactTime = `${dateFormatted} at ${timeFormatted} GMT`;
+
+  return {
+    exactTime,
+    timeFormatted,
+    dateFormatted,
+    relativeTime,
+    isJustNow,
+    minutesAgo: diffMins,
+  };
+}

@@ -4,6 +4,7 @@ import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
   FileCheck,
   Search,
@@ -35,6 +36,7 @@ import {
   Check,
   RotateCcw,
   SlidersHorizontal,
+  BookOpen,
 } from 'lucide-react';
 
 export interface ReportReviewViewProps {
@@ -67,6 +69,15 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   const [cells, setCells] = useState<Cell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [liveTicker, setLiveTicker] = useState(Date.now());
+
+  // Live real-time ticker updating elapsed submission times every 15s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTicker(Date.now());
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Filters & Search
   const [typeFilter, setTypeFilter] = useState<'all' | 'meeting' | 'evangelism'>('all');
@@ -903,7 +914,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                 <th className="py-3 px-4">ATTENDANCE / SOULS</th>
                 <th className="py-3 px-4">FINANCE / OFFERING</th>
                 <th className="py-3 px-4">STATUS</th>
-                <th className="py-3 px-4">DEADLINE TIMING</th>
+                <th className="py-3 px-4">SUBMISSION TIME & LIVE TRACKING</th>
                 <th className="py-3 px-5 text-right">QUICK ACTIONS</th>
               </tr>
             </thead>
@@ -1271,16 +1282,29 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     </span>
                   </div>
 
+                  {/* Live Submission Timing Banner */}
+                  {(() => {
+                    const liveTime = formatLiveSubmissionTracking(item.submittedAt, liveTicker);
+                    return (
+                      <div className="mt-2.5 flex items-center justify-between text-[11px] bg-[#F5F7FA] px-2.5 py-1.5 rounded-xl border border-[#E3E8EF]">
+                        <div className="flex items-center gap-1.5 text-[#142B4A] font-semibold truncate">
+                          <Clock className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
+                          <span className="truncate">{liveTime.timeFormatted} GMT ({liveTime.relativeTime})</span>
+                        </div>
+                        <span className={item.late ? 'text-[#C74646] font-bold text-[10px] shrink-0' : 'text-[#23845B] font-bold text-[10px] shrink-0'}>
+                          {item.late ? '● Late' : '● On-Time'}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
                   {/* Category & Date Bar */}
-                  <div className="mt-3 flex items-center justify-between text-[11px] text-[#667085] bg-[#F5F7FA] px-2.5 py-1.5 rounded-xl border border-[#E3E8EF]">
+                  <div className="mt-2 flex items-center justify-between text-[11px] text-[#667085] bg-white px-2.5 py-1 rounded-xl border border-[#E3E8EF]">
                     <span className="font-bold text-[#142B4A] flex items-center gap-1">
                       {item.reportType === 'meeting' ? <FileText className="w-3 h-3 text-[#142B4A]" /> : <Flame className="w-3 h-3 text-[#C6A45A]" />}
                       {item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'}
                     </span>
-                    <span>{item.reportType === 'meeting' ? item.meetingDate : item.date}</span>
-                    <span className={item.late ? 'text-[#C74646] font-bold' : 'text-[#23845B] font-semibold'}>
-                      {item.late ? 'Late' : 'On-Time'}
-                    </span>
+                    <span>Meeting: {item.reportType === 'meeting' ? item.meetingDate : item.date}</span>
                   </div>
 
                   {/* Metrics 2x2 grid */}
@@ -1334,10 +1358,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                         e.stopPropagation();
                         setInspectingItem(item);
                       }}
-                      className="py-2 px-3 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] font-bold text-xs flex items-center justify-center gap-1 shadow-2xs cursor-pointer min-h-[40px]"
+                      className="flex-1 py-2 px-3 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer min-h-[40px]"
                     >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span className="hidden xs:inline">Details</span>
+                      <BookOpen className="w-3.5 h-3.5 text-[#C6A45A]" />
+                      <span>Read Report</span>
                     </button>
 
                     {whatsappUrl && (

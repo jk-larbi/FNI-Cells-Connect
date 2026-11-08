@@ -7,7 +7,7 @@ import { ReportService } from '../../services/reportService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics, CellPerformanceRecord } from '../../types';
-import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
+import { getCurrentDeadlineInfo, formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
   Users,
   Building,
@@ -55,6 +55,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
   const [showSoulModal, setShowSoulModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [liveTicker, setLiveTicker] = useState(Date.now());
+
+  // Real-time live submission tracking ticker
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTicker(Date.now());
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Push Notifications state
   const { isPushEnabled, isPushSupported, requestPushPermission, dispatchNotification } = useNotifications();
@@ -852,7 +861,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <th className="py-3 px-4">REPORT TYPE</th>
                 <th className="py-3 px-4">KEY METRIC</th>
                 <th className="py-3 px-4">REVIEW STATUS</th>
-                <th className="py-3 px-4">SUBMISSION TIMING</th>
+                <th className="py-3 px-4">SUBMISSION TIME (LIVE)</th>
                 <th className="py-3 px-5 text-right">ACTION</th>
               </tr>
             </thead>
@@ -978,19 +987,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                       </td>
 
-                      {/* Timing / Deadline Column */}
+                      {/* Submission Time & Live Tracking */}
                       <td className="py-4 px-4 whitespace-nowrap">
-                        {item.late ? (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
-                            <span className="w-2 h-2 rounded-full bg-[#C74646]" />
-                            Overdue / Late
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
-                            On Track
-                          </span>
-                        )}
+                        {(() => {
+                          const liveTime = formatLiveSubmissionTracking(item.submittedAt, liveTicker);
+                          return (
+                            <div>
+                              <div className="flex items-center gap-1.5 font-bold text-[#142B4A]">
+                                <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
+                                <span>{liveTime.timeFormatted} GMT</span>
+                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold flex items-center gap-1 ${
+                                  liveTime.isJustNow ? 'bg-emerald-100 text-[#23845B] animate-pulse' : 'bg-[#F0F5FA] text-[#142B4A] border border-[#E3E8EF]'
+                                }`}>
+                                  {liveTime.isJustNow && <span className="w-1.5 h-1.5 rounded-full bg-[#23845B] animate-ping" />}
+                                  {liveTime.relativeTime}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-[#667085] mt-0.5">
+                                {liveTime.dateFormatted} &bull;{' '}
+                                <span className={item.late ? 'text-[#C74646] font-bold' : 'text-[#23845B] font-bold'}>
+                                  {item.late ? 'Late Return' : 'On-Time'}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Action Buttons: Accept / Decline / Inspect */}
@@ -1055,10 +1076,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                 onNavigateToTab('report-review');
                               }
                             }}
-                            className="w-7 h-7 rounded-lg bg-[#F5F7FA] text-[#142B4A] hover:bg-[#142B4A] hover:text-[#C6A45A] inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer border border-[#E3E8EF]"
-                            title="Inspect Full Report Details"
+                            className="px-2.5 py-1 rounded-lg bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                            title="Read complete report before approving"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <BookOpen className="w-3.5 h-3.5 text-[#C6A45A]" />
+                            <span>Read Report</span>
                           </button>
                         </div>
                       </td>
