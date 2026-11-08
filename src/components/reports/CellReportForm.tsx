@@ -271,13 +271,13 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
               <Calendar className="w-4 h-4 text-gold-500" />
               1. Cell Identification & Meeting Schedule
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Cell Fellowship (Automatically Registered)
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 sm:min-h-[36px] flex items-end">
+                  <span>Cell Fellowship (Automatically Registered)</span>
                 </label>
                 {!isAdmin ? (
-                  <div className="w-full text-xs rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-[#142B4A] font-bold flex items-center justify-between shadow-2xs">
+                  <div className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-100 px-3 text-[#142B4A] font-bold flex items-center justify-between shadow-2xs">
                     <div className="flex items-center gap-2 truncate">
                       <Building className="w-4 h-4 text-[#C6A45A] shrink-0" />
                       <span className="truncate">{currentUser.cell_name || cells.find(c => c.id === cellId)?.name || 'Fellowship Cell'}</span>
@@ -301,7 +301,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                       }
                     }}
                     required
-                    className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                    className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
                   >
                     {cells.map(c => (
                       <option key={c.id} value={c.id}>
@@ -313,8 +313,8 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Meeting Location <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 sm:min-h-[36px] flex items-end">
+                  <span>Meeting Location <span className="text-rose-500">*</span></span>
                 </label>
                 <input
                   type="text"
@@ -322,32 +322,32 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                   value={meetingLocation}
                   onChange={e => setMeetingLocation(e.target.value)}
                   placeholder="e.g. Hall 4 Common Room, Legon Campus"
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                  className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Meeting Date <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 sm:min-h-[36px] flex items-end">
+                  <span>Meeting Date <span className="text-rose-500">*</span></span>
                 </label>
                 <input
                   type="date"
                   required
                   value={meetingDate}
                   onChange={e => setMeetingDate(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                  className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Tutor / Cell Leader Name
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 sm:min-h-[36px] flex items-end">
+                  <span>Tutor / Cell Leader Name</span>
                 </label>
                 <input
                   type="text"
                   disabled
                   value={currentUser.full_name}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-slate-600 font-medium cursor-not-allowed"
+                  className="w-full h-11 text-xs rounded-xl border border-slate-200 bg-slate-100 px-3 text-slate-600 font-medium cursor-not-allowed"
                 />
               </div>
             </div>
