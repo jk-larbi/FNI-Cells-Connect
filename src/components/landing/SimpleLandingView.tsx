@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowRight, LogIn, UserPlus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Sparkles, BookOpen, Shield, LogIn, UserPlus } from 'lucide-react';
 
 interface SimpleLandingViewProps {
   onSignUp: () => void;
@@ -10,31 +10,60 @@ interface SimpleLandingViewProps {
 export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
   onSignUp,
   onLogIn,
-  onViewOverview,
 }) => {
+  // Active statement tab: 'mission' or 'vision' with smooth animation
+  const [activeTab, setActiveTab] = useState<'mission' | 'vision'>('mission');
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-cycle through mission and vision every 8 seconds if user doesn't toggle
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveTab(prev => (prev === 'mission' ? 'vision' : 'mission'));
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans">
-      {/* Subtle restrained decorative background lines */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-        <div className="w-[500px] h-[500px] sm:w-[680px] sm:h-[680px] rounded-full border border-[#C6A45A]/10 animate-pulse opacity-40"></div>
-        <div className="w-[700px] h-[700px] sm:w-[920px] sm:h-[920px] rounded-full border border-[#142B4A]/5 opacity-30"></div>
+    <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
+      {/* Background Decorative Gold & Navy Aura */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
+        <div className="w-[500px] h-[500px] sm:w-[720px] sm:h-[720px] rounded-full bg-gradient-to-tr from-[#142B4A]/5 via-transparent to-[#C6A45A]/10 blur-3xl animate-pulse" />
+        <div className="w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] rounded-full border border-[#C6A45A]/15 animate-[spin_60s_linear_infinite]" />
+        <div className="w-[600px] h-[600px] sm:w-[850px] sm:h-[850px] rounded-full border border-[#142B4A]/5 animate-[spin_90s_linear_infinite_reverse]" />
       </div>
 
-      {/* Top spacing spacer */}
-      <div className="w-full flex justify-center pt-2">
-        <div className="h-1 w-12 rounded-full bg-gradient-to-r from-transparent via-[#C6A45A]/40 to-transparent"></div>
+      {/* Top Ministry Accent Bar */}
+      <div className={`transition-all duration-1000 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'} w-full flex justify-center pt-2 z-10`}>
+        <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#142B4A]/5 border border-[#C6A45A]/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#C6A45A] animate-ping" />
+          <span className="text-[11px] font-bold text-[#142B4A] uppercase tracking-widest">
+            Forerunners Network International
+          </span>
+        </div>
       </div>
 
-      {/* Main Centered Content */}
-      <main className="w-full max-w-xl mx-auto flex flex-col items-center text-center my-auto z-10 px-4">
-        {/* 1. Official FNI Logo - Big & Prominent in Centre */}
-        <div className="relative mb-6 sm:mb-8 group">
-          {/* Subtle gold outer glow & accent border */}
-          <div className="absolute -inset-2.5 rounded-3xl border border-[#C6A45A]/40 opacity-70 group-hover:scale-105 transition-all duration-300"></div>
-          <div className="absolute -inset-1 rounded-3xl border border-[#142B4A]/10"></div>
-          
-          {/* Logo Frame: Pristine, preserving the complete emblem & pillars */}
-          <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-3xl overflow-hidden border-2 border-white shadow-2xl bg-[#142B4A] flex items-center justify-center p-1">
+      {/* Main Centered Animated Hero Content */}
+      <main className="w-full max-w-2xl mx-auto flex flex-col items-center text-center my-auto z-10 px-4">
+        {/* 1. Official FNI Ministry Logo with Floating Animation & Gold Glow */}
+        <div
+          className={`relative mb-6 sm:mb-8 transition-all duration-1000 delay-200 transform ${
+            isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+          }`}
+        >
+          {/* Subtle Outer Pulsing Glow */}
+          <div className="absolute -inset-3 rounded-full bg-gradient-to-r from-[#C6A45A]/30 via-[#142B4A]/20 to-[#C6A45A]/30 blur-md animate-pulse" />
+
+          {/* Concentric Gold Accent Rings */}
+          <div className="absolute -inset-2 rounded-3xl border border-[#C6A45A]/50 transition-all duration-500" />
+          <div className="absolute -inset-1 rounded-3xl border border-[#142B4A]/10" />
+
+          {/* Logo Frame: Clean, preserving the emblem and full proportions */}
+          <div className="w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 rounded-3xl overflow-hidden border-2 border-white shadow-2xl bg-[#142B4A] flex items-center justify-center p-1 relative z-10 group hover:scale-[1.02] transition-transform duration-500">
             <img
               src="/fni-official-logo.jpg"
               alt="Forerunners Network International Official Logo"
@@ -43,66 +72,129 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
           </div>
         </div>
 
-        {/* 2. Platform Name - Big & Bold in Official Blue */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[#142B4A] tracking-tight leading-none mb-3">
-          FNI CELLS CONNECT
-        </h1>
-
-        {/* Thin Gold Decorative Divider */}
-        <div className="flex items-center justify-center gap-2.5 w-40 sm:w-52 my-2.5">
-          <div className="h-[2px] bg-gradient-to-r from-transparent to-[#C6A45A] flex-1"></div>
-          <div className="w-2 h-2 rounded-full bg-[#C6A45A] shadow-xs"></div>
-          <div className="h-[2px] bg-gradient-to-l from-transparent to-[#C6A45A] flex-1"></div>
+        {/* Platform Title */}
+        <div
+          className={`transition-all duration-1000 delay-300 transform ${
+            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+        >
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#142B4A] tracking-tight leading-none mb-2">
+            FNI CELLS CONNECT
+          </h1>
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-[#C6A45A] mb-4">
+            Connecting Cells • Strengthening Fellowship
+          </p>
         </div>
 
-        {/* 3. Short Elegant Tagline */}
-        <p className="text-base sm:text-lg text-[#667085] font-medium italic tracking-wide mt-1 mb-8 sm:mb-10">
-          Connecting Cells. Strengthening Fellowship.
-        </p>
+        {/* 2. Mission and Statements Animated Showcase */}
+        <div
+          className={`w-full max-w-xl transition-all duration-1000 delay-500 transform ${
+            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
+          {/* Statement Tab Controls */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab('mission')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
+                activeTab === 'mission'
+                  ? 'bg-[#142B4A] text-white shadow-md shadow-[#142B4A]/20 scale-105 border border-[#142B4A]'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-transparent'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>Mission Statement</span>
+            </button>
 
-        {/* 4. Two Buttons: SIGN UP and LOG IN */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-sm sm:max-w-md">
-          {/* Sign Up Button: Deep Navy Blue with Gold Detail */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('vision')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
+                activeTab === 'vision'
+                  ? 'bg-[#142B4A] text-white shadow-md shadow-[#142B4A]/20 scale-105 border border-[#142B4A]'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-transparent'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>Vision Statement</span>
+            </button>
+          </div>
+
+          {/* Animated Statement Box */}
+          <div className="relative bg-gradient-to-b from-white to-[#F8FAFC] rounded-3xl p-6 sm:p-8 border border-[#E3E8EF] shadow-lg shadow-slate-200/50 overflow-hidden min-h-[160px] flex items-center justify-center">
+            {/* Elegant Quotation Mark Watermark */}
+            <span className="absolute top-2 left-4 text-7xl text-[#C6A45A]/10 font-serif select-none pointer-events-none">
+              “
+            </span>
+
+            {/* Mission Statement */}
+            <div
+              className={`transition-all duration-700 ease-in-out transform ${
+                activeTab === 'mission'
+                  ? 'opacity-100 scale-100 block'
+                  : 'opacity-0 scale-95 hidden'
+              }`}
+            >
+              <span className="inline-block text-[10px] font-bold tracking-widest text-[#C6A45A] uppercase mb-2">
+                Our Mission
+              </span>
+              <p className="text-sm sm:text-base md:text-lg text-[#142B4A] font-serif italic leading-relaxed max-w-lg mx-auto">
+                “Mobilizing territorial cell fellowships, rigorous discipleship training, dynamic evangelism outreaches, and systematic pastoral care to transform lives and communities.”
+              </p>
+            </div>
+
+            {/* Vision Statement */}
+            <div
+              className={`transition-all duration-700 ease-in-out transform ${
+                activeTab === 'vision'
+                  ? 'opacity-100 scale-100 block'
+                  : 'opacity-0 scale-95 hidden'
+              }`}
+            >
+              <span className="inline-block text-[10px] font-bold tracking-widest text-[#C6A45A] uppercase mb-2">
+                Our Vision
+              </span>
+              <p className="text-sm sm:text-base md:text-lg text-[#142B4A] font-serif italic leading-relaxed max-w-lg mx-auto">
+                “To raise a global army of consecrated believers equipped with apostolic and prophetic depth, establishing the reign of Christ across all spheres of society.”
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Action Buttons: Proceed to Registration Portal / Log In */}
+        <div
+          className={`mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md transition-all duration-1000 delay-700 transform ${
+            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
+          {/* Primary CTA: Go to Registration Portal */}
           <button
             type="button"
             onClick={onSignUp}
-            className="w-full sm:flex-1 py-4 px-7 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-sm uppercase tracking-wider shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 border border-[#142B4A] group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
+            className="w-full sm:flex-1 py-4 px-6 rounded-2xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 border border-[#142B4A] group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
           >
             <UserPlus className="w-4 h-4 text-[#C6A45A]" />
-            <span>Sign Up</span>
-            <ArrowRight className="w-4 h-4 text-[#C6A45A] group-hover:translate-x-1 transition-transform" />
+            <span>Registration Portal</span>
+            <ArrowRight className="w-4 h-4 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
           </button>
 
-          {/* Log In Button: White with Blue Border and Blue Text */}
+          {/* Secondary CTA: Log In */}
           <button
             type="button"
             onClick={onLogIn}
-            className="w-full sm:flex-1 py-4 px-7 rounded-xl bg-white hover:bg-[#F5F7FA] text-[#142B4A] hover:text-[#142B4A] border-2 border-[#142B4A] hover:border-[#C6A45A] font-bold text-sm uppercase tracking-wider transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
+            className="w-full sm:w-auto py-4 px-7 rounded-2xl bg-white hover:bg-slate-50 text-[#142B4A] border-2 border-[#142B4A] hover:border-[#C6A45A] font-bold text-xs uppercase tracking-widest transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20"
           >
             <LogIn className="w-4 h-4 text-[#142B4A]" />
             <span>Log In</span>
           </button>
         </div>
-
-        {/* Navigation to Landing Page B (Ministry Overview) */}
-        {onViewOverview && (
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={onViewOverview}
-              className="text-xs font-semibold text-[#142B4A] hover:text-[#C6A45A] transition-colors underline underline-offset-4 flex items-center gap-1 mx-auto"
-            >
-              <span>Explore FNI Ministry Vision & Annual Soul Target</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
-            </button>
-          </div>
-        )}
       </main>
 
-      {/* Subtle Minimal Footer Attribution */}
-      <footer className="w-full text-center pb-2 z-10">
-        <p className="text-[11px] font-semibold tracking-wider text-[#667085]/70 uppercase">
-          Forerunners Network International
+      {/* Footer Info */}
+      <footer className="w-full text-center text-[11px] text-[#667085] z-10 pt-4">
+        <p className="font-medium">
+          Forerunners Network International &bull; Advancing the Great Commission
         </p>
       </footer>
     </div>
