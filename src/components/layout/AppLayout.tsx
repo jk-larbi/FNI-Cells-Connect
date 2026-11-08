@@ -158,6 +158,7 @@ export const AppLayout: React.FC = () => {
                     initialReportId={highlightedReportId}
                     onClearInitialReportId={() => setHighlightedReportId(undefined)}
                     onBack={handleGoBack}
+                    onNavigateToTab={(tab) => navigateToTab(tab as any)}
                   />
                 )}
                 {effectiveTab === 'evangelism' && (
