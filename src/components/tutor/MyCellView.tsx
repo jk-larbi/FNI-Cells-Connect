@@ -46,27 +46,24 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
     async function load() {
       try {
         setIsLoading(true);
-        if (currentUser.cell_id) {
-          const [c, mList, eList] = await Promise.all([
-            CellService.getCellById(currentUser.cell_id),
-            ReportService.getCellMeetingReports({ cellId: currentUser.cell_id }),
-            ReportService.getEvangelismReports({ cellId: currentUser.cell_id }),
-          ]);
-          if (c) {
-            setCell(c);
-            setCellName(c.name || '');
-            setMeetingLocation(c.meeting_location || c.location || '');
-            setMeetingDay(c.meeting_day || 'Wednesday');
-            setMeetingTime(c.meeting_time || '18:30');
-            setVenueAddress(c.venue_address || c.location || '');
-            setTargetAttendance(c.target_attendance || 25);
-            setTotalMembers(c.total_members !== undefined ? c.total_members : 10);
-            setActiveMembers(c.active_members !== undefined ? c.active_members : 8);
-            setNewMembers(c.new_members !== undefined ? c.new_members : 2);
-          }
-          setMeetingReports(mList);
-          setEvangReports(eList);
-        }
+        const c = await CellService.getCellForTutor(currentUser);
+        setCell(c);
+        setCellName(currentUser.cell_name || c.name || '');
+        setMeetingLocation(c.meeting_location || c.venue_address || c.location || '');
+        setMeetingDay(c.meeting_day || 'Wednesday');
+        setMeetingTime(c.meeting_time || '18:30');
+        setVenueAddress(c.venue_address || c.location || '');
+        setTargetAttendance(c.target_attendance || 25);
+        setTotalMembers(c.total_members !== undefined ? c.total_members : 10);
+        setActiveMembers(c.active_members !== undefined ? c.active_members : 8);
+        setNewMembers(c.new_members !== undefined ? c.new_members : 2);
+
+        const [mList, eList] = await Promise.all([
+          ReportService.getCellMeetingReports({ cellId: c.id }),
+          ReportService.getEvangelismReports({ cellId: c.id }),
+        ]);
+        setMeetingReports(mList);
+        setEvangReports(eList);
       } finally {
         setIsLoading(false);
       }
@@ -137,10 +134,10 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm">
           <div className="flex items-center gap-3 pb-4 mb-5 border-b border-[#E3E8EF]">
             <div className="w-12 h-12 rounded-2xl bg-[#142B4A] flex items-center justify-center text-[#C6A45A] font-bold text-lg shadow-sm">
-              {cell.name.slice(0, 2).toUpperCase()}
+              {(currentUser.cell_name || cell.name || 'FC').slice(0, 2).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#142B4A]">{cell.name}</h2>
+              <h2 className="text-base font-bold text-[#142B4A]">{currentUser.cell_name || cell.name}</h2>
               <p className="text-xs text-[#667085]">
                 Campus / Location: <span className="font-semibold text-[#182230]">{cell.location}</span> &bull; Code: <span className="font-mono">{cell.code || 'FNI-CEL'}</span>
               </p>
@@ -158,7 +155,7 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
             {/* Basic Identification */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold text-[#182230] mb-1">Cell Name</label>
+                <label className="block font-bold text-[#182230] mb-1">Cell Fellowship Name</label>
                 <input
                   type="text"
                   value={cellName}
@@ -167,6 +164,9 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                   placeholder="e.g. Dominion Cell Legon"
                   className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none font-semibold text-[#142B4A]"
                 />
+                <p className="text-[10px] text-[#667085] mt-1">
+                  Registered Fellowship: <strong className="text-[#142B4A]">{currentUser.cell_name || cell.name}</strong>
+                </p>
               </div>
 
               <div>

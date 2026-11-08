@@ -96,14 +96,13 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
     async function load() {
       try {
         setIsLoading(true);
-        const cellId = currentUser.cell_id;
-        const [c, mList, eList, cntList] = await Promise.all([
-          cellId ? CellService.getCellById(cellId) : Promise.resolve(null),
-          ReportService.getCellMeetingReports({ cellId: cellId || undefined }),
-          ReportService.getEvangelismReports({ cellId: cellId || undefined }),
-          FollowUpService.getContacts(cellId || undefined),
-        ]);
+        const c = await CellService.getCellForTutor(currentUser);
         setCell(c);
+        const [mList, eList, cntList] = await Promise.all([
+          ReportService.getCellMeetingReports({ cellId: c.id }),
+          ReportService.getEvangelismReports({ cellId: c.id }),
+          FollowUpService.getContacts(c.id),
+        ]);
         setMeetingReports(mList);
         setEvangReports(eList);
         setContacts(cntList);

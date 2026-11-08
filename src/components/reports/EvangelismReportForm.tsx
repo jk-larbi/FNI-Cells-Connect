@@ -3,6 +3,7 @@ import { Cell, EvangelismReport } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { ReportService } from '../../services/reportService';
+import { CellService } from '../../services/cellService';
 import { FollowUpService } from '../../services/followUpService';
 import {
   Flame,
@@ -18,6 +19,8 @@ import {
   Plus,
   Trash2,
   ArrowLeft,
+  Building,
+  Lock,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -30,7 +33,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const { dispatchNotification } = useNotifications();
 
   const [cells, setCells] = useState<Cell[]>([]);
@@ -66,10 +69,15 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
       try {
         const cList = await ReportService.getCells();
         setCells(cList);
-        if (!cellId && cList.length > 0) {
-          const matching = cList.find(c => c.id === currentUser.cell_id) || cList[0];
-          setCellId(matching.id);
-          if (!location && matching.name) {
+        const myCell = await CellService.getCellForTutor(currentUser);
+        if (!cellId || !isAdmin) {
+          setCellId(myCell.id);
+          if (!location) {
+            setLocation(myCell.meeting_location || myCell.venue_address || myCell.location || `${currentUser.cell_name || myCell.name} Territory`);
+          }
+        } else if (cellId && cList.length > 0) {
+          const matching = cList.find(c => c.id === cellId);
+          if (matching && !location) {
             setLocation(`${matching.name} Territory`);
           }
         }
@@ -78,7 +86,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
       }
     }
     loadCells();
-  }, [currentUser, cellId]);
+  }, [currentUser, cellId, isAdmin]);
 
   const handleAddTeamMember = () => {
     if (!teamMembersInput.trim()) return;
@@ -258,20 +266,33 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Cell Fellowship <span className="text-rose-500">*</span>
+                Cell Fellowship (Automatically Registered)
               </label>
-              <select
-                value={cellId}
-                onChange={e => setCellId(e.target.value)}
-                required
-                className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
-              >
-                {cells.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.location ? `(${c.location})` : ''}
-                  </option>
-                ))}
-              </select>
+              {!isAdmin ? (
+                <div className="w-full text-xs rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-[#142B4A] font-bold flex items-center justify-between shadow-2xs">
+                  <div className="flex items-center gap-2 truncate">
+                    <Building className="w-4 h-4 text-[#C6A45A] shrink-0" />
+                    <span className="truncate">{currentUser.cell_name || cells.find(c => c.id === cellId)?.name || 'Fellowship Cell'}</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#142B4A] text-[#C6A45A] shrink-0 ml-1.5 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    Your Cell
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={cellId}
+                  onChange={e => setCellId(e.target.value)}
+                  required
+                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                >
+                  {cells.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.location ? `(${c.location})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
