@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Flame, Target, Eye, Sparkles } from 'lucide-react';
+import { ArrowRight, Flame, Target, Eye, Compass } from 'lucide-react';
 
 interface MinistryVisionViewProps {
   onProceed: () => void;
@@ -85,7 +85,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
-                <Sparkles className="w-4 h-4" />
+                <Compass className="w-4 h-4" />
               </div>
               <span className="text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Mission
