@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
+import { SupabaseService } from './supabaseService';
 import { SoulTargetConfig, SoulTargetMetrics } from '../types';
 import { ReportService } from './reportService';
 import { CellService } from './cellService';
@@ -45,6 +46,12 @@ export class SoulTargetService {
   private static liveListeners: Set<(metrics: SoulTargetMetrics) => void> = new Set();
 
   static async getConfig(): Promise<SoulTargetConfig> {
+    // 1. Primary: Try Supabase
+    const supaConfig = await SupabaseService.getSoulTargetConfig();
+    if (supaConfig) {
+      setStoredConfig(supaConfig);
+      return supaConfig;
+    }
     if (isFirebaseConfigured && db) {
       try {
         const snap = await getDoc(doc(db, 'soulTargets', 'target-2026'));

@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, getDocs, query, where, orderBy, getDoc, updateDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
+import { SupabaseService } from './supabaseService';
 import { PrivateMessage, CommunityMessage, InvitationCode, UserRole, MessageReply } from '../types';
 
 const STORAGE_KEYS = {
@@ -59,6 +60,13 @@ export class MessagingService {
       isRead: false,
       replyTo: data.replyTo,
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.sendPrivateMessage(msg);
+    } catch (err) {
+      console.warn('Supabase private message notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {
@@ -201,6 +209,13 @@ export class MessagingService {
       mentions: data.mentions,
       reactions: {},
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.sendCommunityMessage(msg);
+    } catch (err) {
+      console.warn('Supabase community message notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {

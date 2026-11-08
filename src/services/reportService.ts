@@ -25,6 +25,7 @@ import {
 } from '../types';
 import { evaluateSubmissionTiming, getCurrentDeadlineInfo } from '../utils/deadlineUtil';
 import { CellService } from './cellService';
+import { SupabaseService } from './supabaseService';
 
 const STORAGE_KEYS = {
   MEETING_REPORTS: 'fni_meeting_reports_v5_clean',
@@ -62,6 +63,15 @@ export class ReportService {
     tutorUid?: string;
     status?: ReportStatus;
   }): Promise<CellMeetingReport[]> {
+    // 1. Primary: Try Supabase
+    const supaReports = await SupabaseService.getCellMeetingReports(filters);
+    if (supaReports && supaReports.length > 0) {
+      let filtered = supaReports;
+      if (filters?.status) filtered = filtered.filter(r => r.status === filters.status);
+      setStored(STORAGE_KEYS.MEETING_REPORTS, filtered);
+      return filtered;
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const ref = collection(db, 'cellMeetingReports');
@@ -147,6 +157,13 @@ export class ReportService {
       submittedAt: nowIso,
       late: timing.isLate,
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.upsertCellMeetingReport(report);
+    } catch (err) {
+      console.warn('Supabase meeting report sync notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {
@@ -234,6 +251,15 @@ export class ReportService {
     tutorUid?: string;
     status?: ReportStatus;
   }): Promise<EvangelismReport[]> {
+    // 1. Primary: Try Supabase
+    const supaReports = await SupabaseService.getEvangelismReports(filters);
+    if (supaReports && supaReports.length > 0) {
+      let filtered = supaReports;
+      if (filters?.status) filtered = filtered.filter(r => r.status === filters.status);
+      setStored(STORAGE_KEYS.EVANGELISM_REPORTS, filtered);
+      return filtered;
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const ref = collection(db, 'evangelismReports');
@@ -311,6 +337,13 @@ export class ReportService {
       submittedAt: nowIso,
       late: timing.isLate,
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.upsertEvangelismReport(report);
+    } catch (err) {
+      console.warn('Supabase evangelism report sync notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {
@@ -456,6 +489,39 @@ export class ReportService {
 
     const nowIso = new Date().toISOString();
     const collectionName = reportType === 'meeting' ? 'cellMeetingReports' : 'evangelismReports';
+
+    // Dual-write to Supabase
+    try {
+      if (reportType === 'meeting') {
+        const meetingList = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
+        const target = meetingList.find(r => r.id === reportId);
+        if (target) {
+          await SupabaseService.upsertCellMeetingReport({
+            ...target,
+            status,
+            reviewerComment: comment,
+            reviewedBy: reviewerUid,
+            reviewedByName: reviewerName,
+            reviewedAt: nowIso,
+          });
+        }
+      } else {
+        const evList = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
+        const target = evList.find(r => r.id === reportId);
+        if (target) {
+          await SupabaseService.upsertEvangelismReport({
+            ...target,
+            status,
+            reviewerComment: comment,
+            reviewedBy: reviewerUid,
+            reviewedByName: reviewerName,
+            reviewedAt: nowIso,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase report review sync notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {

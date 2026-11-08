@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, getDocs, updateDoc, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
+import { SupabaseService } from './supabaseService';
 import { TeachingMaterial } from '../types';
 
 const STORAGE_KEY = 'fni_teaching_materials_v2_clean';
@@ -25,6 +26,12 @@ function setStoredMaterials(items: TeachingMaterial[]): void {
 
 export class TeachingMaterialService {
   static async getMaterials(isAdmin = false): Promise<TeachingMaterial[]> {
+    // 1. Primary: Try Supabase
+    const supaMaterials = await SupabaseService.getTeachingMaterials();
+    if (supaMaterials && supaMaterials.length > 0) {
+      setStoredMaterials(supaMaterials);
+      return isAdmin ? supaMaterials : supaMaterials.filter(m => m.status === 'published');
+    }
     if (isFirebaseConfigured && db) {
       try {
         const snap = await getDocs(
@@ -76,6 +83,13 @@ export class TeachingMaterialService {
       createdAt: nowIso,
       updatedAt: nowIso,
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.upsertTeachingMaterial(record);
+    } catch (err) {
+      console.warn('Supabase teaching material notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {

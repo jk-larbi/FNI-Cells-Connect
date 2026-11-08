@@ -1,5 +1,6 @@
 import { collection, getDocs, doc, getDoc, setDoc, query, where, orderBy } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
+import { SupabaseService } from './supabaseService';
 import { OfferingRecord, OfferingAggregation, UserRole } from '../types';
 import { ReportService } from './reportService';
 
@@ -59,6 +60,13 @@ export class FinanceService {
       submittedAt: data.submittedAt || new Date().toISOString(),
       status: data.status,
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.upsertOfferingRecord(record);
+    } catch (err) {
+      console.warn('Supabase offering sync notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {

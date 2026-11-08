@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
+import { SupabaseService } from './supabaseService';
 import { SystemSettings } from '../types';
 
 const STORAGE_KEY = 'fni_system_settings_v5_clean';
@@ -15,6 +16,12 @@ export const DEFAULT_SETTINGS: SystemSettings = {
 
 export class SettingsService {
   static async getSettings(): Promise<SystemSettings> {
+    // 1. Primary: Try Supabase
+    const supaSettings = await SupabaseService.getSystemSettings();
+    if (supaSettings) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(supaSettings));
+      return supaSettings;
+    }
     if (isFirebaseConfigured && db) {
       try {
         const snap = await getDoc(doc(db, 'systemSettings', 'general'));
@@ -44,6 +51,13 @@ export class SettingsService {
       updatedAt: new Date().toISOString(),
       updatedBy: updatedBy || current.updatedBy,
     };
+
+    // Dual-write to Supabase
+    try {
+      await SupabaseService.upsertSystemSettings(updated);
+    } catch (err) {
+      console.warn('Supabase settings sync notice:', err);
+    }
 
     if (isFirebaseConfigured && db) {
       try {

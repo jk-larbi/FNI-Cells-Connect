@@ -11,6 +11,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
+import { SupabaseService } from './supabaseService';
 import { EvangelismContact, FollowUpStatus } from '../types';
 
 const STORAGE_KEY = 'fni_contacts_store_v5_clean';
@@ -44,6 +45,13 @@ export class FollowUpService {
     } else if (filter) {
       targetCellId = filter.cellId;
       targetTutorUid = filter.tutorUid;
+    }
+
+    // 1. Primary: Try Supabase
+    const supaContacts = await SupabaseService.getEvangelismContacts({ cellId: targetCellId, tutorUid: targetTutorUid });
+    if (supaContacts && supaContacts.length > 0) {
+      saveStoredContacts(supaContacts);
+      return supaContacts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     }
 
     let all: EvangelismContact[] = [];

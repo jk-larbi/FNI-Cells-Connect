@@ -269,6 +269,14 @@ export class AuthService {
       createdAt: nowIso,
     });
 
+    // Save in Supabase if configured
+    try {
+      const { SupabaseService } = await import('./supabaseService');
+      await SupabaseService.upsertProfile(newProfile);
+    } catch (e) {
+      console.warn('Supabase upsertProfile notice:', e);
+    }
+
     // Save in Firestore if db connected
     if (isFirebaseConfigured && db) {
       try {
@@ -695,6 +703,14 @@ export class AuthService {
     const current = this.getCurrentProfile();
     if (current && current.id === userId) {
       this.setCurrentProfile(updatedProfile);
+    }
+
+    // Sync with Supabase if configured
+    try {
+      const { SupabaseService } = await import('./supabaseService');
+      await SupabaseService.updateProfileAvatar(userId, avatarUrl);
+    } catch (e) {
+      console.warn('Supabase updateUserAvatar notice:', e);
     }
 
     // Sync with Firestore if configured
