@@ -780,6 +780,17 @@ export class AuthService {
         // Schedule proactive token renewal prior to expiry
         const expiresAt = result.data.expiresAt || (Math.floor(Date.now() / 1000) + 86400);
         scheduleSupabaseRenewal(expiresAt);
+
+        // Trigger automatic retry of pending queued sync operations now that authentication is ready
+        try {
+          const { SyncStateService } = await import('./syncStateService');
+          SyncStateService.retryPendingSync().catch((retryErr) => {
+            console.warn('[SyncStateService] Post-auth pending sync retry notice:', retryErr);
+          });
+        } catch {
+          // SyncStateService retry is non-blocking
+        }
+
         return true;
       }
     } catch (err: any) {

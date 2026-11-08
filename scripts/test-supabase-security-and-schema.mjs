@@ -143,7 +143,7 @@ for (const tbl of requiredRlsTables) {
 console.log('\nTEST 3: Sensitive Data Access Restrictions (Anti-Leakage)...');
 
 assert(
-  migrationSql.includes('CREATE POLICY "offerings_select" ON public.offering_records FOR SELECT TO authenticated') &&
+  migrationSql.includes('CREATE POLICY "offering_records_select" ON public.offering_records FOR SELECT TO authenticated') &&
   migrationSql.includes('USING (public.is_admin());'),
   'offering_records is strictly restricted to administrators; ordinary tutors cannot view financial records of other cells.'
 );

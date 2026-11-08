@@ -18,6 +18,12 @@
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { SyncStateService } from './syncStateService';
+
+// Initialize SyncStateService client and online lifecycle listeners if Supabase is configured
+if (isSupabaseConfigured && supabase) {
+  SyncStateService.setDefaultClient(supabase);
+  SyncStateService.initLifecycleListeners();
+}
 import {
   Cell,
   CellMeetingReport,

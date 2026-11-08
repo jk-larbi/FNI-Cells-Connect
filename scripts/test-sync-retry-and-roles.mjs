@@ -1,6 +1,10 @@
 /**
  * Forerunners Network International (FNI) - Digital Reporting System
- * Executable Test Suite: Retry Mechanism, Role Compatibility & Anti-Leakage Verification
+ * Executable Test Suite: Production SyncStateService, Retry Lifecycle,
+ * Role Compatibility & Anti-Leakage Verification
+ * 
+ * Tests the ACTUAL production SyncStateService directly from src/services/syncStateService.ts
+ * without any duplicate mock classes.
  */
 
 import * as crypto from 'crypto';
@@ -8,7 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 console.log('================================================================');
-console.log('FNI CELLS CONNECT — RETRY BEHAVIOR & ROLE COMPATIBILITY SUITE');
+console.log('FNI CELLS CONNECT — PRODUCTION SYNC RETRY & ROLE VERIFICATION');
 console.log('================================================================\n');
 
 let passedTests = 0;
@@ -26,11 +30,10 @@ function assert(condition, testName, details = '') {
 }
 
 // -----------------------------------------------------------------------------
-// TEST GROUP 1: EXECUTABLE SYNC QUEUE & RETRY MECHANISM
+// ENVIRONMENT INITIALIZATION FOR PRODUCTION SERVICE
 // -----------------------------------------------------------------------------
-console.log('--- TEST GROUP 1: Executable Sync Queue & Retry Execution ---');
 
-// Mock localStorage in Node.js environment
+// Mock HTML5 LocalStorage in Node.js environment before loading production service
 const mockStorage = new Map();
 global.localStorage = {
   getItem: (key) => mockStorage.get(key) || null,
@@ -39,202 +42,365 @@ global.localStorage = {
   clear: () => mockStorage.clear(),
 };
 
-// Import or recreate SyncStateService logic for standalone test execution
+// Mock window and event listeners for lifecycle reconnection tests
+const windowListeners = new Map();
+global.window = {
+  addEventListener: (event, handler) => {
+    windowListeners.set(event, handler);
+  },
+  removeEventListener: (event) => {
+    windowListeners.delete(event);
+  },
+  dispatchEvent: (event) => {
+    const handler = windowListeners.get(event);
+    if (handler) handler();
+  },
+};
+
+// Directly import the actual production SyncStateService
+import { SyncStateService } from '../src/services/syncStateService.ts';
+
 const SYNC_REGISTRY_KEY = 'fni_pending_supabase_sync_registry_v1';
-const MAX_RETRY_ATTEMPTS = 5;
 
-class TestSyncStateService {
-  static listeners = new Set();
+// -----------------------------------------------------------------------------
+// TEST GROUP 1: BROWSER QUEUE DURABILITY & LOCALSTORAGE SCOPE DOCUMENTATION
+// -----------------------------------------------------------------------------
+console.log('--- TEST GROUP 1: In-Browser Storage Scope & Durability Verification ---');
 
-  static subscribe(listener) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
+const syncServiceSource = fs.readFileSync(
+  path.resolve(process.cwd(), 'src', 'services', 'syncStateService.ts'),
+  'utf8'
+);
 
-  static getPendingItems() {
-    try {
-      const raw = localStorage.getItem(SYNC_REGISTRY_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  }
+assert(
+  syncServiceSource.includes('in-browser, single-client') &&
+  syncServiceSource.includes('NOT a cross-device durable queue'),
+  'SyncStateService explicitly documents localStorage as in-browser buffer, not cross-device durable queue'
+);
 
-  static getPendingCount() {
-    return this.getPendingItems().length;
-  }
+assert(
+  syncServiceSource.includes('Firebase remains the authoritative source of truth'),
+  'SyncStateService affirms Firebase authoritative source of truth during dual-backend operation'
+);
 
-  static recordFailedSync(item) {
-    const items = this.getPendingItems();
-    const existingIndex = items.findIndex(i => i.table === item.table && i.id === item.id);
-    const existing = existingIndex >= 0 ? items[existingIndex] : null;
-    const retryCount = existing ? existing.retryCount + 1 : 1;
-    const isTerminal = retryCount >= MAX_RETRY_ATTEMPTS;
+// -----------------------------------------------------------------------------
+// TEST GROUP 2: AUTHENTICATION READINESS & SAFE HANDLING
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 2: Authentication Readiness & Safe Client Handling ---');
 
-    const entry = {
-      id: item.id,
-      table: item.table,
-      action: item.action || 'UPSERT',
-      payload: item.payload,
-      errorMessage: item.errorMessage,
-      timestamp: new Date().toISOString(),
-      retryCount,
-      terminal: isTerminal,
-    };
-
-    if (existingIndex >= 0) {
-      items[existingIndex] = entry;
-    } else {
-      items.push(entry);
-    }
-
-    localStorage.setItem(SYNC_REGISTRY_KEY, JSON.stringify(items));
-    this.listeners.forEach(cb => cb(items.length, items));
-  }
-
-  static async retryPendingSync(mockClient) {
-    const items = this.getPendingItems();
-    if (items.length === 0) return { total: 0, succeeded: 0, failed: 0, terminal: 0 };
-
-    let succeeded = 0;
-    let failed = 0;
-    let terminal = 0;
-    const remainingItems = [];
-
-    for (const item of items) {
-      if (item.retryCount >= MAX_RETRY_ATTEMPTS) {
-        terminal++;
-        remainingItems.push(item);
-        continue;
-      }
-
-      try {
-        let opError = null;
-        if (item.action === 'DELETE') {
-          const res = await mockClient.from(item.table).delete().eq('id', item.id);
-          opError = res.error;
-        } else {
-          let onConflict = 'id';
-          if (item.table === 'cells') onConflict = 'firebase_id';
-          else if (item.table === 'soul_targets' || item.table === 'soul_target_configs') onConflict = 'year';
-          const res = await mockClient.from(item.table).upsert(item.payload, { onConflict });
-          opError = res.error;
-        }
-
-        if (!opError) {
-          succeeded++;
-        } else {
-          failed++;
-          const newRetryCount = item.retryCount + 1;
-          const isNowTerminal = newRetryCount >= MAX_RETRY_ATTEMPTS;
-          if (isNowTerminal) terminal++;
-          remainingItems.push({
-            ...item,
-            retryCount: newRetryCount,
-            errorMessage: opError.message,
-            timestamp: new Date().toISOString(),
-            terminal: isNowTerminal,
-          });
-        }
-      } catch (err) {
-        failed++;
-        const newRetryCount = item.retryCount + 1;
-        const isNowTerminal = newRetryCount >= MAX_RETRY_ATTEMPTS;
-        if (isNowTerminal) terminal++;
-        remainingItems.push({
-          ...item,
-          retryCount: newRetryCount,
-          errorMessage: err.message,
-          timestamp: new Date().toISOString(),
-          terminal: isNowTerminal,
-        });
-      }
-    }
-
-    localStorage.setItem(SYNC_REGISTRY_KEY, JSON.stringify(remainingItems));
-    this.listeners.forEach(cb => cb(remainingItems.length, remainingItems));
-    return { total: items.length, succeeded, failed, terminal };
-  }
-}
-
-// 1. Initial State
 mockStorage.clear();
-let reportedCount = -1;
-TestSyncStateService.subscribe((count) => { reportedCount = count; });
+SyncStateService.clearRegistry();
+SyncStateService.setDefaultClient(null);
 
-assert(TestSyncStateService.getPendingCount() === 0, 'Initial pending queue is empty');
+assert(
+  SyncStateService.isClientReady() === false,
+  'SyncStateService correctly identifies when Supabase client is not ready/authenticated'
+);
 
-// 2. Queue three distinct operations
-TestSyncStateService.recordFailedSync({
+// Queue an item while unauthenticated
+SyncStateService.recordFailedSync({
   table: 'cell_meeting_reports',
-  id: 'cmr-test-1',
+  id: 'cmr-offline-1',
   action: 'UPSERT',
-  payload: { id: 'cmr-test-1', cell_name: 'Agape Cell', attendance: 25 },
-  errorMessage: 'Failed to fetch (network disconnected)',
+  payload: { id: 'cmr-offline-1', cell_name: 'Grace Cell', attendance: 30 },
+  errorMessage: 'JWT expired / unauthenticated',
 });
 
-TestSyncStateService.recordFailedSync({
-  table: 'evangelism_contacts',
-  id: 'cnt-test-flaky',
-  action: 'UPSERT',
-  payload: { id: 'cnt-test-flaky', contact_name: 'Emmanuel' },
-  errorMessage: 'PostgREST 503 gateway timeout',
+assert(
+  SyncStateService.getPendingCount() === 1,
+  'Item successfully queued in localStorage while Supabase is unauthenticated'
+);
+
+// Attempt retry without authenticated client
+const unauthRetryResult = await SyncStateService.retryPendingSync();
+
+assert(
+  unauthRetryResult.succeeded === 0 && unauthRetryResult.failed === 1,
+  'Unauthenticated retry aborts safely without throwing unhandled exceptions'
+);
+assert(
+  SyncStateService.getPendingCount() === 1,
+  'Pending queue preserved intact in localStorage when client is not authenticated'
+);
+
+// -----------------------------------------------------------------------------
+// TEST GROUP 3: INSERT, UPSERT & DELETE PRODUCTION REPLAY VERIFICATION
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 3: Production INSERT, UPSERT & DELETE Replay Execution ---');
+
+mockStorage.clear();
+SyncStateService.clearRegistry();
+
+let subscribedCount = -1;
+const unsubscribe = SyncStateService.subscribe((count) => {
+  subscribedCount = count;
 });
 
-TestSyncStateService.recordFailedSync({
-  table: 'evangelism_contacts',
-  id: 'cnt-test-del',
-  action: 'DELETE',
-  payload: { id: 'cnt-test-del' },
-  errorMessage: 'Socket hang up',
-});
+// Track calls made to mock client
+const executedCalls = [];
 
-assert(TestSyncStateService.getPendingCount() === 3, 'Queue successfully records 3 failed writes');
-assert(reportedCount === 3, 'Subscription listener is notified when items are queued');
-
-// 3. Simulate Retry Execution with Mock Client
 const mockSupabase = {
   from: (tableName) => ({
+    insert: async (payload) => {
+      executedCalls.push({ action: 'INSERT', table: tableName, payload });
+      return { data: payload, error: null };
+    },
     upsert: async (payload, opts) => {
-      // Simulate success for cmr-test-1, but continued failure for cnt-test-flaky
-      if (payload.id === 'cmr-test-1') {
-        return { data: payload, error: null };
+      executedCalls.push({ action: 'UPSERT', table: tableName, payload, opts });
+      if (payload.id === 'failing-record' || payload.firebase_id === 'failing-record') {
+        return { data: null, error: { message: 'Database constraint violation (foreign key missing)' } };
       }
-      return { data: null, error: { message: 'Database busy - deadlock detected' } };
+      return { data: payload, error: null };
     },
     delete: () => ({
       eq: async (col, val) => {
-        // Simulate delete success
-        return { data: { id: val }, error: null };
+        executedCalls.push({ action: 'DELETE', table: tableName, col, val });
+        return { data: { [col]: val }, error: null };
       },
     }),
   }),
 };
 
-const retryResult = await TestSyncStateService.retryPendingSync(mockSupabase);
+SyncStateService.setDefaultClient(mockSupabase);
+assert(SyncStateService.isClientReady() === true, 'SyncStateService confirms default authenticated client is ready');
 
-assert(retryResult.total === 3, 'Replay processor processed all 3 pending items');
-assert(retryResult.succeeded === 2, '2 operations succeeded (cmr-test-1 upsert and cnt-test-del delete)');
-assert(retryResult.failed === 1, '1 operation failed (cnt-test-flaky)');
-assert(TestSyncStateService.getPendingCount() === 1, 'Queue drained successfully: only 1 failing item remains in localStorage');
+// 1. Queue an INSERT action (e.g. notifications)
+SyncStateService.recordFailedSync({
+  table: 'notifications',
+  id: 'notif-101',
+  action: 'INSERT',
+  payload: { id: 'notif-101', recipient_target: 'all', message: 'Church-wide prayer vigil' },
+  errorMessage: 'Connection lost during POST',
+});
 
-const remaining = TestSyncStateService.getPendingItems();
-assert(remaining[0].id === 'cnt-test-flaky', 'Remaining item is the failed contact write');
-assert(remaining[0].retryCount === 2, 'Retry count incremented to 2 for failing item');
-assert(remaining[0].errorMessage === 'Database busy - deadlock detected', 'Error message updated with latest server error');
+// 2. Queue an UPSERT action with table-specific conflict key (e.g. cells -> firebase_id)
+SyncStateService.recordFailedSync({
+  table: 'cells',
+  id: 'cell-agape-1',
+  action: 'UPSERT',
+  payload: { firebase_id: 'cell-agape-1', name: 'Agape Fellowship', leader: 'Bro. Emmanuel' },
+  errorMessage: 'Gateway timeout 504',
+});
 
-// 4. Test Terminal Max Retries Handling
+// 3. Queue an UPSERT action for standard table (e.g. cell_meeting_reports -> id)
+SyncStateService.recordFailedSync({
+  table: 'cell_meeting_reports',
+  id: 'cmr-201',
+  action: 'UPSERT',
+  payload: { id: 'cmr-201', cell_id: 'cell-agape-1', offering: 150 },
+  errorMessage: 'Socket hang up',
+});
+
+// 4. Queue a DELETE action (e.g. evangelism_contacts)
+SyncStateService.recordFailedSync({
+  table: 'evangelism_contacts',
+  id: 'contact-del-301',
+  action: 'DELETE',
+  payload: { id: 'contact-del-301' },
+  errorMessage: 'Network unreachable',
+});
+
+// 5. Queue an operation that will fail on replay
+SyncStateService.recordFailedSync({
+  table: 'evangelism_reports',
+  id: 'failing-record',
+  action: 'UPSERT',
+  payload: { id: 'failing-record', souls_won: 5 },
+  errorMessage: 'Database connection refused',
+});
+
+assert(SyncStateService.getPendingCount() === 5, '5 operations queued across INSERT, UPSERT and DELETE');
+assert(subscribedCount === 5, 'Subscription listener accurately notified of pending queue depth (5)');
+
+// Replay queue with production SyncStateService
+const replaySummary = await SyncStateService.retryPendingSync();
+
+assert(replaySummary.total === 5, 'Replay processor processed all 5 queued items');
+assert(replaySummary.succeeded === 4, '4 operations succeeded across INSERT, UPSERT, and DELETE');
+assert(replaySummary.failed === 1, '1 operation failed gracefully as anticipated');
+assert(SyncStateService.getPendingCount() === 1, 'Queue drained in localStorage: 4 succeeded pruned, 1 failing item remains');
+
+// Verify executed method calls and arguments
+const insertCall = executedCalls.find(c => c.action === 'INSERT' && c.table === 'notifications');
+assert(insertCall && insertCall.payload.id === 'notif-101', 'INSERT operation dispatched correctly to Supabase table');
+
+const cellsUpsertCall = executedCalls.find(c => c.action === 'UPSERT' && c.table === 'cells');
+assert(
+  cellsUpsertCall && cellsUpsertCall.opts?.onConflict === 'firebase_id',
+  'UPSERT for "cells" table correctly applied onConflict="firebase_id"'
+);
+
+const reportUpsertCall = executedCalls.find(c => c.action === 'UPSERT' && c.table === 'cell_meeting_reports');
+assert(
+  reportUpsertCall && reportUpsertCall.opts?.onConflict === 'id',
+  'UPSERT for standard table correctly applied onConflict="id"'
+);
+
+const deleteCall = executedCalls.find(c => c.action === 'DELETE' && c.table === 'evangelism_contacts');
+assert(
+  deleteCall && deleteCall.val === 'contact-del-301',
+  'DELETE operation dispatched correctly with eq("id", id)'
+);
+
+// Check remaining failing item in localStorage
+const remainingItems = SyncStateService.getPendingItems();
+assert(remainingItems.length === 1, 'Exactly one failing item persisted in localStorage');
+assert(remainingItems[0].id === 'failing-record', 'Persisted item is the failing evangelism report');
+assert(remainingItems[0].retryCount === 2, 'Retry count incremented to 2');
+assert(
+  remainingItems[0].errorMessage === 'Database constraint violation (foreign key missing)',
+  'Error message updated with latest server response'
+);
+
+// -----------------------------------------------------------------------------
+// TEST GROUP 4: DUPLICATE PREVENTION & MUTEX LOCKING
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 4: Duplicate Prevention & Mutex Locking ---');
+
+// Mock a slow Supabase client to test concurrent execution locking
+let slowReplayResolve;
+const slowClient = {
+  from: () => ({
+    upsert: () => new Promise(resolve => {
+      slowReplayResolve = () => resolve({ data: {}, error: null });
+    }),
+  }),
+};
+
+SyncStateService.setDefaultClient(slowClient);
+
+// Initiate first retry run (asynchronously held open)
+const firstRunPromise = SyncStateService.retryPendingSync();
+
+assert(
+  SyncStateService.isRetryInProgress() === true,
+  'Mutex lock is active while replay is in progress'
+);
+
+// Initiate second concurrent retry run while first is still running
+const secondRunPromise = SyncStateService.retryPendingSync();
+const secondRunResult = await secondRunPromise;
+
+assert(
+  secondRunResult.inProgress === true,
+  'Duplicate/concurrent retry attempt is rejected via mutex lock (skips overlapping run)'
+);
+
+// Resolve first run
+if (slowReplayResolve) slowReplayResolve();
+await firstRunPromise;
+
+assert(
+  SyncStateService.isRetryInProgress() === false,
+  'Mutex lock released once replay completes'
+);
+
+// -----------------------------------------------------------------------------
+// TEST GROUP 5: TERMINAL FAILURE PRESERVATION & MANUAL RECOVERY
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 5: Terminal Failure Preservation & Manual Recovery ---');
+
+mockStorage.clear();
+SyncStateService.clearRegistry();
+
+// Queue a stubbornly failing item
+SyncStateService.recordFailedSync({
+  table: 'evangelism_reports',
+  id: 'fatal-row-99',
+  action: 'UPSERT',
+  payload: { id: 'fatal-row-99', souls_won: 10 },
+  errorMessage: 'Foreign key violation: region does not exist',
+});
+
+// A failing client
+const persistentlyFailingClient = {
+  from: () => ({
+    upsert: async () => ({
+      data: null,
+      error: { message: 'Foreign key violation: region does not exist' },
+    }),
+  }),
+};
+
+SyncStateService.setDefaultClient(persistentlyFailingClient);
+
+// Drive through 4 additional failures to reach MAX_RETRY_ATTEMPTS (5)
 for (let i = 0; i < 4; i++) {
-  await TestSyncStateService.retryPendingSync(mockSupabase);
+  await SyncStateService.retryPendingSync();
 }
-const finalCheck = TestSyncStateService.getPendingItems();
-assert(finalCheck[0].retryCount >= 5, 'Retry count accurately tracked across consecutive failures');
-assert(finalCheck[0].terminal === true, 'Item capped as terminal after exceeding MAX_RETRY_ATTEMPTS (5)');
+
+const terminalItems = SyncStateService.getPendingItems();
+assert(terminalItems[0].retryCount >= 5, 'Retry counter accurately tracks 5 consecutive failures');
+assert(terminalItems[0].terminal === true, 'Item capped with terminal=true after 5 failed attempts');
+assert(SyncStateService.getTerminalCount() === 1, 'getTerminalCount() reports 1 terminal failure');
+assert(
+  SyncStateService.getPendingCount() === 1,
+  'Terminal failure remains preserved in storage — NOT silently dropped'
+);
+
+// Standard retry run should skip terminal items by default
+const skippedSummary = await SyncStateService.retryPendingSync();
+assert(skippedSummary.terminal === 1, 'Standard retry run skips terminal items to prevent thrashing');
+assert(
+  SyncStateService.getPendingCount() === 1,
+  'Terminal item remains visible and persistent'
+);
+
+// Now simulate administrative correction (fixing the region) and manual recovery
+const correctedClient = {
+  from: () => ({
+    upsert: async (payload) => ({ data: payload, error: null }),
+  }),
+};
+
+SyncStateService.setDefaultClient(correctedClient);
+
+// Test resetTerminal()
+SyncStateService.resetTerminal('fatal-row-99');
+const afterReset = SyncStateService.getPendingItems();
+assert(afterReset[0].terminal === false, 'resetTerminal() cleared terminal flag for recovered item');
+assert(afterReset[0].retryCount === 0, 'resetTerminal() reset retry count to 0');
+
+// Replay recovered item
+const recoveredSummary = await SyncStateService.retryPendingSync();
+assert(recoveredSummary.succeeded === 1, 'Recovered item successfully replayed and committed');
+assert(SyncStateService.getPendingCount() === 0, 'Queue completely drained after successful manual recovery');
 
 // -----------------------------------------------------------------------------
-// TEST GROUP 2: APPLICATION ROLE COMPATIBILITY & ENUM VALIDATION
+// TEST GROUP 6: AUTOMATIC LIFECYCLE RECONNECTION TRIGGERING
 // -----------------------------------------------------------------------------
-console.log('\n--- TEST GROUP 2: Application Role Compatibility & Enum Validation ---');
+console.log('\n--- TEST GROUP 6: Automatic Lifecycle Reconnection Triggering ---');
+
+SyncStateService.initLifecycleListeners();
+assert(
+  windowListeners.has('online'),
+  'SyncStateService successfully attached listener to window "online" event'
+);
+
+let lifecycleReplayTriggered = false;
+const originalRetry = SyncStateService.retryPendingSync;
+SyncStateService.retryPendingSync = async function() {
+  lifecycleReplayTriggered = true;
+  return { total: 0, succeeded: 0, failed: 0, terminal: 0 };
+};
+
+// Dispatch online event
+global.window.dispatchEvent('online');
+assert(
+  lifecycleReplayTriggered === true,
+  'Window "online" event automatically triggers SyncStateService.retryPendingSync()'
+);
+
+// Restore original function
+SyncStateService.retryPendingSync = originalRetry;
+
+// Clean up subscription
+unsubscribe();
+
+// -----------------------------------------------------------------------------
+// TEST GROUP 7: APPLICATION ROLE COMPATIBILITY & ENUM VALIDATION
+// -----------------------------------------------------------------------------
+console.log('\n--- TEST GROUP 7: Application Role Compatibility & Enum Validation ---');
 
 const APPLICATION_ROLES = [
   'tutor',
@@ -292,9 +458,9 @@ assert(validateRoleForProvisioning('') === false, 'Empty role rejected fail-clos
 assert(validateRoleForProvisioning(null) === false, 'Null role rejected fail-closed');
 
 // -----------------------------------------------------------------------------
-// TEST GROUP 3: ANTI-LEAKAGE RLS ISOLATION SIMULATION
+// TEST GROUP 8: ANTI-LEAKAGE RLS ISOLATION SIMULATION
 // -----------------------------------------------------------------------------
-console.log('\n--- TEST GROUP 3: Anti-Leakage RLS Isolation Simulation ---');
+console.log('\n--- TEST GROUP 8: Anti-Leakage RLS Isolation Simulation ---');
 
 // 1. Private Messages Isolation: Strictly between sender and recipient
 function canReadPrivateMessage(message, callerUid) {
