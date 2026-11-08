@@ -93,6 +93,7 @@ export class ReportService {
     tutorUid: string;
     cellName: string;
     meetingDate: string;
+    meetingLocation?: string;
     tutorName: string;
     members: number;
     activeMembers: number;
@@ -103,6 +104,7 @@ export class ReportService {
     offering?: number;
     tutorNotes?: string;
     testimonies?: string;
+    tutorExperience?: string;
     isDraft?: boolean;
   }): Promise<CellMeetingReport> {
     const nowIso = new Date().toISOString();
@@ -125,6 +127,7 @@ export class ReportService {
       tutorUid: data.tutorUid,
       cellName: data.cellName,
       meetingDate: data.meetingDate,
+      meetingLocation: data.meetingLocation,
       tutorName: data.tutorName,
       members: Number(data.members || 0),
       activeMembers: Number(data.activeMembers || 0),
@@ -135,6 +138,7 @@ export class ReportService {
       offering: data.offering ? Number(data.offering) : undefined,
       tutorNotes: data.tutorNotes || '',
       testimonies: data.testimonies || '',
+      tutorExperience: data.tutorExperience || '',
       status: 'Newly Submitted',
       submittedAt: nowIso,
       late: timing.isLate,
@@ -159,6 +163,22 @@ export class ReportService {
       list.unshift(report);
     }
     setStored(STORAGE_KEYS.MEETING_REPORTS, list);
+
+    // Feature 2: Auto-record offering in finance system without duplicates
+    if (report.offering && report.offering > 0) {
+      const { FinanceService } = await import('./financeService');
+      await FinanceService.recordOfferingFromReport({
+        reportId: report.id,
+        cellId: report.cellId,
+        cellName: report.cellName,
+        tutorUid: report.tutorUid,
+        tutorName: report.tutorName,
+        amount: report.offering,
+        meetingDate: report.meetingDate,
+        status: report.status,
+        submittedAt: report.submittedAt,
+      });
+    }
 
     this.recordAuditLog({
       action: timing.isLate ? 'SUBMIT_LATE_MEETING_REPORT' : 'SUBMIT_MEETING_REPORT',
@@ -218,9 +238,11 @@ export class ReportService {
     date: string;
     location: string;
     teamMembers: string[];
+    preSetTarget?: number;
     peopleSpokenTo: number;
     contactsCaptured: number;
     conversions: number;
+    verifiedSoulsWon?: number;
     interestedInMinistry: number;
     potentialFollowUps: number;
     messageUsed: string;
@@ -241,9 +263,11 @@ export class ReportService {
       date: data.date,
       location: data.location,
       teamMembers: data.teamMembers || [],
+      preSetTarget: data.preSetTarget !== undefined ? Number(data.preSetTarget) : 0,
       peopleSpokenTo: Number(data.peopleSpokenTo || 0),
       contactsCaptured: Number(data.contactsCaptured || 0),
       conversions: Number(data.conversions || 0),
+      verifiedSoulsWon: data.verifiedSoulsWon !== undefined ? Number(data.verifiedSoulsWon) : Number(data.conversions || 0),
       interestedInMinistry: Number(data.interestedInMinistry || 0),
       potentialFollowUps: Number(data.potentialFollowUps || 0),
       messageUsed: data.messageUsed || '',

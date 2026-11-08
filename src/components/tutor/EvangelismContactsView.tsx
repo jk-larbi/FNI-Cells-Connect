@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 const STATUS_LIST: FollowUpStatus[] = [
-  'New Contact',
-  'Follow-up Pending',
+  'Not contacted',
+  'Follow-up required',
   'Contacted',
   'Interested',
-  'Joined Ministry',
+  'Joined a cell',
   'Completed',
   'Unreachable',
 ];
@@ -39,6 +39,7 @@ export const EvangelismContactsView: React.FC = () => {
   // Add / Edit Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Partial<EvangelismContact>>({});
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const loadData = async () => {
@@ -56,16 +57,18 @@ export const EvangelismContactsView: React.FC = () => {
   }, [currentUser]);
 
   const handleOpenAdd = () => {
+    setDuplicateWarning(null);
     setEditingContact({
       name: '',
       phone: '',
+      whatsappNumber: '',
       email: '',
       location: currentUser.cell_name ? `${currentUser.cell_name} Territory` : '',
       cellName: currentUser.cell_name || 'Fellowship Cell',
       cellId: currentUser.cell_id || '',
       tutorUid: currentUser.id,
       tutorName: currentUser.full_name,
-      followUpStatus: 'New Contact',
+      followUpStatus: 'Not contacted',
       notes: '',
       dateCaptured: new Date().toISOString().split('T')[0],
       nextFollowUpDate: '',
@@ -80,16 +83,35 @@ export const EvangelismContactsView: React.FC = () => {
       return;
     }
 
+    if (!editingContact.id && editingContact.phone) {
+      const dup = await FollowUpService.findDuplicateContact(
+        editingContact.phone,
+        editingContact.whatsappNumber
+      );
+      if (dup && !duplicateWarning) {
+        setDuplicateWarning(
+          `Notice: An existing contact "${dup.name || dup.contactName}" is already recorded with this phone or WhatsApp. Click Save again to confirm.`
+        );
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
+      const effectiveWA = editingContact.whatsappNumber?.trim() || editingContact.phone?.trim();
       if (editingContact.id) {
-        await FollowUpService.updateContact(editingContact.id, editingContact);
+        await FollowUpService.updateContact(
+          editingContact.id, 
+          { ...editingContact, whatsappNumber: effectiveWA },
+          currentUser.full_name
+        );
       } else {
         await FollowUpService.addContact({
           contactName: editingContact.name,
           name: editingContact.name,
           phone: editingContact.phone,
           contactDetails: editingContact.phone,
+          whatsappNumber: effectiveWA,
           email: editingContact.email || '',
           dateCaptured: editingContact.dateCaptured || new Date().toISOString().split('T')[0],
           location: editingContact.location || '',
@@ -97,12 +119,13 @@ export const EvangelismContactsView: React.FC = () => {
           cellName: currentUser.cell_name || 'General Cell',
           tutorUid: currentUser.id,
           tutorName: currentUser.full_name,
-          followUpStatus: editingContact.followUpStatus || 'New Contact',
+          followUpStatus: editingContact.followUpStatus || 'Not contacted',
           notes: editingContact.notes || '',
           nextFollowUpDate: editingContact.nextFollowUpDate || '',
         });
       }
       setIsModalOpen(false);
+      setDuplicateWarning(null);
       setEditingContact({});
       await loadData();
     } finally {
@@ -266,34 +289,52 @@ export const EvangelismContactsView: React.FC = () => {
                       </td>
 
                       <td className="py-4 px-4 whitespace-nowrap">
-                        {contact.followUpStatus === 'Joined Ministry' && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
-                            Joined Ministry
+                        {contact.followUpStatus === 'Joined a cell' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                            Joined a cell
                           </span>
                         )}
                         {contact.followUpStatus === 'Completed' && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
+                          <span className="inline-flex items-center gap-1.5 font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-700" />
                             Completed
                           </span>
                         )}
-                        {(contact.followUpStatus === 'New Contact' || contact.followUpStatus === 'Follow-up Pending') && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#D99A32]">
-                            <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
-                            {contact.followUpStatus}
+                        {contact.followUpStatus === 'Not contacted' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                            Not contacted
                           </span>
                         )}
-                        {(contact.followUpStatus === 'Contacted' || contact.followUpStatus === 'Interested') && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#142B4A]">
-                            <span className="w-2 h-2 rounded-full bg-[#142B4A]" />
-                            {contact.followUpStatus}
+                        {contact.followUpStatus === 'Follow-up required' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                            Follow-up required
+                          </span>
+                        )}
+                        {contact.followUpStatus === 'Contacted' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                            Contacted
+                          </span>
+                        )}
+                        {contact.followUpStatus === 'Interested' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-navy-800 bg-navy-100 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-navy-700" />
+                            Interested
                           </span>
                         )}
                         {contact.followUpStatus === 'Unreachable' && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
-                            <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                          <span className="inline-flex items-center gap-1.5 font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
                             Unreachable
+                          </span>
+                        )}
+                        {contact.followUpStatus === 'New Contact' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                            New Contact
                           </span>
                         )}
                       </td>
@@ -314,17 +355,39 @@ export const EvangelismContactsView: React.FC = () => {
                       </td>
 
                       <td className="py-4 px-5 whitespace-nowrap text-right">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setEditingContact(contact);
-                            setIsModalOpen(true);
-                          }}
-                          className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 inline-flex items-center justify-center transition-colors shadow-2xs"
-                          title="Edit Contact & Follow-up"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                          {(contact.whatsappNumber || contact.phone) && (
+                            <a
+                              href={`https://wa.me/${(contact.whatsappNumber || contact.phone || '').replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Chat on WhatsApp"
+                              className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 inline-flex items-center justify-center transition-colors border border-emerald-200"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {contact.phone && (
+                            <a
+                              href={`tel:${contact.phone}`}
+                              title="Call"
+                              className="w-7 h-7 rounded-lg bg-navy-50 text-navy-800 hover:bg-navy-100 inline-flex items-center justify-center transition-colors border border-navy-200"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditingContact(contact);
+                              setIsModalOpen(true);
+                            }}
+                            className="w-7 h-7 rounded-lg bg-slate-50 text-slate-700 hover:bg-slate-100 inline-flex items-center justify-center transition-colors border border-slate-200"
+                            title="Edit Contact & Follow-up"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -351,13 +414,23 @@ export const EvangelismContactsView: React.FC = () => {
               </button>
             </div>
 
+            {duplicateWarning && (
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>{duplicateWarning}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSaveContact} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-[#182230] mb-1">Full Name</label>
+                <label className="block font-bold text-[#182230] mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={editingContact.name || editingContact.contactName || ''}
-                  onChange={e => setEditingContact({ ...editingContact, name: e.target.value })}
+                  onChange={e => {
+                    setDuplicateWarning(null);
+                    setEditingContact({ ...editingContact, name: e.target.value });
+                  }}
                   required
                   placeholder="e.g. Kwesi Boateng"
                   className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
@@ -366,16 +439,32 @@ export const EvangelismContactsView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#182230] mb-1">Phone Number</label>
+                  <label className="block font-bold text-[#182230] mb-1">Phone Number *</label>
                   <input
                     type="tel"
                     value={editingContact.phone || editingContact.contactDetails || ''}
-                    onChange={e => setEditingContact({ ...editingContact, phone: e.target.value })}
+                    onChange={e => {
+                      setDuplicateWarning(null);
+                      setEditingContact({ ...editingContact, phone: e.target.value });
+                    }}
                     required
                     placeholder="+233 24 123 4567"
                     className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   />
                 </div>
+                <div>
+                  <label className="block font-bold text-[#182230] mb-1">WhatsApp Number</label>
+                  <input
+                    type="tel"
+                    value={editingContact.whatsappNumber || ''}
+                    onChange={e => setEditingContact({ ...editingContact, whatsappNumber: e.target.value })}
+                    placeholder="Defaults to phone"
+                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#182230] mb-1">Outreach Location</label>
                   <input
@@ -383,6 +472,16 @@ export const EvangelismContactsView: React.FC = () => {
                     value={editingContact.location || ''}
                     onChange={e => setEditingContact({ ...editingContact, location: e.target.value })}
                     placeholder="e.g. Pentagon Hostels"
+                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#182230] mb-1">Email (Optional)</label>
+                  <input
+                    type="email"
+                    value={editingContact.email || ''}
+                    onChange={e => setEditingContact({ ...editingContact, email: e.target.value })}
+                    placeholder="kwesi@example.com"
                     className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   />
                 </div>

@@ -17,14 +17,15 @@ import {
   Edit2,
   X,
   Filter,
+  MessageSquare,
 } from 'lucide-react';
 
 const STATUS_LIST: FollowUpStatus[] = [
-  'New Contact',
-  'Follow-up Pending',
+  'Not contacted',
+  'Follow-up required',
   'Contacted',
   'Interested',
-  'Joined Ministry',
+  'Joined a cell',
   'Completed',
   'Unreachable',
 ];
@@ -50,6 +51,7 @@ export const FollowUpManagementView: React.FC = () => {
   const [formData, setFormData] = useState<{
     name: string;
     phone: string;
+    whatsappNumber: string;
     email: string;
     location: string;
     cellId: string;
@@ -60,14 +62,16 @@ export const FollowUpManagementView: React.FC = () => {
   }>({
     name: '',
     phone: '',
+    whatsappNumber: '',
     email: '',
     location: '',
     cellId: currentUser.cell_id || '',
     cellName: currentUser.cell_name || '',
-    followUpStatus: 'New Contact',
+    followUpStatus: 'Not contacted',
     notes: '',
     nextFollowUpDate: '',
   });
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -92,14 +96,16 @@ export const FollowUpManagementView: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingContact(null);
+    setDuplicateWarning(null);
     setFormData({
       name: '',
       phone: '',
+      whatsappNumber: '',
       email: '',
       location: currentUser.cell_name ? `${currentUser.cell_name} Territory` : '',
       cellId: currentUser.cell_id || (cells[0]?.id || ''),
       cellName: currentUser.cell_name || (cells[0]?.name || 'Central Cell'),
-      followUpStatus: 'New Contact',
+      followUpStatus: 'Not contacted',
       notes: '',
       nextFollowUpDate: '',
     });
@@ -108,9 +114,11 @@ export const FollowUpManagementView: React.FC = () => {
 
   const handleOpenEdit = (contact: EvangelismContact) => {
     setEditingContact(contact);
+    setDuplicateWarning(null);
     setFormData({
       name: contact.name || contact.contactName || '',
       phone: contact.phone || contact.contactDetails || '',
+      whatsappNumber: contact.whatsappNumber || contact.phone || contact.contactDetails || '',
       email: contact.email || '',
       location: contact.location || contact.evangelismLocation || '',
       cellId: contact.cellId || currentUser.cell_id || '',
@@ -126,19 +134,35 @@ export const FollowUpManagementView: React.FC = () => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim()) return;
 
+    if (!editingContact) {
+      const dup = await FollowUpService.findDuplicateContact(
+        formData.phone,
+        formData.whatsappNumber
+      );
+      if (dup && !duplicateWarning) {
+        setDuplicateWarning(
+          `Notice: An existing record for "${dup.name || dup.contactName}" was found with matching phone or WhatsApp in ${dup.cellName || 'a cell'}. Press Save again to proceed anyway.`
+        );
+        return;
+      }
+    }
+
+    const effectiveWhatsApp = formData.whatsappNumber.trim() || formData.phone.trim();
+
     if (editingContact) {
       await FollowUpService.updateContact(editingContact.id, {
         name: formData.name,
         contactName: formData.name,
         phone: formData.phone,
         contactDetails: formData.phone,
+        whatsappNumber: effectiveWhatsApp,
         email: formData.email,
         location: formData.location,
         followUpStatus: formData.followUpStatus,
         notes: formData.notes,
         nextFollowUpDate: formData.nextFollowUpDate || undefined,
         lastFollowUpDate: new Date().toISOString().split('T')[0],
-      });
+      }, currentUser.full_name);
     } else {
       const targetCell = cells.find(c => c.id === formData.cellId);
       await FollowUpService.addContact({
@@ -150,6 +174,7 @@ export const FollowUpManagementView: React.FC = () => {
         contactName: formData.name,
         phone: formData.phone,
         contactDetails: formData.phone,
+        whatsappNumber: effectiveWhatsApp,
         email: formData.email,
         location: formData.location,
         dateCaptured: new Date().toISOString().split('T')[0],
@@ -160,6 +185,7 @@ export const FollowUpManagementView: React.FC = () => {
     }
 
     setIsModalOpen(false);
+    setDuplicateWarning(null);
     loadData();
   };
 
@@ -356,6 +382,11 @@ export const FollowUpManagementView: React.FC = () => {
                         <div className="font-semibold text-[#182230]">
                           {c.phone || c.contactDetails || 'No phone'}
                         </div>
+                        {c.whatsappNumber && (
+                          <div className="text-[10px] text-emerald-700 font-medium">
+                            WA: {c.whatsappNumber}
+                          </div>
+                        )}
                         {c.email && (
                           <div className="text-[11px] text-[#667085]">{c.email}</div>
                         )}
@@ -371,34 +402,52 @@ export const FollowUpManagementView: React.FC = () => {
                       </td>
 
                       <td className="py-4 px-4 whitespace-nowrap">
-                        {c.followUpStatus === 'Joined Ministry' && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
-                            Joined Ministry
+                        {c.followUpStatus === 'Joined a cell' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                            Joined a cell
                           </span>
                         )}
                         {c.followUpStatus === 'Completed' && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
+                          <span className="inline-flex items-center gap-1.5 font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-700" />
                             Completed
                           </span>
                         )}
-                        {(c.followUpStatus === 'New Contact' || c.followUpStatus === 'Follow-up Pending') && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#D99A32]">
-                            <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
-                            {c.followUpStatus}
+                        {c.followUpStatus === 'Not contacted' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                            Not contacted
                           </span>
                         )}
-                        {(c.followUpStatus === 'Contacted' || c.followUpStatus === 'Interested') && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#142B4A]">
-                            <span className="w-2 h-2 rounded-full bg-[#142B4A]" />
-                            {c.followUpStatus}
+                        {c.followUpStatus === 'Follow-up required' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                            Follow-up required
+                          </span>
+                        )}
+                        {c.followUpStatus === 'Contacted' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                            Contacted
+                          </span>
+                        )}
+                        {c.followUpStatus === 'Interested' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-navy-800 bg-navy-100 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-navy-700" />
+                            Interested
                           </span>
                         )}
                         {c.followUpStatus === 'Unreachable' && (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
-                            <span className="w-2 h-2 rounded-full bg-[#C74646]" />
+                          <span className="inline-flex items-center gap-1.5 font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
                             Unreachable
+                          </span>
+                        )}
+                        {c.followUpStatus === 'New Contact' && (
+                          <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                            New Contact
                           </span>
                         )}
                       </td>
@@ -419,16 +468,38 @@ export const FollowUpManagementView: React.FC = () => {
                       </td>
 
                       <td className="py-4 px-5 whitespace-nowrap text-right">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleOpenEdit(c);
-                          }}
-                          className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 inline-flex items-center justify-center transition-colors shadow-2xs"
-                          title="Update Follow-up"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                          {(c.whatsappNumber || c.phone) && (
+                            <a
+                              href={`https://wa.me/${(c.whatsappNumber || c.phone || '').replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Chat on WhatsApp"
+                              className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 inline-flex items-center justify-center transition-colors border border-emerald-200"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {c.phone && (
+                            <a
+                              href={`tel:${c.phone}`}
+                              title="Call"
+                              className="w-7 h-7 rounded-lg bg-navy-50 text-navy-800 hover:bg-navy-100 inline-flex items-center justify-center transition-colors border border-navy-200"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleOpenEdit(c);
+                            }}
+                            className="w-7 h-7 rounded-lg bg-slate-50 text-slate-700 hover:bg-slate-100 inline-flex items-center justify-center transition-colors border border-slate-200"
+                            title="Update Follow-up"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -455,13 +526,23 @@ export const FollowUpManagementView: React.FC = () => {
               </button>
             </div>
 
+            {duplicateWarning && (
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>{duplicateWarning}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
               <div>
                 <label className="block font-bold text-[#182230] mb-1">Full Name</label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => {
+                    setDuplicateWarning(null);
+                    setFormData({ ...formData, name: e.target.value });
+                  }}
                   required
                   placeholder="e.g. John K. Addo"
                   className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
@@ -470,16 +551,32 @@ export const FollowUpManagementView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#182230] mb-1">Phone Number</label>
+                  <label className="block font-bold text-[#182230] mb-1">Phone Number *</label>
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={e => {
+                      setDuplicateWarning(null);
+                      setFormData({ ...formData, phone: e.target.value });
+                    }}
                     required
                     placeholder="+233 24 123 4567"
                     className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   />
                 </div>
+                <div>
+                  <label className="block font-bold text-[#182230] mb-1">WhatsApp Number</label>
+                  <input
+                    type="tel"
+                    value={formData.whatsappNumber}
+                    onChange={e => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                    placeholder="Defaults to phone"
+                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#182230] mb-1">Email (Optional)</label>
                   <input
@@ -490,34 +587,32 @@ export const FollowUpManagementView: React.FC = () => {
                     className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#182230] mb-1">Location</label>
+                  <label className="block font-bold text-[#182230] mb-1">Outreach Location</label>
                   <input
                     type="text"
                     value={formData.location}
                     onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="Campus or Hostel"
+                    placeholder="Campus or Area"
                     className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Assigned Cell</label>
-                  <select
-                    value={formData.cellId}
-                    onChange={e => {
-                      const c = cells.find(item => item.id === e.target.value);
-                      setFormData({ ...formData, cellId: e.target.value, cellName: c ? c.name : '' });
-                    }}
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-white text-[#182230]"
-                  >
-                    {cells.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Assigned Cell</label>
+                <select
+                  value={formData.cellId}
+                  onChange={e => {
+                    const c = cells.find(item => item.id === e.target.value);
+                    setFormData({ ...formData, cellId: e.target.value, cellName: c ? c.name : '' });
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-white text-[#182230]"
+                >
+                  {cells.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -545,7 +640,7 @@ export const FollowUpManagementView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-[#182230] mb-1">Pastoral Notes & History</label>
+                <label className="block font-bold text-[#182230] mb-1">Pastoral Notes & Discipleship Log</label>
                 <textarea
                   rows={2}
                   value={formData.notes}
@@ -554,6 +649,25 @@ export const FollowUpManagementView: React.FC = () => {
                   className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                 />
               </div>
+
+              {editingContact && editingContact.history && editingContact.history.length > 0 && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Follow-Up History Timeline
+                  </div>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    {editingContact.history.map((h, idx) => (
+                      <div key={idx} className="text-[11px] text-slate-600 border-l-2 border-[#C6A45A] pl-2 py-0.5">
+                        <span className="font-semibold text-navy-950">{h.status}</span>
+                        <span className="text-slate-400 mx-1">•</span>
+                        <span>{new Date(h.changedAt).toLocaleDateString()}</span>
+                        {h.changedBy && <span className="text-slate-400"> by {h.changedBy}</span>}
+                        {h.note && <p className="text-slate-500 italic mt-0.5">{h.note}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button

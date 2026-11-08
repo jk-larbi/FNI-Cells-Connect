@@ -72,11 +72,20 @@ export class FollowUpService {
     data: Omit<EvangelismContact, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<EvangelismContact> {
     const nowIso = new Date().toISOString();
-    const id = `cnt-${Date.now()}`;
+    const id = `cnt-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const newContact: EvangelismContact = {
       ...data,
       id,
+      whatsappNumber: data.whatsappNumber || data.phone || '',
+      history: [
+        {
+          status: data.followUpStatus || 'Not contacted',
+          note: data.notes || data.followUpNotes || 'Contact initially captured',
+          changedAt: nowIso,
+          changedBy: data.tutorName || 'Tutor',
+        },
+      ],
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -105,15 +114,31 @@ export class FollowUpService {
 
   static async updateContact(
     contactId: string,
-    updates: Partial<EvangelismContact>
+    updates: Partial<EvangelismContact>,
+    changedBy?: string
   ): Promise<EvangelismContact> {
     const nowIso = new Date().toISOString();
     const all = getStoredContacts();
     const index = all.findIndex(c => c.id === contactId);
+    const existing = index >= 0 ? all[index] : null;
+
+    let history = existing?.history || [];
+    if (updates.followUpStatus && updates.followUpStatus !== existing?.followUpStatus) {
+      history = [
+        {
+          status: updates.followUpStatus,
+          note: updates.followUpNotes || updates.notes || `Status transitioned to ${updates.followUpStatus}`,
+          changedAt: nowIso,
+          changedBy: changedBy || existing?.tutorName || 'Tutor',
+        },
+        ...history,
+      ];
+    }
 
     const merged: EvangelismContact = {
-      ...(index >= 0 ? all[index] : (updates as EvangelismContact)),
+      ...(existing || (updates as EvangelismContact)),
       ...updates,
+      history,
       id: contactId,
       updatedAt: nowIso,
     };
@@ -122,6 +147,7 @@ export class FollowUpService {
       try {
         const updatePayload = {
           ...updates,
+          history,
           updatedAt: nowIso,
           serverUpdatedAt: serverTimestamp(),
         };
@@ -144,35 +170,70 @@ export class FollowUpService {
     return merged;
   }
 
+  static async findDuplicateContact(
+    phone: string,
+    whatsappNumber?: string
+  ): Promise<EvangelismContact | null> {
+    const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+    const cleanWhatsApp = (whatsappNumber || '').replace(/[^0-9]/g, '');
+    if (!cleanPhone && !cleanWhatsApp) return null;
+
+    const all = await this.getContacts();
+    return (
+      all.find(c => {
+        const cPhone = (c.phone || '').replace(/[^0-9]/g, '');
+        const cWa = (c.whatsappNumber || '').replace(/[^0-9]/g, '');
+        if (cleanPhone && (cPhone === cleanPhone || cWa === cleanPhone)) return true;
+        if (cleanWhatsApp && (cPhone === cleanWhatsApp || cWa === cleanWhatsApp)) return true;
+        return false;
+      }) || null
+    );
+  }
+
   static async getSummary(cellId?: string): Promise<{
     totalContacts: number;
-    requiringFollowUp: number;
+    notContacted: number;
+    followUpRequired: number;
+    contacted: number;
+    interested: number;
+    joinedCell: number;
     completed: number;
+    unreachable: number;
+    requiringFollowUp: number;
     outstanding: number;
   }> {
     const contacts = await this.getContacts(cellId);
     const totalContacts = contacts.length;
 
-    const completed = contacts.filter(
-      c => c.followUpStatus === 'Joined Ministry' || c.followUpStatus === 'Completed'
+    const notContacted = contacts.filter(
+      c => c.followUpStatus === 'Not contacted' || c.followUpStatus === 'New Contact'
     ).length;
 
-    const outstanding = contacts.filter(
-      c => c.followUpStatus === 'New Contact' || c.followUpStatus === 'Follow-up Pending'
+    const followUpRequired = contacts.filter(
+      c => c.followUpStatus === 'Follow-up required' || c.followUpStatus === 'Follow-up Pending'
     ).length;
 
-    const requiringFollowUp = contacts.filter(
-      c =>
-        c.followUpStatus === 'New Contact' ||
-        c.followUpStatus === 'Follow-up Pending' ||
-        c.followUpStatus === 'Contacted' ||
-        c.followUpStatus === 'Interested'
+    const contacted = contacts.filter(c => c.followUpStatus === 'Contacted').length;
+    const interested = contacts.filter(c => c.followUpStatus === 'Interested').length;
+    const joinedCell = contacts.filter(
+      c => c.followUpStatus === 'Joined a cell' || c.followUpStatus === 'Joined Ministry'
     ).length;
+    const completed = contacts.filter(c => c.followUpStatus === 'Completed').length;
+    const unreachable = contacts.filter(c => c.followUpStatus === 'Unreachable').length;
+
+    const outstanding = notContacted + followUpRequired + contacted + interested;
+    const requiringFollowUp = followUpRequired + notContacted;
 
     return {
       totalContacts,
-      requiringFollowUp,
+      notContacted,
+      followUpRequired,
+      contacted,
+      interested,
+      joinedCell,
       completed,
+      unreachable,
+      requiringFollowUp,
       outstanding,
     };
   }

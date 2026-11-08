@@ -4,11 +4,13 @@ import { ArrowRight, LogIn, UserPlus } from 'lucide-react';
 interface SimpleLandingViewProps {
   onSignUp: () => void;
   onLogIn: () => void;
+  onViewOverview?: () => void;
 }
 
 export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
   onSignUp,
   onLogIn,
+  onViewOverview,
 }) => {
   return (
     <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans">
@@ -81,6 +83,20 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
             <span>Log In</span>
           </button>
         </div>
+
+        {/* Navigation to Landing Page B (Ministry Overview) */}
+        {onViewOverview && (
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={onViewOverview}
+              className="text-xs font-semibold text-[#142B4A] hover:text-[#C6A45A] transition-colors underline underline-offset-4 flex items-center gap-1 mx-auto"
+            >
+              <span>Explore FNI Ministry Vision & Annual Soul Target</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
+            </button>
+          </div>
+        )}
       </main>
 
       {/* Subtle Minimal Footer Attribution */}

@@ -365,8 +365,80 @@ export class AuthService {
       created_at: matchedCred.createdAt,
     };
 
+    if (matchedProfile.is_active === false || (matchedProfile as any).status === 'Suspended') {
+      return {
+        profile: null,
+        error: 'Your tutor account has been suspended by church leadership. Please contact the administration.',
+      };
+    }
+
     this.setCurrentProfile(matchedProfile);
     return { profile: matchedProfile, error: null };
+  }
+
+  // --- TUTOR ACCOUNT MANAGEMENT: SUSPENSION & REACTIVATION ---
+  static async suspendTutor(tutorUid: string, reason?: string, adminName?: string): Promise<boolean> {
+    const all = this.getAllProfiles();
+    const tutor = all.find(p => p.id === tutorUid);
+    if (!tutor) return false;
+
+    tutor.is_active = false;
+    (tutor as any).status = 'Suspended';
+    (tutor as any).suspensionReason = reason || 'Administrative review';
+    (tutor as any).suspendedAt = new Date().toISOString();
+    this.saveProfiles(all);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await Promise.all([
+          setDoc(doc(db, 'profiles', tutorUid), { is_active: false, status: 'Suspended', suspensionReason: reason, suspendedAt: new Date().toISOString() }, { merge: true }),
+          setDoc(doc(db, 'users', tutorUid), { is_active: false, status: 'Suspended', suspensionReason: reason, suspendedAt: new Date().toISOString() }, { merge: true }),
+        ]);
+      } catch (e) {
+        console.warn('Firebase suspendTutor notice:', e);
+      }
+    }
+
+    ReportService.recordAuditLog({
+      action: 'SUSPEND_TUTOR_ACCOUNT',
+      entity_type: 'users',
+      entity_id: tutorUid,
+      user_name: adminName,
+      details: { tutor_name: tutor.full_name, cell_name: tutor.cell_name, reason },
+    });
+
+    return true;
+  }
+
+  static async reactivateTutor(tutorUid: string, adminName?: string): Promise<boolean> {
+    const all = this.getAllProfiles();
+    const tutor = all.find(p => p.id === tutorUid);
+    if (!tutor) return false;
+
+    tutor.is_active = true;
+    (tutor as any).status = 'Active';
+    this.saveProfiles(all);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await Promise.all([
+          setDoc(doc(db, 'profiles', tutorUid), { is_active: true, status: 'Active' }, { merge: true }),
+          setDoc(doc(db, 'users', tutorUid), { is_active: true, status: 'Active' }, { merge: true }),
+        ]);
+      } catch (e) {
+        console.warn('Firebase reactivateTutor notice:', e);
+      }
+    }
+
+    ReportService.recordAuditLog({
+      action: 'REACTIVATE_TUTOR_ACCOUNT',
+      entity_type: 'users',
+      entity_id: tutorUid,
+      user_name: adminName,
+      details: { tutor_name: tutor.full_name, cell_name: tutor.cell_name },
+    });
+
+    return true;
   }
 
   // --- 3. ADMINISTRATOR LOGIN (ONLY: Password, Default: admin123) ---

@@ -24,9 +24,13 @@ import {
 
 interface LandingPageViewProps {
   onOpenAuth: (mode?: 'select' | 'tutor' | 'admin', tutorTab?: 'signup' | 'login') => void;
+  onNavigateToLandingA?: () => void;
 }
 
-export const LandingPageView: React.FC<LandingPageViewProps> = ({ onOpenAuth }) => {
+export const LandingPageView: React.FC<LandingPageViewProps> = ({ 
+  onOpenAuth,
+  onNavigateToLandingA,
+}) => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
@@ -124,6 +128,15 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onOpenAuth }) 
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {onNavigateToLandingA && (
+              <button
+                onClick={onNavigateToLandingA}
+                className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-navy-950 transition-colors"
+                title="Switch to Minimal Landing Page"
+              >
+                &larr; Minimal View
+              </button>
+            )}
             <button
               onClick={() => onOpenAuth('admin')}
               className="px-3.5 py-2 text-xs font-bold text-[#142B4A] hover:bg-[#F5F7FA] border border-[#E3E8EF] rounded-xl transition-all"

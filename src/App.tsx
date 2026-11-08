@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { SimpleLandingView } from './components/landing/SimpleLandingView';
+import { LandingPageView } from './components/landing/LandingPageView';
 import { AuthView, AuthFlowView } from './components/auth/AuthView';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
 
@@ -10,7 +11,7 @@ const MainContent: React.FC = () => {
   const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
 
   // Navigation state for unauthenticated flow
-  const [entryView, setEntryView] = useState<'landing' | AuthFlowView>('landing');
+  const [entryView, setEntryView] = useState<'landing' | 'overview-landing' | AuthFlowView>('landing');
 
   // 1. Unauthenticated Visitor Flow
   if (isLoggedOut || !currentUser) {
@@ -24,11 +25,25 @@ const MainContent: React.FC = () => {
       );
     }
 
-    // Landing Page: Displays ONLY logo, FNI CELLS CONNECT, tagline, SIGN UP and LOG IN
+    if (entryView === 'overview-landing') {
+      return (
+        <LandingPageView
+          onOpenAuth={(mode, tab) => {
+            if (mode === 'admin') setEntryView('admin-login');
+            else if (tab === 'login') setEntryView('tutor-login');
+            else setEntryView('tutor-signup');
+          }}
+          onNavigateToLandingA={() => setEntryView('landing')}
+        />
+      );
+    }
+
+    // Landing Page A: Minimal Landing Page (logo, name, tagline, SIGN UP and LOG IN)
     return (
       <SimpleLandingView
         onSignUp={() => setEntryView('tutor-signup')}
         onLogIn={() => setEntryView('login-select')}
+        onViewOverview={() => setEntryView('overview-landing')}
       />
     );
   }

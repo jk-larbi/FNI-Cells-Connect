@@ -11,13 +11,16 @@ export type ReportStatus =
   | 'needs_revision';
 
 export type FollowUpStatus =
-  | 'New Contact'
-  | 'Follow-up Pending'
+  | 'Not contacted'
+  | 'Follow-up required'
   | 'Contacted'
   | 'Interested'
-  | 'Joined Ministry'
+  | 'Joined a cell'
   | 'Completed'
-  | 'Unreachable';
+  | 'Unreachable'
+  | 'New Contact'
+  | 'Follow-up Pending'
+  | 'Joined Ministry';
 
 export type NotificationChannel = 'in_app' | 'email' | 'whatsapp';
 
@@ -67,6 +70,7 @@ export interface Cell {
   name: string;
   normalized_name?: string;
   location?: string;
+  meeting_location?: string;
   tutorUid?: string;
   code?: string;
   region_id?: string;
@@ -77,6 +81,9 @@ export interface Cell {
   meeting_day?: string;
   meeting_time?: string;
   venue_address?: string;
+  total_members?: number;
+  active_members?: number;
+  new_members?: number;
   target_attendance?: number;
   status?: 'Active' | 'Suspended' | 'Deactivated';
   is_active: boolean;
@@ -103,6 +110,7 @@ export interface CellMeetingReport {
   tutorUid: string;
   cellName: string;
   meetingDate: string;
+  meetingLocation?: string;
   tutorName: string;
   members: number;
   activeMembers: number;
@@ -113,6 +121,7 @@ export interface CellMeetingReport {
   offering?: number;
   tutorNotes?: string;
   testimonies?: string;
+  tutorExperience?: string;
   status: ReportStatus;
   submittedAt: string;
   late: boolean;
@@ -132,9 +141,11 @@ export interface EvangelismReport {
   date: string;
   location: string;
   teamMembers: string[];
+  preSetTarget?: number;
   peopleSpokenTo: number;
   contactsCaptured: number;
   conversions: number;
+  verifiedSoulsWon?: number;
   interestedInMinistry: number;
   potentialFollowUps: number;
   messageUsed: string;
@@ -203,8 +214,10 @@ export interface EvangelismContact {
   name?: string;
   contactDetails?: string;
   phone?: string;
+  whatsappNumber?: string;
   email?: string;
   dateCaptured: string;
+  evangelismReportId?: string;
   evangelismLocation?: string;
   location?: string;
   cellId: string;
@@ -217,8 +230,126 @@ export interface EvangelismContact {
   notes?: string;
   lastFollowUpDate?: string;
   nextFollowUpDate?: string;
+  history?: Array<{
+    status: FollowUpStatus;
+    note?: string;
+    changedAt: string;
+    changedBy?: string;
+  }>;
   createdAt: string;
   updatedAt: string;
+}
+
+// Offering / Financial Management
+export interface OfferingRecord {
+  id: string;
+  reportId: string;
+  cellId: string;
+  cellName: string;
+  tutorUid?: string;
+  tutorName?: string;
+  amount: number;
+  currency?: string;
+  meetingDate: string;
+  weekLabel?: string;
+  submittedAt: string;
+  status: ReportStatus;
+}
+
+export interface OfferingAggregation {
+  weekly: Array<{ period: string; amount: number; reportCount: number }>;
+  monthly: Array<{ month: string; amount: number; reportCount: number }>;
+  quarterly: Array<{ quarter: string; amount: number; reportCount: number }>;
+  annual: number;
+  cellBreakdown: Array<{ cellId: string; cellName: string; totalAmount: number; reportCount: number }>;
+}
+
+// Communication: Private Tutor-Admin & Community
+export interface PrivateMessage {
+  id: string;
+  senderUid: string;
+  senderName: string;
+  senderRole: UserRole;
+  recipientUid: string;
+  recipientName: string;
+  cellId?: string;
+  cellName?: string;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+  readAt?: string;
+}
+
+export interface CommunityMessage {
+  id: string;
+  senderUid: string;
+  senderName: string;
+  senderRole: UserRole;
+  cellName?: string;
+  content: string;
+  category?: 'general' | 'announcement' | 'prayer_request' | 'testimony';
+  createdAt: string;
+}
+
+export interface InvitationCode {
+  id: string;
+  code: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  expiresAt: string;
+  expiryMinutes: number;
+  maxUses?: number;
+  usedCount: number;
+  isRevoked: boolean;
+}
+
+// Teaching Materials
+export interface TeachingMaterial {
+  id: string;
+  title: string;
+  description: string;
+  weekLabel: string;
+  documentUrl?: string;
+  fileName?: string;
+  fileSize?: string;
+  fileType?: string;
+  textContent?: string;
+  status: 'published' | 'archived';
+  publishedAt?: string;
+  uploadedBy: string;
+  uploadedByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Soul Target Tracking
+export interface SoulTargetConfig {
+  id: string;
+  year: number;
+  annualTarget: number;
+  updatedAt: string;
+  updatedBy: string;
+  auditHistory: Array<{
+    previousTarget: number;
+    newTarget: number;
+    changedBy: string;
+    reason: string;
+    timestamp: string;
+  }>;
+}
+
+export interface SoulTargetMetrics {
+  annualTarget: number;
+  year: number;
+  verifiedSoulsWon: number;
+  remainingSouls: number;
+  percentageAchieved: number;
+  weeklyProgress: Array<{ week: string; souls: number }>;
+  monthlyProgress: Array<{ month: string; souls: number }>;
+  quarterlyProgress: Array<{ quarter: string; souls: number }>;
+  cellContributions: Array<{ cellId: string; cellName: string; souls: number; percentage: number }>;
+  teamContributions: Array<{ leaderName: string; souls: number; outings: number }>;
 }
 
 // System Settings (Vision, Mission, Annual Target, Deadline)
@@ -335,6 +466,9 @@ export type AdminNavTab =
   | 'report-review'
   | 'evangelism'
   | 'follow-ups'
+  | 'finance'
+  | 'materials'
+  | 'messages'
   | 'analytics'
   | 'notifications'
   | 'settings';
@@ -347,6 +481,8 @@ export type TutorNavTab =
   | 'my-reports'
   | 'evangelism-contacts'
   | 'follow-ups'
+  | 'materials'
+  | 'messages'
   | 'cell-activity-history'
   | 'notifications'
   | 'my-account';

@@ -67,17 +67,23 @@ export const CellLeadersView: React.FC = () => {
     setLeaderEvang(evangReports.filter(e => e.tutorUid === leader.id || (matchedCell && e.cellId === matchedCell.id)));
   };
 
-  const handleToggleStatus = (leader: Profile) => {
-    const newActive = !leader.is_active;
-    const updated: Profile = {
-      ...leader,
-      is_active: newActive,
-    };
-    const all = AuthService.getAllProfiles().map(p => (p.id === leader.id ? updated : p));
-    AuthService.saveProfiles(all);
-    setProfiles(prev => prev.map(p => (p.id === leader.id ? updated : p)));
+  const handleToggleStatus = async (leader: Profile) => {
+    if (leader.is_active) {
+      const reason = window.prompt(
+        `Enter suspension reason for ${leader.full_name}:`,
+        'Administrative review pending'
+      );
+      if (reason === null) return;
+      await AuthService.suspendTutor(leader.id, reason || 'Administrative review', 'FNI Administrator');
+    } else {
+      const confirmReactivate = window.confirm(`Reactivate tutor account for ${leader.full_name}?`);
+      if (!confirmReactivate) return;
+      await AuthService.reactivateTutor(leader.id, 'FNI Administrator');
+    }
+    await loadData();
     if (selectedLeader?.id === leader.id) {
-      setSelectedLeader(updated);
+      const updated = AuthService.getAllProfiles().find(p => p.id === leader.id);
+      if (updated) setSelectedLeader(updated);
     }
   };
 

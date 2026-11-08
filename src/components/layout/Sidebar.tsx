@@ -18,6 +18,9 @@ import {
   History,
   Shield,
   Send,
+  DollarSign,
+  BookOpen,
+  MessageSquare,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { currentUser, logout, isAdmin } = useAuth();
 
-  // Administrator Portal Navigation: 10 items
+  // Administrator Portal Navigation: Full institutional oversight
   const adminNavItems = [
     { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
@@ -49,12 +52,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'report-review' as AppNavTab, label: 'Report Review', icon: FileCheck },
     { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
+    { id: 'finance' as AppNavTab, label: 'Offering Aggregation', icon: DollarSign },
+    { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessageSquare },
     { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3 },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings },
   ];
 
-  // Tutor Portal Navigation: 10 items
+  // Tutor Portal Navigation: Dedicated fellowship tools
   const tutorNavItems = [
     { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: LayoutDashboard },
     { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building },
@@ -63,6 +69,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: FileCheck },
     { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: Users },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
+    { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessageSquare },
     { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: History },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'my-account' as AppNavTab, label: 'My Account', icon: User },

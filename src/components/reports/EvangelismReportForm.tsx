@@ -43,6 +43,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
   const [location, setLocation] = useState(currentUser.cell_name ? `${currentUser.cell_name} Campus / Territory` : '');
   const [teamMembersInput, setTeamMembersInput] = useState('');
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
+  const [preSetTarget, setPreSetTarget] = useState<number>(5);
   const [peopleSpokenTo, setPeopleSpokenTo] = useState<number>(0);
   const [contactsCaptured, setContactsCaptured] = useState<number>(0);
   const [conversions, setConversions] = useState<number>(0);
@@ -56,7 +57,8 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
   const [showAddContact, setShowAddContact] = useState(false);
   const [newContactName, setNewContactName] = useState('');
   const [newContactPhone, setNewContactPhone] = useState('');
-  const [capturedContactsList, setCapturedContactsList] = useState<{ name: string; phone: string }[]>([]);
+  const [newContactWhatsApp, setNewContactWhatsApp] = useState('');
+  const [capturedContactsList, setCapturedContactsList] = useState<{ name: string; phone: string; whatsapp: string }[]>([]);
 
   useEffect(() => {
     async function loadCells() {
@@ -89,10 +91,24 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
 
   const handleAddQuickContact = () => {
     if (!newContactName.trim()) return;
-    setCapturedContactsList(prev => [...prev, { name: newContactName.trim(), phone: newContactPhone.trim() }]);
+    const whatsapp = newContactWhatsApp.trim() || newContactPhone.trim();
+    const updatedList = [...capturedContactsList, { 
+      name: newContactName.trim(), 
+      phone: newContactPhone.trim(), 
+      whatsapp 
+    }];
+    setCapturedContactsList(updatedList);
     setNewContactName('');
     setNewContactPhone('');
-    setContactsCaptured(prev => prev + 1);
+    setNewContactWhatsApp('');
+    // Automatically keep contacts captured count in sync
+    setContactsCaptured(updatedList.length);
+  };
+
+  const handleRemoveContact = (index: number) => {
+    const updated = capturedContactsList.filter((_, i) => i !== index);
+    setCapturedContactsList(updated);
+    setContactsCaptured(updated.length);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,6 +121,10 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
     }
     if (!location.trim()) {
       setErrorMsg('Please state the evangelism location or campus.');
+      return;
+    }
+    if (preSetTarget <= 0) {
+      setErrorMsg('Please set a pre-set evangelism faith target before submitting.');
       return;
     }
     if (peopleSpokenTo < 0 || conversions < 0 || contactsCaptured < 0) {
@@ -121,6 +141,8 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
         ? teamMembers 
         : (teamMembersInput.trim() ? [teamMembersInput.trim()] : [currentUser.full_name]);
 
+      const effectiveContacts = Math.max(contactsCaptured, capturedContactsList.length);
+
       const rep = await ReportService.submitEvangelismReport({
         cellId,
         cellName,
@@ -129,9 +151,11 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
         date,
         location: location.trim(),
         teamMembers: finalTeam,
+        preSetTarget: Number(preSetTarget) || 0,
         peopleSpokenTo: Number(peopleSpokenTo) || 0,
-        contactsCaptured: Number(contactsCaptured) || 0,
+        contactsCaptured: effectiveContacts,
         conversions: Number(conversions) || 0,
+        verifiedSoulsWon: Number(conversions) || 0,
         interestedInMinistry: Number(interestedInMinistry) || 0,
         potentialFollowUps: Number(potentialFollowUps) || 0,
         messageUsed: messageUsed.trim(),
@@ -139,19 +163,21 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
         testimonies: testimonies.trim(),
       });
 
-      // Save any captured contacts directly to follow-up system
+      // Save any captured contacts directly to follow-up system with report linkage and WhatsApp
       for (const item of capturedContactsList) {
         await FollowUpService.addContact({
           contactName: item.name,
-          contactDetails: item.phone || 'Consent provided during outreach',
+          contactDetails: item.phone || item.whatsapp || 'Provided during outreach',
+          whatsappNumber: item.whatsapp || item.phone,
           dateCaptured: date,
           evangelismLocation: location.trim(),
           cellId,
           cellName,
           tutorUid: currentUser.id,
           assignedToName: currentUser.full_name,
-          followUpStatus: 'New Contact',
-          followUpNotes: `Met during evangelism outreach at ${location.trim()}.`,
+          followUpStatus: 'Contacted',
+          followUpNotes: `Met during evangelism outreach at ${location.trim()}. Faith target: ${preSetTarget}.`,
+          evangelismReportId: rep.id,
         });
       }
 
@@ -323,11 +349,32 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
 
         {/* Section 3: Harvest Metrics & Statistics */}
         <div className="pt-2 border-t border-slate-100">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-3 flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-gold-500" />
-            3. Harvest & Soul-Winning Metrics
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-gold-500" />
+              3. Harvest & Soul-Winning Metrics
+            </h3>
+            <span className="text-[11px] font-medium text-slate-500">
+              Pre-set faith target is mandatory before harvest return
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+            <div className="p-3 bg-navy-50/80 rounded-2xl border border-navy-200 col-span-2 sm:col-span-1">
+              <label className="block text-[11px] font-bold text-navy-950 mb-1">
+                Pre-Set Target <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={preSetTarget}
+                onChange={e => setPreSetTarget(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full text-base font-extrabold text-navy-950 bg-white border border-navy-300 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
+              />
+              <span className="text-[10px] text-navy-600 block mt-1 font-medium">Faith goal</span>
+            </div>
+
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                 People Spoken To
@@ -369,7 +416,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
 
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                Interested in Ministry
+                Interested
               </label>
               <input
                 type="number"
@@ -382,7 +429,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
 
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                Potential Follow-ups
+                Follow-ups
               </label>
               <input
                 type="number"
@@ -467,42 +514,66 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
 
           {showAddContact && (
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 mb-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <input
                   type="text"
-                  placeholder="Contact Name..."
+                  placeholder="Full Name *"
                   value={newContactName}
                   onChange={e => setNewContactName(e.target.value)}
                   className="text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-800"
                 />
                 <input
                   type="text"
-                  placeholder="Phone / WhatsApp / Email..."
+                  placeholder="Phone Number"
                   value={newContactPhone}
                   onChange={e => setNewContactPhone(e.target.value)}
                   className="text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-800"
                 />
+                <input
+                  type="text"
+                  placeholder="WhatsApp Number (e.g. +233...)"
+                  value={newContactWhatsApp}
+                  onChange={e => setNewContactWhatsApp(e.target.value)}
+                  className="text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-800"
+                />
               </div>
-              <button
-                type="button"
-                onClick={handleAddQuickContact}
-                className="px-3 py-1.5 bg-navy-900 text-white text-xs font-bold rounded-lg hover:bg-navy-950"
-              >
-                Save Contact to Follow-Up Queue
-              </button>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleAddQuickContact}
+                  className="px-3.5 py-1.5 bg-navy-900 text-white text-xs font-bold rounded-lg hover:bg-navy-950 transition-colors"
+                >
+                  + Add Contact to Follow-Up Queue
+                </button>
+              </div>
             </div>
           )}
 
           {capturedContactsList.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {capturedContactsList.map((c, i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-xs">
-                  <div className="font-semibold text-navy-950">
-                    {c.name} <span className="text-slate-400 font-normal">({c.phone})</span>
+                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                  <div>
+                    <span className="font-semibold text-navy-950">{c.name}</span>
+                    <span className="text-slate-500 ml-2">Phone: {c.phone || 'N/A'}</span>
+                    {c.whatsapp && (
+                      <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold ml-2">
+                        WhatsApp: {c.whatsapp}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
-                    Queued for Follow-Up
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
+                      Linked to Outreach
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveContact(i)}
+                      className="text-slate-400 hover:text-rose-600 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

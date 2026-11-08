@@ -13,6 +13,7 @@ import { ReportReviewView } from '../admin/ReportReviewView';
 import { EvangelismAdminView } from '../admin/EvangelismAdminView';
 import { AnalyticsView } from '../admin/AnalyticsView';
 import { AdminSettingsView } from '../admin/AdminSettingsView';
+import { FinanceView } from '../admin/FinanceView';
 
 // Tutor Portal Views
 import { TutorDashboardView } from '../tutor/TutorDashboardView';
@@ -26,6 +27,8 @@ import { MyAccountView } from '../tutor/MyAccountView';
 
 // Shared Views
 import { FollowUpManagementView } from '../followups/FollowUpManagementView';
+import { TeachingMaterialsView } from '../materials/TeachingMaterialsView';
+import { MessagingView } from '../communication/MessagingView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
 
@@ -46,7 +49,8 @@ export const AppLayout: React.FC = () => {
     currentTab === 'cell-leaders' ||
     currentTab === 'report-review' ||
     currentTab === 'analytics' ||
-    currentTab === 'settings'
+    currentTab === 'settings' ||
+    currentTab === 'finance'
   ) ? 'my-dashboard' : currentTab;
 
   return (
@@ -84,6 +88,9 @@ export const AppLayout: React.FC = () => {
                 {effectiveTab === 'report-review' && <ReportReviewView />}
                 {effectiveTab === 'evangelism' && <EvangelismAdminView />}
                 {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
+                {effectiveTab === 'finance' && <FinanceView />}
+                {effectiveTab === 'materials' && <TeachingMaterialsView />}
+                {effectiveTab === 'messages' && <MessagingView />}
                 {effectiveTab === 'analytics' && <AnalyticsView />}
                 {effectiveTab === 'settings' && <AdminSettingsView />}
               </>
@@ -111,6 +118,8 @@ export const AppLayout: React.FC = () => {
                 {effectiveTab === 'my-reports' && <MyReportsView />}
                 {effectiveTab === 'evangelism-contacts' && <EvangelismContactsView />}
                 {effectiveTab === 'follow-ups' && <FollowUpManagementView />}
+                {effectiveTab === 'materials' && <TeachingMaterialsView />}
+                {effectiveTab === 'messages' && <MessagingView />}
                 {effectiveTab === 'cell-activity-history' && <CellActivityHistoryView />}
                 {effectiveTab === 'my-account' && <MyAccountView />}
               </>

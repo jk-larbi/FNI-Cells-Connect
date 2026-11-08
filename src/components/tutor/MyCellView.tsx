@@ -25,10 +25,15 @@ export const MyCellView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Editable details
+  const [cellName, setCellName] = useState('');
+  const [meetingLocation, setMeetingLocation] = useState('');
+  const [venueAddress, setVenueAddress] = useState('');
   const [meetingDay, setMeetingDay] = useState('Wednesday');
   const [meetingTime, setMeetingTime] = useState('18:30');
-  const [venueAddress, setVenueAddress] = useState('');
   const [targetAttendance, setTargetAttendance] = useState(25);
+  const [totalMembers, setTotalMembers] = useState(10);
+  const [activeMembers, setActiveMembers] = useState(8);
+  const [newMembers, setNewMembers] = useState(2);
   const [isSaving, setIsSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
 
@@ -44,10 +49,15 @@ export const MyCellView: React.FC = () => {
           ]);
           if (c) {
             setCell(c);
+            setCellName(c.name || '');
+            setMeetingLocation(c.meeting_location || c.location || '');
             setMeetingDay(c.meeting_day || 'Wednesday');
             setMeetingTime(c.meeting_time || '18:30');
             setVenueAddress(c.venue_address || c.location || '');
             setTargetAttendance(c.target_attendance || 25);
+            setTotalMembers(c.total_members !== undefined ? c.total_members : 10);
+            setActiveMembers(c.active_members !== undefined ? c.active_members : 8);
+            setNewMembers(c.new_members !== undefined ? c.new_members : 2);
           }
           setMeetingReports(mList);
           setEvangReports(eList);
@@ -67,15 +77,21 @@ export const MyCellView: React.FC = () => {
     try {
       const updated: Cell = {
         ...cell,
+        name: cellName.trim() || cell.name,
+        location: meetingLocation.trim() || cell.location,
+        meeting_location: meetingLocation.trim(),
+        venue_address: venueAddress.trim() || meetingLocation.trim(),
         meeting_day: meetingDay,
         meeting_time: meetingTime,
-        venue_address: venueAddress,
-        target_attendance: targetAttendance,
+        target_attendance: Number(targetAttendance) || 25,
+        total_members: Number(totalMembers) || 0,
+        active_members: Number(activeMembers) || 0,
+        new_members: Number(newMembers) || 0,
       };
       await CellService.updateCell(updated);
       setCell(updated);
-      setSaveNotice('Cell meeting schedule and venue updated successfully.');
-      setTimeout(() => setSaveNotice(''), 3000);
+      setSaveNotice('Cell membership and meeting details updated successfully.');
+      setTimeout(() => setSaveNotice(''), 3500);
     } finally {
       setIsSaving(false);
     }
@@ -124,41 +140,109 @@ export const MyCellView: React.FC = () => {
               </div>
             )}
 
+            {/* Basic Identification */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Cell Name</label>
+                <input
+                  type="text"
+                  value={cellName}
+                  onChange={e => setCellName(e.target.value)}
+                  required
+                  placeholder="e.g. Dominion Cell Legon"
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none font-semibold text-[#142B4A]"
+                />
+              </div>
+
               <div>
                 <label className="block font-bold text-[#182230] mb-1">Assigned Tutor</label>
                 <input
                   type="text"
                   disabled
                   value={cell.leader_name || currentUser.full_name}
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-[#F5F7FA] text-[#667085] cursor-not-allowed"
-                />
-                <span className="text-[10px] text-[#667085] mt-0.5 block">
-                  Cell ownership requires administrator approval to reassign
-                </span>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">Leader Phone</label>
-                <input
-                  type="text"
-                  disabled
-                  value={cell.leader_phone || currentUser.phone_number || ''}
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-[#F5F7FA] text-[#667085] cursor-not-allowed"
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-[#F5F7FA] text-[#667085] cursor-not-allowed font-medium"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-[#182230] mb-1">Venue / Physical Address</label>
-              <input
-                type="text"
-                value={venueAddress}
-                onChange={e => setVenueAddress(e.target.value)}
-                required
-                placeholder="e.g. Hall 4 Common Room, Legon Campus"
-                className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-              />
+            {/* Meeting Location & Venue */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Meeting Location / Campus</label>
+                <input
+                  type="text"
+                  value={meetingLocation}
+                  onChange={e => setMeetingLocation(e.target.value)}
+                  required
+                  placeholder="e.g. University of Ghana, Legon"
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Venue / Physical Address</label>
+                <input
+                  type="text"
+                  value={venueAddress}
+                  onChange={e => setVenueAddress(e.target.value)}
+                  required
+                  placeholder="e.g. Hall 4 Common Room, Legon Campus"
+                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Feature 1: Cell Membership Statistics */}
+            <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#142B4A] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  Cell Membership Roster & Status
+                </span>
+                <span className="text-[10px] text-[#667085]">Used for weekly report attendance validation</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-white rounded-xl border border-[#E3E8EF]">
+                  <label className="block font-bold text-[#182230] mb-1">Total Registered Members</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={totalMembers}
+                    onChange={e => setTotalMembers(Math.max(1, Number(e.target.value) || 1))}
+                    required
+                    className="w-full text-base font-extrabold text-[#142B4A] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
+                  />
+                  <span className="text-[10px] text-[#667085] mt-0.5 block">Official registered roll</span>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-[#E3E8EF]">
+                  <label className="block font-bold text-[#182230] mb-1">Active Members</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMembers}
+                    value={activeMembers}
+                    onChange={e => setActiveMembers(Math.min(totalMembers, Math.max(0, Number(e.target.value) || 0)))}
+                    required
+                    className="w-full text-base font-extrabold text-[#23845B] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
+                  />
+                  <span className="text-[10px] text-[#667085] mt-0.5 block">Regular participants</span>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-[#E3E8EF]">
+                  <label className="block font-bold text-[#182230] mb-1">New Members</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newMembers}
+                    onChange={e => setNewMembers(Math.max(0, Number(e.target.value) || 0))}
+                    required
+                    className="w-full text-base font-extrabold text-[#C6A45A] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
+                  />
+                  <span className="text-[10px] text-[#667085] mt-0.5 block">Recently integrated</span>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

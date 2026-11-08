@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
-import { DashboardStats, SystemSettings, UnifiedReportItem } from '../../types';
+import { SoulTargetService } from '../../services/soulTargetService';
+import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics } from '../../types';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import {
   Users,
@@ -40,6 +41,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [recentQueue, setRecentQueue] = useState<UnifiedReportItem[]>([]);
+  const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
+  const [showSoulModal, setShowSoulModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Settings modal inline state
@@ -51,14 +54,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [dashStats, systemSettings, queue] = await Promise.all([
+      const [dashStats, systemSettings, queue, sMetrics] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
         ReportService.getUnifiedReviewQueue(),
+        SoulTargetService.calculateMetrics(),
       ]);
       setStats(dashStats);
       setSettings(systemSettings);
       setRecentQueue(queue.slice(0, 7));
+      setSoulMetrics(sMetrics);
       setEditVision(systemSettings.vision);
       setEditMission(systemSettings.mission);
       setEditTarget(systemSettings.annualSoulWinningTarget);
@@ -175,12 +180,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Annual Soul-Winning Target Progress Card */}
-        <div className="bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm flex flex-col justify-between">
+        <div
+          onClick={() => setShowSoulModal(true)}
+          className="bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm flex flex-col justify-between hover:border-gold-400 hover:shadow-md cursor-pointer transition-all group"
+          title="Click to view full soul-winning target breakdown and cell contributions"
+        >
           <div>
             <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-[#C6A45A]" />
-                <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">
+                <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider group-hover:text-gold-700 transition-colors">
                   Soul-Winning Target
                 </h2>
               </div>
@@ -215,9 +224,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#E3E8EF] flex items-center justify-between text-[11px] text-[#667085]">
-            <span>Deadline: Sunday 6:00 PM GMT</span>
+            <span className="text-gold-700 font-bold group-hover:underline">Click for Breakdown &rarr;</span>
             <button
-              onClick={() => onNavigateToTab('analytics')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigateToTab('analytics');
+              }}
               className="font-bold text-[#142B4A] hover:underline flex items-center gap-0.5"
             >
               Analytics <ArrowRight className="w-3 h-3" />
@@ -545,6 +557,121 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Feature 6: Soul-Winning Target Interactive Breakdown Modal */}
+      {showSoulModal && (
+        <div className="fixed inset-0 z-50 bg-navy-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-gold-50 text-gold-600 border border-gold-200 flex items-center justify-center">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-navy-950">Annual Soul-Winning Target Breakdown</h3>
+                  <p className="text-[11px] text-slate-500">Real-time audited contributions by fellowship cell & timeframe</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSoulModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-navy-950 flex items-center justify-center text-xs"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Overall Progress Summary */}
+            <div className="p-4 bg-navy-950 text-white rounded-2xl border border-navy-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-gold-400 uppercase tracking-wider block">Verified Souls Harvested</span>
+                  <div className="text-3xl font-black text-white mt-0.5">
+                    {soulMetrics?.verifiedSoulsWon || stats.soulsWon} <span className="text-sm font-semibold text-slate-400">/ {soulTarget.toLocaleString()} Goal</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-black text-gold-400">{soulMetrics?.percentageAchieved || targetPercent}%</div>
+                  <span className="text-[10px] text-slate-300">Achieved</span>
+                </div>
+              </div>
+
+              {/* Bar */}
+              <div className="w-full bg-navy-900 rounded-full h-3 overflow-hidden border border-navy-800">
+                <div
+                  className="bg-gold-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${soulMetrics?.percentageAchieved || targetPercent}%` }}
+                />
+              </div>
+
+              <div className="flex justify-between text-[11px] text-slate-300 pt-1">
+                <span>Remaining: <strong className="text-white">{soulMetrics?.remainingSouls || remainingTarget} souls</strong></span>
+                <span>Annual Cycle: <strong>{new Date().getFullYear()}</strong></span>
+              </div>
+            </div>
+
+            {/* Time Breakdown Cards */}
+            <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-500 block uppercase">This Week</span>
+                <div className="text-lg font-black text-navy-950 mt-1">
+                  +{soulMetrics?.weeklyProgress.reduce((acc, w) => acc + w.souls, 0) || 0}
+                </div>
+                <span className="text-[10px] text-emerald-700 font-semibold">Active harvest</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-500 block uppercase">This Month</span>
+                <div className="text-lg font-black text-navy-950 mt-1">
+                  +{soulMetrics?.monthlyProgress.reduce((acc, m) => acc + m.souls, 0) || stats.soulsWon}
+                </div>
+                <span className="text-[10px] text-slate-500">Current month</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-500 block uppercase">This Quarter</span>
+                <div className="text-lg font-black text-navy-950 mt-1">
+                  +{soulMetrics?.quarterlyProgress.reduce((acc, q) => acc + q.souls, 0) || stats.soulsWon}
+                </div>
+                <span className="text-[10px] text-gold-700 font-semibold">Q{Math.floor(new Date().getMonth() / 3) + 1} Harvest</span>
+              </div>
+            </div>
+
+            {/* Cell Contributions Ranking */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-2">
+                Contribution by Fellowship Cell / Team
+              </h4>
+              <div className="space-y-2 max-h-44 overflow-y-auto">
+                {soulMetrics && soulMetrics.cellContributions.length > 0 ? (
+                  soulMetrics.cellContributions.map(c => (
+                    <div key={c.cellId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-navy-950">{c.cellName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-navy-900">+{c.souls} souls</span>
+                        <span className="text-[10px] text-gold-700 bg-gold-50 px-1.5 py-0.5 rounded font-bold">
+                          {c.percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-3 text-center text-xs text-slate-400 bg-slate-50 rounded-xl">
+                    No individual cell contributions logged yet for this period.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span className="italic">Only verified souls from approved evangelism reports are counted.</span>
+              <button
+                onClick={() => setShowSoulModal(false)}
+                className="px-4 py-1.5 bg-navy-950 text-white rounded-xl font-bold text-xs hover:bg-navy-900"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Inline Modal for Editing Vision, Mission & Annual Target */}
       {isEditingSettings && (

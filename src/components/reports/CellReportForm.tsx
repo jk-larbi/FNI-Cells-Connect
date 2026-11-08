@@ -42,8 +42,9 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
   // Cell Meeting Form State (matching Part 6A)
   const [cellId, setCellId] = useState(initialReport?.cell_id || currentUser.cell_id || '');
   const [meetingDate, setMeetingDate] = useState(initialReport?.meeting_date || new Date().toISOString().split('T')[0]);
-  const [members, setMembers] = useState<number>(initialReport?.members_present || 0);
-  const [activeMembers, setActiveMembers] = useState<number>(initialReport?.members_present || 0);
+  const [meetingLocation, setMeetingLocation] = useState<string>('');
+  const [totalCellMembers, setTotalCellMembers] = useState<number>(10);
+  const [activeMembers, setActiveMembers] = useState<number>(initialReport?.members_present || 8);
   const [attendance, setAttendance] = useState<number>(initialReport?.total_attendance || 0);
   const [newMembers, setNewMembers] = useState<number>(initialReport?.first_timers_contacted || 0);
   const [absentees, setAbsentees] = useState<number>(initialReport?.visitors_count || 0);
@@ -51,6 +52,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
   const [offering, setOffering] = useState<string>(initialReport?.offering_amount ? String(initialReport.offering_amount) : '');
   const [tutorNotes, setTutorNotes] = useState<string>(initialReport?.additional_remarks || initialReport?.meeting_topic || '');
   const [testimonies, setTestimonies] = useState<string>((initialReport as any)?.testimonies || '');
+  const [tutorExperience, setTutorExperience] = useState<string>((initialReport as any)?.tutorExperience || '');
 
   useEffect(() => {
     async function loadData() {
@@ -60,6 +62,16 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
         if (!cellId && cList.length > 0) {
           const matched = cList.find(c => c.id === currentUser.cell_id) || cList[0];
           setCellId(matched.id);
+          setMeetingLocation(matched.meeting_location || matched.venue_address || matched.location || '');
+          setTotalCellMembers(matched.total_members !== undefined ? matched.total_members : 10);
+          setActiveMembers(matched.active_members !== undefined ? matched.active_members : 8);
+        } else if (cellId && cList.length > 0) {
+          const matched = cList.find(c => c.id === cellId);
+          if (matched) {
+            setMeetingLocation(matched.meeting_location || matched.venue_address || matched.location || '');
+            setTotalCellMembers(matched.total_members !== undefined ? matched.total_members : 10);
+            setActiveMembers(matched.active_members !== undefined ? matched.active_members : 8);
+          }
         }
       } finally {
         setIsLoadingMetadata(false);
@@ -67,6 +79,17 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
     }
     loadData();
   }, [currentUser, cellId]);
+
+  // Attendance auto-calculation helper
+  const handleAttendanceChange = (val: number) => {
+    const present = Math.max(0, val);
+    setAttendance(present);
+    // Auto-calculate absentees against cell total membership
+    if (totalCellMembers > 0) {
+      const calcAbsent = Math.max(0, totalCellMembers - present);
+      setAbsentees(calcAbsent);
+    }
+  };
 
   // If user toggled to Evangelism Report, render the dedicated EvangelismReportForm
   if (reportType === 'evangelism') {
@@ -112,8 +135,16 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
       setErrorMessage('Please specify the cell meeting date.');
       return;
     }
-    if (members < 0 || activeMembers < 0 || attendance < 0 || newMembers < 0 || absentees < 0 || followUpNeeded < 0) {
+    if (activeMembers < 0 || attendance < 0 || newMembers < 0 || absentees < 0 || followUpNeeded < 0) {
       setErrorMessage('Numerical values cannot be negative.');
+      return;
+    }
+
+    // Feature 1: Validate attendance + absentees consistency
+    if (totalCellMembers > 0 && attendance + absentees !== totalCellMembers) {
+      setErrorMessage(
+        `Attendance inconsistency: Present (${attendance}) + Absent (${absentees}) = ${attendance + absentees}. This must equal Total Registered Members (${totalCellMembers}). Please adjust or align figures.`
+      );
       return;
     }
 
@@ -129,7 +160,8 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
         tutorUid: currentUser.id,
         tutorName: currentUser.full_name,
         meetingDate,
-        members: Number(members) || 0,
+        meetingLocation: meetingLocation.trim() || selectedCell?.venue_address || selectedCell?.location,
+        members: Number(totalCellMembers) || 0,
         activeMembers: Number(activeMembers) || 0,
         attendance: Number(attendance) || 0,
         newMembers: Number(newMembers) || 0,
@@ -138,6 +170,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
         offering: offering ? Number(offering) : undefined,
         tutorNotes: tutorNotes.trim(),
         testimonies: testimonies.trim(),
+        tutorExperience: tutorExperience.trim(),
       });
 
       dispatchNotification(
@@ -222,14 +255,23 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
               <Calendar className="w-4 h-4 text-gold-500" />
               1. Cell Identification & Meeting Schedule
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Cell Name (Auto-populated)
                 </label>
                 <select
                   value={cellId}
-                  onChange={e => setCellId(e.target.value)}
+                  onChange={e => {
+                    const id = e.target.value;
+                    setCellId(id);
+                    const matched = cells.find(c => c.id === id);
+                    if (matched) {
+                      setMeetingLocation(matched.meeting_location || matched.venue_address || matched.location || '');
+                      setTotalCellMembers(matched.total_members !== undefined ? matched.total_members : 10);
+                      setActiveMembers(matched.active_members !== undefined ? matched.active_members : 8);
+                    }
+                  }}
                   required
                   className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
                 >
@@ -239,6 +281,20 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Meeting Location <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={meetingLocation}
+                  onChange={e => setMeetingLocation(e.target.value)}
+                  placeholder="e.g. Hall 4 Common Room, Legon Campus"
+                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-semibold"
+                />
               </div>
 
               <div>
@@ -269,67 +325,56 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
           </div>
 
           {/* Section 2: Membership & Attendance Metrics */}
-          <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-3 flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-gold-500" />
-              2. Membership & Attendance Counts
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Number of Members
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={members}
-                  onChange={e => setMembers(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-                />
+          <div className="pt-2 border-t border-slate-100 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-gold-500" />
+                2. Membership & Attendance Validation
+              </h3>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="px-2.5 py-1 rounded-lg bg-navy-50 text-navy-900 border border-navy-200 font-bold">
+                  Total Cell Members: {totalCellMembers}
+                </span>
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
+                  Active Members: {activeMembers}
+                </span>
               </div>
+            </div>
 
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Active Members
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={activeMembers}
-                  onChange={e => setActiveMembers(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-                />
+            {/* Attendance Consistency Helper */}
+            {attendance + absentees !== totalCellMembers && totalCellMembers > 0 && (
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-3">
+                <span>
+                  Present (<strong>{attendance}</strong>) + Absent (<strong>{absentees}</strong>) = <strong>{attendance + absentees}</strong>. Total Registered Members on file is <strong>{totalCellMembers}</strong>.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAbsentees(Math.max(0, totalCellMembers - attendance))}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 font-bold text-[11px] text-amber-900 hover:bg-amber-100 transition-colors shrink-0"
+                >
+                  Auto-Align Absentees
+                </button>
               </div>
+            )}
 
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               <div className="p-3 bg-navy-50/80 rounded-2xl border border-navy-200">
                 <label className="block text-[11px] font-bold text-navy-900 mb-1">
-                  Attendance Count <span className="text-rose-500">*</span>
+                  Number Present (Attendance) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={attendance}
-                  onChange={e => setAttendance(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => handleAttendanceChange(parseInt(e.target.value) || 0)}
                   className="w-full text-base font-extrabold text-navy-950 bg-white border border-navy-300 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
                 />
+                <span className="text-[10px] text-navy-600 mt-0.5 block">Attended meeting</span>
               </div>
 
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  New Members
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={newMembers}
-                  onChange={e => setNewMembers(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
-                />
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Absentees Count
+                  Number Absent
                 </label>
                 <input
                   type="number"
@@ -338,6 +383,35 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                   onChange={e => setAbsentees(Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
                 />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Unable to attend</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Active Members (Metric)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={activeMembers}
+                  onChange={e => setActiveMembers(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full text-base font-bold text-emerald-800 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-emerald-600"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Regular participants</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  New Members / Visitors
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={newMembers}
+                  onChange={e => setNewMembers(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full text-base font-bold text-navy-950 bg-white border border-slate-200 rounded-xl p-2 focus:ring-1 focus:ring-navy-600"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">First-timers joined</span>
               </div>
 
               <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200">
@@ -351,6 +425,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                   onChange={e => setFollowUpNeeded(Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full text-base font-bold text-amber-900 bg-white border border-amber-300 rounded-xl p-2 focus:ring-1 focus:ring-amber-500"
                 />
+                <span className="text-[10px] text-amber-800 mt-0.5 block">Care pipeline</span>
               </div>
             </div>
           </div>
@@ -359,13 +434,13 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
           <div className="pt-2 border-t border-slate-100 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-navy-950 mb-1 flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-gold-500" />
-              3. Finance & Meeting Notes
+              3. Finance, Member Testimonies & Tutor Assessment
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Offering Collected (Optional)
+                  Offering Collected (Auto-aggregated in Finance)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-semibold text-xs">
@@ -378,34 +453,53 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                     placeholder="0.00"
                     value={offering}
                     onChange={e => setOffering(e.target.value)}
-                    className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+                    className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 font-bold"
                   />
                 </div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">
+                  Automatically logged for ministry financial reporting
+                </span>
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Tutor's Notes Used for Cell Meeting (Optional)
+                  Scripture / Lesson Taught (Optional)
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Outline key scripture passages, lesson taught, prayer items or pastoral remarks..."
+                  placeholder="Outline key scripture passages or message taught during the cell meeting..."
                   value={tutorNotes}
                   onChange={e => setTutorNotes(e.target.value)}
                   className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
                 />
               </div>
 
+              {/* Feature 1: Member Testimonies as a separate field */}
               <div className="sm:col-span-3">
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A45A]" />
-                  <span>Testimonies & Experiences Encountered (Optional)</span>
+                  <span>Member Testimonies (Signs, Healings, Answered Prayers)</span>
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Record any testimonies, answered prayers, signs, or miraculous experiences encountered during the cell meeting..."
+                  placeholder="Record specific testimonies shared by cell members during this meeting..."
                   value={testimonies}
                   onChange={e => setTestimonies(e.target.value)}
+                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
+                />
+              </div>
+
+              {/* Feature 1: Tutor's Personal Assessment & Experiences as a separate field */}
+              <div className="sm:col-span-3">
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#142B4A]" />
+                  <span>Tutor's Personal Assessment & Experiences (Separate Field)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Tutor's personal evaluation: spiritual atmosphere, member responsiveness, cell growth challenges, and leadership experiences..."
+                  value={tutorExperience}
+                  onChange={e => setTutorExperience(e.target.value)}
                   className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600"
                 />
               </div>
