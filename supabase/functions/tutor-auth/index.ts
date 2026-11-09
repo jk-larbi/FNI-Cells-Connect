@@ -10,10 +10,10 @@ const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
 function normalizePhone(value: string): string | null {
-  const compact = value.trim().replace(/[\\s().-]/g, "");
-  if (/^0\\d{9}$/.test(compact)) return "+233" + compact.slice(1);
-  if (/^233\\d{9}$/.test(compact)) return "+" + compact;
-  if (/^\\+[1-9]\\d{7,14}$/.test(compact)) return compact;
+  const compact = value.trim().replace(/[ ().-]/g, "").replaceAll("\t", "");
+  if (/^0[0-9]{9}$/.test(compact)) return "+233" + compact.slice(1);
+  if (/^233[0-9]{9}$/.test(compact)) return "+" + compact;
+  if (/^\+[1-9][0-9]{7,14}$/.test(compact)) return compact;
   return null;
 }
 
