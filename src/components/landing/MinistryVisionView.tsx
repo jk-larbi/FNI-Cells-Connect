@@ -24,11 +24,14 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
 
   return (
     <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
-      {/* Subtle Background Radial Rings */}
+      {/* Soft animated background: more visible against the light surface, without competing with content */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
-        <div className="w-[500px] h-[500px] sm:w-[750px] sm:h-[750px] rounded-full bg-gradient-to-tr from-[#142B4A]/5 via-transparent to-[#C6A45A]/10 blur-3xl animate-pulse" />
-        <div className="w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border border-[#C6A45A]/15 animate-[spin_80s_linear_infinite]" />
-        <div className="w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/5 animate-[spin_110s_linear_infinite_reverse]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(198,164,90,0.10),transparent_58%)]" />
+        <div className="absolute top-[12%] right-[8%] w-48 h-48 rounded-full bg-[#C6A45A]/20 blur-3xl animate-float-slow" />
+        <div className="absolute bottom-[14%] left-[5%] w-56 h-56 rounded-full bg-[#142B4A]/10 blur-3xl animate-float-reverse" />
+        <div className="w-[500px] h-[500px] sm:w-[750px] sm:h-[750px] rounded-full bg-gradient-to-tr from-[#142B4A]/10 via-transparent to-[#C6A45A]/20 blur-3xl animate-pulse" />
+        <div className="absolute w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border border-[#C6A45A]/30 animate-[spin_80s_linear_infinite]" />
+        <div className="absolute w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/10 animate-[spin_110s_linear_infinite_reverse]" />
       </div>
 
       {/* Main Centered Content */}
