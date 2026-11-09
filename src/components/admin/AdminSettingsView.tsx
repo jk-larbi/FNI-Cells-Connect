@@ -4,6 +4,7 @@ import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { ReportService } from '../../services/reportService';
 import { SystemSettings, AuditLog } from '../../types';
+import { supabase } from '../../lib/supabase';
 import {
   Settings,
   Shield,
@@ -46,6 +47,9 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   // Status
   const [isSavingSystem, setIsSavingSystem] = useState(false);
   const [systemSaveNotice, setSystemSaveNotice] = useState('');
+  const [notificationEmail, setNotificationEmail] = useState('');
+  const [emailSaveNotice, setEmailSaveNotice] = useState<{ text: string; isError: boolean } | null>(null);
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -59,6 +63,8 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       setTarget(s.annualSoulWinningTarget);
       setDeadline(s.weeklyDeadline);
       setAuditLogs(logs);
+      const { data: emailSettings } = await supabase.from('admin_notification_settings').select('notification_email').eq('id', 1).maybeSingle();
+      setNotificationEmail(emailSettings?.notification_email || '');
     }
     load();
   }, []);
@@ -79,6 +85,28 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
     } finally {
       setIsSavingSystem(false);
     }
+  };
+
+  const handleSaveNotificationEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = notificationEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setEmailSaveNotice({ text: 'Enter a valid notification email address.', isError: true });
+      return;
+    }
+    setIsSavingEmail(true);
+    setEmailSaveNotice(null);
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) throw new Error('Please sign in again.');
+      const { error } = await supabase.from('admin_notification_settings').upsert({
+        id: 1, notification_email: cleanEmail, updated_by: authData.user.id, updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+      if (error) throw error;
+      setEmailSaveNotice({ text: 'Notification email saved successfully.', isError: false });
+    } catch (error: any) {
+      setEmailSaveNotice({ text: error?.message || 'Could not save the notification email.', isError: true });
+    } finally { setIsSavingEmail(false); }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -252,6 +280,21 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {/* TAB 2: ADMINISTRATOR PROFILE & SECURITY */}
       {activeTab === 'security' && (
         <div className="space-y-6 max-w-md">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-[#182230]">Email Notifications</h3>
+              <p className="text-xs text-[#667085] mt-0.5">Choose where new report alerts should be sent. You can change this address anytime.</p>
+            </div>
+            <form onSubmit={handleSaveNotificationEmail} className="space-y-3 text-xs">
+              {emailSaveNotice && <div className={`p-3 rounded-xl border-l-4 font-semibold ${emailSaveNotice.isError ? 'bg-[#FFF5F5] border-[#C74646] text-[#C74646]' : 'bg-emerald-50 border-[#23845B] text-[#23845B]'}`}>{emailSaveNotice.text}</div>}
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Administrator notification email</label>
+                <input type="email" required value={notificationEmail} onChange={e => setNotificationEmail(e.target.value)} placeholder="Email for report alerts" className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none" />
+              </div>
+              <button type="submit" disabled={isSavingEmail} className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold disabled:opacity-60">{isSavingEmail ? 'Saving...' : 'Save Notification Email'}</button>
+            </form>
+          </div>
+
           {/* Administrator Profile Photo */}
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
             <div>
