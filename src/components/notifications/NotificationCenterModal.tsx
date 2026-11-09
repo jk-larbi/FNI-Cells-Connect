@@ -112,17 +112,12 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     }
   };
 
-  const handleTestPush = () => {
-    const success = PushNotificationService.showLocalNotification('FNI CELLS CONNECT Test Alert', {
-      body: 'Real-time push delivery verified on this device! All ministry notifications are operational.',
-      tag: 'test-' + Date.now(),
-      data: { targetTab: isAdmin ? 'dashboard' : 'my-dashboard' },
-    });
-    if (success) {
-      setPushStatusMessage('Test notification dispatched to your operating system / browser!');
-    } else {
-      setPushStatusMessage('Could not show notification. Please ensure browser permissions are allowed.');
-    }
+  const handleTestPush = async () => {
+    setPushStatusMessage('Sending a background push test...');
+    const result = await PushNotificationService.sendTestPush();
+    setPushStatusMessage(result.success
+      ? 'A real background push was sent to this device. Check your browser notifications.'
+      : result.error || 'The push test could not be completed.');
   };
 
   const handleItemClick = (n: NotificationItem) => {
