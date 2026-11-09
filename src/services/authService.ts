@@ -3,12 +3,12 @@
  * Pure Supabase Authentication & Identity Service (Strict Production Backend)
  * 
  * Strict Security Rules:
- * - 100% Supabase Auth native integration (signUp, signInWithPassword, signOut, resetPassword)
- * - Zero artificial email addresses; requires genuine user email address
+ * - Supabase Auth native sessions; tutor username/password resolved by a trusted Edge Function
+ * - Tutor accounts use phone as a private Auth identifier; admin accounts retain email/password
  * - Zero local-only account creation or PBKDF2 local password hash storage
  * - Zero client-side administrator bypasses (admin123 and demo role-switching permanently removed)
  * - Strict server-side role verification: self-registration NEVER grants administrative roles (always 'tutor')
- * - Full email verification handling: users without confirmed session cannot access protected sessions
+ * - Tutor registration requires no email or SMS delivery; phone ownership is not verified
  * - Complete session persistence, automatic token refresh, and lifecycle synchronization
  */
 
@@ -248,7 +248,7 @@ export class AuthService {
     if (!isSupabaseConfigured || !supabase) return { profile: null, error: 'Supabase authentication service is unavailable.' };
 
     try {
-      let authUserId: string | null = null;
+      let authUserId = '';
       if (legacyEmail) {
         const { data, error } = await supabase.auth.signInWithPassword({ email: legacyEmail, password });
         if (error || !data.user) return { profile: null, error: error?.message || 'Invalid username or password.' };
