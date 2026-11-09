@@ -24,14 +24,13 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
 
   return (
     <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
-      {/* Soft animated background: more visible against the light surface, without competing with content */}
+      {/* Ambient orbital background — matched to the established login portal motion */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(198,164,90,0.10),transparent_58%)]" />
-        <div className="absolute top-[12%] right-[8%] w-48 h-48 rounded-full bg-[#C6A45A]/20 blur-3xl animate-float-slow" />
-        <div className="absolute bottom-[14%] left-[5%] w-56 h-56 rounded-full bg-[#142B4A]/10 blur-3xl animate-float-reverse" />
-        <div className="w-[500px] h-[500px] sm:w-[750px] sm:h-[750px] rounded-full bg-gradient-to-tr from-[#142B4A]/10 via-transparent to-[#C6A45A]/20 blur-3xl animate-pulse" />
-        <div className="absolute w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border border-[#C6A45A]/30 animate-[spin_80s_linear_infinite]" />
-        <div className="absolute w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/10 animate-[spin_110s_linear_infinite_reverse]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(198,164,90,0.12),transparent_60%)]" />
+        <div className="absolute w-[500px] h-[500px] sm:w-[720px] sm:h-[720px] rounded-full bg-gradient-to-tr from-[#142B4A]/10 via-transparent to-[#C6A45A]/20 blur-3xl animate-pulse" />
+        <div className="absolute w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border-2 border-[#C6A45A]/35 animate-[spin_80s_linear_infinite]" />
+        <div className="absolute w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/20 animate-[spin_110s_linear_infinite_reverse]" />
+        <div className="absolute w-[300px] h-[300px] sm:w-[460px] sm:h-[460px] rounded-full border border-[#C6A45A]/20 animate-[spin_58s_linear_infinite_reverse]" />
       </div>
 
       {/* Main Centered Content */}
@@ -62,7 +61,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#142B4A] tracking-tight leading-none mb-2">
+          <h1 className="fni-portal-title text-2xl sm:text-3xl md:text-4xl font-black text-[#142B4A] tracking-tight leading-none mb-2">
             FNI CELLS CONNECT
           </h1>
           <div className="h-0.5 w-16 bg-[#C6A45A] mx-auto rounded-full mb-6 sm:mb-8" />
