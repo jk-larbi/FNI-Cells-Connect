@@ -160,6 +160,23 @@ export class PushNotificationService {
     }
   }
 
+  static async sendTestPush(): Promise<{ success: boolean; sent?: number; error?: string }> {
+    try {
+      const { data, error } = await supabase.functions.invoke(FUNCTION_NAME, {
+        body: { action: 'test_push' },
+      });
+      if (error || !data) {
+        return { success: false, error: data?.error || error?.message || 'Could not send a test push notification.' };
+      }
+      if (Number(data.sent || 0) < 1) {
+        return { success: false, error: data.message || 'No active browser push subscription was found for this device.' };
+      }
+      return { success: true, sent: Number(data.sent) };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Test push failed.' };
+    }
+  }
+
   static async setupForegroundListener(
     _onReceive: (payload: { title: string; body: string; data?: any }) => void
   ): Promise<(() => void) | null> {
