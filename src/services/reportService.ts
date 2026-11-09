@@ -192,6 +192,8 @@ export class ReportService {
         late: report.late,
         submittedAt: report.submittedAt,
       });
+      const { EmailNotificationService } = await import('./emailNotificationService');
+      await EmailNotificationService.reportSubmitted(report.id, 'meeting');
     } catch (notifErr) {
       console.warn('Report submission notification dispatch notice:', notifErr);
     }
@@ -330,6 +332,8 @@ export class ReportService {
         late: report.late,
         submittedAt: report.submittedAt,
       });
+      const { EmailNotificationService } = await import('./emailNotificationService');
+      await EmailNotificationService.reportSubmitted(report.id, 'evangelism');
     } catch (notifErr) {
       console.warn('Evangelism submission notification dispatch notice:', notifErr);
     }
