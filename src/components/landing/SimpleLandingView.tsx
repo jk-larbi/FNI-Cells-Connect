@@ -65,7 +65,7 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
 
       {/* Top Header Bar: Ministry Badge & Back Navigation */}
       <div
-        className={`w-full max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2 sm:gap-0 z-10 pt-2 mb-8 sm:mb-0 transition-all duration-700 transform ${
+        className={`w-full max-w-xl mx-auto flex flex-row items-center justify-between gap-2 z-10 pt-2 mb-8 sm:mb-0 transition-all duration-700 transform ${
           isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
         }`}
       >
@@ -73,15 +73,15 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
           <button
             type="button"
             onClick={onBackToVision}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#142B4A] hover:text-[#C6A45A] bg-[#142B4A]/5 hover:bg-[#142B4A]/10 border border-[#C6A45A]/20 transition-all cursor-pointer group"
+            className="inline-flex shrink min-w-0 items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold text-[#142B4A] hover:text-[#C6A45A] bg-[#142B4A]/5 hover:bg-[#142B4A]/10 border border-[#C6A45A]/20 transition-all cursor-pointer group"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-            <span>Ministry Vision & Target</span>
+            <span className="whitespace-nowrap">Ministry Vision & Target</span>
           </button>
         ) : <div />}
 
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#142B4A]/5 border border-[#142B4A]/10">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#C6A45A]" />
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-[#142B4A]/5 border border-[#142B4A]/10 whitespace-nowrap">
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-[#C6A45A]" />
           <span className="text-[10px] font-bold text-[#142B4A] tracking-wider uppercase">
             Official Portal
           </span>
