@@ -1,4 +1,5 @@
 import { SupabaseService } from './supabaseService';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { PrivateMessage, CommunityMessage, InvitationCode, UserRole, MessageReply } from '../types';
 
 const STORAGE_KEYS = {
@@ -315,45 +316,33 @@ export class MessagingService {
     tutorUid: string
   ): Promise<{ valid: boolean; error?: string }> {
     const cleanCode = codeAttempt.trim().toUpperCase();
-    const all = await this.getInvitationCodes();
-    const matched = all.find(c => c.code.toUpperCase() === cleanCode);
-
-    if (!matched) {
-      return { valid: false, error: 'Invalid invitation code. Please check with an administrator.' };
+    if (!cleanCode || !isSupabaseConfigured || !supabase) {
+      return { valid: false, error: 'Invitation verification is unavailable. Please try again.' };
     }
 
-    if (matched.isRevoked) {
-      return { valid: false, error: 'This invitation code has been revoked by leadership.' };
+    // The server derives the user identity from the verified JWT; never trust the supplied UID.
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user || userData.user.id !== tutorUid) {
+      return { valid: false, error: 'Please sign in again before redeeming an invitation code.' };
     }
 
-    const now = Date.now();
-    const expiryTime = new Date(matched.expiresAt).getTime();
-    if (now > expiryTime) {
-      return { valid: false, error: 'This invitation code has expired. Expired codes can no longer be used.' };
+    // Atomic server-side validation and use-count increment prevents code enumeration and race conditions.
+    const { data: redeemed, error } = await supabase.rpc('redeem_invitation_code', {
+      p_code: cleanCode,
+    });
+    if (error) {
+      console.error('Invitation redemption failed:', error.message);
+      return { valid: false, error: 'Could not verify the invitation code. Please try again.' };
+    }
+    if (redeemed !== true) {
+      return { valid: false, error: 'Invalid, expired, revoked, or fully used invitation code.' };
     }
 
-    if (matched.maxUses && matched.usedCount >= matched.maxUses) {
-      return { valid: false, error: 'This invitation code has reached its maximum authorized usage limit.' };
-    }
-
-    // Increment usage
-    matched.usedCount += 1;
-    setStored(STORAGE_KEYS.INVITES, all);
-
-    // Grant access
     const authorizedUsers = getStored<string[]>(STORAGE_KEYS.COMMUNITY_ACCESS, []);
-    if (!authorizedUsers.includes(tutorUid)) {
-      authorizedUsers.push(tutorUid);
+    if (!authorizedUsers.includes(userData.user.id)) {
+      authorizedUsers.push(userData.user.id);
       setStored(STORAGE_KEYS.COMMUNITY_ACCESS, authorizedUsers);
     }
-
-    // Primary write to Supabase
-    try {
-      await SupabaseService.upsertInvitationCode(matched);
-    } catch (e) {
-      console.warn('Supabase redeem code notice:', e);
-    }
-
     return { valid: true };
   }
 
