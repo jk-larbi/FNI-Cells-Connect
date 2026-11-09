@@ -9,6 +9,8 @@ import { AuthView, AuthFlowView } from './components/auth/AuthView';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
 import { PasswordRecoveryView } from './components/auth/PasswordRecoveryView';
 import { supabase } from './lib/supabase';
+import { ThemeProvider } from './context/ThemeContext';
+import { ThemeToggle } from './components/layout/ThemeToggle';
 
 const MainContent: React.FC = () => {
   const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
@@ -94,11 +96,14 @@ const MainContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <MainContent />
-      </NotificationProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <ThemeToggle />
+          <MainContent />
+        </NotificationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
