@@ -207,7 +207,7 @@ Deno.serve(async req => {
       if (!subscription?.endpoint || !subscription?.keys) return;
       try {
         const subscriber = server.subscribe(subscription);
-        await subscriber.pushTextMessage(payload, { ttl: 86400, urgency: webpush.Urgency.High });
+        await subscriber.pushTextMessage(payload, { ttl: 2419200, urgency: webpush.Urgency.High });
         sent += 1;
       } catch (error: any) {
         const status = Number(error?.response?.status || 0);
