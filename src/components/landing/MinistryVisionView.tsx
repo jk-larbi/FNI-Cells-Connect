@@ -96,7 +96,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
                 <Compass className="w-4 h-4" />
               </div>
-              <span className="text-xs font-black uppercase tracking-wider text-[#142B4A]">
+              <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Mission
               </span>
             </div>
