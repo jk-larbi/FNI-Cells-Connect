@@ -211,3 +211,44 @@ html.dark .fni-orbit-ring-inner { border-color: rgb(226 190 112 / .42) !importan
   .vision-statement-card.is-visible, .vision-statement-card.is-visible::after { animation: none !important; }
   html:not(.dark) [class*="rounded-"][class*="bg-white"][class*="border"] { transition: none; }
 }
+
+
+/* Dark-mode readability for the login portal only. */
+html.dark .fni-auth-portal [class~="text-[#142B4A]"],
+html.dark .fni-auth-portal [class~="text-[#182230]"] {
+  color: #f8fafc !important;
+}
+html.dark .fni-auth-portal [class~="text-[#667085]"],
+html.dark .fni-auth-portal [class~="text-[#98A2B3]"] {
+  color: #c5d1df !important;
+}
+html.dark .fni-auth-portal [class~="bg-white/90"] {
+  background-color: rgb(17 28 45 / .94) !important;
+  border-color: #3a4d64 !important;
+}
+html.dark .fni-auth-portal [class~="bg-white"] {
+  background-color: #172437 !important;
+}
+html.dark .fni-auth-portal input,
+html.dark .fni-auth-portal input[type="text"],
+html.dark .fni-auth-portal input[type="email"],
+html.dark .fni-auth-portal input[type="password"] {
+  color: #f8fafc !important;
+  background-color: #172437 !important;
+  border-color: #465a72 !important;
+}
+html.dark .fni-auth-portal input::placeholder {
+  color: #a9b8ca !important;
+}
+html.dark .fni-auth-portal button:not([class*="bg-[#142B4A]"]) {
+  color: #f1f5f9;
+}
+html.dark .fni-auth-portal [class~="border-[#E3E8EF]"] {
+  border-color: #3a4d64 !important;
+}
+html.dark .fni-auth-portal [class~="bg-[#142B4A]/5"] {
+  background-color: rgb(198 164 90 / .10) !important;
+}
+html.dark .vision-statement-card .vision-card-heading {
+  color: #ffffff !important;
+}
