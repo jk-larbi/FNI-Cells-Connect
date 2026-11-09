@@ -41,7 +41,14 @@ Deno.serve(async (req) => {
   let details = "";
   let recipients: string[] = [];
 
-  if (action === "report_submitted") {
+  if (action === "login_success") {
+    if (!user.email) return json({ error: "Account email is unavailable" }, 409);
+    recipients = [user.email];
+    subject = "New sign-in to FNI Cells Connect";
+    heading = "A successful sign-in was detected";
+    const signedInAt = new Intl.DateTimeFormat("en-GH", { dateStyle: "full", timeStyle: "long", timeZone: "Africa/Accra" }).format(new Date());
+    details = `<p>Hello ${escapeHtml(profile.full_name || "FNI member")},</p><p>Your FNI Cells Connect account was successfully signed in.</p><p><b>Account:</b> ${escapeHtml(user.email)}</p><p><b>Date and time:</b> ${escapeHtml(signedInAt)} (Ghana time)</p><p>If this was you, no action is needed. If you do not recognise this sign-in, change your password immediately and contact FNI leadership.</p>`;
+  } else if (action === "report_submitted") {
     const table = body.reportType === "meeting" ? "cell_meeting_reports" : body.reportType === "evangelism" ? "evangelism_reports" : null;
     if (!table || !body.reportId) return json({ error: "Invalid report reference" }, 400);
     const { data: report, error } = await db.from(table).select("id,tutor_uid,tutor_name,cell_name,submitted_at,status").eq("id", body.reportId).maybeSingle();
