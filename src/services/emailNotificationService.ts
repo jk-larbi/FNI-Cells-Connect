@@ -13,6 +13,10 @@ export class EmailNotificationService {
     }
   }
 
+  static loginSucceeded() {
+    return this.dispatch({ action: 'login_success' });
+  }
+
   static reportSubmitted(reportId: string, reportType: 'meeting' | 'evangelism') {
     return this.dispatch({ action: 'report_submitted', reportId, reportType });
   }
