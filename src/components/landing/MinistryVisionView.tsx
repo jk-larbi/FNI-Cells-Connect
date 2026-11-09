@@ -27,10 +27,10 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
       {/* Ambient orbital background — matched to the established login portal motion */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(198,164,90,0.12),transparent_60%)]" />
-        <div className="absolute w-[500px] h-[500px] sm:w-[720px] sm:h-[720px] rounded-full bg-gradient-to-tr from-[#142B4A]/10 via-transparent to-[#C6A45A]/20 blur-3xl animate-pulse" />
-        <div className="absolute w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border-2 border-[#C6A45A]/35 animate-[spin_80s_linear_infinite]" />
-        <div className="absolute w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/20 animate-[spin_110s_linear_infinite_reverse]" />
-        <div className="absolute w-[300px] h-[300px] sm:w-[460px] sm:h-[460px] rounded-full border border-[#C6A45A]/20 animate-[spin_58s_linear_infinite_reverse]" />
+        <div className="fni-orbit-glow absolute w-[500px] h-[500px] sm:w-[720px] sm:h-[720px] rounded-full bg-gradient-to-tr from-[#142B4A]/10 via-transparent to-[#C6A45A]/20 blur-3xl animate-pulse" />
+        <div className="fni-orbit-ring fni-orbit-ring-gold absolute w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border-2 border-[#C6A45A]/35 animate-[spin_80s_linear_infinite]" />
+        <div className="fni-orbit-ring fni-orbit-ring-blue absolute w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/20 animate-[spin_110s_linear_infinite_reverse]" />
+        <div className="fni-orbit-ring fni-orbit-ring-inner absolute w-[300px] h-[300px] sm:w-[460px] sm:h-[460px] rounded-full border border-[#C6A45A]/20 animate-[spin_58s_linear_infinite_reverse]" />
       </div>
 
       {/* Main Centered Content */}
