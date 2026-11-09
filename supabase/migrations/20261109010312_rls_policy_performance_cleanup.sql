@@ -42,3 +42,7 @@ CREATE POLICY review_logs_delete ON public.review_logs FOR DELETE TO authenticat
 
 DROP POLICY IF EXISTS firebase_legacy_deny ON private.firebase_legacy_documents;
 CREATE POLICY firebase_legacy_deny ON private.firebase_legacy_documents FOR ALL TO PUBLIC USING(false) WITH CHECK(false);
+
+-- Remove superseded owner policies; combined policies above already include owner checks.
+DROP POLICY IF EXISTS cells_owner_insert ON public.cells;
+DROP POLICY IF EXISTS cells_owner_update ON public.cells;
