@@ -69,15 +69,14 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
         <div className="w-full space-y-4 text-left">
           {/* 1. VISION STATEMENT */}
           <div
-            className={`p-5 sm:p-6 rounded-3xl bg-white border border-[#E3E8EF] shadow-md shadow-slate-200/50 relative overflow-hidden transition-all duration-700 delay-300 transform hover:border-[#C6A45A] group ${
-              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
+            className={`vision-statement-card p-5 sm:p-6 rounded-3xl bg-white border border-[#E3E8EF] shadow-md shadow-slate-200/50 relative overflow-hidden group ${isLoaded ? 'is-visible' : 'opacity-0'}`}
+            style={{ animationDelay: isLoaded ? '180ms' : '0ms' }}
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
                 <Eye className="w-4 h-4" />
               </div>
-              <span className="text-xs font-black uppercase tracking-wider text-[#142B4A]">
+              <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Vision
               </span>
             </div>
@@ -88,9 +87,8 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
 
           {/* 2. MISSION STATEMENT */}
           <div
-            className={`p-5 sm:p-6 rounded-3xl bg-white border border-[#E3E8EF] shadow-md shadow-slate-200/50 relative overflow-hidden transition-all duration-700 delay-450 transform hover:border-[#C6A45A] group ${
-              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
+            className={`vision-statement-card p-5 sm:p-6 rounded-3xl bg-white border border-[#E3E8EF] shadow-md shadow-slate-200/50 relative overflow-hidden group ${isLoaded ? 'is-visible' : 'opacity-0'}`}
+            style={{ animationDelay: isLoaded ? '520ms' : '0ms' }}
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
