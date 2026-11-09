@@ -24,13 +24,47 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
 
   return (
     <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
-      {/* Ambient orbital background — matched to the established login portal motion */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(198,164,90,0.12),transparent_60%)]" />
-        <div className="fni-orbit-glow absolute w-[500px] h-[500px] sm:w-[720px] sm:h-[720px] rounded-full bg-gradient-to-tr from-[#142B4A]/10 via-transparent to-[#C6A45A]/20 blur-3xl animate-pulse" />
-        <div className="fni-orbit-ring fni-orbit-ring-gold absolute w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border-2 border-[#C6A45A]/35 animate-[spin_80s_linear_infinite]" />
-        <div className="fni-orbit-ring fni-orbit-ring-blue absolute w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/20 animate-[spin_110s_linear_infinite_reverse]" />
-        <div className="fni-orbit-ring fni-orbit-ring-inner absolute w-[300px] h-[300px] sm:w-[460px] sm:h-[460px] rounded-full border border-[#C6A45A]/20 animate-[spin_58s_linear_infinite_reverse]" />
+      {/* Creative Background Celestial Radial Rings */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden animate-circle-drift">
+        {/* 1. Central Breathing Radiant Aura */}
+        <div className="w-[500px] h-[500px] sm:w-[750px] sm:h-[750px] rounded-full bg-gradient-to-tr from-[#142B4A]/8 via-[#C6A45A]/12 to-transparent blur-3xl animate-pulse-glow" />
+
+        {/* 2. Expanding Concentric Ripple Wave Ring */}
+        <div className="absolute w-[400px] h-[400px] sm:w-[620px] sm:h-[620px] rounded-full border border-[#C6A45A]/30 animate-ripple-wave" />
+
+        {/* 3. Inner Astrolabe Ring (Clockwise, 22s) with Orbiting Diamond Satellite */}
+        <div className="absolute w-[380px] h-[380px] sm:w-[560px] sm:h-[560px] rounded-full border-2 border-dashed border-[#C6A45A]/35 animate-spin-orbit">
+          {/* Orbiting Satellite Node 1 (North) */}
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex items-center justify-center">
+            <div className="w-3.5 h-3.5 rounded-full bg-[#C6A45A] shadow-[0_0_14px_#C6A45A] ring-4 ring-[#C6A45A]/20" />
+          </div>
+          {/* Orbiting Satellite Node 2 (South) */}
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-[#142B4A]/50" />
+          </div>
+        </div>
+
+        {/* 4. Middle Resonant Ring (Counter-Clockwise, 28s) with Orbiting Beacon */}
+        <div className="absolute w-[500px] h-[500px] sm:w-[740px] sm:h-[740px] rounded-full border border-dotted border-[#142B4A]/20 animate-spin-orbit-reverse">
+          {/* Orbiting Satellite Node (East) */}
+          <div className="absolute top-1/2 -right-2 -translate-y-1/2 flex items-center justify-center">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#C6A45A] shadow-[0_0_10px_#C6A45A]" />
+          </div>
+          {/* Orbiting Satellite Node (West) */}
+          <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-[#142B4A]/40" />
+          </div>
+        </div>
+
+        {/* 5. Outer Celestial Ring (Breathe & Harmonize, 14s) with Cardinal Compass Beacons */}
+        <div className="absolute w-[640px] h-[640px] sm:w-[920px] sm:h-[920px] rounded-full border border-[#C6A45A]/20 animate-orbit-breathe">
+          {/* Cardinal Points (North, South, East, West) */}
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#C6A45A] rotate-45 shadow-[0_0_6px_#C6A45A]" />
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#C6A45A] rotate-45 shadow-[0_0_6px_#C6A45A]" />
+          <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-[#C6A45A] rotate-45 shadow-[0_0_6px_#C6A45A]" />
+          <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-[#C6A45A] rotate-45 shadow-[0_0_6px_#C6A45A]" />
+        </div>
+      </div>
       </div>
 
       {/* Main Centered Content */}

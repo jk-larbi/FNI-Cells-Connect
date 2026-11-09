@@ -66,6 +66,43 @@
 .animate-float-reverse { animation: floatReverse 7s ease-in-out infinite; }
 .animate-pulse-glow { animation: pulseGlow 4s ease-in-out infinite; }
 .shimmer-button { position: relative; overflow: hidden; }
+
+/* =============================================================== */
+/* CREATIVE CELESTIAL CIRCLE ANIMATIONS                            */
+/* =============================================================== */
+
+@keyframes spinOrbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinOrbitReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes orbitBreathe {
+  0%, 100% { transform: scale(0.97) rotate(0deg); opacity: 0.65; }
+  50% { transform: scale(1.03) rotate(180deg); opacity: 0.95; }
+}
+
+@keyframes rippleWave {
+  0% { transform: scale(0.75); opacity: 0.55; }
+  50% { opacity: 0.25; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes gentleTiltDrift {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(1deg); }
+  66% { transform: translateY(6px) rotate(-1deg); }
+}
+
+.animate-spin-orbit { animation: spinOrbit 22s linear infinite; }
+.animate-spin-orbit-reverse { animation: spinOrbitReverse 28s linear infinite; }
+.animate-orbit-breathe { animation: orbitBreathe 14s ease-in-out infinite; }
+.animate-ripple-wave { animation: rippleWave 7s cubic-bezier(0.2, 0.8, 0.4, 1) infinite; }
+.animate-circle-drift { animation: gentleTiltDrift 10s ease-in-out infinite; }
 .shimmer-button::after {
   content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
   background: linear-gradient(60deg, transparent 30%, rgba(255,255,255,.25) 50%, transparent 70%);
