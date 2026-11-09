@@ -43,6 +43,7 @@ export interface Profile {
   id: string;
   supabase_user_id?: string;
   email: string;
+  username?: string;
   full_name: string;
   phone_number?: string;
   role: UserRole;
@@ -424,13 +425,16 @@ export interface AuditLog {
 
 export interface TutorRegistrationInput {
   fullName: string;
-  email: string;
+  username: string;
+  phoneNumber: string;
   cellName: string;
+  email?: string;
   password: string;
   confirmPassword?: string;
 }
 
 export interface TutorLoginInput {
+  username?: string;
   email?: string;
   fullName?: string;
   password: string;

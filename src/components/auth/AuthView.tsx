@@ -15,6 +15,7 @@ import {
   LogIn,
   UserPlus,
   Mail,
+  Phone,
 } from 'lucide-react';
 
 export type AuthFlowView = 'tutor-signup' | 'login-select' | 'tutor-login' | 'admin-login';
@@ -41,7 +42,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
   // Tutor Registration state
   const [regFullName, setRegFullName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regPhoneNumber, setRegPhoneNumber] = useState('');
   const [regCellName, setRegCellName] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
@@ -66,13 +68,12 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!regFullName.trim() || !regEmail.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
-      setErrorMessage('Please complete all 5 fields.');
+    if (!regFullName.trim() || !regUsername.trim() || !regPhoneNumber.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
+      setErrorMessage('Please complete all 6 fields.');
       return;
     }
-
-    if (!regEmail.includes('@') || !regEmail.includes('.')) {
-      setErrorMessage('Please enter a valid email address.');
+    if (!/^[a-zA-Z0-9_]{3,24}$/.test(regUsername.trim())) {
+      setErrorMessage('Username must be 3–24 characters and contain only letters, numbers, or underscores.');
       return;
     }
 
@@ -90,7 +91,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
     try {
       const res = await registerTutor({
         fullName: regFullName.trim(),
-        email: regEmail.trim(),
+        username: regUsername.trim(),
+        phoneNumber: regPhoneNumber.trim(),
         cellName: regCellName.trim(),
         password: regPassword,
         confirmPassword: regConfirmPassword,
@@ -98,13 +100,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
       if (!res.success) {
         setErrorMessage(res.error || 'Registration failed.');
-      } else if (res.needsEmailVerification) {
-        setSuccessNotice(
-          res.verificationNotice ||
-            `Account created! A verification link was sent to ${regEmail}. Please confirm your email before signing in.`
-        );
-        setCurrentView('tutor-login');
-        setLoginIdentifier(regEmail);
       } else {
         setSuccessNotice('Account created successfully! Redirecting...');
         if (onSuccess) onSuccess();
@@ -121,15 +116,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setSuccessNotice('');
 
     if (!loginIdentifier.trim() || !loginPassword) {
-      setErrorMessage('Please enter your email (or full name) and password.');
+      setErrorMessage('Please enter your username and password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await loginTutor({
-        email: loginIdentifier.includes('@') ? loginIdentifier.trim() : undefined,
-        fullName: !loginIdentifier.includes('@') ? loginIdentifier.trim() : undefined,
+        username: loginIdentifier.trim(),
         password: loginPassword,
       });
 
@@ -315,7 +309,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Register Your Fellowship Cell
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Provide your genuine email and fellowship details.
+                  Create your tutor account using your details below.
                 </p>
               </div>
 
@@ -338,28 +332,41 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* 2. Email Address */}
+                {/* 2. Username */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    2. Email Address <span className="text-[#C74646]">*</span>
+                    2. Choose a Username <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
-                    <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
-                    <input
-                      type="email"
-                      required
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      placeholder="e.g. samuel.mensah@example.com"
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
+                    <input type="text" required minLength={3} maxLength={24} autoComplete="username"
+                      value={regUsername} onChange={(e) => setRegUsername(e.target.value)}
+                      placeholder="e.g. samuel_mensah"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
+                    />
+                  </div>
+                  <p className="text-[10px] text-[#667085] mt-1">3–24 letters, numbers or underscores.</p>
+                </div>
+
+                {/* 3. Phone Number */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    3. Phone Number <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative group">
+                    <Phone className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
+                    <input type="tel" required autoComplete="tel"
+                      value={regPhoneNumber} onChange={(e) => setRegPhoneNumber(e.target.value)}
+                      placeholder="e.g. 024 123 4567"
                       className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* 3. Cell Fellowship Name */}
+                {/* 4. Cell Fellowship Name */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    3. Cell Fellowship Name <span className="text-[#C74646]">*</span>
+                    4. Cell Fellowship Name <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -374,10 +381,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* 4. Password */}
+                {/* 5. Password */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    4. Password <span className="text-[#C74646]">*</span>
+                    5. Password <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -392,10 +399,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* 5. Confirm Password */}
+                {/* 6. Confirm Password */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    5. Confirm Password <span className="text-[#C74646]">*</span>
+                    6. Confirm Password <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <KeyRound className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -540,24 +547,25 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Tutor Log In
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Sign in with your email or registered full name.
+                  Sign in with your chosen username and password.
                 </p>
               </div>
 
               <form onSubmit={handleTutorLogin} className="space-y-3.5">
-                {/* 1. Email or Full Name */}
+                {/* 1. Username */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Email Address or Full Name <span className="text-[#C74646]">*</span>
+                    Username <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
-                    <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
                     <input
                       type="text"
                       required
+                      autoComplete="username"
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
-                      placeholder="e.g. samuel.mensah@example.com"
+                      placeholder="Enter your username"
                       className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
@@ -593,11 +601,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </button>
               </form>
 
-              <div className="text-right -mt-1">
-                <button type="button" disabled={isSendingReset} onClick={() => handlePasswordReset(loginIdentifier)} className="text-xs font-semibold text-[#142B4A] hover:text-[#C6A45A] underline disabled:opacity-50">
-                  {isSendingReset ? 'Sending reset link...' : 'Forgot password?'}
-                </button>
-              </div>
+              <p className="text-[11px] text-[#667085] text-right -mt-1">Forgot your password? Contact your FNI administrator.</p>
 
               {/* New tutor link */}
               <div className="pt-3 border-t border-[#E3E8EF] text-center">

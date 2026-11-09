@@ -1384,7 +1384,8 @@ export class SupabaseService {
       if (error || !data) return null;
       return {
         id: data.id,
-        email: data.email,
+        email: data.email || '',
+        username: data.username || undefined,
         full_name: data.full_name,
         phone_number: data.phone_number || undefined,
         role: data.role,
@@ -1415,7 +1416,8 @@ export class SupabaseService {
       if (error || !data) return null;
       return data.map((d: any) => ({
         id: d.id,
-        email: d.email,
+        email: d.email || '',
+        username: d.username || undefined,
         full_name: d.full_name,
         phone_number: d.phone_number || undefined,
         role: d.role,
@@ -1542,7 +1544,8 @@ export class SupabaseService {
     const payload: any = {
       id: profile.id, // Primary key: Alphanumeric TEXT (e.g. "usr-admin" or Firebase UID)
       firebase_uid: profile.id,
-      email: profile.email,
+      email: profile.email || '',
+      username: profile.username || null,
       full_name: profile.full_name,
       phone_number: profile.phone_number || null,
       role: profile.role,
