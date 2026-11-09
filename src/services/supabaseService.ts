@@ -1542,8 +1542,7 @@ export class SupabaseService {
   static async upsertProfile(profile: Profile): Promise<boolean> {
     if (!this.isAvailable()) return false;
     const payload: any = {
-      id: profile.id, // Primary key: Alphanumeric TEXT (e.g. "usr-admin" or Firebase UID)
-      firebase_uid: profile.id,
+      id: profile.id, // Primary key: Supabase Auth user UUID for native accounts
       email: profile.email || '',
       username: profile.username || null,
       full_name: profile.full_name,
