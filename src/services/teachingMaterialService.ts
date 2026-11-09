@@ -93,6 +93,8 @@ export class TeachingMaterialService {
           weekLabel: record.weekLabel,
           uploadedByName: record.uploadedByName,
         });
+        const { EmailNotificationService } = await import('./emailNotificationService');
+        await EmailNotificationService.materialPublished(record.id);
       } catch (e) {
         console.warn('Teaching material notification notice:', e);
       }
