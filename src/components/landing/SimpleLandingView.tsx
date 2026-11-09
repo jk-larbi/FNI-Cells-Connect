@@ -20,7 +20,7 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
+    <div className="fni-simple-landing min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
       {/* Dynamic Background Atmosphere: Radial Cosmic Grid & Golden Halo */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
         {/* Soft Radial Ambient Aura */}
