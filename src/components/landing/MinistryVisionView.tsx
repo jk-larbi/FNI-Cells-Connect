@@ -26,9 +26,9 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
     <div className="min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
       {/* Subtle Background Radial Rings */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
-        <div className="w-[500px] h-[500px] sm:w-[750px] sm:h-[750px] rounded-full bg-gradient-to-tr from-[#142B4A]/5 via-transparent to-[#C6A45A]/10 blur-3xl animate-pulse" />
-        <div className="w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border border-[#C6A45A]/15 animate-[spin_80s_linear_infinite]" />
-        <div className="w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/5 animate-[spin_110s_linear_infinite_reverse]" />
+        <div className="w-[500px] h-[500px] sm:w-[750px] sm:h-[750px] rounded-full bg-gradient-to-tr from-[#142B4A]/12 via-transparent to-[#C6A45A]/20 blur-3xl animate-pulse" />
+        <div className="w-[420px] h-[420px] sm:w-[650px] sm:h-[650px] rounded-full border-2 border-[#C6A45A]/40 shadow-[0_0_24px_rgba(198,164,90,0.18)] animate-[spin_80s_linear_infinite]" />
+        <div className="w-[620px] h-[620px] sm:w-[900px] sm:h-[900px] rounded-full border border-[#142B4A]/20 shadow-[0_0_20px_rgba(20,43,74,0.10)] animate-[spin_110s_linear_infinite_reverse]" />
       </div>
 
       {/* Main Centered Content */}
