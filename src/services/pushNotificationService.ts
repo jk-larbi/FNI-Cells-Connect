@@ -177,7 +177,6 @@ export class PushNotificationService {
         icon: `${import.meta.env.BASE_URL}fni-official-logo.jpg`,
         badge: `${import.meta.env.BASE_URL}logo.svg`,
         tag: options.tag || `fni-${Date.now()}`,
-        renotify: true,
         data: options.data || {},
       })).catch(error => console.warn('Could not display browser notification:', error));
       return true;
