@@ -1,0 +1,13 @@
+{
+  "name": "FNI Cells Connect",
+  "short_name": "FNI Connect",
+  "description": "Forerunners Network International cell leadership and ministry connection platform.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#142B4A",
+  "icons": [
+    { "src": "./fni-official-logo.jpg", "sizes": "any", "type": "image/jpeg", "purpose": "any" }
+  ]
+}
