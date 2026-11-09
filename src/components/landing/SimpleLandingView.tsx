@@ -65,7 +65,7 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
 
       {/* Top Header Bar: Ministry Badge & Back Navigation */}
       <div
-        className={`w-full max-w-xl mx-auto flex items-center justify-between z-10 pt-2 mb-8 sm:mb-0 transition-all duration-700 transform ${
+        className={`w-full max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2 sm:gap-0 z-10 pt-2 mb-8 sm:mb-0 transition-all duration-700 transform ${
           isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
         }`}
       >
@@ -89,7 +89,7 @@ export const SimpleLandingView: React.FC<SimpleLandingViewProps> = ({
       </div>
 
       {/* Main Centered Content */}
-      <main className="w-full max-w-xl mx-auto flex flex-col items-center text-center mt-4 sm:mt-auto my-auto z-10 px-4">
+      <main className="w-full max-w-xl mx-auto flex flex-col items-center text-center mt-8 sm:my-auto z-10 px-4">
         {/* 1. Official FNI Logo - Floating Levitating Animation & Radiant Golden Halo */}
         <div
           className={`relative mb-6 sm:mb-8 transition-all duration-1000 transform animate-float-slow ${
