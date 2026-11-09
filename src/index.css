@@ -252,3 +252,36 @@ html.dark .fni-auth-portal [class~="bg-[#142B4A]/5"] {
 html.dark .vision-statement-card .vision-card-heading {
   color: #ffffff !important;
 }
+
+
+/* Ensure every login-portal text element remains readable in dark mode. */
+html.dark .fni-auth-portal h1,
+html.dark .fni-auth-portal h2,
+html.dark .fni-auth-portal h3,
+html.dark .fni-auth-portal p,
+html.dark .fni-auth-portal label,
+html.dark .fni-auth-portal span,
+html.dark .fni-auth-portal a,
+html.dark .fni-auth-portal small,
+html.dark .fni-auth-portal strong,
+html.dark .fni-auth-portal button:not([type="submit"]) {
+  color: #f8fafc !important;
+}
+
+html.dark .fni-auth-portal .text-\\[\\#667085\\],
+html.dark .fni-auth-portal .text-\\[\\#98A2B3\\] {
+  color: #c5d1df !important;
+}
+
+html.dark .fni-auth-portal input {
+  caret-color: #f8fafc;
+}
+
+html.dark .fni-auth-portal input::placeholder {
+  color: #a9b8ca !important;
+  opacity: 1;
+}
+
+html.dark .fni-auth-portal footer p {
+  color: #c5d1df !important;
+}
