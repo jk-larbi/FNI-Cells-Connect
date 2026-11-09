@@ -225,6 +225,10 @@ export class MessagingService {
         content: msg.content,
         category: msg.category,
       });
+      if (msg.category === 'announcement' && msg.senderRole !== 'tutor') {
+        const { EmailNotificationService } = await import('./emailNotificationService');
+        await EmailNotificationService.announcementPublished(msg.id);
+      }
     } catch (e) {
       console.warn('Community message notification dispatch notice:', e);
     }
