@@ -1,4 +1,4 @@
-import { SupabaseService } from './supabaseService';
+import { supabase } from '../lib/supabase';
 
 export interface PushPreferences {
   pushEnabled: boolean;
@@ -8,258 +8,181 @@ export interface PushPreferences {
   notifyOnNotes: boolean;
 }
 
-export interface DeviceTokenRecord {
-  id: string;
-  userId: string;
-  token: string;
-  role: 'admin' | 'tutor';
-  device: string;
-  platform: string;
-  createdAt: string;
-  updatedAt: string;
+const STORAGE_KEYS = { PREFERENCES_PREFIX: 'fni_push_pref_' };
+const FUNCTION_NAME = 'fni-web-push';
+
+function base64UrlToUint8Array(value: string): Uint8Array {
+  const padding = '='.repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from(raw, char => char.charCodeAt(0));
 }
 
-const STORAGE_KEYS = {
-  PREFERENCES_PREFIX: 'fni_push_pref_',
-  DEVICE_TOKEN_PREFIX: 'fni_device_token_',
-  REGISTERED_TOKENS: 'fni_registered_device_tokens_v1',
-};
-
 export class PushNotificationService {
-  /**
-   * Check whether the current browser/environment supports Push notifications and Service Workers
-   */
   static isPushSupported(): boolean {
-    return (
-      typeof window !== 'undefined' &&
+    return typeof window !== 'undefined' &&
       'Notification' in window &&
       'serviceWorker' in navigator &&
-      'PushManager' in window
-    );
+      'PushManager' in window &&
+      window.isSecureContext;
   }
 
-  /**
-   * Get current Notification permission
-   */
   static getPermissionState(): NotificationPermission | 'unsupported' {
     if (!this.isPushSupported()) return 'unsupported';
     return Notification.permission;
   }
 
-  /**
-   * Retrieve notification preferences for a user
-   */
   static getPreferences(userId: string): PushPreferences {
     try {
       const stored = localStorage.getItem(`${STORAGE_KEYS.PREFERENCES_PREFIX}${userId}`);
       if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.warn('Failed to load push preferences', e);
+    } catch (error) {
+      console.warn('Failed to load push preferences', error);
     }
-    return {
-      pushEnabled: true,
-      soundEnabled: true,
-      notifyOnReports: true,
-      notifyOnMessages: true,
-      notifyOnNotes: true,
-    };
+    return { pushEnabled: true, soundEnabled: true, notifyOnReports: true, notifyOnMessages: true, notifyOnNotes: true };
   }
 
-  /**
-   * Save user notification preferences
-   */
   static setPreferences(userId: string, prefs: Partial<PushPreferences>): PushPreferences {
-    const current = this.getPreferences(userId);
-    const updated = { ...current, ...prefs };
+    const updated = { ...this.getPreferences(userId), ...prefs };
     try {
       localStorage.setItem(`${STORAGE_KEYS.PREFERENCES_PREFIX}${userId}`, JSON.stringify(updated));
-    } catch (e) {
-      console.warn('Failed to save push preferences', e);
+    } catch (error) {
+      console.warn('Failed to save push preferences', error);
     }
     return updated;
   }
 
-  /**
-   * Request notification permission and register device token
-   */
+  static async registerServiceWorker(): Promise<ServiceWorkerRegistration> {
+    if (!('serviceWorker' in navigator)) throw new Error('This browser does not support service workers.');
+    const base = import.meta.env.BASE_URL || '/';
+    return navigator.serviceWorker.register(`${base}sw.js`, { scope: base, updateViaCache: 'none' });
+  }
+
+  static async syncExistingSubscription(): Promise<boolean> {
+    if (!this.isPushSupported() || Notification.permission !== 'granted') return false;
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) return false;
+      const { data, error } = await supabase.functions.invoke(FUNCTION_NAME, {
+        body: {
+          action: 'register',
+          subscription: subscription.toJSON(),
+          device: navigator.userAgent,
+          platform: (navigator as any).userAgentData?.platform || navigator.platform || 'Web',
+        },
+      });
+      if (error || !data?.success) {
+        console.warn('Could not refresh the saved FNI push subscription:', data?.error || error?.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Could not restore browser push subscription:', error);
+      return false;
+    }
+  }
+
+  static async hasActiveSubscription(): Promise<boolean> {
+    if (!this.isPushSupported()) return false;
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      return Boolean(await registration.pushManager.getSubscription());
+    } catch {
+      return false;
+    }
+  }
+
   static async requestPermissionAndRegister(
     userId: string,
-    role: 'admin' | 'tutor' = 'tutor'
+    _role: string = 'tutor'
   ): Promise<{ success: boolean; token?: string; error?: string }> {
     if (!this.isPushSupported()) {
-      return {
-        success: false,
-        error: 'Push notifications are not supported by this browser or device (e.g. insecure context or unsupported browser).',
-      };
+      return { success: false, error: 'Browser push requires a supported browser and a secure HTTPS connection.' };
     }
 
     try {
-      // 1. Request browser permission
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        return {
-          success: false,
-          error: `Permission was not granted (${permission}). Please allow notifications in your browser settings.`,
-        };
+        return { success: false, error: `Notification permission was not granted (${permission}). Allow notifications in your browser settings.` };
       }
 
-      // 2. Generate web client push token identifier
-      const token = `token_${userId}_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
-
-      // 3. Save device token record
-      await this.saveDeviceToken({
-        userId,
-        token,
-        role,
+      const registration = await this.registerServiceWorker();
+      await navigator.serviceWorker.ready;
+      const { data: keyData, error: keyError } = await supabase.functions.invoke(FUNCTION_NAME, {
+        body: { action: 'get_public_key' },
       });
+      if (keyError || !keyData?.publicKey) {
+        throw new Error(keyData?.error || keyError?.message || 'Push server is not configured yet. Please try again later.');
+      }
 
-      // Save preference as enabled
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: base64UrlToUint8Array(keyData.publicKey) as BufferSource,
+        });
+      }
+
+      const { data: registerData, error: registerError } = await supabase.functions.invoke(FUNCTION_NAME, {
+        body: {
+          action: 'register',
+          subscription: subscription.toJSON(),
+          device: navigator.userAgent,
+          platform: (navigator as any).userAgentData?.platform || navigator.platform || 'Web',
+        },
+      });
+      if (registerError || !registerData?.success) {
+        throw new Error(registerData?.error || registerError?.message || 'Could not register this device with FNI.');
+      }
+
       this.setPreferences(userId, { pushEnabled: true });
-
-      return {
-        success: true,
-        token,
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        error: err.message || 'An error occurred while requesting notification permission.',
-      };
+      return { success: true, token: 'web-push-subscription' };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Unable to enable browser push notifications.' };
     }
   }
 
-  /**
-   * Save device token to Supabase and local persistent registry
-   */
-  static async saveDeviceToken(data: {
-    userId: string;
-    token: string;
-    role: 'admin' | 'tutor';
-  }): Promise<void> {
-    const tokenId = `dt_${data.userId}_${data.token.slice(-12)}`;
-    const nowIso = new Date().toISOString();
-
-    const record: DeviceTokenRecord = {
-      id: tokenId,
-      userId: data.userId,
-      token: data.token,
-      role: data.role,
-      device: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown Device',
-      platform: typeof navigator !== 'undefined' ? (navigator as any).userAgentData?.platform || navigator.platform || 'Web' : 'Web',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
-
-    // Store in local storage registry
-    try {
-      localStorage.setItem(`${STORAGE_KEYS.DEVICE_TOKEN_PREFIX}${data.userId}`, JSON.stringify(record));
-      const allTokens: DeviceTokenRecord[] = JSON.parse(
-        localStorage.getItem(STORAGE_KEYS.REGISTERED_TOKENS) || '[]'
-      );
-      const filtered = allTokens.filter(t => t.id !== tokenId);
-      filtered.push(record);
-      localStorage.setItem(STORAGE_KEYS.REGISTERED_TOKENS, JSON.stringify(filtered));
-    } catch (e) {
-      console.warn('Local device token storage error:', e);
-    }
-
-    // Store in Supabase
-    try {
-      await SupabaseService.upsertDeviceToken({
-        id: tokenId,
-        userId: data.userId,
-        token: data.token,
-        device: record.device,
-        platform: record.platform,
-      });
-    } catch (e) {
-      console.warn('Supabase deviceTokens notice:', e);
-    }
-  }
-
-  /**
-   * Unregister device token (e.g. when logging out or disabling push)
-   */
   static async unregisterDeviceToken(userId: string): Promise<void> {
     try {
-      const stored = localStorage.getItem(`${STORAGE_KEYS.DEVICE_TOKEN_PREFIX}${userId}`);
-      if (stored) {
-        const record: DeviceTokenRecord = JSON.parse(stored);
-        localStorage.removeItem(`${STORAGE_KEYS.DEVICE_TOKEN_PREFIX}${userId}`);
-
-        const allTokens: DeviceTokenRecord[] = JSON.parse(
-          localStorage.getItem(STORAGE_KEYS.REGISTERED_TOKENS) || '[]'
-        );
-        const filtered = allTokens.filter(t => t.id !== record.id);
-        localStorage.setItem(STORAGE_KEYS.REGISTERED_TOKENS, JSON.stringify(filtered));
-
-        // Delete from Supabase
-        try {
-          await SupabaseService.deleteDeviceToken(record.id);
-        } catch (e) {
-          console.warn('Supabase deviceTokens delete notice:', e);
-        }
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        const { error } = await supabase.functions.invoke(FUNCTION_NAME, {
+          body: { action: 'unregister', endpoint: subscription.endpoint },
+        });
+        if (error) console.warn('Could not remove the server-side push subscription:', error.message);
+        await subscription.unsubscribe();
       }
-    } catch (e) {
-      console.warn('Error during token unregistration:', e);
+      this.setPreferences(userId, { pushEnabled: false });
+    } catch (error) {
+      console.warn('Could not unregister browser push subscription:', error);
     }
   }
 
-  /**
-   * Listen to foreground notifications
-   */
   static async setupForegroundListener(
     _onReceive: (payload: { title: string; body: string; data?: any }) => void
   ): Promise<(() => void) | null> {
     return null;
   }
 
-  /**
-   * Show a native browser notification (handles foreground or local dispatch when permission is granted)
-   */
   static showLocalNotification(
     title: string,
-    options: {
-      body: string;
-      tag?: string;
-      data?: any;
-    }
+    options: { body: string; tag?: string; data?: any }
   ): boolean {
-    if (!this.isPushSupported() || Notification.permission !== 'granted') {
-      return false;
-    }
-
+    if (!this.isPushSupported() || Notification.permission !== 'granted') return false;
     try {
-      // Check if service worker registration can show it
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification(title, {
-            body: options.body,
-            icon: '/fni-official-logo.jpg',
-            badge: '/logo.svg',
-            tag: options.tag || ('fni-' + Date.now()),
-            renotify: true,
-            data: options.data || {},
-          } as any);
-        }).catch(() => {
-          new Notification(title, {
-            body: options.body,
-            icon: '/fni-official-logo.jpg',
-            tag: options.tag,
-            data: options.data,
-          });
-        });
-      } else {
-        new Notification(title, {
-          body: options.body,
-          icon: '/fni-official-logo.jpg',
-          tag: options.tag,
-          data: options.data,
-        });
-      }
+      navigator.serviceWorker.ready.then(registration => registration.showNotification(title, {
+        body: options.body,
+        icon: `${import.meta.env.BASE_URL}fni-official-logo.jpg`,
+        badge: `${import.meta.env.BASE_URL}logo.svg`,
+        tag: options.tag || `fni-${Date.now()}`,
+        renotify: true,
+        data: options.data || {},
+      })).catch(error => console.warn('Could not display browser notification:', error));
       return true;
-    } catch (e) {
-      console.warn('Error displaying native browser notification:', e);
+    } catch (error) {
+      console.warn('Error displaying browser notification:', error);
       return false;
     }
   }
