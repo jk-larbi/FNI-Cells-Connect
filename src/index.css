@@ -419,3 +419,69 @@ html.dark .vision-statement-card p,
 html.dark .vision-statement-card .vision-card-heading { color: #e6edf5 !important; }
 html.dark .custom-scrollbar,
 html.dark * { scrollbar-color: #52647a transparent; }
+
+
+/* Refined dark surfaces across cards, menus, dialogs and status panels.
+   This changes colour treatment only; dimensions and component layout stay intact. */
+html.dark [class*="bg-white"],
+html.dark [class*="bg-slate-50"],
+html.dark [class*="bg-gray-50"] {
+  background-color: #111c2d !important;
+}
+html.dark [class*="bg-slate-100"],
+html.dark [class*="bg-slate-200"],
+html.dark [class*="bg-gray-100"],
+html.dark [class*="bg-gray-200"] {
+  background-color: #1b2a3d !important;
+}
+html.dark [class*="bg-emerald-50"],
+html.dark [class*="bg-green-50"] {
+  background-color: #123328 !important;
+}
+html.dark [class*="bg-amber-50"],
+html.dark [class*="bg-yellow-50"] {
+  background-color: #382d18 !important;
+}
+html.dark [class*="bg-rose-50"],
+html.dark [class*="bg-red-50"] {
+  background-color: #3b2027 !important;
+}
+html.dark [class*="bg-blue-50"],
+html.dark [class*="bg-indigo-50"] {
+  background-color: #1b2d48 !important;
+}
+html.dark [class*="text-slate-800"],
+html.dark [class*="text-slate-900"],
+html.dark [class*="text-gray-800"],
+html.dark [class*="text-gray-900"] {
+  color: #e6edf5 !important;
+}
+html.dark [class*="text-slate-500"],
+html.dark [class*="text-slate-600"],
+html.dark [class*="text-gray-500"],
+html.dark [class*="text-gray-600"] {
+  color: #aebdd0 !important;
+}
+html.dark [class*="border-slate-100"],
+html.dark [class*="border-slate-200"],
+html.dark [class*="border-gray-100"],
+html.dark [class*="border-gray-200"] {
+  border-color: #34465c !important;
+}
+html.dark [class*="shadow-"] {
+  --tw-shadow-color: rgb(0 0 0 / .28);
+}
+html.dark .vision-statement-card.is-visible {
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html.dark, html.dark body,
+  html.dark [class*="bg-white"],
+  html.dark [class*="bg-slate-"],
+  html.dark [class*="text-slate-"],
+  html.dark [class*="border-slate-"] {
+    transition-property: background-color, color, border-color, box-shadow;
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+  }
+}
