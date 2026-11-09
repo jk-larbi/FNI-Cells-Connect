@@ -295,30 +295,28 @@ html.dark .fni-simple-landing {
 html.dark .fni-simple-landing h1,
 html.dark .fni-simple-landing h2,
 html.dark .fni-simple-landing h3,
-html.dark .fni-simple-landing .text-\\[\\#142B4A\\],
-html.dark .fni-simple-landing .text-\\[\\#182230\\] {
+html.dark .fni-simple-landing [class*="text-[#142B4A]"],
+html.dark .fni-simple-landing [class*="text-[#182230]"] {
   color: #ffffff !important;
 }
 html.dark .fni-simple-landing p,
 html.dark .fni-simple-landing footer,
 html.dark .fni-simple-landing footer p,
-html.dark .fni-simple-landing .text-\\[\\#667085\\] {
+html.dark .fni-simple-landing [class*="text-[#667085]"] {
   color: #cbd5e1 !important;
 }
 html.dark .fni-simple-landing button {
   color: #f8fafc !important;
 }
-html.dark .fni-simple-landing button.bg-white,
 html.dark .fni-simple-landing button[class*="bg-white"] {
   background: #1b2d45 !important;
   border-color: #c6a45a !important;
   color: #ffffff !important;
 }
-html.dark .fni-simple-landing button.bg-white svg,
 html.dark .fni-simple-landing button[class*="bg-white"] svg {
   color: #e9d9b2 !important;
 }
-html.dark .fni-simple-landing .bg-\\[\\#142B4A\\]\\/5 {
+html.dark .fni-simple-landing [class*="bg-[#142B4A]/5"] {
   background-color: rgb(198 164 90 / .12) !important;
   border-color: rgb(198 164 90 / .32) !important;
 }
