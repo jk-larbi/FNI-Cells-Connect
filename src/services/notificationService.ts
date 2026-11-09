@@ -2,8 +2,6 @@ import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { NotificationItem, NotificationType, NotificationChannel, UserRole } from '../types';
 import { PushNotificationService } from './pushNotificationService';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
-
 const STORAGE_KEY = 'fni_notifications_store_v2';
 const SUBSCRIBERS = new Set<(notifs: NotificationItem[]) => void>();
 
