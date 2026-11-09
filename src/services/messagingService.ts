@@ -96,7 +96,7 @@ export class MessagingService {
       if (supaMsgs && supaMsgs.length > 0) {
         setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
         return supaMsgs
-          .filter(m => m.senderUid === tutorUid || m.recipientUid === tutorUid)
+          .filter(m => m.senderUid === tutorUid || m.recipientUid === tutorUid || (m.recipientUid === 'admin' && m.senderUid === tutorUid))
           .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       }
     } catch (e) {
@@ -128,7 +128,9 @@ export class MessagingService {
     const groups = new Map<string, PrivateMessage[]>();
 
     for (const msg of all) {
-      const tutorUid = msg.senderRole === 'admin' ? msg.recipientUid : msg.senderUid;
+      const tutorUid = (msg.senderRole === 'admin' || msg.senderRole === 'super_admin' || msg.senderRole === 'national_admin')
+        ? (msg.recipientUid === 'admin' ? msg.senderUid : msg.recipientUid)
+        : msg.senderUid;
       if (!groups.has(tutorUid)) groups.set(tutorUid, []);
       groups.get(tutorUid)!.push(msg);
     }

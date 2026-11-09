@@ -3,7 +3,9 @@ import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
-import { Lock, User, Phone, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
+import { Lock,
+  Eye,
+  EyeOff, User, Phone, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
@@ -17,6 +19,8 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
   // Password change state
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({ type: 'idle' });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
@@ -159,13 +163,21 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                   <Lock className="w-3.5 h-3.5" />
                 </div>
                 <input
-                  type="password"
+                  type={showNewPassword ? "text" : "password"}
                   required
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
-                  className="w-full pl-9 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600"
+                  className="w-full pl-9 pr-9 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600"
                 />
+                <button
+                  type="button"
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                >
+                  {showNewPassword ? <EyeOff className="w-3.5 h-3.5 text-[#C6A45A]" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
               </div>
             </div>
 
@@ -178,13 +190,21 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                   <Lock className="w-3.5 h-3.5" />
                 </div>
                 <input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   required
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Repeat new password"
-                  className="w-full pl-9 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600"
+                  className="w-full pl-9 pr-9 text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-800 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600"
                 />
+                <button
+                  type="button"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5 text-[#C6A45A]" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
               </div>
             </div>
 

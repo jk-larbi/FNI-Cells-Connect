@@ -21,11 +21,14 @@ interface FinanceViewProps {
   onBack?: () => void;
 }
 
+const getCurrSymbol = (c?: string) => (c === 'GBP' ? '£' : c === 'USD' ? '$' : '₵');
+
 export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
   const { currentUser, isAdmin } = useAuth();
   const [aggregation, setAggregation] = useState<OfferingAggregation | null>(null);
   const [records, setRecords] = useState<OfferingRecord[]>([]);
   const [periodFilter, setPeriodFilter] = useState<'weekly' | 'monthly' | 'quarterly' | 'annual'>('weekly');
+  const [selectedCurrency, setSelectedCurrency] = useState<'ALL' | 'GHS' | 'GBP' | 'USD'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
 
   const loadFinanceData = async () => {
@@ -81,10 +84,34 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
     );
   }
 
-  const weeklySum = aggregation?.weekly.reduce((acc, w) => acc + w.amount, 0) || 0;
-  const monthlySum = aggregation?.monthly.reduce((acc, m) => acc + m.amount, 0) || 0;
-  const quarterlySum = aggregation?.quarterly.reduce((acc, q) => acc + q.amount, 0) || 0;
-  const annualSum = aggregation?.annual || 0;
+  const filteredRecords = selectedCurrency === 'ALL'
+    ? records
+    : records.filter(r => (r.currency || 'GHS') === selectedCurrency);
+
+  const activeSum = filteredRecords.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+  const weeklySum = selectedCurrency === 'ALL'
+    ? (aggregation?.weekly.reduce((acc, w) => acc + w.amount, 0) || 0)
+    : filteredRecords.filter(r => {
+        const d = new Date(r.meetingDate);
+        const now = new Date();
+        return (now.getTime() - d.getTime()) <= 7 * 86400000;
+      }).reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+  const monthlySum = selectedCurrency === 'ALL'
+    ? (aggregation?.monthly.reduce((acc, m) => acc + m.amount, 0) || 0)
+    : filteredRecords.filter(r => {
+        const d = new Date(r.meetingDate);
+        const now = new Date();
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }).reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+  const quarterlySum = selectedCurrency === 'ALL'
+    ? (aggregation?.quarterly.reduce((acc, q) => acc + q.amount, 0) || 0)
+    : filteredRecords.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+  const annualSum = selectedCurrency === 'ALL' ? (aggregation?.annual || activeSum) : activeSum;
+  const currentSymbol = selectedCurrency === 'ALL' ? '₵' : getCurrSymbol(selectedCurrency);
+  const currentLabel = selectedCurrency === 'ALL' ? 'GHS' : selectedCurrency;
 
   return (
     <div className="space-y-6">
@@ -113,6 +140,23 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <span className="text-[10px] font-bold text-[#667085] px-1 uppercase">Currency:</span>
+            {(['ALL', 'GHS', 'GBP', 'USD'] as const).map(curr => (
+              <button
+                key={curr}
+                type="button"
+                onClick={() => setSelectedCurrency(curr)}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  selectedCurrency === curr
+                    ? 'bg-[#142B4A] text-white shadow-xs'
+                    : 'text-[#667085] hover:text-[#142B4A] hover:bg-white/60'
+                }`}
+              >
+                {curr === 'ALL' ? 'All' : `${curr} (${getCurrSymbol(curr)})`}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -135,7 +179,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             </div>
           </div>
           <div className="text-2xl font-black text-navy-950">
-            GHS {weeklySum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currentLabel} {currentSymbol}{weeklySum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">
             Current Monday–Sunday cycle
@@ -150,7 +194,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             </div>
           </div>
           <div className="text-2xl font-black text-navy-950">
-            GHS {monthlySum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currentLabel} {currentSymbol}{monthlySum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <span className="text-[11px] text-slate-400 font-medium mt-1 block">
             Month-to-date total
@@ -165,7 +209,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             </div>
           </div>
           <div className="text-2xl font-black text-navy-950">
-            GHS {quarterlySum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currentLabel} {currentSymbol}{quarterlySum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <span className="text-[11px] text-slate-400 font-medium mt-1 block">
             Q{Math.floor(new Date().getMonth() / 3) + 1} cumulative
@@ -180,7 +224,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             </div>
           </div>
           <div className="text-2xl font-black text-white">
-            GHS {annualSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currentLabel} {currentSymbol}{annualSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <span className="text-[11px] text-gold-300 font-medium mt-1 block">
             {new Date().getFullYear()} Ministry Year-to-Date
@@ -270,7 +314,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
                       {rec.tutorName}
                     </td>
                     <td className="py-3.5 px-4 text-right font-extrabold text-navy-950 whitespace-nowrap">
-                      GHS {rec.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {rec.currency || 'GHS'} {getCurrSymbol(rec.currency)}{rec.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3.5 px-5 text-center whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">

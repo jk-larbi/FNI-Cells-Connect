@@ -1,3 +1,4 @@
+import { Eye, EyeOff } from 'lucide-react';
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 
@@ -8,6 +9,8 @@ interface PasswordRecoveryViewProps {
 export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ onComplete }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -58,17 +61,29 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ onCo
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block text-sm font-semibold text-[#142B4A]">
             New password
-            <input autoComplete="new-password" type="password" minLength={8} required value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-[#E3E8EF] px-4 py-3 text-sm outline-none focus:border-[#142B4A]"
-              placeholder="At least 8 characters" />
+            <div className="relative mt-2">
+              <input autoComplete="new-password" type={showPassword ? "text" : "password"} minLength={8} required value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-[#E3E8EF] pl-4 pr-11 py-3 text-sm outline-none focus:border-[#142B4A]"
+                placeholder="At least 8 characters" />
+              <button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3.5 text-[#667085] hover:text-[#142B4A] focus:outline-none cursor-pointer">
+                {showPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4 text-[#667085]" />}
+              </button>
+            </div>
           </label>
           <label className="block text-sm font-semibold text-[#142B4A]">
             Confirm new password
-            <input autoComplete="new-password" type="password" minLength={8} required value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-[#E3E8EF] px-4 py-3 text-sm outline-none focus:border-[#142B4A]"
-              placeholder="Enter the password again" />
+            <div className="relative mt-2">
+              <input autoComplete="new-password" type={showConfirmPassword ? "text" : "password"} minLength={8} required value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="w-full rounded-xl border border-[#E3E8EF] pl-4 pr-11 py-3 text-sm outline-none focus:border-[#142B4A]"
+                placeholder="Enter the password again" />
+              <button type="button" aria-label={showConfirmPassword ? "Hide password" : "Show password"} onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-3.5 text-[#667085] hover:text-[#142B4A] focus:outline-none cursor-pointer">
+                {showConfirmPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4 text-[#667085]" />}
+              </button>
+            </div>
           </label>
           {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           <button type="submit" disabled={saving}

@@ -88,6 +88,7 @@ export class ReportService {
     absentees: number;
     followUpNeeded: number;
     offering?: number;
+    currency?: string;
     scripturalTheme?: string;
     scripturesUsed?: string;
     tutorNotes?: string;
@@ -160,6 +161,7 @@ export class ReportService {
         tutorUid: report.tutorUid,
         tutorName: report.tutorName,
         amount: report.offering,
+        currency: report.currency,
         meetingDate: report.meetingDate,
         status: report.status,
         submittedAt: report.submittedAt,

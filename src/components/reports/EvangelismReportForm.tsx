@@ -481,7 +481,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                   min="1"
                   required
                   value={preSetTarget}
-                  onChange={e => setPreSetTarget(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={e => setPreSetTarget(e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value) || 1))}
                   className="w-full text-xl font-black text-navy-950 bg-white border border-navy-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
                 />
               </div>
@@ -499,7 +499,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                   type="number"
                   min="0"
                   value={peopleSpokenTo}
-                  onChange={e => setPeopleSpokenTo(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setPeopleSpokenTo(e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
                 />
               </div>
@@ -517,7 +517,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                   type="number"
                   min="0"
                   value={contactsCaptured}
-                  onChange={e => setContactsCaptured(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setContactsCaptured(e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
                 />
               </div>
@@ -535,7 +535,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                   type="number"
                   min="0"
                   value={conversions}
-                  onChange={e => setConversions(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setConversions(e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full text-xl font-black text-amber-900 bg-white border border-gold-400 rounded-xl p-2.5 focus:ring-1 focus:ring-gold-500 focus:outline-none"
                 />
               </div>
@@ -553,7 +553,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                   type="number"
                   min="0"
                   value={interestedInMinistry}
-                  onChange={e => setInterestedInMinistry(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setInterestedInMinistry(e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
                 />
               </div>
@@ -571,7 +571,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                   type="number"
                   min="0"
                   value={potentialFollowUps}
-                  onChange={e => setPotentialFollowUps(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setPotentialFollowUps(e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-1 focus:ring-navy-600 focus:outline-none"
                 />
               </div>

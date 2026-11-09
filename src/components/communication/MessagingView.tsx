@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MessagingService } from '../../services/messagingService';
+import { supabase } from '../../lib/supabase';
 import { CellService } from '../../services/cellService';
 import { PrivateMessage, CommunityMessage, InvitationCode, MessageReply } from '../../types';
 import {
@@ -167,11 +168,29 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       setMemberDirectory(directory);
 
-      const tList = cells.map(c => ({
-        id: c.tutorUid || c.leader_name || c.id,
-        name: c.leader_name || 'Tutor',
-        cellName: c.name,
-      }));
+      const adminConvs = await MessagingService.getAdminConversations();
+      const tutorMap = new Map<string, { id: string; name: string; cellName: string }>();
+
+      cells.forEach(c => {
+        const id = c.tutorUid || c.id;
+        tutorMap.set(id, {
+          id,
+          name: c.leader_name || 'Cell Leader',
+          cellName: c.name,
+        });
+      });
+
+      adminConvs.forEach(conv => {
+        if (!tutorMap.has(conv.tutorUid) && conv.tutorUid !== 'admin') {
+          tutorMap.set(conv.tutorUid, {
+            id: conv.tutorUid,
+            name: conv.tutorName,
+            cellName: conv.cellName || 'Fellowship Cell',
+          });
+        }
+      });
+
+      const tList = Array.from(tutorMap.values());
       setTutorList(tList);
       if (tList.length > 0 && !selectedTutorId) {
         setSelectedTutorId(tList[0].id);
@@ -185,9 +204,39 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     init();
   }, [currentUser, isAdmin]);
 
-  // Load private messages whenever target changes
+  // Realtime subscription + auto-sync for messaging (Zero manual refresh required)
   useEffect(() => {
     loadPrivateMessages();
+
+    // 1. Subscribe to Supabase Realtime for instant push updates
+    const channel = supabase
+      .channel(`realtime:messages:${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'private_messages' },
+        () => {
+          loadPrivateMessages();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'community_messages' },
+        () => {
+          loadCommunity();
+        }
+      )
+      .subscribe();
+
+    // 2. High-reliability polling fallback every 3 seconds for guaranteed message delivery
+    const pollTimer = setInterval(() => {
+      loadPrivateMessages();
+      loadCommunity();
+    }, 3000);
+
+    return () => {
+      clearInterval(pollTimer);
+      supabase.removeChannel(channel);
+    };
   }, [currentUser, isAdmin, selectedTutorId]);
 
   const loadPrivateMessages = async () => {

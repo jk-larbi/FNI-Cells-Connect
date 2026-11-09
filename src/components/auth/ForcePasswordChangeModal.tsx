@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldAlert, Lock, CheckCircle2, AlertCircle, KeyRound, ArrowRight } from 'lucide-react';
+import { ShieldAlert, Lock,
+  Eye,
+  EyeOff, CheckCircle2, AlertCircle, KeyRound, ArrowRight } from 'lucide-react';
 import { Button } from '../common/Button';
 
 export const ForcePasswordChangeModal: React.FC = () => {
   const { changePassword } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -67,13 +71,21 @@ export const ForcePasswordChangeModal: React.FC = () => {
                 <Lock className="w-4 h-4" />
               </div>
               <input
-                type="password"
+                type={showNewPassword ? "text" : "password"}
                 required
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder="Enter new strong password"
-                className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600 font-mono"
+                className="w-full pl-10 pr-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600 font-mono"
               />
+              <button
+                type="button"
+                aria-label={showNewPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+              >
+                {showNewPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -86,13 +98,21 @@ export const ForcePasswordChangeModal: React.FC = () => {
                 <Lock className="w-4 h-4" />
               </div>
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 required
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                className="w-full pl-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600 font-mono"
+                className="w-full pl-10 pr-10 text-xs rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-1 focus:ring-navy-600 focus:border-navy-600 font-mono"
               />
+              <button
+                type="button"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

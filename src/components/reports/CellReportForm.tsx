@@ -55,6 +55,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
   const [absentees, setAbsentees] = useState<number>(initialReport?.visitors_count || 0);
   const [followUpNeeded, setFollowUpNeeded] = useState<number>(initialReport?.follow_ups_conducted || 0);
   const [offering, setOffering] = useState<string>(initialReport?.offering_amount ? String(initialReport.offering_amount) : '');
+  const [currency, setCurrency] = useState<'GHS' | 'GBP' | 'USD'>((initialReport as any)?.currency || 'GHS');
   const [scripturalTheme, setScripturalTheme] = useState<string>((initialReport as any)?.scripturalTheme || initialReport?.meeting_topic || '');
   const [scripturesUsed, setScripturesUsed] = useState<string>((initialReport as any)?.scripturesUsed || '');
   const [tutorNotes, setTutorNotes] = useState<string>(initialReport?.additional_remarks || '');
@@ -175,6 +176,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
         absentees: Number(absentees) || 0,
         followUpNeeded: Number(followUpNeeded) || 0,
         offering: offering ? Number(offering) : undefined,
+        currency: currency,
         scripturalTheme: scripturalTheme.trim(),
         scripturesUsed: scripturesUsed.trim(),
         tutorNotes: tutorNotes.trim(),
@@ -379,7 +381,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                   min="0"
                   required
                   value={attendance}
-                  onChange={e => setAttendance(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setAttendance(e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value) || 0))}
                   placeholder="0"
                   className="w-full text-xl font-black text-emerald-950 bg-white border border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
@@ -396,7 +398,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                   type="number"
                   min="0"
                   value={absentees}
-                  onChange={e => setAbsentees(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setAbsentees(e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value) || 0))}
                   placeholder="0"
                   className="w-full text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-navy-600 focus:outline-none"
                 />
@@ -482,14 +484,26 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                 </span>
               </div>
 
-              {/* Step 3: Offering Collected (Auto-aggregated in Finance) */}
+              {/* Step 3: Offering Collected with Currency Selection */}
               <div className="max-w-xs">
-                <label className="block text-xs font-bold text-[#182230] mb-1">
-                  Offering Collected (Auto-aggregated in Finance)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-[#182230]">
+                    Offering Collected
+                  </label>
+                  <select
+                    value={currency}
+                    aria-label="Currency Selection"
+                    onChange={e => setCurrency(e.target.value as 'GHS' | 'GBP' | 'USD')}
+                    className="text-[11px] font-bold text-[#142B4A] bg-slate-100 border border-slate-200 rounded-lg px-2 py-0.5 focus:outline-none cursor-pointer"
+                  >
+                    <option value="GHS">GHS (₵)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="USD">USD ($)</option>
+                  </select>
+                </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#142B4A] font-black text-sm">
-                    ₵
+                    {currency === 'GBP' ? '£' : currency === 'USD' ? '$' : '₵'}
                   </div>
                   <input
                     type="number"
@@ -502,7 +516,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                   />
                 </div>
                 <span className="text-xs text-[#667085] mt-1 block leading-tight">
-                  Automatically logged for ministry financial reporting
+                  Auto-logged for finance in selected currency ({currency})
                 </span>
               </div>
 

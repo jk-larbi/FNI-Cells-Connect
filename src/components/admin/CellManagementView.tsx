@@ -619,8 +619,9 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 <label className="block font-bold text-[#182230] mb-1">Target Attendance</label>
                 <input
                   type="number"
-                  value={editingCell.target_attendance || 20}
-                  onChange={e => setEditingCell({ ...editingCell, target_attendance: Number(e.target.value) })}
+                  value={editingCell.target_attendance ?? 20}
+                  onChange={e => setEditingCell({ ...editingCell, target_attendance: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value) || 1) })}
+                  onBlur={() => { if (!editingCell.target_attendance) setEditingCell({ ...editingCell, target_attendance: 20 }); }}
                   min={1}
                   className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                 />

@@ -833,7 +833,8 @@ export const AdminManagementView: React.FC = () => {
                 <input
                   type="number"
                   value={newCell.target_attendance}
-                  onChange={e => setNewCell({ ...newCell, target_attendance: parseInt(e.target.value) || 20 })}
+                  onChange={e => setNewCell({ ...newCell, target_attendance: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value) || 1) })}
+                  onBlur={() => { if (!newCell.target_attendance) setNewCell({ ...newCell, target_attendance: 20 }); }}
                   className="w-full rounded-xl border border-slate-200 p-2.5"
                 />
               </div>

@@ -33,6 +33,7 @@ export class FinanceService {
     tutorUid?: string;
     tutorName?: string;
     amount: number;
+    currency?: string;
     meetingDate: string;
     status: any;
     submittedAt?: string;
@@ -52,7 +53,7 @@ export class FinanceService {
       tutorUid: data.tutorUid,
       tutorName: data.tutorName,
       amount: Number(data.amount) || 0,
-      currency: 'GHS',
+      currency: data.currency || 'GHS',
       meetingDate: data.meetingDate,
       weekLabel,
       submittedAt: data.submittedAt || new Date().toISOString(),
@@ -120,7 +121,7 @@ export class FinanceService {
             tutorUid: r.tutorUid,
             tutorName: r.tutorName,
             amount: Number(r.offering),
-            currency: 'GHS',
+            currency: (r as any).currency || 'GHS',
             meetingDate: r.meetingDate,
             weekLabel: `Week ${weekNum} (${dateObj.toLocaleString('default', { month: 'short' })})`,
             submittedAt: r.submittedAt,

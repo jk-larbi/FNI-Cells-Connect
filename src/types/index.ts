@@ -84,6 +84,7 @@ export interface Cell {
   region_name?: string;
   leader_id?: string;
   leader_name?: string;
+  co_leader_name?: string;
   leader_phone?: string;
   meeting_day?: string;
   meeting_time?: string;
@@ -127,6 +128,7 @@ export interface CellMeetingReport {
   absentees: number;
   followUpNeeded: number;
   offering?: number;
+  currency?: string;
   scripturalTheme?: string;
   scripturesUsed?: string;
   tutorNotes?: string;
@@ -425,11 +427,12 @@ export interface AuditLog {
 
 export interface TutorRegistrationInput {
   fullName: string;
-  username: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   cellName: string;
+  coLeaderName?: string;
+  username?: string;
   email?: string;
-  password: string;
+  password?: string;
   confirmPassword?: string;
 }
 

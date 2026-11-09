@@ -37,11 +37,11 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
   const [venueAddress, setVenueAddress] = useState('');
   const [meetingDay, setMeetingDay] = useState('Wednesday');
   const [meetingTime, setMeetingTime] = useState('18:30');
-  const [targetAttendance, setTargetAttendance] = useState(25);
-  const [totalMembers, setTotalMembers] = useState(10);
-  const [activeMembers, setActiveMembers] = useState(8);
-  const [newMembers, setNewMembers] = useState(2);
-  const [requiringFollowUp, setRequiringFollowUp] = useState(0);
+  const [targetAttendance, setTargetAttendance] = useState<number | string>(25);
+  const [totalMembers, setTotalMembers] = useState<number | string>(10);
+  const [activeMembers, setActiveMembers] = useState<number | string>(8);
+  const [newMembers, setNewMembers] = useState<number | string>(2);
+  const [requiringFollowUp, setRequiringFollowUp] = useState<number | string>(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
 
@@ -235,7 +235,8 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                     type="number"
                     min={1}
                     value={totalMembers}
-                    onChange={e => setTotalMembers(Math.max(1, Number(e.target.value) || 1))}
+                    onChange={e => setTotalMembers(e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    onBlur={() => { if (totalMembers === '' || Number(totalMembers) < 1) setTotalMembers(1); }}
                     required
                     className="w-full text-base font-extrabold text-[#142B4A] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
                   />
@@ -248,7 +249,7 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                     type="number"
                     min={0}
                     value={activeMembers}
-                    onChange={e => setActiveMembers(Math.max(0, Number(e.target.value) || 0))}
+                    onChange={e => setActiveMembers(e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0))}
                     required
                     className="w-full text-base font-extrabold text-[#23845B] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
                   />
@@ -261,7 +262,7 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                     type="number"
                     min={0}
                     value={newMembers}
-                    onChange={e => setNewMembers(Math.max(0, Number(e.target.value) || 0))}
+                    onChange={e => setNewMembers(e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0))}
                     required
                     className="w-full text-base font-extrabold text-[#C6A45A] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
                   />
@@ -274,7 +275,7 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                     type="number"
                     min={0}
                     value={requiringFollowUp}
-                    onChange={e => setRequiringFollowUp(Math.max(0, Number(e.target.value) || 0))}
+                    onChange={e => setRequiringFollowUp(e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0))}
                     required
                     className="w-full text-base font-extrabold text-[#C74646] bg-[#F5F7FA] border border-[#E3E8EF] rounded-lg p-2 focus:bg-white"
                   />
@@ -314,7 +315,8 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
                 <input
                   type="number"
                   value={targetAttendance}
-                  onChange={e => setTargetAttendance(Number(e.target.value))}
+                  onChange={e => setTargetAttendance(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  onBlur={() => { if (targetAttendance === '' || Number(targetAttendance) < 1) setTargetAttendance(15); }}
                   min={1}
                   required
                   className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
