@@ -342,46 +342,80 @@ html.dark .vision-statement-card .vision-card-heading {
   color: #e7edf5;
 }
 
-/* Stronger, clearly staggered entrance for the Vision and Mission cards. */
-@keyframes visionCardReveal {
-  0% { opacity: 0; transform: translate3d(0, 28px, 0) scale(.975); filter: blur(3px); }
-  65% { opacity: 1; filter: blur(0); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+
+/* Vision and Mission: guaranteed, clearly visible entrance motion. */
+@keyframes fniStatementEnter {
+  0% { opacity: 0; transform: translateY(34px) scale(.96); }
+  60% { opacity: 1; transform: translateY(-5px) scale(1.005); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes visionCardSweep {
-  0%, 20% { transform: translateX(-130%); opacity: 0; }
-  35% { opacity: .7; }
-  75%, 100% { transform: translateX(130%); opacity: 0; }
-}
-.vision-statement-card {
-  position: relative;
-  isolation: isolate;
-  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+@keyframes fniGoldSweep {
+  0% { transform: translateX(-160%); opacity: 0; }
+  18% { opacity: .9; }
+  100% { transform: translateX(430%); opacity: 0; }
 }
 .vision-statement-card.is-visible {
-  animation: visionCardReveal 1.05s cubic-bezier(.2,.75,.25,1) both;
-}
-.vision-statement-card::after {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 -35%;
-  width: 28%;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgb(198 164 90 / .16), transparent);
-  transform: translateX(-130%);
+  opacity: 1 !important;
+  animation: fniStatementEnter 1.25s cubic-bezier(.16,1,.3,1) both !important;
 }
 .vision-statement-card.is-visible::after {
-  animation: visionCardSweep 1.8s ease-out .35s both;
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: -30%;
+  width: 24%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(198 164 90 / .38), transparent);
+  animation: fniGoldSweep 1.5s ease-out .25s both;
 }
 .vision-statement-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 38px rgb(20 43 74 / .13);
+  transform: translateY(-3px);
   border-color: #C6A45A;
+  box-shadow: 0 16px 34px rgb(20 43 74 / .14);
 }
 @media (prefers-reduced-motion: reduce) {
   .vision-statement-card.is-visible,
-  .vision-statement-card.is-visible::after {
-    animation: none !important;
-  }
-  .vision-statement-card:hover { transform: none; }
+  .vision-statement-card.is-visible::after { animation: none !important; }
 }
+
+/* Dark theme: retain the same spacing, shapes, layout and brand accents.
+   Only surface, text, border and form colours change. */
+html.dark body,
+html.dark #root { background-color: #0b1220 !important; color: #e6edf5 !important; }
+html.dark .bg-white,
+html.dark .bg-white\/95 { background-color: #111c2d !important; }
+html.dark .bg-canvas,
+html.dark .bg-slate-50,
+html.dark .bg-\[\#F5F7FA\] { background-color: #111c2d !important; }
+html.dark .bg-slate-100,
+html.dark .bg-slate-200 { background-color: #1b2a3d !important; }
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-\[\#182230\],
+html.dark .text-\[\#142B4A\],
+html.dark .text-navy-950,
+html.dark .text-navy-900 { color: #e6edf5 !important; }
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-\[\#667085\] { color: #aebdd0 !important; }
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300,
+html.dark .border-\[\#E3E8EF\] { border-color: #34465c !important; }
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select {
+  color: #e6edf5 !important;
+  background-color: #172437 !important;
+  border-color: #40536a !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder { color: #91a1b5 !important; }
+html.dark .vision-statement-card { background-color: #111c2d !important; }
+html.dark .vision-statement-card p,
+html.dark .vision-statement-card .vision-card-heading { color: #e6edf5 !important; }
+html.dark .custom-scrollbar,
+html.dark * { scrollbar-color: #52647a transparent; }
