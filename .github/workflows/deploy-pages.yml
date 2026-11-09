@@ -17,9 +17,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,15 +38,8 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
           VITE_SUPABASE_URL: https://cjskjazsrrbfyjepwyxa.supabase.co
-          VITE_SUPABASE_ANON_KEY: sb_publishable_0nQJMgCvgruw3CXX9YpBIg_Jq2rAx-Q
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -71,3 +61,50 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published site and built assets
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PAGES_URL}" ]; then
+            echo "::error::GitHub Pages did not return a published URL."
+            exit 1
+          fi
+
+          echo "Checking published page: ${PAGES_URL}"
+          curl --fail --location --silent --show-error \
+            --retry 10 --retry-all-errors --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 \
+            "${PAGES_URL}" --output /tmp/fni-pages-index.html
+
+          if ! grep -Fq '<div id="root"></div>' /tmp/fni-pages-index.html; then
+            echo "::error::Published HTML is missing the React application root."
+            exit 1
+          fi
+
+          JS_PATH="$(grep -oE 'src="[^"]+\.js"' /tmp/fni-pages-index.html | head -n 1 | cut -d '"' -f 2 || true)"
+          CSS_PATH="$(grep -oE 'href="[^"]+\.css"' /tmp/fni-pages-index.html | head -n 1 | cut -d '"' -f 2 || true)"
+
+          if [ -z "${JS_PATH}" ]; then
+            echo "::error::No built JavaScript bundle was found in the published HTML."
+            exit 1
+          fi
+
+          PAGES_ORIGIN="$(printf '%s' "${PAGES_URL}" | sed -E 's#^(https?://[^/]+).*#\1#')"
+          for ASSET_PATH in "${JS_PATH}" "${CSS_PATH}"; do
+            [ -z "${ASSET_PATH}" ] && continue
+            case "${ASSET_PATH}" in
+              http://*|https://*) ASSET_URL="${ASSET_PATH}" ;;
+              /*) ASSET_URL="${PAGES_ORIGIN}${ASSET_PATH}" ;;
+              *) ASSET_URL="${PAGES_URL%/}/${ASSET_PATH}" ;;
+            esac
+            echo "Checking asset: ${ASSET_URL}"
+            curl --fail --location --silent --show-error \
+              --retry 5 --retry-all-errors --retry-delay 3 \
+              --connect-timeout 15 --max-time 60 \
+              "${ASSET_URL}" --output /dev/null
+          done
+
+          echo "GitHub Pages HTML and referenced application assets are reachable."
