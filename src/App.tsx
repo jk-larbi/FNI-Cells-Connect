@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppLayout } from './components/layout/AppLayout';
@@ -7,6 +7,8 @@ import { SimpleLandingView } from './components/landing/SimpleLandingView';
 import { LandingPageView } from './components/landing/LandingPageView';
 import { AuthView, AuthFlowView } from './components/auth/AuthView';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
+import { PasswordRecoveryView } from './components/auth/PasswordRecoveryView';
+import { supabase } from './lib/supabase';
 
 const MainContent: React.FC = () => {
   const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
@@ -15,6 +17,22 @@ const MainContent: React.FC = () => {
   // Screen 1: 'vision-mission' (strictly Vision, Mission statements, and 5,000 Soul-Winning Target)
   // Screen 2: 'landing' (Signup and Login portal with logo and platform name)
   const [entryView, setEntryView] = useState<'vision-mission' | 'landing' | 'overview-landing' | AuthFlowView>('vision-mission');
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (isPasswordRecovery) {
+    return <PasswordRecoveryView onComplete={() => {
+      setIsPasswordRecovery(false);
+      setEntryView('login-select');
+    }} />;
+  }
 
   // 1. Unauthenticated Visitor Flow
   if (isLoggedOut || !currentUser || !currentUser.id) {
