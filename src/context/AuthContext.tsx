@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Profile, TutorRegistrationInput, TutorLoginInput, AdminLoginInput } from '../types';
 import { AuthService } from '../services/authService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { EmailNotificationService } from '../services/emailNotificationService';
 
 const GUEST_PROFILE: Profile = {
   id: '',
@@ -134,6 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (result.profile) {
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
+      void EmailNotificationService.loginSucceeded();
       return { success: true };
     }
     return { success: false, error: result.error || 'Administrator login failed' };
@@ -144,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (result.profile) {
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
+      void EmailNotificationService.loginSucceeded();
       return { success: true };
     }
     return { success: false, error: result.error || 'Tutor login failed' };
