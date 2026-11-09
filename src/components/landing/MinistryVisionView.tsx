@@ -70,7 +70,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           {/* 1. VISION STATEMENT */}
           <div
             className={`vision-statement-card p-5 sm:p-6 rounded-3xl bg-white border border-[#E3E8EF] shadow-md shadow-slate-200/50 relative overflow-hidden group ${isLoaded ? 'is-visible' : 'opacity-0'}`}
-            style={{ animationDelay: isLoaded ? '180ms' : '0ms' }}
+            style={{ animationDelay: isLoaded ? '120ms' : '0ms' }}
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
@@ -88,7 +88,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           {/* 2. MISSION STATEMENT */}
           <div
             className={`vision-statement-card p-5 sm:p-6 rounded-3xl bg-white border border-[#E3E8EF] shadow-md shadow-slate-200/50 relative overflow-hidden group ${isLoaded ? 'is-visible' : 'opacity-0'}`}
-            style={{ animationDelay: isLoaded ? '520ms' : '0ms' }}
+            style={{ animationDelay: isLoaded ? '650ms' : '0ms' }}
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
