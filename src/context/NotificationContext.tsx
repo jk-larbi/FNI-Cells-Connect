@@ -72,18 +72,32 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [activeNavigationTarget, setActiveNavigationTarget] = useState<NotificationNavigationTarget | null>(null);
 
-  // Initialize push capabilities
+  // Register the background service worker and restore a real server-backed subscription.
   useEffect(() => {
-    const supported = PushNotificationService.isPushSupported();
-    setIsPushSupported(supported);
-    if (supported) {
-      const perm = PushNotificationService.getPermissionState();
-      setPushPermission(perm);
-      if (currentUser?.id) {
-        const prefs = PushNotificationService.getPreferences(currentUser.id);
-        setIsPushEnabled(prefs.pushEnabled && perm === 'granted');
+    let cancelled = false;
+    const initializePush = async () => {
+      const supported = PushNotificationService.isPushSupported();
+      if (!cancelled) {
+        setIsPushSupported(supported);
+        setPushPermission(PushNotificationService.getPermissionState());
+        setIsPushEnabled(false);
       }
-    }
+      if (!supported) return;
+
+      try {
+        await PushNotificationService.registerServiceWorker();
+        await navigator.serviceWorker.ready;
+        if (currentUser?.id && Notification.permission === 'granted') {
+          const active = await PushNotificationService.syncExistingSubscription();
+          if (!cancelled) setIsPushEnabled(active);
+        }
+      } catch (error) {
+        console.warn('FNI background notification setup notice:', error);
+      }
+      if (!cancelled) setPushPermission(PushNotificationService.getPermissionState());
+    };
+    void initializePush();
+    return () => { cancelled = true; };
   }, [currentUser?.id]);
 
   // Real-time subscription to notifications for the current authenticated user
