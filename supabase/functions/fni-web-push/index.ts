@@ -120,6 +120,43 @@ Deno.serve(async req => {
     return json({ success: true });
   }
 
+  if (action === "test_push") {
+    const { data: devices, error } = await db.from("device_tokens")
+      .select("id,token").eq("user_id", auth.profile.id);
+    if (error) return json({ error: "Could not load this device's push subscription" }, 500);
+    if (!devices?.length) return json({ sent: 0, failed: 0, message: "Enable browser push on this device first." });
+    const { server } = await getPushServer();
+    const payload = JSON.stringify({
+      title: "FNI CELLS CONNECT Test Alert",
+      body: "Background browser push is working on this device.",
+      tag: `fni-test-${Date.now()}`,
+      data: { targetTab: "notifications" },
+      timestamp: new Date().toISOString(),
+    });
+    let sent = 0;
+    let failed = 0;
+    const staleIds: string[] = [];
+    await Promise.all(devices.map(async (device: any) => {
+      let subscription: webpush.PushSubscription;
+      try { subscription = JSON.parse(device.token); } catch { return; }
+      if (!subscription?.endpoint || !subscription?.keys) return;
+      try {
+        await server.subscribe(subscription).pushTextMessage(payload, {
+          ttl: 300,
+          urgency: webpush.Urgency.High,
+        });
+        sent += 1;
+      } catch (error: any) {
+        const status = Number(error?.response?.status || 0);
+        if (status === 404 || status === 410) staleIds.push(device.id);
+        else console.error("Test web push delivery failed:", status, error?.message || error);
+        failed += 1;
+      }
+    }));
+    if (staleIds.length) await db.from("device_tokens").delete().in("id", staleIds);
+    return json({ sent, failed, staleRemoved: staleIds.length });
+  }
+
   if (action === "send_notification") {
     const notification = body?.notification;
     if (!notification?.id || !notification?.title || !notification?.message || !notification?.user_id) {
