@@ -485,3 +485,50 @@ html.dark .vision-statement-card.is-visible {
     transition-timing-function: ease-out;
   }
 }
+
+
+/* Light mode polish — subtle depth and clearer separation, without layout changes. */
+html:not(.dark) {
+  color-scheme: light;
+  background: #f6f8fc;
+}
+html:not(.dark) body {
+  background: #f6f8fc;
+  color: #243247;
+}
+html:not(.dark) main {
+  text-rendering: optimizeLegibility;
+}
+html:not(.dark) .bg-white {
+  border-color: #e7ecf3;
+}
+html:not(.dark) [class*="rounded-"][class*="bg-white"][class*="border"] {
+  box-shadow: 0 2px 10px rgb(20 43 74 / .035);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+html:not(.dark) [class*="rounded-"][class*="bg-white"][class*="border"]:hover {
+  border-color: #d5deea;
+  box-shadow: 0 7px 20px rgb(20 43 74 / .065);
+}
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: #fff;
+  border-color: #dce3ed;
+}
+html:not(.dark) input:focus,
+html:not(.dark) textarea:focus,
+html:not(.dark) select:focus {
+  outline: none;
+  border-color: #c6a45a;
+  box-shadow: 0 0 0 3px rgb(198 164 90 / .13);
+}
+html:not(.dark) ::selection {
+  background: #e9d9b2;
+  color: #142b4a;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not(.dark) [class*="rounded-"][class*="bg-white"][class*="border"] {
+    transition: none;
+  }
+}
