@@ -12,12 +12,11 @@ export const ForcePasswordChangeModal: React.FC = () => {
 
   // Criteria validation
   const minLength = newPassword.length >= 8;
-  const notAdmin123 = newPassword !== 'admin123';
   const hasLetter = /[a-zA-Z]/.test(newPassword);
   const hasNumber = /[0-9]/.test(newPassword);
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
 
-  const isValid = minLength && notAdmin123 && hasLetter && hasNumber && passwordsMatch;
+  const isValid = minLength && hasLetter && hasNumber && passwordsMatch;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +54,7 @@ export const ForcePasswordChangeModal: React.FC = () => {
           <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 text-xs text-amber-900 flex items-start gap-2.5">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p>
-              The temporary credentials (<code className="font-bold bg-amber-100 px-1 py-0.5 rounded">admin123</code>) will be permanently disabled once this step is completed. You cannot skip this process.
+              Your account requires an updated password before accessing the dashboard. You cannot skip this security step.
             </p>
           </div>
 
@@ -109,8 +108,8 @@ export const ForcePasswordChangeModal: React.FC = () => {
             <div className={`flex items-center gap-2 ${hasNumber ? 'text-emerald-600 font-medium' : 'text-slate-400'}`}>
               <CheckCircle2 className="w-3.5 h-3.5" /> Contains numbers
             </div>
-            <div className={`flex items-center gap-2 ${notAdmin123 && newPassword.length > 0 ? 'text-emerald-600 font-medium' : 'text-slate-400'}`}>
-              <CheckCircle2 className="w-3.5 h-3.5" /> Not equal to temporary password (admin123)
+            <div className={`flex items-center gap-2 ${newPassword.length >= 8 ? 'text-emerald-600 font-medium' : 'text-slate-400'}`}>
+              <CheckCircle2 className="w-3.5 h-3.5" /> Minimum 8 characters
             </div>
             <div className={`flex items-center gap-2 ${passwordsMatch ? 'text-emerald-600 font-medium' : 'text-slate-400'}`}>
               <CheckCircle2 className="w-3.5 h-3.5" /> Passwords match

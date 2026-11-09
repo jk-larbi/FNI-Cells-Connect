@@ -41,6 +41,7 @@ export type NotificationType =
 
 export interface Profile {
   id: string;
+  supabase_user_id?: string;
   email: string;
   full_name: string;
   phone_number?: string;
@@ -423,15 +424,22 @@ export interface AuditLog {
 
 export interface TutorRegistrationInput {
   fullName: string;
+  email: string;
   cellName: string;
   password: string;
   confirmPassword?: string;
 }
 
 export interface TutorLoginInput {
-  fullName: string;
+  email?: string;
+  fullName?: string;
   password: string;
   cellName?: string;
+}
+
+export interface AdminLoginInput {
+  email: string;
+  password: string;
 }
 
 export interface CellLeaderRegistrationInput {

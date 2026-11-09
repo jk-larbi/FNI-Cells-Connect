@@ -95,17 +95,12 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       return;
     }
 
-    if (newPassword === 'admin123') {
-      setPassMessage({ text: 'Cannot reuse the temporary password admin123.', isError: true });
-      return;
-    }
-
     setIsChangingPass(true);
     try {
       const res = await changePassword(newPassword);
       if (res.success) {
         setPassMessage({
-          text: 'Administrator password successfully updated. Temporary password is permanently disabled.',
+          text: 'Administrator password successfully updated in Supabase Auth.',
           isError: false,
         });
         setNewPassword('');

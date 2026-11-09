@@ -13,6 +13,7 @@ import {
   AlertCircle,
   LogIn,
   UserPlus,
+  Mail,
 } from 'lucide-react';
 
 export type AuthFlowView = 'tutor-signup' | 'login-select' | 'tutor-login' | 'admin-login';
@@ -37,18 +38,19 @@ export const AuthView: React.FC<AuthViewProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Tutor Registration state (4 fields ONLY)
+  // Tutor Registration state
   const [regFullName, setRegFullName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
   const [regCellName, setRegCellName] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
 
-  // Tutor Login state (3 fields ONLY)
-  const [loginFullName, setLoginFullName] = useState('');
-  const [loginCellName, setLoginCellName] = useState('');
+  // Tutor Login state
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // Administrator Login state (1 field ONLY)
+  // Administrator Login state (Email & Password via Supabase Auth)
+  const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
 
   // Feedback states
@@ -56,14 +58,19 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
 
-  // 1. Handle Tutor Registration
+  // 1. Handle Tutor Registration (Strict Supabase Only)
   const handleTutorSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!regFullName.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
-      setErrorMessage('Please complete all 4 fields.');
+    if (!regFullName.trim() || !regEmail.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
+      setErrorMessage('Please complete all 5 fields.');
+      return;
+    }
+
+    if (!regEmail.includes('@') || !regEmail.includes('.')) {
+      setErrorMessage('Please enter a valid email address.');
       return;
     }
 
@@ -81,6 +88,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     try {
       const res = await registerTutor({
         fullName: regFullName.trim(),
+        email: regEmail.trim(),
         cellName: regCellName.trim(),
         password: regPassword,
         confirmPassword: regConfirmPassword,
@@ -88,6 +96,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
       if (!res.success) {
         setErrorMessage(res.error || 'Registration failed.');
+      } else if (res.needsEmailVerification) {
+        setSuccessNotice(
+          res.verificationNotice ||
+            `Account created! A verification link was sent to ${regEmail}. Please confirm your email before signing in.`
+        );
+        setCurrentView('tutor-login');
+        setLoginIdentifier(regEmail);
       } else {
         setSuccessNotice('Account created successfully! Redirecting...');
         if (onSuccess) onSuccess();
@@ -97,21 +112,22 @@ export const AuthView: React.FC<AuthViewProps> = ({
     }
   };
 
-  // 2. Handle Tutor Login (Full Name and Password ONLY)
+  // 2. Handle Tutor Login (Direct Supabase Auth)
   const handleTutorLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!loginFullName.trim() || !loginPassword) {
-      setErrorMessage('Please enter Full Name and Password.');
+    if (!loginIdentifier.trim() || !loginPassword) {
+      setErrorMessage('Please enter your email (or full name) and password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await loginTutor({
-        fullName: loginFullName.trim(),
+        email: loginIdentifier.includes('@') ? loginIdentifier.trim() : undefined,
+        fullName: !loginIdentifier.includes('@') ? loginIdentifier.trim() : undefined,
         password: loginPassword,
       });
 
@@ -125,20 +141,24 @@ export const AuthView: React.FC<AuthViewProps> = ({
     }
   };
 
-  // 3. Handle Admin Login
+  // 3. Handle Admin Login (Strict Supabase Auth with Server-Side Admin Role Verification)
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!adminPassword) {
-      setErrorMessage('Please enter the administrator password.');
+    if (!adminEmail.trim() || !adminPassword) {
+      setErrorMessage('Please enter both administrator email and password.');
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await loginAdmin(adminPassword);
+      const res = await loginAdmin({
+        email: adminEmail.trim(),
+        password: adminPassword,
+      });
+
       if (!res.success) {
         setErrorMessage(res.error || 'Administrator login failed.');
       } else {
@@ -159,7 +179,11 @@ export const AuthView: React.FC<AuthViewProps> = ({
       </div>
 
       {/* Top Header / Back Navigation */}
-      <div className={`w-full max-w-md mx-auto flex items-center justify-between z-10 mb-2 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+      <div
+        className={`w-full max-w-md mx-auto flex items-center justify-between z-10 mb-2 transition-all duration-700 ${
+          isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+        }`}
+      >
         {currentView === 'login-select' || currentView === 'tutor-signup' ? (
           <button
             type="button"
@@ -198,70 +222,50 @@ export const AuthView: React.FC<AuthViewProps> = ({
             <img
               src="/fni-official-logo.jpg"
               alt="Forerunners Network International Official Logo"
-              className="w-full h-full object-contain rounded-xl"
+              className="w-full h-full object-cover rounded-xl"
             />
           </div>
         </div>
 
-        {/* Platform Name & Thin Gold Divider */}
-        <div
-          className={`transition-all duration-700 delay-150 transform ${
-            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
-          }`}
-        >
-          <h1 className="text-2xl sm:text-3xl font-black text-[#142B4A] tracking-tight leading-none mb-2">
-            FNI CELLS CONNECT
-          </h1>
-
-          <div className="flex items-center justify-center gap-2 w-28 my-1.5 mx-auto">
-            <div className="h-[1.5px] bg-gradient-to-r from-transparent to-[#C6A45A] flex-1" />
-            <div className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]" />
-            <div className="h-[1.5px] bg-gradient-to-l from-transparent to-[#C6A45A] flex-1" />
+        {/* Global Error Banner */}
+        {errorMessage && (
+          <div className="w-full mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-start gap-2.5 text-left animate-shake">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+            <div className="flex-1 font-medium">{errorMessage}</div>
           </div>
-        </div>
+        )}
 
-        {/* Animated Card Container for Current View */}
-        <div
-          className={`w-full mt-4 sm:mt-5 bg-white rounded-3xl border-2 border-[#142B4A]/15 shadow-xl shadow-slate-200/60 p-4 sm:p-7 text-left transition-all duration-700 delay-300 transform ${
-            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-        >
-          {/* Alerts with Smooth Slide-in */}
-          {errorMessage && (
-            <div className="mb-4 p-3 rounded-2xl bg-[#FFF5F5] border-l-4 border-[#C74646] text-[#C74646] flex items-start gap-2.5 text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-300">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
+        {/* Global Success / Email Verification Banner */}
+        {successNotice && (
+          <div className="w-full mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-start gap-2.5 text-left animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+            <div className="flex-1 font-medium">{successNotice}</div>
+          </div>
+        )}
 
-          {successNotice && (
-            <div className="mb-4 p-3 rounded-2xl bg-[#F0FDF4] border-l-4 border-[#23845B] text-[#23845B] flex items-start gap-2.5 text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-300">
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{successNotice}</span>
-            </div>
-          )}
-
+        {/* Card Frame for Current Auth Mode */}
+        <div className="w-full bg-white/90 backdrop-blur-md border border-[#E3E8EF] shadow-2xl rounded-3xl p-6 sm:p-7 transition-all">
           {/* ============================================================ */}
-          {/* 1. TUTOR REGISTRATION PAGE (Animated Staggered Fields)         */}
+          {/* 1. TUTOR REGISTRATION FORM (Strict Supabase Auth)            */}
           {/* ============================================================ */}
           {currentView === 'tutor-signup' && (
             <div className="space-y-4">
               <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#142B4A]/5 border border-[#C6A45A]/30 text-[10px] font-bold text-[#142B4A] uppercase tracking-wider mb-1.5">
                   <UserPlus className="w-3 h-3 text-[#C6A45A]" />
-                  <span>Cell Leader Onboarding</span>
+                  <span>Cell Registration</span>
                 </div>
                 <h2 className="text-lg font-bold text-[#142B4A]">
-                  Create Your Tutor Account
+                  Register Your Fellowship Cell
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Register your cell fellowship and personal credentials.
+                  Provide your genuine email and fellowship details.
                 </p>
               </div>
 
-              <form onSubmit={handleTutorSignUp} className="space-y-3.5">
+              <form onSubmit={handleTutorSignUp} className="space-y-3">
                 {/* 1. Full Name */}
-                <div className="transition-all duration-300">
+                <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
                     1. Full Name <span className="text-[#C74646]">*</span>
                   </label>
@@ -273,15 +277,33 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       value={regFullName}
                       onChange={(e) => setRegFullName(e.target.value)}
                       placeholder="e.g. Samuel Mensah"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all shadow-2xs"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* 2. Cell Name */}
-                <div className="transition-all duration-300">
+                {/* 2. Email Address */}
+                <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    2. Cell Name <span className="text-[#C74646]">*</span>
+                    2. Email Address <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative group">
+                    <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
+                    <input
+                      type="email"
+                      required
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      placeholder="e.g. samuel.mensah@example.com"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Cell Fellowship Name */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    3. Cell Fellowship Name <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -291,15 +313,15 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       value={regCellName}
                       onChange={(e) => setRegCellName(e.target.value)}
                       placeholder="e.g. Grace Fellowship Central"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all shadow-2xs"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* 3. Password */}
-                <div className="transition-all duration-300">
+                {/* 4. Password */}
+                <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    3. Password <span className="text-[#C74646]">*</span>
+                    4. Password <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -308,16 +330,16 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       required
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder="Create a password (min 6 characters)"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all shadow-2xs"
+                      placeholder="Min 6 characters"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* 4. Confirm Password */}
-                <div className="transition-all duration-300">
+                {/* 5. Confirm Password */}
+                <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    4. Confirm Password <span className="text-[#C74646]">*</span>
+                    5. Confirm Password <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <KeyRound className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -327,7 +349,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       value={regConfirmPassword}
                       onChange={(e) => setRegConfirmPassword(e.target.value)}
                       placeholder="Repeat password"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all shadow-2xs"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -339,7 +361,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group active:scale-[0.99] border border-[#142B4A]"
                 >
                   <UserPlus className="w-4 h-4 text-[#C6A45A]" />
-                  <span>{isLoading ? 'Creating Account...' : 'Sign Up'}</span>
+                  <span>{isLoading ? 'Registering in Supabase...' : 'Sign Up'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </form>
@@ -449,7 +471,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           )}
 
           {/* ============================================================ */}
-          {/* 3. TUTOR LOGIN FORM (Full Name and Password ONLY)            */}
+          {/* 3. TUTOR LOGIN FORM (Direct Supabase Auth)                   */}
           {/* ============================================================ */}
           {currentView === 'tutor-login' && (
             <div className="space-y-4">
@@ -462,31 +484,31 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Tutor Log In
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Enter your registered full name and password.
+                  Sign in with your email or registered full name.
                 </p>
               </div>
 
               <form onSubmit={handleTutorLogin} className="space-y-3.5">
-                {/* 1. Full Name */}
-                <div>
+                {/* 1. Email or Full Name */}
+                <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Full Name <span className="text-[#C74646]">*</span>
+                    Email Address or Full Name <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
-                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
+                    <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
                     <input
                       type="text"
                       required
-                      value={loginFullName}
-                      onChange={(e) => setLoginFullName(e.target.value)}
-                      placeholder="Enter your registered full name"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all shadow-2xs"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      placeholder="e.g. samuel.mensah@example.com"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
                 </div>
 
                 {/* 2. Password */}
-                <div>
+                <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
                     Password <span className="text-[#C74646]">*</span>
                   </label>
@@ -498,7 +520,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="Enter your password"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all shadow-2xs"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -533,7 +555,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           )}
 
           {/* ============================================================ */}
-          {/* 4. ADMINISTRATOR LOGIN FORM                                  */}
+          {/* 4. ADMINISTRATOR LOGIN FORM (Strict Supabase Auth)           */}
           {/* ============================================================ */}
           {currentView === 'admin-login' && (
             <div className="space-y-4">
@@ -546,14 +568,31 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Administrator Log In
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Enter authorized administrator password:
+                  Sign in with your verified administrator credentials.
                 </p>
               </div>
 
               <form onSubmit={handleAdminLogin} className="space-y-3.5">
-                <div>
+                <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Administrator Password <span className="text-[#C74646]">*</span>
+                    Administrator Email <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative group">
+                    <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
+                    <input
+                      type="email"
+                      required
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      placeholder="e.g. pastor@fnicells.org"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    Password <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -562,24 +601,19 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       required
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="Enter password"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all shadow-2xs"
+                      placeholder="Enter administrator password"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-slate-50 border border-[#C6A45A]/40 text-[11px] text-[#667085]">
-                  <span className="font-semibold text-[#142B4A]">Initial Login Note: </span>
-                  Default is <code className="bg-white px-1.5 py-0.5 rounded border border-[#E3E8EF] font-mono font-bold text-[#142B4A]">admin123</code>. You will configure your permanent password on first sign in.
                 </div>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-3 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group active:scale-[0.99] border border-[#142B4A]"
+                  className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group active:scale-[0.99] border border-[#142B4A]"
                 >
                   <Shield className="w-4 h-4 text-[#C6A45A]" />
-                  <span>{isLoading ? 'Authenticating...' : 'Log In'}</span>
+                  <span>{isLoading ? 'Verifying with Supabase...' : 'Log In as Administrator'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </form>

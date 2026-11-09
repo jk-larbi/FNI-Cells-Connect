@@ -1,18 +1,18 @@
 /**
  * Forerunners Network International (FNI) - Digital Reporting System
- * Pure Supabase Authentication & Identity Service
+ * Pure Supabase Authentication & Identity Service (Strict Production Backend)
  * 
- * Features:
+ * Strict Security Rules:
  * - 100% Supabase Auth native integration (signUp, signInWithPassword, signOut, resetPassword)
- * - Zero Firebase dependencies
- * - Robust account provisioning: auto-creates Profile in Supabase PostgreSQL
- * - Strict security: self-registration NEVER grants administrative roles (always 'tutor')
- * - Full session persistence, automatic token refresh, and lifecycle synchronization
- * - Fallback to secure client-side PBKDF2 password cryptography for offline resilience
+ * - Zero artificial email addresses; requires genuine user email address
+ * - Zero local-only account creation or PBKDF2 local password hash storage
+ * - Zero client-side administrator bypasses (admin123 and demo role-switching permanently removed)
+ * - Strict server-side role verification: self-registration NEVER grants administrative roles (always 'tutor')
+ * - Full email verification handling: users without confirmed session cannot access protected sessions
+ * - Complete session persistence, automatic token refresh, and lifecycle synchronization
  */
 
-import { Profile, Cell, TutorRegistrationInput, TutorLoginInput } from '../types';
-import { INITIAL_PROFILES } from './mockData';
+import { Profile, Cell, TutorRegistrationInput, TutorLoginInput, AdminLoginInput } from '../types';
 import { supabase, isSupabaseConfigured, setSupabaseAccessToken } from '../lib/supabase';
 import { ReportService } from './reportService';
 import { CellService, normalizeCellName } from './cellService';
@@ -21,171 +21,142 @@ import { SyncStateService } from './syncStateService';
 
 const STORAGE_KEYS = {
   CURRENT_PROFILE: 'fni_current_profile_v6_strict',
-  PROFILES_LIST: 'fni_profiles_directory_v6_strict',
-  ADMIN_SECURITY: 'fni_admin_security_config_v6_strict',
-  TUTOR_CREDS: 'fni_tutor_secure_creds_v6_strict',
   ACTIVE_SESSION: 'fni_active_session_v6_strict',
+  PROFILES_DIRECTORY: 'fni_profiles_directory_v6_strict',
 };
-
-interface AdminSecurityConfig {
-  initialConfigured: boolean;
-  passwordSalt?: string;
-  passwordHash?: string;
-  configuredAt?: string;
-}
-
-interface StoredTutorCredential {
-  uid: string;
-  fullName: string;
-  email: string;
-  cellName: string;
-  normalizedCell: string;
-  salt: string;
-  hash: string;
-  createdAt: string;
-}
-
-/**
- * Client-side Cryptographic PBKDF2 Password Hasher (Web Crypto API)
- * Ensures passwords are NEVER stored in plain text anywhere in storage or database
- */
-async function hashPasswordWithSalt(password: string, existingSalt?: string): Promise<{ salt: string; hash: string }> {
-  const enc = new TextEncoder();
-  const salt = existingSalt || Array.from(crypto.getRandomValues(new Uint8Array(16)))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(password),
-    { name: 'PBKDF2' },
-    false,
-    ['deriveBits', 'deriveKey']
-  );
-
-  const derivedBits = await crypto.subtle.deriveBits(
-    {
-      name: 'PBKDF2',
-      salt: enc.encode(salt),
-      iterations: 100000,
-      hash: 'SHA-256',
-    },
-    keyMaterial,
-    256
-  );
-
-  const hash = Array.from(new Uint8Array(derivedBits))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-  return { salt, hash };
-}
-
-async function verifyPassword(password: string, salt: string, storedHash: string): Promise<boolean> {
-  const { hash } = await hashPasswordWithSalt(password, salt);
-  return hash === storedHash;
-}
 
 export class AuthService {
   // --- Persistent Storage Helpers ---
   static getAllProfiles(): Profile[] {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.PROFILES_LIST);
+      const stored = localStorage.getItem(STORAGE_KEYS.PROFILES_DIRECTORY);
       if (stored) return JSON.parse(stored);
     } catch (e) {
       console.warn('Failed to parse stored profiles', e);
     }
-    return INITIAL_PROFILES;
+    return [];
   }
 
   static saveProfiles(profiles: Profile[]): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.PROFILES_LIST, JSON.stringify(profiles));
+      localStorage.setItem(STORAGE_KEYS.PROFILES_DIRECTORY, JSON.stringify(profiles));
     } catch (e) {
       console.warn('Failed to save profiles to localStorage', e);
     }
   }
 
-  static getAdminSecurityConfig(): AdminSecurityConfig {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.ADMIN_SECURITY);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      // fallback
-    }
-    return {
-      initialConfigured: false,
-    };
-  }
-
-  static saveAdminSecurityConfig(config: AdminSecurityConfig): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ADMIN_SECURITY, JSON.stringify(config));
-    } catch (e) {
-      console.warn('Failed to save admin security config', e);
-    }
-  }
-
-  private static getStoredTutorCredentials(): Record<string, StoredTutorCredential> {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.TUTOR_CREDS);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  private static saveTutorCredential(key: string, cred: StoredTutorCredential): void {
-    try {
-      const all = this.getStoredTutorCredentials();
-      all[key.toLowerCase().trim()] = cred;
-      localStorage.setItem(STORAGE_KEYS.TUTOR_CREDS, JSON.stringify(all));
-    } catch (e) {
-      console.warn('Failed to save tutor credential locally', e);
-    }
-  }
-
-  static getCurrentProfile(): Profile {
+  static getCurrentProfile(): Profile | null {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_PROFILE);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      // fallback
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
     }
-    return INITIAL_PROFILES[0];
   }
 
-  static setCurrentProfile(profile: Profile): void {
+  static setCurrentProfile(profile: Profile | null): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_PROFILE, JSON.stringify(profile));
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, profile.id);
+      if (profile) {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_PROFILE, JSON.stringify(profile));
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, profile.id);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROFILE);
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+      }
     } catch (e) {
-      console.warn('Failed to save current profile locally', e);
+      console.warn('Failed to update current profile in localStorage', e);
     }
   }
 
+  /**
+   * Fetches the authoritative profile for a given user ID from Supabase.
+   */
   static async fetchProfileById(userId: string): Promise<Profile | null> {
-    const remote = await SupabaseService.getProfile(userId);
-    if (remote) {
-      this.setCurrentProfile(remote);
-      return remote;
+    if (!isSupabaseConfigured || !supabase) return null;
+    try {
+      const remote = await SupabaseService.getProfile(userId);
+      if (remote) {
+        this.setCurrentProfile(remote);
+        return remote;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch profile by id:', e);
     }
-    const local = this.getAllProfiles().find(p => p.id === userId);
-    return local || null;
+    return null;
   }
 
-  // --- 1. TUTOR REGISTRATION (SUPABASE AUTH + ACCOUNT PROVISIONING) ---
+  /**
+   * Validates that the active client session matches a real, active Supabase session.
+   * Returns the verified Profile or null if unauthenticated.
+   */
+  static async getVerifiedSessionProfile(): Promise<Profile | null> {
+    if (!isSupabaseConfigured || !supabase) {
+      this.setCurrentProfile(null);
+      return null;
+    }
+
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session?.user) {
+        this.setCurrentProfile(null);
+        return null;
+      }
+
+      // Authoritative profile lookup
+      const profile = await SupabaseService.getProfile(session.user.id);
+      if (profile) {
+        if (!profile.is_active) {
+          await supabase.auth.signOut();
+          this.setCurrentProfile(null);
+          return null;
+        }
+        this.setCurrentProfile(profile);
+        return profile;
+      }
+
+      // Reconstruct standard tutor profile if trigger delay
+      const reconstructed: Profile = {
+        id: session.user.id,
+        supabase_user_id: session.user.id,
+        email: session.user.email || '',
+        full_name: session.user.user_metadata?.full_name || 'Fellowship Tutor',
+        cell_name: session.user.user_metadata?.cell_name || undefined,
+        role: 'tutor', // STRICT: Standard user default
+        is_active: true,
+        is_onboarded: true,
+        must_change_password: false,
+        created_at: session.user.created_at || new Date().toISOString(),
+      };
+      await SupabaseService.upsertProfile(reconstructed);
+      this.setCurrentProfile(reconstructed);
+      return reconstructed;
+    } catch (err) {
+      console.warn('Session verification exception:', err);
+      this.setCurrentProfile(null);
+      return null;
+    }
+  }
+
+  // --- 1. TUTOR REGISTRATION (STRICT SUPABASE AUTH ONLY) ---
   static async registerTutor(input: TutorRegistrationInput): Promise<{
     profile: Profile | null;
     cell: Cell | null;
     error: string | null;
+    needsEmailVerification?: boolean;
     verificationNotice?: string;
   }> {
-    const cleanName = input.fullName.trim();
-    const cleanCellName = input.cellName.trim();
+    const cleanName = input.fullName?.trim();
+    const cleanEmail = input.email?.trim().toLowerCase();
+    const cleanCellName = input.cellName?.trim();
     const password = input.password || '';
 
-    // Validation
-    if (!cleanName || !cleanCellName || !password) {
-      return { profile: null, cell: null, error: 'Full name, cell name, and password are required.' };
+    // Strict validation
+    if (!cleanName || !cleanEmail || !cleanCellName || !password) {
+      return { profile: null, cell: null, error: 'Full name, email address, cell name, and password are required.' };
+    }
+
+    if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      return { profile: null, cell: null, error: 'Please enter a valid email address.' };
     }
 
     if (password.length < 6) {
@@ -196,210 +167,152 @@ export class AuthService {
       return { profile: null, cell: null, error: 'Passwords do not match.' };
     }
 
-    const normalizedCell = normalizeCellName(cleanCellName);
-
-    // 1. Check duplicate cell registration
-    const allCells = await CellService.getCells();
-    const existing = allCells.find(c => {
-      const existingNorm = c.normalized_name || normalizeCellName(c.name);
-      return existingNorm === normalizedCell;
-    });
-
-    if (existing) {
+    if (!isSupabaseConfigured || !supabase) {
       return {
         profile: null,
         cell: null,
-        error: `Cell "${cleanCellName}" is already registered. If this is your cell, please select "Login" instead.`,
+        error: 'Supabase authentication service is unavailable. Please check backend connection.',
       };
     }
 
-    // 2. Resolve or generate valid Supabase email address
-    let email = (input as any).email?.trim();
-    if (!email || !email.includes('@')) {
-      // Format valid email with domain accepted by GoTrue
-      const sanitizedName = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const uniqueSuffix = Date.now().toString().slice(-4);
-      email = `${sanitizedName}.${uniqueSuffix}@gmail.com`;
-    }
+    const normalizedCell = normalizeCellName(cleanCellName);
 
-    let supabaseUid: string | null = null;
-    let emailVerificationRequired = false;
+    // Check duplicate cell registration in Supabase
+    try {
+      const allCells = await CellService.getCells();
+      const existing = allCells.find(c => {
+        const existingNorm = c.normalized_name || normalizeCellName(c.name);
+        return existingNorm === normalizedCell;
+      });
 
-    // 3. Register user in Supabase Auth
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: cleanName,
-              cell_name: cleanCellName,
-              role: 'tutor', // STRICT: Enforce tutor role on registration
-            },
-          },
-        });
-
-        if (authError) {
-          console.warn('Supabase Auth signUp notice:', authError.message);
-          // If error is duplicate email, report clearly
-          if (authError.message.toLowerCase().includes('already registered')) {
-            return { profile: null, cell: null, error: 'An account with this name/email already exists. Please log in.' };
-          }
-          return { profile: null, cell: null, error: authError.message };
-        }
-
-        if (authData?.user) {
-          supabaseUid = authData.user.id;
-          if (!authData.session) {
-            emailVerificationRequired = true;
-          }
-        }
-      } catch (err: any) {
-        console.warn('Supabase Auth signup exception:', err);
+      if (existing) {
+        return {
+          profile: null,
+          cell: null,
+          error: `Cell "${cleanCellName}" is already registered. If this is your cell, please select "Login" instead.`,
+        };
       }
-    }
-
-    const uid = supabaseUid || `tutor-${Date.now()}`;
-    const cellId = `cell-${Date.now()}`;
-    const nowIso = new Date().toISOString();
-
-    // 4. Register Cell Fellowship
-    const newCell: Cell = {
-      id: cellId,
-      name: cleanCellName,
-      normalized_name: normalizedCell,
-      location: 'Central Campus',
-      code: `FNI-CEL-${(allCells.length + 1).toString().padStart(3, '0')}`,
-      tutorUid: uid,
-      leader_id: uid,
-      leader_name: cleanName,
-      meeting_day: 'Wednesday',
-      meeting_time: '18:30',
-      venue_address: 'Fellowship Center',
-      target_attendance: 25,
-      status: 'Active',
-      is_active: true,
-      created_at: nowIso,
-    };
-    await CellService.updateCell(newCell);
-
-    // 5. Create Profile (Role strictly enforced as 'tutor')
-    const newProfile: Profile = {
-      id: uid,
-      email,
-      full_name: cleanName,
-      cell_id: cellId,
-      cell_name: cleanCellName,
-      role: 'tutor', // STRICT: Never allow self-elevation to admin
-      is_active: true,
-      is_onboarded: true,
-      must_change_password: false,
-      auth_provider: 'email',
-      created_at: nowIso,
-    };
-
-    // Save profile locally
-    const allProfiles = this.getAllProfiles();
-    this.saveProfiles([newProfile, ...allProfiles]);
-
-    // Save salt and hash securely for local fallback
-    const { salt, hash } = await hashPasswordWithSalt(password);
-    this.saveTutorCredential(`${cleanName.toLowerCase()}::${normalizedCell}`, {
-      uid,
-      fullName: cleanName,
-      email,
-      cellName: cleanCellName,
-      normalizedCell,
-      salt,
-      hash,
-      createdAt: nowIso,
-    });
-    // Also save by clean name and by email
-    this.saveTutorCredential(cleanName.toLowerCase(), {
-      uid,
-      fullName: cleanName,
-      email,
-      cellName: cleanCellName,
-      normalizedCell,
-      salt,
-      hash,
-      createdAt: nowIso,
-    });
-    this.saveTutorCredential(email.toLowerCase(), {
-      uid,
-      fullName: cleanName,
-      email,
-      cellName: cleanCellName,
-      normalizedCell,
-      salt,
-      hash,
-      createdAt: nowIso,
-    });
-
-    // 6. Save in Supabase PostgreSQL
-    try {
-      await SupabaseService.upsertProfile(newProfile);
     } catch (e) {
-      console.warn('Supabase upsertProfile notice:', e);
+      console.warn('Notice checking duplicate cell:', e);
     }
 
-    this.setCurrentProfile(newProfile);
-
-    // Trigger retry of any queued offline sync writes
-    SyncStateService.retryPendingSync().catch(() => {});
-
-    // 7. Audit log & Notification
-    ReportService.recordAuditLog({
-      action: 'TUTOR_REGISTERED_CELL',
-      entity_type: 'users',
-      entity_id: newProfile.id,
-      details: {
-        tutor_name: newProfile.full_name,
-        cell_name: newCell.name,
-      },
-    });
-
+    // Register user directly in Supabase Auth
     try {
-      const { NotificationService } = await import('./notificationService');
-      await NotificationService.createNotification({
-        userId: 'admin',
-        title: 'New Fellowship Cell & Tutor Registered',
-        message: `${cleanName} has registered "${cleanCellName}" in the fellowship directory.`,
-        type: 'system_alert',
-        channel: 'in_app',
-        metadata: {
-          targetTab: 'cell-management',
-          cellId,
-          cellName: cleanCellName,
-          tutorUid: uid,
-          tutorName: cleanName,
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            full_name: cleanName,
+            cell_name: cleanCellName,
+            role: 'tutor', // STRICT: Always assign 'tutor' on self-signup
+          },
         },
       });
-    } catch (e) {
-      console.warn('Failed to notify admin of tutor registration:', e);
-    }
 
-    return {
-      profile: newProfile,
-      cell: newCell,
-      error: null,
-      verificationNotice: emailVerificationRequired
-        ? 'Account registered! If email confirmation is enabled, please verify your email before next sign-in.'
-        : undefined,
-    };
+      if (authError) {
+        return { profile: null, cell: null, error: authError.message };
+      }
+
+      if (!authData?.user) {
+        return { profile: null, cell: null, error: 'Failed to create user account in Supabase Auth.' };
+      }
+
+      const uid = authData.user.id;
+      const cellId = `cell-${Date.now()}`;
+      const nowIso = new Date().toISOString();
+
+      // Register Cell Fellowship in Supabase
+      const newCell: Cell = {
+        id: cellId,
+        name: cleanCellName,
+        normalized_name: normalizedCell,
+        location: 'Fellowship Center',
+        code: `FNI-CEL-${Date.now().toString().slice(-4)}`,
+        tutorUid: uid,
+        leader_id: uid,
+        leader_name: cleanName,
+        meeting_day: 'Wednesday',
+        meeting_time: '18:30',
+        venue_address: 'Fellowship Center',
+        target_attendance: 25,
+        status: 'Active',
+        is_active: true,
+        created_at: nowIso,
+      };
+      await CellService.updateCell(newCell);
+
+      // Handle Email Verification Requirement
+      if (!authData.session) {
+        // Supabase has email confirmation enabled; user cannot sign in until email link is verified
+        return {
+          profile: null,
+          cell: newCell,
+          error: null,
+          needsEmailVerification: true,
+          verificationNotice: 'Registration successful! A confirmation email has been sent to your inbox. Please click the link to verify your email before logging in.',
+        };
+      }
+
+      // If active session was returned immediately (autoconfirm enabled or session active)
+      const newProfile: Profile = {
+        id: uid,
+        supabase_user_id: uid,
+        email: cleanEmail,
+        full_name: cleanName,
+        cell_id: cellId,
+        cell_name: cleanCellName,
+        role: 'tutor', // STRICT: Never allow self-elevation to admin
+        is_active: true,
+        is_onboarded: true,
+        must_change_password: false,
+        auth_provider: 'email',
+        created_at: nowIso,
+      };
+
+      await SupabaseService.upsertProfile(newProfile);
+      this.setCurrentProfile(newProfile);
+
+      // Audit log & Notification
+      ReportService.recordAuditLog({
+        action: 'TUTOR_REGISTERED_CELL',
+        entity_type: 'users',
+        entity_id: uid,
+        details: {
+          tutor_name: cleanName,
+          cell_name: cleanCellName,
+        },
+      });
+
+      return {
+        profile: newProfile,
+        cell: newCell,
+        error: null,
+        needsEmailVerification: false,
+      };
+    } catch (err: any) {
+      return {
+        profile: null,
+        cell: null,
+        error: err?.message || 'An unexpected error occurred during registration.',
+      };
+    }
   }
 
-  // --- 2. TUTOR LOGIN (SUPABASE AUTH EMAIL/PASSWORD + CREDENTIAL LOOKUP) ---
+  // --- 2. TUTOR LOGIN (AUTHENTICATE DIRECTLY AGAINST SUPABASE AUTH) ---
   static async signInTutor(input: TutorLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
-    const rawIdentifier = input.fullName.trim();
+    const rawIdentifier = (input.email || input.fullName || '').trim();
     const password = input.password || '';
 
     if (!rawIdentifier || !password) {
-      return { profile: null, error: 'Full name and password are required.' };
+      return { profile: null, error: 'Email (or registered name) and password are required.' };
     }
 
-    // 1. Check if user identifier is an email or a full name
+    if (!isSupabaseConfigured || !supabase) {
+      return { profile: null, error: 'Supabase authentication service is unavailable.' };
+    }
+
+    // 1. Resolve email
     let targetEmail: string | null = null;
     let targetFullName = rawIdentifier;
 
@@ -407,315 +320,220 @@ export class AuthService {
       targetEmail = rawIdentifier.toLowerCase();
     } else {
       // Look up email by Full Name in Supabase
-      if (isSupabaseConfigured && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('email, id, full_name, cell_name')
-            .ilike('full_name', rawIdentifier)
-            .limit(1);
-
-          if (!error && data && data.length > 0 && data[0].email) {
-            targetEmail = data[0].email;
-            targetFullName = data[0].full_name;
-          }
-        } catch (e) {
-          console.warn('Supabase profile email lookup notice:', e);
-        }
-      }
-
-      // Check local stored tutor credentials
-      if (!targetEmail) {
-        const creds = this.getStoredTutorCredentials();
-        const cred = creds[rawIdentifier.toLowerCase()];
-        if (cred?.email) {
-          targetEmail = cred.email;
-        }
-      }
-    }
-
-    // 2. Authenticate with Supabase Auth if configured and email resolved
-    if (isSupabaseConfigured && supabase && targetEmail) {
       try {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: targetEmail,
-          password,
-        });
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .ilike('full_name', rawIdentifier)
+          .limit(1);
 
-        if (!authError && authData?.user) {
-          // Fetch authoritative profile from Supabase
-          let profile = await SupabaseService.getProfile(authData.user.id);
-          if (!profile) {
-            // Reconstruct from auth metadata if not yet created in public.profiles
-            profile = {
-              id: authData.user.id,
-              email: authData.user.email || targetEmail,
-              full_name: authData.user.user_metadata?.full_name || targetFullName,
-              cell_name: authData.user.user_metadata?.cell_name || undefined,
-              role: (authData.user.user_metadata?.role as any) || 'tutor',
-              is_active: true,
-              is_onboarded: true,
-              must_change_password: false,
-              created_at: authData.user.created_at || new Date().toISOString(),
-            };
-            await SupabaseService.upsertProfile(profile);
-          }
-
-          this.setCurrentProfile(profile);
-          SyncStateService.retryPendingSync().catch(() => {});
-          return { profile, error: null };
-        } else if (authError) {
-          console.warn('Supabase Auth signIn notice:', authError.message);
-          if (authError.message.includes('Email not confirmed')) {
-            return {
-              profile: null,
-              error: 'Email address not yet confirmed. Please check your inbox for the confirmation link.',
-            };
-          }
-          if (authError.message.includes('Invalid login credentials')) {
-            // Also attempt local fallback before rejecting
-          }
+        if (!error && data && data.length > 0 && data[0].email) {
+          targetEmail = data[0].email;
+          targetFullName = data[0].full_name;
         }
-      } catch (err: any) {
-        console.warn('Supabase Auth login exception:', err);
+      } catch (e) {
+        console.warn('Supabase profile email lookup notice:', e);
       }
     }
 
-    // 3. Fallback: Authenticate via Stored Cryptographic PBKDF2 Credentials
-    const storedCreds = this.getStoredTutorCredentials();
-    const candidateCred = storedCreds[rawIdentifier.toLowerCase()] ||
-      Object.values(storedCreds).find(c =>
-        c.fullName.toLowerCase() === rawIdentifier.toLowerCase() ||
-        c.email.toLowerCase() === rawIdentifier.toLowerCase()
-      );
+    if (!targetEmail) {
+      return { profile: null, error: 'No account found matching this name/email. Please check your credentials or register.' };
+    }
 
-    if (candidateCred) {
-      const isMatch = await verifyPassword(password, candidateCred.salt, candidateCred.hash);
-      if (isMatch) {
-        const allProfiles = this.getAllProfiles();
-        const profile = allProfiles.find(p => p.id === candidateCred.uid) || {
-          id: candidateCred.uid,
-          email: candidateCred.email || `${candidateCred.normalizedCell}@fnicells.org`,
-          full_name: candidateCred.fullName,
-          cell_name: candidateCred.cellName,
-          role: 'tutor' as const,
+    // 2. Authenticate directly with Supabase Auth
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password,
+      });
+
+      if (authError) {
+        if (authError.message.includes('Email not confirmed')) {
+          return {
+            profile: null,
+            error: 'Your email address has not been confirmed yet. Please check your inbox for the confirmation link.',
+          };
+        }
+        return { profile: null, error: authError.message || 'Invalid email or password.' };
+      }
+
+      if (!authData?.user) {
+        return { profile: null, error: 'Authentication failed. No user returned by Supabase.' };
+      }
+
+      // Fetch authoritative profile from Supabase
+      let profile = await SupabaseService.getProfile(authData.user.id);
+      if (!profile) {
+        profile = {
+          id: authData.user.id,
+          supabase_user_id: authData.user.id,
+          email: authData.user.email || targetEmail,
+          full_name: authData.user.user_metadata?.full_name || targetFullName,
+          cell_name: authData.user.user_metadata?.cell_name || undefined,
+          role: 'tutor', // STRICT: Fallback to standard tutor role
           is_active: true,
           is_onboarded: true,
           must_change_password: false,
-          created_at: candidateCred.createdAt,
+          created_at: authData.user.created_at || new Date().toISOString(),
         };
-
-        this.setCurrentProfile(profile);
-        return { profile, error: null };
+        await SupabaseService.upsertProfile(profile);
       }
-    }
 
-    return { profile: null, error: 'Invalid name/email or password. Please verify your credentials.' };
+      if (!profile.is_active) {
+        await supabase.auth.signOut();
+        this.setCurrentProfile(null);
+        return { profile: null, error: 'This account has been deactivated. Please contact church leadership.' };
+      }
+
+      this.setCurrentProfile(profile);
+      SyncStateService.retryPendingSync().catch(() => {});
+      return { profile, error: null };
+    } catch (err: any) {
+      return { profile: null, error: err?.message || 'Login failed unexpectedly.' };
+    }
   }
 
-  // --- 3. SUSPEND & REACTIVATE TUTOR ---
-  static async suspendTutor(tutorUid: string, reason?: string, adminName?: string): Promise<boolean> {
-    const allProfiles = this.getAllProfiles();
-    const target = allProfiles.find(p => p.id === tutorUid);
-    if (!target) return false;
+  // --- 3. ADMINISTRATOR AUTHENTICATION (AUTHENTICATE DIRECTLY AGAINST SUPABASE AUTH) ---
+  static async signInAdmin(input: AdminLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
+    const email = input.email?.trim().toLowerCase();
+    const password = input.password || '';
 
-    target.is_active = false;
-    this.saveProfiles(allProfiles);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('profiles').update({ is_active: false }).eq('id', tutorUid);
-      } catch (e) {
-        console.warn('Supabase suspendTutor error:', e);
-      }
+    if (!email || !password) {
+      return { profile: null, error: 'Administrator email and password are required.' };
     }
 
-    ReportService.recordAuditLog({
-      action: 'TUTOR_SUSPENDED',
-      entity_type: 'users',
-      entity_id: tutorUid,
-      details: { reason: reason || 'Administrative suspension', suspended_by: adminName || 'Admin' },
-    });
+    if (!isSupabaseConfigured || !supabase) {
+      return { profile: null, error: 'Supabase authentication service is unavailable.' };
+    }
 
-    return true;
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        return { profile: null, error: authError.message || 'Invalid administrator credentials.' };
+      }
+
+      if (!authData?.user) {
+        return { profile: null, error: 'Administrator authentication failed.' };
+      }
+
+      // Authoritative profile lookup from Supabase
+      const profile = await SupabaseService.getProfile(authData.user.id);
+      if (!profile) {
+        await supabase.auth.signOut();
+        this.setCurrentProfile(null);
+        return { profile: null, error: 'Administrator profile not found in Supabase database.' };
+      }
+
+      // STRICT: Verify role is genuinely administrative in Supabase PostgreSQL
+      const isAdminRole =
+        profile.role === 'admin' ||
+        profile.role === 'super_admin' ||
+        profile.role === 'national_admin';
+
+      if (!isAdminRole) {
+        // User is authenticated in Supabase, but is not an authorized administrator
+        await supabase.auth.signOut();
+        this.setCurrentProfile(null);
+        return {
+          profile: null,
+          error: 'Access denied: This account does not possess administrator privileges.',
+        };
+      }
+
+      if (!profile.is_active) {
+        await supabase.auth.signOut();
+        this.setCurrentProfile(null);
+        return { profile: null, error: 'This administrator account has been deactivated.' };
+      }
+
+      this.setCurrentProfile(profile);
+      SyncStateService.retryPendingSync().catch(() => {});
+      return { profile, error: null };
+    } catch (err: any) {
+      return { profile: null, error: err?.message || 'Administrator authentication exception.' };
+    }
+  }
+
+  // --- 4. SUSPEND & REACTIVATE TUTOR ---
+  static async suspendTutor(tutorUid: string, reason?: string, adminName?: string): Promise<boolean> {
+    if (!isSupabaseConfigured || !supabase) return false;
+
+    try {
+      const { error } = await supabase.from('profiles').update({ is_active: false }).eq('id', tutorUid);
+      if (error) {
+        console.warn('Supabase suspendTutor error:', error.message);
+        return false;
+      }
+
+      ReportService.recordAuditLog({
+        action: 'TUTOR_SUSPENDED',
+        entity_type: 'users',
+        entity_id: tutorUid,
+        details: { reason: reason || 'Administrative suspension', suspended_by: adminName || 'Admin' },
+      });
+
+      return true;
+    } catch (e) {
+      console.warn('Supabase suspendTutor error:', e);
+      return false;
+    }
   }
 
   static async reactivateTutor(tutorUid: string, adminName?: string): Promise<boolean> {
-    const allProfiles = this.getAllProfiles();
-    const target = allProfiles.find(p => p.id === tutorUid);
-    if (!target) return false;
+    if (!isSupabaseConfigured || !supabase) return false;
 
-    target.is_active = true;
-    this.saveProfiles(allProfiles);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('profiles').update({ is_active: true }).eq('id', tutorUid);
-      } catch (e) {
-        console.warn('Supabase reactivateTutor error:', e);
+    try {
+      const { error } = await supabase.from('profiles').update({ is_active: true }).eq('id', tutorUid);
+      if (error) {
+        console.warn('Supabase reactivateTutor error:', error.message);
+        return false;
       }
+
+      ReportService.recordAuditLog({
+        action: 'TUTOR_REACTIVATED',
+        entity_type: 'users',
+        entity_id: tutorUid,
+        details: { reactivated_by: adminName || 'Admin' },
+      });
+
+      return true;
+    } catch (e) {
+      console.warn('Supabase reactivateTutor error:', e);
+      return false;
     }
-
-    ReportService.recordAuditLog({
-      action: 'TUTOR_REACTIVATED',
-      entity_type: 'users',
-      entity_id: tutorUid,
-      details: { reactivated_by: adminName || 'Admin' },
-    });
-
-    return true;
-  }
-
-  // --- 4. ADMINISTRATOR AUTHENTICATION ---
-  static async signInAdmin(passwordAttempt: string): Promise<{ profile: Profile | null; error: string | null }> {
-    const adminConfig = this.getAdminSecurityConfig();
-
-    // 1. Attempt Supabase Auth login as admin if Supabase is active
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: 'admin@fnicells.org',
-          password: passwordAttempt,
-        });
-
-        if (!authError && authData?.user) {
-          const profile = await SupabaseService.getProfile(authData.user.id) || {
-            id: authData.user.id,
-            email: 'admin@fnicells.org',
-            full_name: 'System Administrator',
-            role: 'super_admin',
-            is_active: true,
-            is_onboarded: true,
-            must_change_password: false,
-            created_at: authData.user.created_at,
-          };
-          this.setCurrentProfile(profile);
-          SyncStateService.retryPendingSync().catch(() => {});
-          return { profile, error: null };
-        }
-      } catch (e) {
-        console.warn('Supabase admin login notice:', e);
-      }
-    }
-
-    // 2. Unconfigured / First Sign-In: Default temporary credential "admin123"
-    if (!adminConfig.initialConfigured) {
-      if (passwordAttempt === 'admin123') {
-        const adminProfile: Profile = {
-          id: 'usr-admin',
-          email: 'admin@fnicells.org',
-          full_name: 'System Administrator',
-          role: 'super_admin',
-          is_active: true,
-          is_onboarded: true,
-          must_change_password: true,
-          auth_provider: 'credentials',
-          created_at: new Date().toISOString(),
-        };
-        this.setCurrentProfile(adminProfile);
-        return { profile: adminProfile, error: null };
-      }
-      return { profile: null, error: 'Incorrect initial administrator password. Default is "admin123".' };
-    }
-
-    // 3. Configured Permanent Password: Validate with PBKDF2 hash
-    if (adminConfig.passwordSalt && adminConfig.passwordHash) {
-      const isMatch = await verifyPassword(passwordAttempt, adminConfig.passwordSalt, adminConfig.passwordHash);
-      if (isMatch) {
-        const adminProfile: Profile = {
-          id: 'usr-admin',
-          email: 'admin@fnicells.org',
-          full_name: 'System Administrator',
-          role: 'super_admin',
-          is_active: true,
-          is_onboarded: true,
-          must_change_password: false,
-          auth_provider: 'credentials',
-          created_at: adminConfig.configuredAt || new Date().toISOString(),
-        };
-        this.setCurrentProfile(adminProfile);
-        return { profile: adminProfile, error: null };
-      }
-    }
-
-    return { profile: null, error: 'Invalid administrator password.' };
   }
 
   // --- 5. PASSWORD MANAGEMENT ---
-  static async changeAdminPassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
+  static async changePassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
     if (!newPassword || newPassword.length < 6) {
       return { success: false, error: 'Password must be at least 6 characters long.' };
     }
 
-    if (newPassword === 'admin123') {
-      return { success: false, error: 'You cannot use the temporary default password as your permanent password.' };
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Supabase service is unavailable.' };
     }
 
-    // Update in Supabase Auth if configured
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.updateUser({ password: newPassword });
-      } catch (e) {
-        console.warn('Supabase updateUser password notice:', e);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        return { success: false, error: error.message };
       }
-    }
 
-    // Update local security configuration
-    const { salt, hash } = await hashPasswordWithSalt(newPassword);
-    this.saveAdminSecurityConfig({
-      initialConfigured: true,
-      passwordSalt: salt,
-      passwordHash: hash,
-      configuredAt: new Date().toISOString(),
-    });
-
-    const current = this.getCurrentProfile();
-    current.must_change_password = false;
-    this.setCurrentProfile(current);
-
-    ReportService.recordAuditLog({
-      action: 'ADMIN_PASSWORD_CHANGED',
-      entity_type: 'users',
-      entity_id: current.id,
-      details: { user: current.full_name },
-    });
-
-    return { success: true };
-  }
-
-  static async changeTutorPassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
-    if (!newPassword || newPassword.length < 6) {
-      return { success: false, error: 'Password must be at least 6 characters long.' };
-    }
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (error) {
-          console.warn('Supabase updateUser password notice:', error.message);
-        }
-      } catch (e) {
-        console.warn('Supabase password update exception:', e);
+      const current = this.getCurrentProfile();
+      if (current) {
+        current.must_change_password = false;
+        this.setCurrentProfile(current);
+        await supabase.from('profiles').update({ must_change_password: false }).eq('id', current.id);
       }
+
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Password update failed.' };
     }
-
-    const current = this.getCurrentProfile();
-    const { salt, hash } = await hashPasswordWithSalt(newPassword);
-    this.saveTutorCredential(current.full_name.toLowerCase(), {
-      uid: current.id,
-      fullName: current.full_name,
-      email: current.email,
-      cellName: current.cell_name || 'Fellowship Cell',
-      normalizedCell: normalizeCellName(current.cell_name || ''),
-      salt,
-      hash,
-      createdAt: new Date().toISOString(),
-    });
-
-    current.must_change_password = false;
-    this.setCurrentProfile(current);
-
-    return { success: true };
   }
 
   // --- 6. PASSWORD RESET REQUEST ---
@@ -724,61 +542,28 @@ export class AuthService {
       return { success: false, error: 'Please enter a valid email address.' };
     }
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/?tab=account` : undefined,
-        });
-        if (error) {
-          return { success: false, error: error.message };
-        }
-        return { success: true };
-      } catch (e: any) {
-        return { success: false, error: e?.message || 'Password reset request failed.' };
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Supabase authentication service is unavailable.' };
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/?tab=account` : undefined,
+      });
+      if (error) {
+        return { success: false, error: error.message };
       }
-    }
-
-    return { success: true };
-  }
-
-  // --- 7. DEMO ROLE SWITCHER ---
-  static switchDemoRole(role: 'admin' | 'cell_leader'): Profile {
-    if (role === 'admin') {
-      const p: Profile = {
-        id: 'usr-admin',
-        email: 'admin@fnicells.org',
-        full_name: 'Administrator',
-        role: 'super_admin',
-        is_active: true,
-        is_onboarded: true,
-        must_change_password: false,
-        auth_provider: 'credentials',
-        created_at: new Date().toISOString(),
-      };
-      this.setCurrentProfile(p);
-      return p;
-    } else {
-      const p: Profile = {
-        id: 'usr-tutor-agape',
-        email: 'agape@fnicells.org',
-        full_name: 'Agape Cell Tutor',
-        cell_id: 'cell-agape-demo',
-        cell_name: 'Agape Fellowship Cell',
-        role: 'tutor',
-        is_active: true,
-        is_onboarded: true,
-        must_change_password: false,
-        auth_provider: 'email',
-        created_at: new Date().toISOString(),
-      };
-      this.setCurrentProfile(p);
-      return p;
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Password reset request failed.' };
     }
   }
 
-  // --- 8. CELL LEADER ONBOARDING ---
+  // --- 7. CELL LEADER ONBOARDING ---
   static async completeCellLeaderOnboarding(input: any): Promise<{ profile: Profile; isExistingCellAssociated?: boolean }> {
     const current = this.getCurrentProfile();
+    if (!current) throw new Error('Unauthenticated user cannot complete onboarding');
+
     const res = await CellService.registerCell({
       name: input.cellName,
       location: input.location || input.venueAddress,
@@ -805,9 +590,11 @@ export class AuthService {
     return { profile: current, isExistingCellAssociated: res.isExistingAssociated };
   }
 
-  // --- 9. AVATAR UPLOAD ---
+  // --- 8. AVATAR UPLOAD ---
   static async updateUserAvatar(userId: string, avatarUrl: string): Promise<Profile> {
     const current = this.getCurrentProfile();
+    if (!current) throw new Error('Unauthenticated');
+
     current.avatar_url = avatarUrl;
     this.setCurrentProfile(current);
 
@@ -820,7 +607,7 @@ export class AuthService {
     return current;
   }
 
-  // --- 10. SIGN OUT ---
+  // --- 9. SIGN OUT ---
   static async signOut(): Promise<void> {
     if (isSupabaseConfigured && supabase) {
       try {
@@ -831,7 +618,6 @@ export class AuthService {
     }
 
     setSupabaseAccessToken(null);
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_PROFILE);
-    localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+    this.setCurrentProfile(null);
   }
 }

@@ -42,51 +42,38 @@ assert.strictEqual(normalizeCellName(cellA), normalizeCellName(cellC), 'Punctuat
 assert.notStrictEqual(normalizeCellName(cellA), normalizeCellName(cellD), 'Distinct cells incorrectly matched');
 console.log('  ✅ Normalized cell names detect duplicate registrations across formatting variants.');
 
-// 3. Admin Authentication & Password State Machine
-console.log('\nTEST 3: Admin Credential & Forced Password Change State Machine...');
-let adminSecurity = {
-  initialConfigured: false,
-  passwordHash: null,
-};
+// 3. Strict Administrator Authentication & Role Verification (Zero Bypass)
+console.log('\nTEST 3: Strict Administrator Authentication & Server-Side Role Enforcement...');
 
-function authenticateAdmin(username, password) {
-  if (username !== 'admin' && username !== 'admin@forerunners.org') {
-    return { success: false, error: 'User not found' };
+function verifyAdminSession(email, password, userProfile) {
+  if (!email || !password) {
+    return { success: false, error: 'Email and password are required' };
   }
-  if (!adminSecurity.initialConfigured) {
-    if (password === 'admin123') {
-      return { success: true, mustChangePassword: true };
-    }
-    return { success: false, error: 'Invalid initial password' };
-  } else {
-    if (password === 'admin123') {
-      return { success: false, error: 'Temporary password permanently disabled' };
-    }
-    if (password === adminSecurity.passwordHash) {
-      return { success: true, mustChangePassword: false };
-    }
-    return { success: false, error: 'Incorrect password' };
+  // admin123 is rejected as an insecure client bypass
+  if (password === 'admin123') {
+    return { success: false, error: 'Insecure default credentials (admin123) are permanently rejected' };
   }
+  // Server-side role verification
+  const isAdminRole = userProfile && (userProfile.role === 'admin' || userProfile.role === 'super_admin' || userProfile.role === 'national_admin');
+  if (!isAdminRole) {
+    return { success: false, error: 'Access denied: Account does not have administrator privileges' };
+  }
+  return { success: true, profile: userProfile };
 }
 
-// Initial login with admin123
-let authRes = authenticateAdmin('admin', 'admin123');
-assert.strictEqual(authRes.success, true);
-assert.strictEqual(authRes.mustChangePassword, true, 'First login must force password change');
+// Insecure bypass attempt must fail
+let bypassAttempt = verifyAdminSession('admin@forerunners.org', 'admin123', { role: 'super_admin' });
+assert.strictEqual(bypassAttempt.success, false, 'Default admin123 must be permanently rejected');
 
-// Change password
-adminSecurity.initialConfigured = true;
-adminSecurity.passwordHash = 'KingdomLeader2026!';
+// Non-admin user cannot access admin portal
+let nonAdminAttempt = verifyAdminSession('tutor@fnicells.org', 'ValidPass2026!', { role: 'tutor' });
+assert.strictEqual(nonAdminAttempt.success, false, 'Ordinary tutor must not receive admin access');
 
-// Old password must fail
-let failedOld = authenticateAdmin('admin', 'admin123');
-assert.strictEqual(failedOld.success, false, 'Temporary password should no longer work');
-
-// New password must succeed without mustChangePassword
-let successNew = authenticateAdmin('admin', 'KingdomLeader2026!');
-assert.strictEqual(successNew.success, true, 'New administrator password failed');
-assert.strictEqual(successNew.mustChangePassword, false, 'mustChangePassword should be cleared');
-console.log('  ✅ Initial temporary credentials work on first sign-in and are permanently disabled after update.');
+// Verified administrator succeeds
+let validAdmin = verifyAdminSession('pastor@fnicells.org', 'KingdomLeader2026!', { role: 'super_admin', is_active: true });
+assert.strictEqual(validAdmin.success, true, 'Verified administrator failed login');
+assert.strictEqual(validAdmin.profile.role, 'super_admin');
+console.log('  ✅ Insecure client bypasses permanently rejected; server-side role verification enforced.');
 
 // 4. Report Review Status State Transitions
 console.log('\nTEST 4: Report Review Lifecycle & Audit Trail...');

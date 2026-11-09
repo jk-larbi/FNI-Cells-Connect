@@ -1,7 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Profile, TutorRegistrationInput, TutorLoginInput } from '../types';
+import { Profile, TutorRegistrationInput, TutorLoginInput, AdminLoginInput } from '../types';
 import { AuthService } from '../services/authService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+const GUEST_PROFILE: Profile = {
+  id: '',
+  email: '',
+  full_name: 'Guest User',
+  role: 'tutor',
+  is_active: false,
+  is_onboarded: false,
+  must_change_password: false,
+  created_at: '',
+};
 
 interface AuthContextType {
   currentUser: Profile;
@@ -12,20 +23,24 @@ interface AuthContextType {
   isOnboarded: boolean;
   mustChangePassword: boolean;
   isLoggedOut: boolean;
-  switchRole: (role: 'admin' | 'cell_leader') => void;
   canReviewReports: boolean;
   canManageCells: boolean;
   canManageUsers: boolean;
   canSubmitReport: boolean;
-  loginAdmin: (password: string) => Promise<{ success: boolean; error?: string }>;
+  loginAdmin: (input: AdminLoginInput) => Promise<{ success: boolean; error?: string }>;
   loginTutor: (input: TutorLoginInput) => Promise<{ success: boolean; error?: string }>;
-  registerTutor: (input: TutorRegistrationInput) => Promise<{ success: boolean; error?: string; verificationNotice?: string }>;
+  registerTutor: (input: TutorRegistrationInput) => Promise<{
+    success: boolean;
+    error?: string;
+    needsEmailVerification?: boolean;
+    verificationNotice?: string;
+  }>;
   completeOnboarding: (input: any) => Promise<{ success: boolean; isExistingCellAssociated?: boolean; error?: string }>;
   changePassword: (newPass: string) => Promise<{ success: boolean; error?: string }>;
   updateAvatar: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   showLoginView: () => void;
-  refreshProfile: () => void;
+  refreshProfile: () => Promise<void>;
   isFirebaseActive: boolean;
   isSupabaseActive: boolean;
 }
@@ -33,53 +48,90 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<Profile>(() => AuthService.getCurrentProfile());
+  const [currentUser, setCurrentUser] = useState<Profile>(() => {
+    const cached = AuthService.getCurrentProfile();
+    return cached || GUEST_PROFILE;
+  });
   const [isLoggedOut, setIsLoggedOut] = useState<boolean>(() => {
-    return !localStorage.getItem('fni_active_session_v6_strict');
+    return !AuthService.getCurrentProfile()?.id;
   });
 
-  // Listen to Supabase Auth state changes (native GoTrue session lifecycle)
+  // Validate session on initial application mount
   useEffect(() => {
+    let isMounted = true;
+
+    async function checkActiveSession() {
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const verified = await AuthService.getVerifiedSessionProfile();
+          if (isMounted) {
+            if (verified) {
+              setCurrentUser(verified);
+              setIsLoggedOut(false);
+            } else {
+              setCurrentUser(GUEST_PROFILE);
+              setIsLoggedOut(true);
+            }
+          }
+        } catch {
+          if (isMounted) {
+            setCurrentUser(GUEST_PROFILE);
+            setIsLoggedOut(true);
+          }
+        }
+      } else {
+        if (isMounted) {
+          setCurrentUser(GUEST_PROFILE);
+          setIsLoggedOut(true);
+        }
+      }
+    }
+
+    checkActiveSession();
+
+    // Listen to native Supabase GoTrue Auth state transitions
     if (isSupabaseConfigured && supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!isMounted) return;
+
         if (session?.user) {
-          localStorage.setItem('fni_active_session_v6_strict', session.user.id);
-          setIsLoggedOut(false);
           const profile = await AuthService.fetchProfileById(session.user.id);
-          if (profile) setCurrentUser(profile);
-        } else if (event === 'SIGNED_OUT') {
-          localStorage.removeItem('fni_active_session_v6_strict');
+          if (profile && profile.is_active) {
+            setCurrentUser(profile);
+            setIsLoggedOut(false);
+          } else if (profile && !profile.is_active) {
+            await supabase.auth.signOut();
+            setCurrentUser(GUEST_PROFILE);
+            setIsLoggedOut(true);
+          }
+        } else if (event === 'SIGNED_OUT' || !session) {
+          setCurrentUser(GUEST_PROFILE);
           setIsLoggedOut(true);
+          AuthService.setCurrentProfile(null);
         }
       });
 
       return () => {
+        isMounted = false;
         subscription.unsubscribe();
       };
     }
   }, []);
 
-  const refreshProfile = () => {
-    const updated = AuthService.getCurrentProfile();
-    setCurrentUser(updated);
-  };
-
-  const switchRole = (role: 'admin' | 'cell_leader') => {
-    const updated = AuthService.switchDemoRole(role);
-    localStorage.setItem('fni_active_session_v6_strict', updated.id);
-    setCurrentUser(updated);
-    setIsLoggedOut(false);
+  const refreshProfile = async () => {
+    if (currentUser?.id) {
+      const updated = await AuthService.fetchProfileById(currentUser.id);
+      if (updated) setCurrentUser(updated);
+    }
   };
 
   const showLoginView = () => {
-    localStorage.removeItem('fni_active_session_v6_strict');
     setIsLoggedOut(true);
   };
 
-  const loginAdmin = async (password: string) => {
-    const result = await AuthService.signInAdmin(password);
+  const loginAdmin = async (input: AdminLoginInput) => {
+    const result = await AuthService.signInAdmin(input);
     if (result.profile) {
-      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true };
@@ -90,7 +142,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginTutor = async (input: TutorLoginInput) => {
     const result = await AuthService.signInTutor(input);
     if (result.profile) {
-      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true };
@@ -100,11 +151,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerTutor = async (input: TutorRegistrationInput) => {
     const result = await AuthService.registerTutor(input);
-    if (!result.error && result.profile) {
-      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
-      setCurrentUser(result.profile);
-      setIsLoggedOut(false);
-      return { success: true, verificationNotice: result.verificationNotice };
+    if (!result.error) {
+      if (result.needsEmailVerification) {
+        // Email confirmation is required; user is NOT logged in yet
+        setCurrentUser(GUEST_PROFILE);
+        setIsLoggedOut(true);
+        return {
+          success: true,
+          needsEmailVerification: true,
+          verificationNotice: result.verificationNotice,
+        };
+      }
+      if (result.profile) {
+        setCurrentUser(result.profile);
+        setIsLoggedOut(false);
+        return { success: true };
+      }
     }
     return { success: false, error: result.error || 'Tutor registration failed' };
   };
@@ -112,7 +174,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeOnboarding = async (input: any) => {
     try {
       const result = await AuthService.completeCellLeaderOnboarding(input);
-      localStorage.setItem('fni_active_session_v6_strict', result.profile.id);
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
       return { success: true, isExistingCellAssociated: result.isExistingCellAssociated };
@@ -122,30 +183,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const changePassword = async (newPass: string) => {
-    if (isAdmin) {
-      const result = await AuthService.changeAdminPassword(newPass);
-      if (result.success) {
-        refreshProfile();
-        return { success: true };
-      }
-      return { success: false, error: result.error };
-    } else {
-      const result = await AuthService.changeTutorPassword(newPass);
-      if (result.success) {
-        refreshProfile();
-        return { success: true };
-      }
-      return { success: false, error: result.error };
+    const result = await AuthService.changePassword(newPass);
+    if (result.success) {
+      await refreshProfile();
+      return { success: true };
     }
+    return { success: false, error: result.error };
   };
 
   const logout = async () => {
     await AuthService.signOut();
-    localStorage.removeItem('fni_active_session_v6_strict');
+    setCurrentUser(GUEST_PROFILE);
     setIsLoggedOut(true);
   };
 
   const updateAvatar = async (avatarUrl: string) => {
+    if (!currentUser.id) return { success: false, error: 'Unauthenticated' };
     try {
       const updated = await AuthService.updateUserAvatar(currentUser.id, avatarUrl);
       setCurrentUser(updated);
@@ -155,12 +208,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const role = currentUser?.role;
-  const isAdmin = role === 'admin' || role === 'super_admin' || role === 'national_admin';
+  const role = currentUser.role;
+  const isAdmin = currentUser.id !== '' && (role === 'admin' || role === 'super_admin' || role === 'national_admin');
   const isTutor = !isAdmin;
   const effectiveRole: 'admin' | 'tutor' = isAdmin ? 'admin' : 'tutor';
-  const isOnboarded = currentUser?.is_onboarded ?? true;
-  const mustChangePassword = Boolean(currentUser?.must_change_password);
+  const isOnboarded = currentUser.is_onboarded ?? true;
+  const mustChangePassword = Boolean(currentUser.must_change_password);
 
   return (
     <AuthContext.Provider
@@ -173,7 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOnboarded,
         mustChangePassword,
         isLoggedOut,
-        switchRole,
         canReviewReports: isAdmin,
         canManageCells: isAdmin,
         canManageUsers: isAdmin,

@@ -17,7 +17,7 @@ const MainContent: React.FC = () => {
   const [entryView, setEntryView] = useState<'vision-mission' | 'landing' | 'overview-landing' | AuthFlowView>('vision-mission');
 
   // 1. Unauthenticated Visitor Flow
-  if (isLoggedOut || !currentUser) {
+  if (isLoggedOut || !currentUser || !currentUser.id) {
     if (entryView === 'tutor-signup' || entryView === 'login-select' || entryView === 'tutor-login' || entryView === 'admin-login') {
       return (
         <AuthView
