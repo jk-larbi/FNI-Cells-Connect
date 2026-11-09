@@ -266,87 +266,81 @@ button, a, input, select, textarea {
 }
 
 
+
 /* =============================================================== */
-/* FNI DARK MODE — persistent theme, preserving the existing brand */
+/* FNI THEME LAYER — preserve component layout and brand colours.  */
 /* =============================================================== */
-html.dark {
-  color-scheme: dark;
-  background: #0b1220;
-}
-html.dark body {
-  background: #0b1220 !important;
-  color: #e5e7eb !important;
-}
-html.dark #root {
-  background: #0b1220;
-}
-html.dark [class~="bg-white"],
-html.dark [class~="bg-white/95"] {
-  background-color: #111c2d !important;
-}
-html.dark [class~="bg-canvas"],
-html.dark [class~="bg-slate-50"],
-html.dark [class~="bg-[#F5F7FA]"] {
-  background-color: #172437 !important;
-}
-html.dark [class~="bg-slate-100"],
-html.dark [class~="bg-slate-200"] {
-  background-color: #243449 !important;
-}
-html.dark [class~="text-[#182230]"],
-html.dark [class~="text-navy-950"],
-html.dark [class~="text-slate-800"],
-html.dark [class~="text-slate-900"],
-html.dark [class~="text-[#142B4A]"] {
-  color: #e7edf5 !important;
-}
-html.dark [class~="text-[#667085]"],
-html.dark [class~="text-slate-500"],
-html.dark [class~="text-slate-600"],
-html.dark [class~="text-slate-400"] {
-  color: #a9b8ca !important;
-}
-html.dark [class~="border-[#E3E8EF]"],
-html.dark [class~="border-slate-100"],
-html.dark [class~="border-slate-200"],
-html.dark [class~="border-slate-300"] {
-  border-color: #34465c !important;
-}
+
+html { color-scheme: light; }
+html.dark { color-scheme: dark; background: #0b1220; }
+html.dark body,
+html.dark #root { background-color: #0b1220 !important; color: #e6edf5 !important; }
+
+/* Common page and card surfaces. Exact utility selectors avoid catching
+   translucent backgrounds such as bg-white/10 and decorative gradients. */
+html.dark .bg-white,
+html.dark .bg-canvas,
+html.dark .bg-slate-50,
+html.dark .bg-gray-50 { background-color: #111c2d !important; }
+html.dark .bg-slate-100,
+html.dark .bg-slate-200,
+html.dark .bg-gray-100,
+html.dark .bg-gray-200 { background-color: #1b2a3d !important; }
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-\[\#182230\],
+html.dark .text-\[\#142B4A\],
+html.dark .text-navy-950,
+html.dark .text-navy-900 { color: #e6edf5 !important; }
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-gray-500,
+html.dark .text-\[\#667085\] { color: #aebdd0 !important; }
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300,
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-\[\#E3E8EF\] { border-color: #34465c !important; }
+
+/* Soft semantic panels keep their meaning in dark mode. */
+html.dark .bg-emerald-50,
+html.dark .bg-green-50 { background-color: #123328 !important; }
+html.dark .bg-amber-50,
+html.dark .bg-yellow-50 { background-color: #382d18 !important; }
+html.dark .bg-rose-50,
+html.dark .bg-red-50 { background-color: #3b2027 !important; }
+html.dark .bg-blue-50,
+html.dark .bg-indigo-50 { background-color: #1b2d48 !important; }
+
+/* Form controls: preserve focus rings, sizing and interaction states. */
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea,
 html.dark select {
-  background-color: #172437;
-  color: #e7edf5;
-  border-color: #40536a;
+  color: #e6edf5 !important;
+  background-color: #172437 !important;
+  border-color: #40536a !important;
 }
 html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #91a1b5;
+html.dark textarea::placeholder { color: #91a1b5 !important; }
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: #c6a45a !important;
+  box-shadow: 0 0 0 3px rgb(198 164 90 / .16) !important;
 }
-html.dark .custom-scrollbar,
-html.dark * {
-  scrollbar-color: #52647a transparent;
-}
-html.dark .shadow-slate-200\/50 {
-  --tw-shadow-color: rgb(0 0 0 / 0.35);
-}
-html.dark .vision-statement-card {
-  background: #111c2d;
-  border-color: #34465c;
-  box-shadow: 0 14px 36px rgb(0 0 0 / 0.22);
-}
-html.dark .vision-statement-card p {
-  color: #e7edf5;
-}
-html.dark .vision-statement-card .vision-card-heading {
-  color: #e7edf5;
-}
+html.dark * { scrollbar-color: #52647a transparent; }
 
-
-/* Vision and Mission: guaranteed, clearly visible entrance motion. */
+/* Vision/Mission statement entrance. Keep animation properties separate
+   so each card's inline animationDelay is respected. */
 @keyframes fniStatementEnter {
   0% { opacity: 0; transform: translateY(34px) scale(.96); }
-  60% { opacity: 1; transform: translateY(-5px) scale(1.005); }
+  65% { opacity: 1; transform: translateY(-4px) scale(1.005); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes fniGoldSweep {
@@ -354,9 +348,13 @@ html.dark .vision-statement-card .vision-card-heading {
   18% { opacity: .9; }
   100% { transform: translateX(430%); opacity: 0; }
 }
+.vision-statement-card { position: relative; }
 .vision-statement-card.is-visible {
   opacity: 1 !important;
-  animation: fniStatementEnter 1.25s cubic-bezier(.16,1,.3,1) both !important;
+  animation-name: fniStatementEnter;
+  animation-duration: 1.25s;
+  animation-timing-function: cubic-bezier(.16,1,.3,1);
+  animation-fill-mode: both;
 }
 .vision-statement-card.is-visible::after {
   content: '';
@@ -371,137 +369,24 @@ html.dark .vision-statement-card .vision-card-heading {
   animation: fniGoldSweep 1.5s ease-out .25s both;
 }
 .vision-statement-card:hover {
-  transform: translateY(-3px);
   border-color: #C6A45A;
   box-shadow: 0 16px 34px rgb(20 43 74 / .14);
 }
-@media (prefers-reduced-motion: reduce) {
-  .vision-statement-card.is-visible,
-  .vision-statement-card.is-visible::after { animation: none !important; }
+html.dark .vision-statement-card {
+  background-color: #111c2d !important;
+  border-color: #34465c !important;
+  box-shadow: 0 14px 36px rgb(0 0 0 / .22);
 }
-
-/* Dark theme: retain the same spacing, shapes, layout and brand accents.
-   Only surface, text, border and form colours change. */
-html.dark body,
-html.dark #root { background-color: #0b1220 !important; color: #e6edf5 !important; }
-html.dark .bg-white,
-html.dark .bg-white\/95 { background-color: #111c2d !important; }
-html.dark .bg-canvas,
-html.dark .bg-slate-50,
-html.dark .bg-\[\#F5F7FA\] { background-color: #111c2d !important; }
-html.dark .bg-slate-100,
-html.dark .bg-slate-200 { background-color: #1b2a3d !important; }
-html.dark .text-slate-900,
-html.dark .text-slate-800,
-html.dark .text-\[\#182230\],
-html.dark .text-\[\#142B4A\],
-html.dark .text-navy-950,
-html.dark .text-navy-900 { color: #e6edf5 !important; }
-html.dark .text-slate-700,
-html.dark .text-slate-600,
-html.dark .text-slate-500,
-html.dark .text-\[\#667085\] { color: #aebdd0 !important; }
-html.dark .border-slate-100,
-html.dark .border-slate-200,
-html.dark .border-slate-300,
-html.dark .border-\[\#E3E8EF\] { border-color: #34465c !important; }
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark textarea,
-html.dark select {
-  color: #e6edf5 !important;
-  background-color: #172437 !important;
-  border-color: #40536a !important;
-}
-html.dark input::placeholder,
-html.dark textarea::placeholder { color: #91a1b5 !important; }
-html.dark .vision-statement-card { background-color: #111c2d !important; }
 html.dark .vision-statement-card p,
 html.dark .vision-statement-card .vision-card-heading { color: #e6edf5 !important; }
-html.dark .custom-scrollbar,
-html.dark * { scrollbar-color: #52647a transparent; }
 
-
-/* Refined dark surfaces across cards, menus, dialogs and status panels.
-   This changes colour treatment only; dimensions and component layout stay intact. */
-html.dark [class*="bg-white"],
-html.dark [class*="bg-slate-50"],
-html.dark [class*="bg-gray-50"] {
-  background-color: #111c2d !important;
-}
-html.dark [class*="bg-slate-100"],
-html.dark [class*="bg-slate-200"],
-html.dark [class*="bg-gray-100"],
-html.dark [class*="bg-gray-200"] {
-  background-color: #1b2a3d !important;
-}
-html.dark [class*="bg-emerald-50"],
-html.dark [class*="bg-green-50"] {
-  background-color: #123328 !important;
-}
-html.dark [class*="bg-amber-50"],
-html.dark [class*="bg-yellow-50"] {
-  background-color: #382d18 !important;
-}
-html.dark [class*="bg-rose-50"],
-html.dark [class*="bg-red-50"] {
-  background-color: #3b2027 !important;
-}
-html.dark [class*="bg-blue-50"],
-html.dark [class*="bg-indigo-50"] {
-  background-color: #1b2d48 !important;
-}
-html.dark [class*="text-slate-800"],
-html.dark [class*="text-slate-900"],
-html.dark [class*="text-gray-800"],
-html.dark [class*="text-gray-900"] {
-  color: #e6edf5 !important;
-}
-html.dark [class*="text-slate-500"],
-html.dark [class*="text-slate-600"],
-html.dark [class*="text-gray-500"],
-html.dark [class*="text-gray-600"] {
-  color: #aebdd0 !important;
-}
-html.dark [class*="border-slate-100"],
-html.dark [class*="border-slate-200"],
-html.dark [class*="border-gray-100"],
-html.dark [class*="border-gray-200"] {
-  border-color: #34465c !important;
-}
-html.dark [class*="shadow-"] {
-  --tw-shadow-color: rgb(0 0 0 / .28);
-}
-html.dark .vision-statement-card.is-visible {
-  will-change: transform, opacity;
-}
-@media (prefers-reduced-motion: no-preference) {
-  html.dark, html.dark body,
-  html.dark [class*="bg-white"],
-  html.dark [class*="bg-slate-"],
-  html.dark [class*="text-slate-"],
-  html.dark [class*="border-slate-"] {
-    transition-property: background-color, color, border-color, box-shadow;
-    transition-duration: 180ms;
-    transition-timing-function: ease-out;
-  }
-}
-
-
-/* Light mode polish — subtle depth and clearer separation, without layout changes. */
+/* Light mode: subtle separation only; no layout or component geometry changes. */
 html:not(.dark) {
   color-scheme: light;
   background: #f6f8fc;
 }
-html:not(.dark) body {
-  background: #f6f8fc;
-  color: #243247;
-}
-html:not(.dark) main {
-  text-rendering: optimizeLegibility;
-}
-html:not(.dark) .bg-white {
-  border-color: #e7ecf3;
-}
+html:not(.dark) body { background: #f6f8fc; color: #243247; }
+html:not(.dark) .bg-white { border-color: #e7ecf3; }
 html:not(.dark) [class*="rounded-"][class*="bg-white"][class*="border"] {
   box-shadow: 0 2px 10px rgb(20 43 74 / .035);
   transition: border-color 180ms ease, box-shadow 180ms ease;
@@ -512,10 +397,7 @@ html:not(.dark) [class*="rounded-"][class*="bg-white"][class*="border"]:hover {
 }
 html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
 html:not(.dark) textarea,
-html:not(.dark) select {
-  background-color: #fff;
-  border-color: #dce3ed;
-}
+html:not(.dark) select { background-color: #fff; border-color: #dce3ed; }
 html:not(.dark) input:focus,
 html:not(.dark) textarea:focus,
 html:not(.dark) select:focus {
@@ -523,11 +405,25 @@ html:not(.dark) select:focus {
   border-color: #c6a45a;
   box-shadow: 0 0 0 3px rgb(198 164 90 / .13);
 }
-html:not(.dark) ::selection {
-  background: #e9d9b2;
-  color: #142b4a;
+html:not(.dark) ::selection { background: #e9d9b2; color: #142b4a; }
+
+/* Theme changes are intentionally brief and limited to colour properties. */
+@media (prefers-reduced-motion: no-preference) {
+  html.dark body,
+  html.dark .bg-white,
+  html.dark .bg-canvas,
+  html.dark .bg-slate-50,
+  html.dark .bg-slate-100,
+  html.dark .bg-slate-200,
+  html.dark [class*="text-slate-"],
+  html.dark [class*="border-slate-"] {
+    transition: background-color 180ms ease-out, color 180ms ease-out,
+      border-color 180ms ease-out, box-shadow 180ms ease-out;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
+  .vision-statement-card.is-visible,
+  .vision-statement-card.is-visible::after { animation: none !important; }
   html:not(.dark) [class*="rounded-"][class*="bg-white"][class*="border"] {
     transition: none;
   }
