@@ -33,6 +33,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run regression tests
+        run: |
+          npm run test:fni
+          npm run test:notifications
+
       - name: Build application
         run: npm run build
         env:
