@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Moon, Sun } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppLayout } from './components/layout/AppLayout';
@@ -75,12 +76,41 @@ const MainContent: React.FC = () => {
 };
 
 export const App: React.FC = () => {
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      return window.localStorage.getItem('fni-theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+    try {
+      window.localStorage.setItem('fni-theme', isDark ? 'dark' : 'light');
+    } catch {
+      // The theme still works for this session when storage is unavailable.
+    }
+  }, [isDark]);
+
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <MainContent />
-      </NotificationProvider>
-    </AuthProvider>
+    <>
+      <button
+        type="button"
+        onClick={() => setIsDark(value => !value)}
+        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        aria-pressed={isDark}
+        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        className="fixed bottom-20 md:bottom-6 right-4 z-[100] h-11 w-11 rounded-full bg-[#142B4A] text-[#C6A45A] border border-[#C6A45A]/60 shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
+      >
+        {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </button>
+      <AuthProvider>
+        <NotificationProvider>
+          <MainContent />
+        </NotificationProvider>
+      </AuthProvider>
+    </>
   );
 };
 
