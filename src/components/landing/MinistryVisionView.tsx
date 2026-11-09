@@ -65,7 +65,6 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-[#C6A45A] rotate-45 shadow-[0_0_6px_#C6A45A]" />
         </div>
       </div>
-      </div>
 
       {/* Main Centered Content */}
       <main className="w-full max-w-2xl mx-auto flex flex-col items-center text-center my-auto z-10 px-4">
