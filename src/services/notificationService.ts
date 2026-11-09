@@ -2,6 +2,7 @@ import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { NotificationItem, NotificationType, NotificationChannel, UserRole } from '../types';
 import { PushNotificationService } from './pushNotificationService';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const STORAGE_KEY = 'fni_notifications_store_v2';
 const SUBSCRIBERS = new Set<(notifs: NotificationItem[]) => void>();
@@ -104,18 +105,42 @@ export class NotificationService {
       created_at: nowIso,
     };
 
-    // 1. Primary write to Supabase
+    // 1. Persist the notification to Supabase.
     try {
       await SupabaseService.insertNotification(newNotif);
     } catch (err) {
       console.warn('Supabase notification sync notice:', err);
     }
 
-    // 2. Persist to local storage
+    // 2. Ask the authenticated edge function to deliver background browser push.
+    // In-app notifications remain available if push is not configured or a device has not opted in.
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.functions.invoke('fni-web-push', {
+          body: {
+            action: 'send_notification',
+            notification: {
+              id: newNotif.id,
+              user_id: newNotif.user_id,
+              title: newNotif.title,
+              message: newNotif.message,
+              type: newNotif.type,
+              metadata: newNotif.metadata,
+              created_at: newNotif.created_at,
+            },
+          },
+        });
+        if (error) console.warn('FNI browser push delivery notice:', error.message);
+      } catch (pushError) {
+        console.warn('FNI browser push is unavailable; in-app notification is retained:', pushError);
+      }
+    }
+
+    // 3. Persist to local storage
     const updated = [newNotif, ...current];
     setStoredNotifications(updated);
 
-    // 3. Dispatch Native Browser Push Notification where permitted
+    // 4. Dispatch a local notification to the sender's currently open browser where permitted
     PushNotificationService.showLocalNotification(item.title, {
       body: item.message,
       tag: id,
