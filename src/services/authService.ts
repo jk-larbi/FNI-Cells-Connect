@@ -548,7 +548,9 @@ export class AuthService {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/?tab=account` : undefined,
+        redirectTo: typeof window !== 'undefined'
+          ? `${window.location.origin}${import.meta.env.BASE_URL}?tab=reset-password`
+          : undefined,
       });
       if (error) {
         return { success: false, error: error.message };
