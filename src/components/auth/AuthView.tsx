@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { AuthService } from '../../services/authService';
 import {
   Shield,
   Lock,
@@ -57,6 +58,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   // 1. Handle Tutor Registration (Strict Supabase Only)
   const handleTutorSignUp = async (e: React.FormEvent) => {
@@ -138,6 +140,25 @@ export const AuthView: React.FC<AuthViewProps> = ({
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Send a secure Supabase password-reset link to the registered email.
+  const handlePasswordReset = async (email: string) => {
+    setErrorMessage('');
+    setSuccessNotice('');
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setErrorMessage('Enter your registered email address first.');
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      const result = await AuthService.requestPasswordReset(cleanEmail);
+      if (!result.success) setErrorMessage(result.error || 'Could not send the password reset link.');
+      else setSuccessNotice('If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.');
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -537,6 +558,12 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </button>
               </form>
 
+              <div className="text-right -mt-1">
+                <button type="button" disabled={isSendingReset} onClick={() => handlePasswordReset(loginIdentifier)} className="text-xs font-semibold text-[#142B4A] hover:text-[#C6A45A] underline disabled:opacity-50">
+                  {isSendingReset ? 'Sending reset link...' : 'Forgot password?'}
+                </button>
+              </div>
+
               {/* New tutor link */}
               <div className="pt-3 border-t border-[#E3E8EF] text-center">
                 <span className="text-xs text-[#667085]">New tutor? </span>
@@ -617,6 +644,11 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </form>
+              <div className="text-right -mt-1">
+                <button type="button" disabled={isSendingReset} onClick={() => handlePasswordReset(adminEmail)} className="text-xs font-semibold text-[#142B4A] hover:text-[#C6A45A] underline disabled:opacity-50">
+                  {isSendingReset ? 'Sending reset link...' : 'Forgot password?'}
+                </button>
+              </div>
             </div>
           )}
         </div>
