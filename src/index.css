@@ -163,74 +163,48 @@ html:not(.dark) ::selection { background: #e9d9b2; color: #142b4a; }
   }
 }
 
-/* Clearly visible, continuous ambient motion on the Vision/Mission landing screen.
-   Separate keyframes animate the background layers without moving the content. */
-@keyframes fniAmbientDriftA {
-  0%, 100% { transform: translate3d(0,0,0) scale(.92); opacity: .72; }
-  50% { transform: translate3d(-34px,28px,0) scale(1.18); opacity: 1; }
-}
-@keyframes fniAmbientDriftB {
-  0%, 100% { transform: translate3d(0,0,0) scale(1); opacity: .65; }
-  50% { transform: translate3d(38px,-30px,0) scale(1.2); opacity: 1; }
-}
+/* Vision portal title and ambient orbital system. */
+html.dark .fni-portal-title { color: #ffffff !important; }
+
 @keyframes fniOrbitClockwise {
-  from { transform: rotate(0deg) scale(1); }
-  to { transform: rotate(360deg) scale(1); }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 @keyframes fniOrbitCounter {
-  from { transform: rotate(360deg) scale(1); }
-  to { transform: rotate(0deg) scale(1); }
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }
-@keyframes fniAmbientBreath {
-  0%, 100% { transform: scale(.88); opacity: .48; }
-  50% { transform: scale(1.12); opacity: .9; }
+@keyframes fniGlowBreathe {
+  0%, 100% { opacity: .52; transform: scale(.94); }
+  50% { opacity: .9; transform: scale(1.08); }
 }
-.min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(2) {
-  animation: fniAmbientDriftA 9s ease-in-out infinite !important;
+.fni-orbit-glow {
+  animation: fniGlowBreathe 9s ease-in-out infinite !important;
   will-change: transform, opacity;
 }
-.min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(3) {
-  animation: fniAmbientDriftB 11s ease-in-out infinite !important;
-  will-change: transform, opacity;
-}
-.min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(4) {
-  animation: fniAmbientBreath 8s ease-in-out infinite !important;
-  will-change: transform, opacity;
-}
-.min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(5) {
-  animation: fniOrbitClockwise 38s linear infinite !important;
+.fni-orbit-ring {
+  transform-origin: center;
   will-change: transform;
 }
-.min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(6) {
-  animation: fniOrbitCounter 52s linear infinite !important;
-  will-change: transform;
-}
-/* Boost contrast in dark mode while retaining the same brand palette. */
-html.dark .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(1) {
-  background-image: radial-gradient(ellipse at 50% 42%, rgb(198 164 90 / .16), transparent 62%) !important;
-}
-html.dark .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(2) {
-  background-color: rgb(198 164 90 / .28) !important;
-}
-html.dark .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(3) {
-  background-color: rgb(65 115 190 / .28) !important;
-}
-html.dark .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(4) {
-  opacity: .72;
-}
-html.dark .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(5) {
+.fni-orbit-ring-gold {
   border-color: rgb(198 164 90 / .48) !important;
+  animation: fniOrbitClockwise 80s linear infinite !important;
 }
-html.dark .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(6) {
-  border-color: rgb(130 165 215 / .3) !important;
+.fni-orbit-ring-blue {
+  border-color: rgb(20 43 74 / .24) !important;
+  animation: fniOrbitCounter 110s linear infinite !important;
 }
-/* Keep the motion restrained but visible in light mode too. */
-html:not(.dark) .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(5) {
-  border-color: rgb(198 164 90 / .48) !important;
+.fni-orbit-ring-inner {
+  border-color: rgb(198 164 90 / .28) !important;
+  animation: fniOrbitCounter 58s linear infinite !important;
 }
-html:not(.dark) .min-h-screen > .absolute.inset-0.pointer-events-none > div:nth-child(6) {
-  border-color: rgb(20 43 74 / .2) !important;
+html.dark .fni-orbit-glow {
+  opacity: .78;
+  filter: blur(3.25rem) saturate(1.25);
 }
+html.dark .fni-orbit-ring-gold { border-color: rgb(226 190 112 / .66) !important; }
+html.dark .fni-orbit-ring-blue { border-color: rgb(122 165 224 / .38) !important; }
+html.dark .fni-orbit-ring-inner { border-color: rgb(226 190 112 / .42) !important; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
