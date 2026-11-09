@@ -241,7 +241,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           <div className="absolute -inset-1 rounded-2xl border border-[#C6A45A]/40" />
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-white shadow-xl bg-[#142B4A] flex items-center justify-center p-0.5 relative z-10 hover:scale-105 transition-transform duration-300">
             <img
-              src="/fni-official-logo.jpg"
+              src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
               alt="Forerunners Network International Official Logo"
               className="w-full h-full object-cover rounded-xl"
             />
