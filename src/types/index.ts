@@ -427,6 +427,7 @@ export interface AuditLog {
 
 export interface TutorRegistrationInput {
   fullName: string;
+  username: string;
   phoneNumber?: string;
   cellName: string;
   coLeaderName?: string;
@@ -437,7 +438,7 @@ export interface TutorRegistrationInput {
 }
 
 export interface TutorLoginInput {
-  username?: string;
+  username: string;
   email?: string;
   fullName?: string;
   password: string;
