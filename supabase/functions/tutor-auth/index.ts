@@ -80,17 +80,53 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "login") {
-      const username = String(body.username || "").trim().toLowerCase();
-      if (!/^[a-z0-9_]{3,24}$/.test(username)) return json({ error: "Enter a valid username and password." }, 400);
-      const { data: profile, error: lookupError } = await admin.from("profiles")
-        .select("phone_number,is_active").eq("username", username).maybeSingle();
-      if (lookupError || !profile?.phone_number || profile.is_active === false) {
-        return json({ error: "Invalid username or password." }, 401);
+      const identifier = String(body.username || body.identifier || "").trim().toLowerCase();
+      if (!identifier || identifier.length > 254) return json({ error: "Enter your username and password." }, 400);
+
+      // Backward compatibility: existing tutor accounts can still use their old email
+      // or phone login. New registrations use usernames and never send confirmation email.
+      let signedIn: any;
+      if (identifier.includes("@")) {
+        const result = await auth.auth.signInWithPassword({ email: identifier, password });
+        if (result.error || !result.data.session || !result.data.user) {
+          return json({ error: "Invalid username/email or password." }, 401);
+        }
+        signedIn = result.data;
+      } else {
+        let profile: any = null;
+        if (/^[a-z0-9_]{3,24}$/.test(identifier)) {
+          const lookup = await admin.from("profiles")
+            .select("phone_number,is_active,role").eq("username", identifier).maybeSingle();
+          if (lookup.error) return json({ error: "Could not verify this account. Please try again." }, 500);
+          profile = lookup.data;
+        }
+        if (!profile) {
+          const phone = normalizePhone(identifier);
+          if (phone) {
+            const lookup = await admin.from("profiles")
+              .select("phone_number,is_active,role").eq("phone_number", phone).maybeSingle();
+            if (lookup.error) return json({ error: "Could not verify this account. Please try again." }, 500);
+            profile = lookup.data;
+          }
+        }
+        if (!profile?.phone_number || profile.is_active === false || profile.role !== "tutor") {
+          return json({ error: "Invalid username or password." }, 401);
+        }
+        const phone = normalizePhone(profile.phone_number);
+        if (!phone) return json({ error: "This account needs administrator assistance." }, 400);
+        const result = await auth.auth.signInWithPassword({ phone, password });
+        if (result.error || !result.data.session || !result.data.user) {
+          return json({ error: "Invalid username or password." }, 401);
+        }
+        signedIn = result.data;
       }
-      const phone = normalizePhone(profile.phone_number);
-      if (!phone) return json({ error: "This account needs administrator assistance." }, 400);
-      const { data: signedIn, error: signInError } = await auth.auth.signInWithPassword({ phone, password });
-      if (signInError || !signedIn.session) return json({ error: "Invalid username or password." }, 401);
+
+      const { data: account, error: accountError } = await admin.from("profiles")
+        .select("role,is_active").or(`id.eq.${signedIn.user.id},supabase_user_id.eq.${signedIn.user.id}`).maybeSingle();
+      if (accountError || !account || account.role !== "tutor" || account.is_active === false) {
+        await auth.auth.signOut();
+        return json({ error: "This account is not authorized for tutor access." }, 403);
+      }
       return json({ user: signedIn.user, session: signedIn.session });
     }
     return json({ error: "Unsupported authentication action." }, 400);
