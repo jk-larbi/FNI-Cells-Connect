@@ -45,6 +45,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
   // Tutor Registration state (Simplified: Full Name, Phone Number, Cell Name + optional Co-Leader)
   const [regFullName, setRegFullName] = useState('');
   const [regPhone, setRegPhone] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regCellName, setRegCellName] = useState('');
   const [regCoLeaderName, setRegCoLeaderName] = useState('');
 
@@ -70,8 +73,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!regFullName.trim() || !regPhone.trim() || !regCellName.trim()) {
-      setErrorMessage('Please provide your Full Name, Phone Number, and Cell Name.');
+    if (!regFullName.trim() || !regUsername.trim() || !regPhone.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
+      setErrorMessage('Please complete all required fields, including your username and password.');
       return;
     }
 
@@ -79,22 +82,18 @@ export const AuthView: React.FC<AuthViewProps> = ({
     try {
       const res = await registerTutor({
         fullName: regFullName.trim(),
+        username: regUsername.trim(),
         phoneNumber: regPhone.trim(),
+        password: regPassword,
+        confirmPassword: regConfirmPassword,
         cellName: regCellName.trim(),
         coLeaderName: regCoLeaderName.trim() || undefined,
       });
 
       if (!res.success) {
         setErrorMessage(res.error || 'Registration failed.');
-      } else if (res.needsEmailVerification) {
-        setSuccessNotice(
-          res.verificationNotice ||
-            `Account registered! Please sign in using your registered name or phone number.`
-        );
-        setCurrentView('tutor-login');
-        setLoginIdentifier(regPhone.trim() || regFullName.trim());
       } else {
-        setSuccessNotice('Cell registered successfully! Redirecting...');
+        setSuccessNotice('Account created successfully. You are now signed in.');
         if (onSuccess) onSuccess();
       }
     } finally {
@@ -109,15 +108,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setSuccessNotice('');
 
     if (!loginIdentifier.trim() || !loginPassword) {
-      setErrorMessage('Please enter your email (or full name) and password.');
+      setErrorMessage('Please enter your username and password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await loginTutor({
-        email: loginIdentifier.includes('@') ? loginIdentifier.trim() : undefined,
-        fullName: !loginIdentifier.includes('@') ? loginIdentifier.trim() : undefined,
+        username: loginIdentifier.trim(),
         password: loginPassword,
       });
 
@@ -362,7 +360,25 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* 4. Second Cell Leader / Co-Leader (Optional) */}
+                {/* Username */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">4. Username <span className="text-[#C74646]">*</span></label>
+                  <div className="relative group">
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input type="text" required minLength={3} maxLength={24} pattern="[a-zA-Z0-9_]+" value={regUsername} onChange={(e) => setRegUsername(e.target.value)} placeholder="Choose a username" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
+                  </div>
+                </div>
+                {/* Password */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">5. Password <span className="text-[#C74646]">*</span></label>
+                  <input type="password" required minLength={6} maxLength={128} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Create a password (at least 6 characters)" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
+                </div>
+                {/* Confirm Password */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">6. Confirm Password <span className="text-[#C74646]">*</span></label>
+                  <input type="password" required minLength={6} maxLength={128} value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
+                </div>
+                {/* 7. Second Cell Leader / Co-Leader (Optional) */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
                     4. Co-Leader Full Name <span className="text-[#667085] font-normal">(Optional — for paired cells)</span>
@@ -509,7 +525,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Tutor Log In
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Sign in with your email or registered full name.
+                  Sign in with the username and password you created.
                 </p>
               </div>
 
@@ -517,16 +533,16 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 {/* 1. Email or Full Name */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Email Address or Full Name <span className="text-[#C74646]">*</span>
+                    Username <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
-                    <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
                     <input
                       type="text"
                       required
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
-                      placeholder="e.g. samuel.mensah@example.com"
+                      placeholder="Enter your username"
                       className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
@@ -570,7 +586,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </button>
               </form>
 
-              <div className="text-right -mt-1">
+              <div className="text-right -mt-1 hidden">
                 <button type="button" disabled={isSendingReset} onClick={() => handlePasswordReset(loginIdentifier)} className="text-xs font-semibold text-[#142B4A] hover:text-[#C6A45A] underline disabled:opacity-50">
                   {isSendingReset ? 'Sending reset link...' : 'Forgot password?'}
                 </button>
