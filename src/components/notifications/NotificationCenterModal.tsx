@@ -6,6 +6,7 @@ import { Button } from '../common/Button';
 import { PushNotificationService } from '../../services/pushNotificationService';
 import {
   Bell,
+  BellRing,
   Mail,
   MessageSquare,
   CheckCheck,
@@ -148,7 +149,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Notification & Real-Time Alert Center"
+      title={<span className="inline-flex items-center gap-2"><BellRing className="w-5 h-5 text-gold-500 shrink-0" /><span>Notification & Real-Time Alert Center</span></span>}
       subtitle="Connected alerting across reports, reviews, pastoral messages, and teaching outlines"
       maxWidth="2xl"
     >
@@ -183,7 +184,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   disabled={isRequestingPush || !isPushSupported}
                   className="px-3 py-1.5 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63] transition-colors shadow-xs text-[11px] flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <Bell className="w-3.5 h-3.5 text-gold-400" />
+                  <BellRing className="w-3.5 h-3.5 text-gold-400" />
                   <span>{isRequestingPush ? 'Requesting...' : 'Enable Push'}</span>
                 </button>
               ) : (
@@ -191,7 +192,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   onClick={handleTestPush}
                   className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 transition-colors shadow-xs text-[11px] flex items-center gap-1.5"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-gold-600" />
+                  <BellRing className="w-3.5 h-3.5 text-gold-600" />
                   <span>Test Push</span>
                 </button>
               )}
