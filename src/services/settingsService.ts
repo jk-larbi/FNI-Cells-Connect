@@ -42,11 +42,16 @@ export class SettingsService {
       updatedBy: updatedBy || current.updatedBy,
     };
 
-    // Primary write to Supabase
+    // Persist ministry-wide settings to Supabase so every device and the public
+    // ministry overview sees the same Vision, Mission, and annual soul target.
     try {
-      await SupabaseService.upsertSystemSettings(updated);
+      const saved = await SupabaseService.upsertSystemSettings(updated);
+      if (!saved) {
+        throw new Error('Supabase could not save the ministry settings. Please check your connection and administrator permissions, then try again.');
+      }
     } catch (err) {
       console.warn('Supabase settings sync notice:', err);
+      throw err;
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
