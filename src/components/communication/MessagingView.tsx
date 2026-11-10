@@ -882,7 +882,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <p className="text-xs text-slate-200 mt-0.5">
                   {isAdmin
                     ? 'Select a tutor to inspect their private communication channel'
-                    : 'Direct, encrypted communication with ministry leadership. Never shared publicly.'}
+                    : 'Private, direct communication with ministry leadership. Not shared in the community forum.'}
                 </p>
               </div>
             </div>
