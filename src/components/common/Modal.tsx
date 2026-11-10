@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
@@ -54,16 +54,16 @@ export const Modal: React.FC<ModalProps> = ({
           onClick={onClose}
         />
         <div
-          className={`relative transform overflow-hidden rounded-3xl bg-white text-left shadow-floating transition-all sm:my-8 w-full ${maxWidthClasses[effectiveMaxWidth]} border border-slate-100 flex flex-col max-h-[90vh]`}
+          className={`relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#111c2d] text-left shadow-floating transition-all sm:my-8 w-full ${maxWidthClasses[effectiveMaxWidth]} border border-slate-100 dark:border-[#26384d] flex flex-col max-h-[90vh]`}
         >
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/60 shrink-0">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#26384d] px-6 py-4 bg-slate-50/60 dark:bg-[#172437] shrink-0">
             <div>
-              <h3 className="text-base font-semibold text-navy-900">{title}</h3>
-              {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+              <h3 className="text-base font-semibold text-navy-900 dark:text-slate-50">{title}</h3>
+              {subtitle && <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">{subtitle}</p>}
             </div>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              className="rounded-lg p-1 text-slate-400 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#26384d] hover:text-slate-600 dark:hover:text-white transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
