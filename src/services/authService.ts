@@ -230,7 +230,6 @@ export class AuthService {
 
       const uid = data.user.id;
       const now = new Date().toISOString();
-      const cellId = `cell-${uid}`;
       const newCell: Cell = {
         id: cellId,
         name: cellName,
