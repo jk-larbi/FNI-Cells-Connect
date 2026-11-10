@@ -293,12 +293,12 @@ export class NotificationService {
     cellName?: string;
     content: string;
   }): Promise<void> {
-    const isFromTutor = params.senderRole !== 'admin';
-    const targetUserId = isFromTutor ? 'admin' : params.recipientUid;
+    const isLeadership = ['admin', 'super_admin', 'national_admin'].includes(params.senderRole);
+    const targetUserId = isLeadership ? params.recipientUid : 'admin';
 
-    const title = isFromTutor
-      ? `Message from ${params.senderName} (${params.cellName || 'Cell Leader'})`
-      : `Leadership Message from ${params.senderName}`;
+    const title = isLeadership
+      ? `Leadership Message from ${params.senderName}`
+      : `Message from ${params.senderName} (${params.cellName || 'Cell Leader'})`;
 
     const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
     const idempotencyKey = `notif-pmsg-${params.messageId}`;
@@ -313,12 +313,12 @@ export class NotificationService {
       channel: 'in_app',
       metadata: {
         messageId: params.messageId,
-        conversationId: isFromTutor ? params.senderUid : params.recipientUid,
+        conversationId: isLeadership ? params.recipientUid : params.senderUid,
         senderUid: params.senderUid,
         senderName: params.senderName,
         category: 'messages',
         targetTab: 'messages',
-        recipientRole: isFromTutor ? 'admin' : 'tutor',
+        recipientRole: isLeadership ? 'tutor' : 'admin',
       },
     });
   }
@@ -415,7 +415,7 @@ export class NotificationService {
         await supabase
           .from('notifications')
           .update({ is_read: true })
-          .or(`user_id.eq.${userId},recipient_target.eq.${userId},recipient_target.eq.all`);
+          .in('id', Array.from(userIdsToMark));
       } catch (e) {
         console.warn('Supabase markAllAsRead note:', e);
       }
@@ -437,18 +437,14 @@ export class NotificationService {
     if (isSupabaseConfigured && supabase) {
       SupabaseService.getNotifications(userId)
         .then(remoteItems => {
-          if (remoteItems && remoteItems.length > 0) {
-            const local = getStoredNotifications();
-            const map = new Map<string, NotificationItem>();
-            remoteItems.forEach(item => map.set(item.id, item));
-            local.forEach(item => {
-              if (!map.has(item.id)) map.set(item.id, item);
-            });
-            const merged = Array.from(map.values()).sort(
+          // A successful empty response is authoritative: do not resurrect stale
+          // messages or notifications from this browser's local cache.
+          if (remoteItems !== null) {
+            const authoritative = [...remoteItems].sort(
               (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
-            setStoredNotifications(merged);
-            callback(this.filterForUser(merged, userId, role));
+            setStoredNotifications(authoritative);
+            callback(this.filterForUser(authoritative, userId, role));
           }
         })
         .catch(err => {
