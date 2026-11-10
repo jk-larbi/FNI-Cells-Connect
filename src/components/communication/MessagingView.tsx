@@ -16,7 +16,6 @@ import {
   AlertCircle,
   Plus,
   ShieldCheck,
-  Sparkles,
   ArrowLeft,
   Reply,
   Smile,
@@ -430,8 +429,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <span>Back to Previous</span>
             </button>
           )}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#142B4A]/10 text-[#142B4A] border border-[#142B4A]/20 mb-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#C6A45A]" />
+          <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#142B4A]/10 text-[#142B4A] border border-[#142B4A]/20 mb-1.5">
             <span>FNI Fellowship Exchange & Leadership Hub</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-[#142B4A] tracking-tight">
