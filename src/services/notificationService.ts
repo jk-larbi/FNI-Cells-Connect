@@ -53,14 +53,9 @@ export class NotificationService {
         return true;
       }
 
-      // 3. Tutor Community messages
-      if (!isAdmin && n.user_id === 'tutor_community') {
-        // Exclude sender from their own community notification
-        if (n.metadata?.senderUid === userId) return false;
-        return true;
-      }
-
-      // 4. Exact recipient match
+      // Community messages are fanned out by the database into one
+      // notification per active recipient, so read state remains per-user.
+      // 3. Exact recipient match
       return n.user_id === userId;
     });
   }
@@ -334,26 +329,35 @@ export class NotificationService {
     content: string;
     category?: string;
   }): Promise<void> {
-    const title = `${params.senderName} (${params.cellName || 'Fellowship Leader'})`;
+    const title = `Community Chat: ${params.senderName} (${params.cellName || 'Fellowship Leader'})`;
     const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
     const idempotencyKey = `notif-cmsg-${params.messageId}`;
 
-    await this.createNotification({
-      id: idempotencyKey,
-      idempotencyKey,
-      userId: 'tutor_community',
-      title: `Community Chat: ${title}`,
-      message: preview,
-      type: 'community_message',
-      channel: 'in_app',
-      metadata: {
-        messageId: params.messageId,
-        senderUid: params.senderUid,
-        senderName: params.senderName,
-        category: 'messages',
-        targetTab: 'messages',
+    // The database trigger creates a separate in-app notification for each
+    // recipient, allowing every tutor to maintain an independent read state.
+    // This request handles background push fan-out to registered tutor devices.
+    if (!isSupabaseConfigured || !supabase) return;
+    const { error } = await supabase.functions.invoke('fni-web-push', {
+      body: {
+        action: 'send_notification',
+        notification: {
+          id: idempotencyKey,
+          user_id: 'tutor_community',
+          title,
+          message: preview,
+          type: 'community_message',
+          metadata: {
+            messageId: params.messageId,
+            senderUid: params.senderUid,
+            senderName: params.senderName,
+            category: 'messages',
+            targetTab: 'messages',
+          },
+          created_at: new Date().toISOString(),
+        },
       },
     });
+    if (error) console.warn('Community chat push delivery notice:', error.message);
   }
 
   /**
