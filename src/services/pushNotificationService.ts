@@ -32,6 +32,28 @@ export class PushNotificationService {
     return Notification.permission;
   }
 
+  static getSupportMessage(): string | null {
+    if (typeof window === 'undefined') return 'Push alerts are unavailable in this environment. In-app notifications remain available.';
+    const userAgent = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
+    const isStandalone = (navigator as any).standalone === true ||
+      window.matchMedia?.('(display-mode: standalone)').matches === true;
+
+    if (isIOS && !isStandalone) {
+      return 'On iPhone or iPad, open FNI from an icon added to your Home Screen to enable background push alerts. Safari tabs do not receive web push on iOS. In-app alerts still work.';
+    }
+    if (!window.isSecureContext) {
+      return 'Background push requires the secure HTTPS FNI website. Open the official FNI link rather than an HTTP or local preview.';
+    }
+    if (!('Notification' in window)) {
+      return 'This browser does not expose the Notifications API. Keep FNI open to receive in-app alerts.';
+    }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return 'This browser does not support web push on this device. In-app real-time alerts remain available.';
+    }
+    return null;
+  }
+
   static getPreferences(userId: string): PushPreferences {
     try {
       const stored = localStorage.getItem(`${STORAGE_KEYS.PREFERENCES_PREFIX}${userId}`);
@@ -98,7 +120,7 @@ export class PushNotificationService {
     _role: string = 'tutor'
   ): Promise<{ success: boolean; token?: string; error?: string }> {
     if (!this.isPushSupported()) {
-      return { success: false, error: 'Browser push requires a supported browser and a secure HTTPS connection.' };
+      return { success: false, error: this.getSupportMessage() || 'Background push is unavailable on this browser. In-app alerts remain available.' };
     }
 
     try {

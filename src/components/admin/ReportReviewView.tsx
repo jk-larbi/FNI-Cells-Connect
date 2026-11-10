@@ -3,7 +3,6 @@ import { UnifiedReportItem, ReportStatus, Cell } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { useAuth } from '../../context/AuthContext';
-import { useNotifications } from '../../context/NotificationContext';
 import { formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
   FileCheck,
@@ -62,7 +61,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   onNavigateToTab,
 }) => {
   const { currentUser } = useAuth();
-  const { dispatchNotification } = useNotifications();
 
   // Data states
   const [reports, setReports] = useState<UnifiedReportItem[]>([]);
@@ -273,19 +271,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             currentUser.full_name
           );
 
-          if (item.tutorUid) {
-            dispatchNotification(
-              `Report Approved: ${item.cellName}`,
-              `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been officially approved.`,
-              'report_approved',
-              'in_app'
-            );
-          }
         }
       }
       setIsBulkApproveModalOpen(false);
       setSelectedIds(new Set());
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsBulkProcessing(false);
     }
@@ -312,20 +304,14 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             currentUser.full_name
           );
 
-          if (item.tutorUid) {
-            dispatchNotification(
-              `Report Needs Correction: ${item.cellName}`,
-              `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report requires correction: "${bulkReturnComment.trim()}"`,
-              'revision_requested',
-              'in_app'
-            );
-          }
         }
       }
       setIsBulkReturnModalOpen(false);
       setBulkReturnComment('');
       setSelectedIds(new Set());
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsBulkProcessing(false);
     }
@@ -345,16 +331,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         currentUser.full_name
       );
 
-      if (item.tutorUid) {
-        dispatchNotification(
-          `Report Approved: ${item.cellName}`,
-          `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been verified and approved.`,
-          'report_approved',
-          'in_app'
-        );
-      }
 
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setQuickActionProcessingId(null);
     }
@@ -387,23 +367,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         currentUser.full_name
       );
 
-      // Dispatch in-app notification to tutor
-      if (inspectingItem.tutorUid) {
-        dispatchNotification(
-          `Report ${reviewAction}: ${inspectingItem.cellName}`,
-          reviewAction === 'Approved'
-            ? `Your ${inspectingItem.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been officially approved.`
-            : `Your ${inspectingItem.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report was returned for correction: "${reviewComment}"`,
-          reviewAction === 'Approved' ? 'report_approved' : 'revision_requested',
-          'in_app'
-        );
-      }
-
       setInspectingItem(null);
       setReviewAction(null);
       setReviewComment('');
       if (onClearInitialReportId) onClearInitialReportId();
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsSubmittingReview(false);
     }

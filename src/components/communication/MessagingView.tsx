@@ -749,7 +749,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Forum Compose Bar */}
-          <form onSubmit={handleSendCommunity} className="p-4 bg-white border-t border-[#E3E8EF] space-y-3">
+          <form onSubmit={handleSendCommunity} className="p-3 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-3 min-w-0">
             {/* Category Selector + Quick Emojis Row */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -790,7 +790,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
 
             {/* Input Row */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               {/* @ Tag Button */}
               <button
                 type="button"
@@ -827,7 +827,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 value={communityText}
                 onChange={handleCommunityInputChange}
                 placeholder="Share a message, prayer need, testimony or tag someone with @..."
-                className="flex-1 text-xs sm:text-sm rounded-2xl border border-[#E3E8EF] bg-[#F5F7FA] px-4 py-3 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] focus:outline-none transition-all"
+                className="flex-1 min-w-0 w-0 text-xs sm:text-sm rounded-2xl border border-[#E3E8EF] bg-[#F5F7FA] px-3 sm:px-4 py-3 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] focus:outline-none transition-all"
               />
 
               {/* Send Button */}
@@ -837,9 +837,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 size="md"
                 isLoading={isSendingCommunity}
                 leftIcon={<Send className="w-4 h-4 text-[#C6A45A]" />}
-                className="rounded-2xl px-5 h-11 shrink-0"
+                className="rounded-2xl px-3 sm:px-5 h-11 min-w-[44px] shrink-0"
               >
-                Send
+                <span className="hidden sm:inline">Send</span>
               </Button>
             </div>
           </form>
@@ -1057,7 +1057,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Private Input Box */}
-          <form onSubmit={handleSendPrivate} className="p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2">
+          <form onSubmit={handleSendPrivate} className="p-3 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-1.5 sm:gap-2 min-w-0">
             <button
               type="button"
               onClick={() => setShowPrivateEmoji(prev => !prev)}

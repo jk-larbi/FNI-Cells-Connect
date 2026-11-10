@@ -436,34 +436,52 @@ export class ReportService {
     const nowIso = new Date().toISOString();
     const collectionName = reportType === 'meeting' ? 'cellMeetingReports' : 'evangelismReports';
 
-    // Save review to Supabase
+    // Load the report from the authoritative backend if the browser cache is missing,
+    // then persist the decision before notifying the tutor.
+    const backendAvailable = SupabaseService.isAvailable();
     try {
       if (reportType === 'meeting') {
-        const meetingList = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
-        const target = meetingList.find(r => r.id === reportId);
-        if (target) {
-          await SupabaseService.upsertCellMeetingReport({
-            ...target,
-            status,
-            reviewerComment: comment,
-            reviewedBy: reviewerUid,
-            reviewedByName: reviewerName,
-            reviewedAt: nowIso,
-          });
+        let meetingList = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
+        let target = meetingList.find(r => r.id === reportId);
+        if (!target && backendAvailable) {
+          const remote = await SupabaseService.getCellMeetingReports();
+          target = remote?.find(r => r.id === reportId);
+          if (remote) {
+            meetingList = remote;
+            setStored(STORAGE_KEYS.MEETING_REPORTS, remote);
+          }
         }
+        if (!target) throw new Error('This cell meeting report could not be found. Refresh the report queue and try again.');
+        const saved = await SupabaseService.upsertCellMeetingReport({
+          ...target,
+          status,
+          reviewerComment: comment,
+          reviewedBy: reviewerUid,
+          reviewedByName: reviewerName,
+          reviewedAt: nowIso,
+        });
+        if (backendAvailable && !saved) throw new Error('The report decision could not be saved to the FNI database. Please try again.');
       } else {
-        const evList = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
-        const target = evList.find(r => r.id === reportId);
-        if (target) {
-          await SupabaseService.upsertEvangelismReport({
-            ...target,
-            status,
-            reviewerComment: comment,
-            reviewedBy: reviewerUid,
-            reviewedByName: reviewerName,
-            reviewedAt: nowIso,
-          });
+        let evList = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
+        let target = evList.find(r => r.id === reportId);
+        if (!target && backendAvailable) {
+          const remote = await SupabaseService.getEvangelismReports();
+          target = remote?.find(r => r.id === reportId);
+          if (remote) {
+            evList = remote;
+            setStored(STORAGE_KEYS.EVANGELISM_REPORTS, remote);
+          }
         }
+        if (!target) throw new Error('This evangelism report could not be found. Refresh the report queue and try again.');
+        const saved = await SupabaseService.upsertEvangelismReport({
+          ...target,
+          status,
+          reviewerComment: comment,
+          reviewedBy: reviewerUid,
+          reviewedByName: reviewerName,
+          reviewedAt: nowIso,
+        });
+        if (backendAvailable && !saved) throw new Error('The report decision could not be saved to the FNI database. Please try again.');
       }
 
       await SupabaseService.insertReviewLog({
@@ -476,7 +494,8 @@ export class ReportService {
         createdAt: nowIso,
       });
     } catch (err) {
-      console.warn('Supabase report review sync notice:', err);
+      if (backendAvailable) throw err;
+      console.warn('Offline report review sync notice:', err);
     }
 
     let updatedReport: any = null;

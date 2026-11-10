@@ -207,7 +207,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
           {!isPushSupported && (
             <p className="mt-2 text-[11px] text-amber-700">
-              Web push is unsupported in this environment. In-app real-time notifications remain fully active.
+              {PushNotificationService.getSupportMessage() || 'Background push is unavailable on this device. In-app real-time notifications remain active.'}
             </p>
           )}
         </div>
