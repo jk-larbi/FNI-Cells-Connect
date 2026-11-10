@@ -19,6 +19,7 @@ import { DashboardView } from '../dashboard/DashboardView';
 import { CellManagementView } from '../admin/CellManagementView';
 import { CellLeadersView } from '../admin/CellLeadersView';
 import { ReportReviewView } from '../admin/ReportReviewView';
+import { ReceivedReportsView } from '../admin/ReceivedReportsView';
 import { EvangelismAdminView } from '../admin/EvangelismAdminView';
 import { AnalyticsView } from '../admin/AnalyticsView';
 import { AdminSettingsView } from '../admin/AdminSettingsView';
@@ -121,6 +122,7 @@ export const AppLayout: React.FC = () => {
     currentTab === 'cell-management' ||
     currentTab === 'cell-leaders' ||
     currentTab === 'report-review' ||
+    currentTab === 'received-reports' ||
     currentTab === 'analytics' ||
     currentTab === 'settings' ||
     currentTab === 'finance'
@@ -170,6 +172,7 @@ export const AppLayout: React.FC = () => {
                 {effectiveTab === 'cell-leaders' && (
                   <CellLeadersView onBack={handleGoBack} />
                 )}
+                {effectiveTab === 'received-reports' && <ReceivedReportsView />}
                 {effectiveTab === 'report-review' && (
                   <ReportReviewView
                     initialReportId={highlightedReportId}
