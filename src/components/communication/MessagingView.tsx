@@ -87,6 +87,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || '');
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
+  const [privateSendError, setPrivateSendError] = useState<string | null>(null);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
   const [showPrivateEmoji, setShowPrivateEmoji] = useState(false);
   const [privateEmojiCategory, setPrivateEmojiCategory] = useState<string>('Smileys & Faces');
@@ -96,6 +97,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [communityText, setCommunityText] = useState('');
   const [communityCategory, setCommunityCategory] = useState<'general' | 'announcement' | 'prayer_request' | 'testimony'>('general');
   const [isSendingCommunity, setIsSendingCommunity] = useState(false);
+  const [communitySendError, setCommunitySendError] = useState<string | null>(null);
   const [communityReplyTo, setCommunityReplyTo] = useState<MessageReply | null>(null);
   const [showCommunityEmoji, setShowCommunityEmoji] = useState(false);
   const [communityEmojiCategory, setCommunityEmojiCategory] = useState<string>('Smileys & Faces');
@@ -315,6 +317,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       : currentUser.full_name;
 
     setIsSendingPrivate(true);
+    setPrivateSendError(null);
     try {
       await MessagingService.sendPrivateMessage({
         senderUid: currentUser.id,
@@ -332,6 +335,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setShowPrivateEmoji(false);
       await loadPrivateMessages();
       privateEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+      console.error('Private message send failed:', error);
+      setPrivateSendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
     } finally {
       setIsSendingPrivate(false);
     }
@@ -348,6 +354,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       .map(m => m.name);
 
     setIsSendingCommunity(true);
+    setCommunitySendError(null);
     try {
       await MessagingService.sendCommunityMessage({
         senderUid: currentUser.id,
@@ -365,6 +372,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setShowMentionMenu(false);
       await loadCommunity();
       communityEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+      console.error('Community message send failed:', error);
+      setCommunitySendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
     } finally {
       setIsSendingCommunity(false);
     }
@@ -372,8 +382,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Handle reaction on community message
   const handleReaction = async (messageId: string, emoji: string) => {
-    await MessagingService.reactToCommunityMessage(messageId, emoji, currentUser.full_name);
-    await loadCommunity();
+    try {
+      await MessagingService.reactToCommunityMessage(messageId, emoji, currentUser.id, currentUser.full_name);
+      await loadCommunity();
+    } catch (error) {
+      console.warn('Community reaction failed:', error);
+      setCommunitySendError('Your reaction could not be saved. Please try again.');
+    }
   };
 
   // Format message text with highlighted @mentions and authentic standard iPhone emojis
@@ -750,6 +765,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Forum Compose Bar */}
           <form onSubmit={handleSendCommunity} className="p-3 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-3 min-w-0">
+            {communitySendError && (
+              <p role="alert" className="text-xs font-semibold text-rose-600">{communitySendError}</p>
+            )}
             {/* Category Selector + Quick Emojis Row */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -1057,7 +1075,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Private Input Box */}
-          <form onSubmit={handleSendPrivate} className="p-3 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <form onSubmit={handleSendPrivate} className="p-3 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+            {privateSendError && (
+              <p role="alert" className="basis-full text-xs font-semibold text-rose-600">{privateSendError}</p>
+            )}
             <button
               type="button"
               onClick={() => setShowPrivateEmoji(prev => !prev)}
@@ -1077,7 +1098,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               value={privateText}
               onChange={e => setPrivateText(e.target.value)}
               placeholder="Type your confidential message to leadership..."
-              className="flex-1 text-xs sm:text-sm rounded-2xl border border-[#E3E8EF] bg-[#F5F7FA] px-4 py-3 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] focus:outline-none transition-all"
+              className="flex-1 min-w-0 w-0 text-xs sm:text-sm rounded-2xl border border-[#E3E8EF] bg-[#F5F7FA] px-3 sm:px-4 py-3 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] focus:outline-none transition-all"
             />
 
             <Button
