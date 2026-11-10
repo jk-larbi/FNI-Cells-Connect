@@ -141,8 +141,9 @@ export class MessagingService {
     for (const [tutorUid, messages] of groups.entries()) {
       messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       const last = messages[messages.length - 1];
-      const unreadCount = messages.filter(m => m.senderRole !== 'admin' && !m.isRead).length;
-      const tutorName = last.senderRole !== 'admin' ? last.senderName : last.recipientName;
+      const isLeadershipRole = (role: UserRole) => ['admin', 'super_admin', 'national_admin'].includes(role);
+      const unreadCount = messages.filter(m => !isLeadershipRole(m.senderRole) && !m.isRead).length;
+      const tutorName = !isLeadershipRole(last.senderRole) ? last.senderName : last.recipientName;
       summaries.push({
         tutorUid,
         tutorName,
