@@ -83,9 +83,11 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
         mission,
         annualSoulWinningTarget: target,
         weeklyDeadline: deadline,
-      });
-      setSystemSaveNotice('System settings successfully updated across FNI.');
-      setTimeout(() => setSystemSaveNotice(''), 3500);
+      }, currentUser?.full_name || 'Administrator');
+      setSystemSaveNotice('Vision, Mission, and annual soul-winning target saved across FNI.');
+      setTimeout(() => setSystemSaveNotice(''), 4500);
+    } catch (error: any) {
+      setSystemSaveNotice(error?.message || 'Could not save ministry settings. Please try again.');
     } finally {
       setIsSavingSystem(false);
     }
