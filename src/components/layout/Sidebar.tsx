@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-xl overflow-hidden border border-[#E3E8EF] bg-[#142B4A] flex items-center justify-center shadow-xs shrink-0">
                 <img
-                  src="/fni-official-logo.jpg"
+                  src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
                   alt="FNI Official Logo"
                   className="w-full h-full object-cover"
                 />

@@ -39,6 +39,14 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden sm:inline text-xs font-bold tracking-wide">Menu</span>
         </button>
 
+        <div className="md:hidden w-7 h-7 rounded-lg overflow-hidden border border-[#E3E8EF] bg-[#142B4A] flex items-center justify-center shrink-0">
+          <img
+            src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
+            alt="FNI Logo"
+            className="w-full h-full object-cover"
+          />
+        </div>
+
         {canGoBack && onGoBack && (
           <button
             type="button"
