@@ -1111,7 +1111,7 @@ export class SupabaseService {
         id: 'general',
         vision: data.vision || '',
         mission: data.mission || '',
-        annualSoulWinningTarget: data.annual_soul_target || 5000,
+        annualSoulWinningTarget: data.annual_soul_winning_target ?? 5000,
         weeklyDeadline: 'Sunday at 6:00 PM Ghana Time (Africa/Accra, UTC+0)',
         updatedAt: data.updated_at || new Date().toISOString(),
         updatedBy: data.updated_by || 'Administrator',
@@ -1128,11 +1128,8 @@ export class SupabaseService {
       ministry_name: 'Forerunners Network International (FNI)',
       vision: settings.vision,
       mission: settings.mission,
-      submission_deadline_day: 'Sunday',
-      submission_deadline_time: '18:00',
-      annual_soul_target: settings.annualSoulWinningTarget,
-      enable_email_notifications: true,
-      enable_whatsapp_notifications: true,
+      weekly_deadline: settings.weeklyDeadline,
+      annual_soul_winning_target: settings.annualSoulWinningTarget,
       updated_by: settings.updatedBy || '',
     };
 
