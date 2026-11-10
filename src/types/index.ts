@@ -438,7 +438,7 @@ export interface TutorRegistrationInput {
 }
 
 export interface TutorLoginInput {
-  username: string;
+  username?: string;
   email?: string;
   fullName?: string;
   password: string;
