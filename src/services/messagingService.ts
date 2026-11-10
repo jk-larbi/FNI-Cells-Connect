@@ -60,11 +60,13 @@ export class MessagingService {
       replyTo: data.replyTo,
     };
 
-    // Primary write to Supabase
-    try {
-      await SupabaseService.sendPrivateMessage(msg);
-    } catch (err) {
-      console.warn('Supabase private message notice:', err);
+    // A message is only considered sent after the authoritative Supabase write succeeds.
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Messaging is temporarily unavailable. Please reconnect and try again.');
+    }
+    const saved = await SupabaseService.sendPrivateMessage(msg);
+    if (!saved) {
+      throw new Error('Your message could not be delivered. Please try again.');
     }
 
     const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
@@ -93,10 +95,10 @@ export class MessagingService {
   static async getPrivateConversation(tutorUid: string): Promise<PrivateMessage[]> {
     try {
       const supaMsgs = await SupabaseService.getPrivateMessages(tutorUid);
-      if (supaMsgs && supaMsgs.length > 0) {
+      if (supaMsgs !== null) {
         setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
         return supaMsgs
-          .filter(m => m.senderUid === tutorUid || m.recipientUid === tutorUid || (m.recipientUid === 'admin' && m.senderUid === tutorUid))
+          .filter(m => m.senderUid === tutorUid || m.recipientUid === tutorUid)
           .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       }
     } catch (e) {
@@ -117,7 +119,7 @@ export class MessagingService {
     try {
       // Refresh messages from Supabase if possible
       const supaMsgs = await SupabaseService.getPrivateMessages('');
-      if (supaMsgs && supaMsgs.length > 0) {
+      if (supaMsgs !== null) {
         all = supaMsgs;
         setStored(STORAGE_KEYS.PRIVATE, all);
       }
@@ -156,21 +158,27 @@ export class MessagingService {
 
   static async markPrivateMessagesRead(tutorUid: string, readerUid: string): Promise<void> {
     const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
-    let modified = false;
+    const readAt = new Date().toISOString();
+    const readIds: string[] = [];
 
     const updated = all.map(m => {
       if ((m.senderUid === tutorUid || m.recipientUid === tutorUid) && m.senderUid !== readerUid && !m.isRead) {
-        modified = true;
-        const readMsg = { ...m, isRead: true, readAt: new Date().toISOString() };
-        // Sync read status to Supabase
-        SupabaseService.sendPrivateMessage(readMsg).catch(() => {});
-        return readMsg;
+        readIds.push(m.id);
+        return { ...m, isRead: true, readAt };
       }
       return m;
     });
 
-    if (modified) {
+    if (readIds.length > 0) {
       setStored(STORAGE_KEYS.PRIVATE, updated);
+      if (supabase) {
+        const results = await Promise.all(
+          readIds.map(id => supabase!.from('private_messages').update({ is_read: true, read_at: readAt }).eq('id', id))
+        );
+        results.forEach(({ error }) => {
+          if (error) console.warn('Private message read receipt could not sync:', error.message);
+        });
+      }
     }
   }
 
@@ -205,11 +213,13 @@ export class MessagingService {
       reactions: {},
     };
 
-    // Primary write to Supabase
-    try {
-      await SupabaseService.sendCommunityMessage(msg);
-    } catch (err) {
-      console.warn('Supabase community message notice:', err);
+    // A community post is only considered sent after the authoritative Supabase write succeeds.
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Community chat is temporarily unavailable. Please reconnect and try again.');
+    }
+    const saved = await SupabaseService.sendCommunityMessage(msg);
+    if (!saved) {
+      throw new Error('Your message could not be delivered. Please try again.');
     }
 
     const all = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
@@ -241,7 +251,7 @@ export class MessagingService {
   static async getCommunityMessages(): Promise<CommunityMessage[]> {
     try {
       const supaMsgs = await SupabaseService.getCommunityMessages();
-      if (supaMsgs && supaMsgs.length > 0) {
+      if (supaMsgs !== null) {
         setStored(STORAGE_KEYS.COMMUNITY, supaMsgs);
         return supaMsgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       }
@@ -355,37 +365,21 @@ export class MessagingService {
   static async reactToCommunityMessage(
     messageId: string,
     emoji: string,
+    userId: string,
     userName: string
   ): Promise<CommunityMessage | null> {
-    const all = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
-    const target = all.find(m => m.id === messageId);
-    if (!target) return null;
-
-    if (!target.reactions) {
-      target.reactions = {};
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Reactions are temporarily unavailable. Please reconnect and try again.');
     }
 
-    const currentReactors = target.reactions[emoji] || [];
-    if (currentReactors.includes(userName)) {
-      // Remove reaction
-      target.reactions[emoji] = currentReactors.filter(u => u !== userName);
-      if (target.reactions[emoji].length === 0) {
-        delete target.reactions[emoji];
-      }
-    } else {
-      // Add reaction
-      target.reactions[emoji] = [...currentReactors, userName];
+    const saved = await SupabaseService.toggleCommunityMessageReaction(messageId, userId, userName, emoji);
+    if (!saved) {
+      throw new Error('Your reaction could not be saved. Please try again.');
     }
 
-    setStored(STORAGE_KEYS.COMMUNITY, all);
-    // Sync to Supabase
-    try {
-      await SupabaseService.sendCommunityMessage(target);
-    } catch (e) {
-      console.warn('Supabase react notice:', e);
-    }
-
-    return target;
+    const refreshed = await this.getCommunityMessages();
+    setStored(STORAGE_KEYS.COMMUNITY, refreshed);
+    return refreshed.find(message => message.id === messageId) || null;
   }
 
   static checkCommunityAccess(_tutorUid?: string, _userRole?: UserRole): boolean {
