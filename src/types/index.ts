@@ -427,6 +427,7 @@ export interface AuditLog {
 
 export interface TutorRegistrationInput {
   fullName: string;
+  username: string;
   phoneNumber?: string;
   cellName: string;
   coLeaderName?: string;
