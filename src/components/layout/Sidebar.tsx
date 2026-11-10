@@ -184,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Middle Section: Navigation Links (Scrollable if screen height is small) */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 custom-scrollbar">
           <nav className="space-y-1">
             {navItems.map(item => {
               const Icon = item.icon;

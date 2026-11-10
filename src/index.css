@@ -118,12 +118,57 @@ body { overscroll-behavior-x: none; }
 img, video, canvas, svg { max-width: 100%; }
 button, a, input, select, textarea { touch-action: manipulation; }
 .mobile-bottom-nav { padding-bottom: max(0.35rem, env(safe-area-inset-bottom)); }
+/* Mobile scrolling: keep the document vertically stable while allowing
+   deliberate horizontal scrolling only inside wide tables and data regions. */
 @media (max-width: 767px) {
-  #root { overflow-x: clip; }
-  main { min-width: 0; width: 100%; }
+  html {
+    scroll-behavior: auto;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
+  body {
+    min-height: 100%;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #root {
+    min-height: 100%;
+    overflow-x: clip;
+    isolation: isolate;
+  }
+  main {
+    min-width: 0;
+    width: 100%;
+    overflow-x: clip;
+    overscroll-behavior-y: auto;
+  }
   table { min-width: 100%; }
-  .table-scroll-container { max-width: 100%; border-radius: 0.75rem; }
+  .table-scroll-container {
+    max-width: 100%;
+    border-radius: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+  .custom-scrollbar {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
   input, select, textarea { max-width: 100%; }
+  .mobile-bottom-nav {
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Prevent the page behind the mobile drawer from moving on touch devices. */
+body.fni-mobile-menu-open {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 html { color-scheme: light; }
