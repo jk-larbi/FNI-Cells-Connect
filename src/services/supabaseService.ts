@@ -805,7 +805,7 @@ export class SupabaseService {
       });
       return messages.map(message => ({
         ...message,
-        reactions: grouped.get(message.id) || {},
+        reactions: grouped.get(message.id) || message.reactions || {},
       }));
     } catch (err) {
       return null;
