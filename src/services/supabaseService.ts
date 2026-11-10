@@ -719,11 +719,15 @@ export class SupabaseService {
   static async getPrivateMessages(userUid: string): Promise<PrivateMessage[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      const { data, error } = await supabase!
+      let query = supabase!
         .from('private_messages')
-        .select('*')
-        .or(`sender_uid.eq.${userUid},recipient_uid.eq.${userUid}`)
-        .order('created_at', { ascending: true });
+        .select('*');
+      // An empty UID is used only by the admin inbox. RLS restricts the
+      // unfiltered result to administrators; tutors still receive only their own rows.
+      if (userUid) {
+        query = query.or(`sender_uid.eq.${userUid},recipient_uid.eq.${userUid}`);
+      }
+      const { data, error } = await query.order('created_at', { ascending: true });
       if (error) return null;
       return data ? data.map(mapPrivateMessageFromDb) : [];
     } catch (err) {
@@ -782,7 +786,27 @@ export class SupabaseService {
         .order('created_at', { ascending: true })
         .limit(100);
       if (error) return null;
-      return data ? data.map(mapCommunityMessageFromDb) : [];
+      const messages = data ? data.map(mapCommunityMessageFromDb) : [];
+      if (!data || data.length === 0) return messages;
+
+      // Reactions live in their own table so any authenticated member can
+      // react without receiving permission to edit another member's post.
+      const { data: reactionRows, error: reactionError } = await supabase!
+        .from('community_message_reactions')
+        .select('message_id,user_id,user_name,emoji')
+        .in('message_id', data.map(row => row.id));
+      if (reactionError || !reactionRows) return messages;
+
+      const grouped = new Map<string, Record<string, string[]>>();
+      reactionRows.forEach(row => {
+        const reactions = grouped.get(row.message_id) || {};
+        reactions[row.emoji] = [...(reactions[row.emoji] || []), row.user_name];
+        grouped.set(row.message_id, reactions);
+      });
+      return messages.map(message => ({
+        ...message,
+        reactions: grouped.get(message.id) || message.reactions || {},
+      }));
     } catch (err) {
       return null;
     }
@@ -823,6 +847,46 @@ export class SupabaseService {
         payload,
         errorMessage: err?.message || String(err),
       });
+      return false;
+    }
+  }
+
+  static async toggleCommunityMessageReaction(
+    messageId: string,
+    userId: string,
+    userName: string,
+    emoji: string
+  ): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { data: existing, error: lookupError } = await supabase!
+        .from('community_message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', userId)
+        .eq('emoji', emoji)
+        .maybeSingle();
+      if (lookupError) return false;
+
+      if (existing) {
+        const { error } = await supabase!
+          .from('community_message_reactions')
+          .delete()
+          .eq('id', existing.id);
+        return !error;
+      }
+
+      const { error } = await supabase!
+        .from('community_message_reactions')
+        .insert({
+          message_id: messageId,
+          user_id: userId,
+          user_name: userName,
+          emoji,
+        });
+      return !error;
+    } catch (err) {
+      console.warn('Community reaction sync notice:', err);
       return false;
     }
   }
@@ -1143,9 +1207,10 @@ export class SupabaseService {
       const { data, error } = await supabase!
         .from('notifications')
         .select('*')
-        .or(`recipient_target.eq.${recipientTarget},recipient_target.eq.all,user_id.eq.${recipientTarget},user_id.eq.all`)
+        // RLS is the recipient filter. This also supports the admin inbox
+        // and the shared tutor-community notification stream.
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
       if (error) return null;
       return data ? data.map(mapNotificationFromDb) : [];
     } catch (err) {
@@ -1155,21 +1220,16 @@ export class SupabaseService {
 
   static async insertNotification(item: NotificationItem): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    const target = item.user_id || (item as any).recipient_target || 'all';
-    const notifType = (item.type || (item as any).notification_type || 'system_alert') as any;
+    const target = item.user_id || 'all';
     const payload = {
       id: item.id,
       user_id: target,
-      recipient_target: target,
-      sender_id: (item as any).sender_id || (item as any).senderId || null,
-      sender_name: (item as any).sender_name || (item as any).senderName || null,
       title: item.title,
       message: item.message,
-      date: item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-      notification_type: notifType,
-      type: notifType,
-      channel: (item.channel || 'in_app') as any,
-      status: 'delivered',
+      type: item.type || 'system_alert',
+      channel: item.channel || 'in_app',
+      target_tab: item.metadata?.targetTab || null,
+      action_url: item.metadata?.actionUrl || null,
       is_read: Boolean(item.is_read),
       read_at: item.is_read ? new Date().toISOString() : null,
       metadata: item.metadata || {},
