@@ -276,6 +276,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       setIsBulkApproveModalOpen(false);
       setSelectedIds(new Set());
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsBulkProcessing(false);
     }
@@ -308,6 +310,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       setBulkReturnComment('');
       setSelectedIds(new Set());
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsBulkProcessing(false);
     }
@@ -329,6 +333,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
 
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setQuickActionProcessingId(null);
     }
@@ -366,6 +372,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       setReviewComment('');
       if (onClearInitialReportId) onClearInitialReportId();
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsSubmittingReview(false);
     }
