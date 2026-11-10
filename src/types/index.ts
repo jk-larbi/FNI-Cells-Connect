@@ -522,6 +522,7 @@ export type AdminNavTab =
   | 'cell-management'
   | 'cell-leaders'
   | 'report-review'
+  | 'received-reports'
   | 'evangelism'
   | 'follow-ups'
   | 'finance'
