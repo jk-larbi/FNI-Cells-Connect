@@ -533,7 +533,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 {/* 1. Email or Full Name */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Username <span className="text-[#C74646]">*</span>
+                    Username / phone / email <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
