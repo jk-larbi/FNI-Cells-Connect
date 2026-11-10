@@ -59,9 +59,11 @@ export class ReportService {
   }): Promise<CellMeetingReport[]> {
     // 1. Primary: Try Supabase
     const supaReports = await SupabaseService.getCellMeetingReports(filters);
-    if (supaReports && supaReports.length > 0) {
+    if (supaReports !== null) {
       let filtered = supaReports;
       if (filters?.status) filtered = filtered.filter(r => r.status === filters.status);
+      // Supabase is authoritative when connected, including an empty result.
+      // Replace stale browser cache so deleted test reports cannot reappear.
       setStored(STORAGE_KEYS.MEETING_REPORTS, filtered);
       return filtered;
     }
@@ -222,9 +224,11 @@ export class ReportService {
   }): Promise<EvangelismReport[]> {
     // 1. Primary: Try Supabase
     const supaReports = await SupabaseService.getEvangelismReports(filters);
-    if (supaReports && supaReports.length > 0) {
+    if (supaReports !== null) {
       let filtered = supaReports;
       if (filters?.status) filtered = filtered.filter(r => r.status === filters.status);
+      // Supabase is authoritative when connected, including an empty result.
+      // Replace stale browser cache so deleted test reports cannot reappear.
       setStored(STORAGE_KEYS.EVANGELISM_REPORTS, filtered);
       return filtered;
     }
