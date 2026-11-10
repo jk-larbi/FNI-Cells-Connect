@@ -929,7 +929,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         {msg.senderName}
                       </span>
                       <span className="text-[11px] text-[#667085]">
-                        ({msg.senderRole === 'admin' ? 'Leadership' : 'Tutor'})
+                        ({['admin', 'super_admin', 'national_admin'].includes(msg.senderRole) ? 'Leadership' : 'Tutor'})
                       </span>
                     </div>
 
