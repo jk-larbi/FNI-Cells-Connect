@@ -201,6 +201,24 @@ export class CellService {
     return { cell: newCell, isExistingAssociated: false };
   }
 
+  static async archiveCells(cellIds: string[]): Promise<boolean> {
+    if (!cellIds.length) return false;
+    const archived = await SupabaseService.archiveCellRegistrations(cellIds);
+    if (!archived) return false;
+    const ids = new Set(cellIds);
+    saveStoredCells(getStoredCells().map(cell => ids.has(cell.id) ? { ...cell, is_archived: true } : cell));
+    return true;
+  }
+
+  static async restoreCells(cellIds: string[]): Promise<boolean> {
+    if (!cellIds.length) return false;
+    const restored = await SupabaseService.restoreCellRegistrations(cellIds);
+    if (!restored) return false;
+    const ids = new Set(cellIds);
+    saveStoredCells(getStoredCells().map(cell => ids.has(cell.id) ? { ...cell, is_archived: false } : cell));
+    return true;
+  }
+
   static async deleteCells(cellIds: string[]): Promise<boolean> {
     if (!cellIds.length) return false;
     const deleted = await SupabaseService.deleteCellRegistrations(cellIds);
