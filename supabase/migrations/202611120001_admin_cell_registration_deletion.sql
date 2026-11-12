@@ -66,13 +66,18 @@ BEGIN
   FOREACH v_table IN ARRAY ARRAY[
     'follow_ups', 'evangelism_contacts', 'cell_meeting_reports',
     'evangelism_reports', 'offerings', 'offering_records',
-    'cell_reports', 'private_messages', 'community_messages'
+    'cell_reports', 'private_messages'
   ] LOOP
     IF to_regclass(format('public.%I', v_table)) IS NOT NULL THEN
       EXECUTE format('DELETE FROM public.%I WHERE cell_id::text = ANY($1)', v_table)
       USING v_keys;
     END IF;
   END LOOP;
+
+  IF to_regclass('public.community_messages') IS NOT NULL THEN
+    DELETE FROM public.community_messages
+    WHERE cell_name = ANY(COALESCE(v_names, ARRAY[]::text[]));
+  END IF;
 
   -- Keep leader/tutor login accounts, but detach their cell assignment.
   UPDATE public.profiles
