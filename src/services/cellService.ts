@@ -36,12 +36,14 @@ export class CellService {
   static async getCells(): Promise<Cell[]> {
     // 1. Primary: Supabase
     const supaCells = await SupabaseService.getCells();
-    if (supaCells && supaCells.length > 0) {
+    if (supaCells !== null) {
+      // A successful empty Supabase response is authoritative. Clear stale
+      // offline data instead of resurrecting deleted cell registrations.
       saveStoredCells(supaCells);
       return supaCells;
     }
 
-    // 2. Offline / LocalStorage cache
+    // Only use the offline cache when Supabase is unavailable or the request failed.
     return getStoredCells();
   }
 
