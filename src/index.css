@@ -998,3 +998,8 @@ html.dark [class*="text-navy-800"] { color: #A8C7FF !important; }
 html.dark [class*="text-gold-600"],
 html.dark [class*="text-gold-700"],
 html.dark [class*="text-gold-800"] { color: #F0C75E !important; }
+
+html.dark [class*="bg-gold-50"],
+html.dark [class*="bg-gold-100"] { background-color: #3A321F !important; border-color: #6D5A2C !important; }
+html.dark [class*="border-gold-"] { border-color: #806A34 !important; }
+html.dark [class*="text-gold-"] { color: #F0C75E !important; }
