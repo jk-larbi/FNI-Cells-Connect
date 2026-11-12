@@ -431,7 +431,6 @@ export interface TutorRegistrationInput {
   phoneNumber?: string;
   cellName: string;
   coLeaderName?: string;
-  username?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
