@@ -71,6 +71,7 @@ function mapCellFromDb(row: any): Cell {
     target_attendance: Number(row.target_attendance || 15),
     status: row.status || 'Active',
     is_active: Boolean(row.is_active ?? true),
+    is_archived: Boolean(row.is_archived ?? false),
     created_at: row.created_at || new Date().toISOString(),
   };
 }
@@ -293,6 +294,24 @@ export class SupabaseService {
     }
   }
 
+  static async archiveCellRegistrations(cellIds: string[]): Promise<boolean> {
+    if (!this.isAvailable() || !cellIds.length) return false;
+    try {
+      const { error } = await supabase!.rpc('admin_archive_cell_registrations', { p_cell_ids: cellIds });
+      if (error) { console.warn('Supabase archiveCellRegistrations error:', error.message); return false; }
+      return true;
+    } catch (err) { console.warn('Supabase archiveCellRegistrations exception:', err); return false; }
+  }
+
+  static async restoreCellRegistrations(cellIds: string[]): Promise<boolean> {
+    if (!this.isAvailable() || !cellIds.length) return false;
+    try {
+      const { error } = await supabase!.rpc('admin_restore_cell_registrations', { p_cell_ids: cellIds });
+      if (error) { console.warn('Supabase restoreCellRegistrations error:', error.message); return false; }
+      return true;
+    } catch (err) { console.warn('Supabase restoreCellRegistrations exception:', err); return false; }
+  }
+
   static async deleteCellRegistrations(cellIds: string[]): Promise<boolean> {
     if (!this.isAvailable() || !cellIds.length) return false;
     try {
@@ -351,6 +370,7 @@ export class SupabaseService {
       requiring_follow_up: cell.requiring_follow_up || 0,
       status: cell.status || 'Active',
       is_active: cell.is_active ?? true,
+      is_archived: cell.is_archived ?? false,
       firebase_id: cell.id,
     };
 
