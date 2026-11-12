@@ -5,17 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: '#F5F7FA', // Light grey page background
+        canvas: '#F4F5F8', // FNI app canvas
         white: '#FFFFFF',
         brand: {
-          navy: '#142B4A',     // Deep navy blue
-          navyLight: '#203D63',// Secondary navy
-          gold: '#C6A45A',     // Restrained gold
-          goldLight: '#E9D9B2',// Light gold
-          grey: '#F5F7FA',     // Light grey
-          border: '#E3E8EF',   // Border grey
-          text: '#182230',     // Primary text
-          muted: '#667085',    // Secondary text
+          navy: '#2463D3',     // FNI Telegram-inspired blue
+          navyLight: '#1D4FA8',// Deeper FNI blue
+          gold: '#D9A52B',     // FNI gold accent
+          goldLight: '#F2D98E',// Light gold
+          grey: '#F4F5F8',     // Light grey
+          border: '#E6E9EF',   // Border grey
+          text: '#202634',     // Primary text
+          muted: '#778092',    // Secondary text
           success: '#23845B',  // Success green
           warning: '#D99A32',  // Warning amber
           error: '#C74646',    // Error red
@@ -29,9 +29,9 @@ export default {
           500: '#334E68',
           600: '#203D63', // Secondary navy
           700: '#1A3354',
-          800: '#142B4A', // Deep navy blue
-          900: '#10223B',
-          950: '#0B1728',
+          800: '#2463D3', // FNI blue
+          900: '#1D4FA8',
+          950: '#172F67',
         },
         gold: {
           50: '#FDFCF7',
@@ -39,7 +39,7 @@ export default {
           200: '#E9D9B2', // Light gold
           300: '#DFCA96',
           400: '#D2B777',
-          500: '#C6A45A', // Restrained gold
+          500: '#D9A52B', // FNI gold
           600: '#AB8B42',
           700: '#8A6E30',
           800: '#695221',
