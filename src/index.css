@@ -777,3 +777,207 @@ html.dark textarea:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 2
   header > div:last-child { min-width: 0; }
   header > div:last-child > button { flex-shrink: 0; }
 }
+
+
+/* ==========================================================
+   FNI CELLS CONNECT — FINAL THEME CONSISTENCY / ACCESSIBILITY
+   Central semantic tokens and corrective mappings for existing
+   utility classes. This layer intentionally changes appearance
+   only; component structure and behaviour remain untouched.
+   ========================================================== */
+:root {
+  color-scheme: light;
+  --fni-theme-page: #F4F5F8;
+  --fni-theme-surface: #FFFFFF;
+  --fni-theme-surface-raised: #F5F7FA;
+  --fni-theme-surface-subtle: #EEF2F7;
+  --fni-theme-text: #202634;
+  --fni-theme-text-secondary: #475467;
+  --fni-theme-text-muted: #667085;
+  --fni-theme-border: #D6DDE8;
+  --fni-theme-divider: #E3E8EF;
+  --fni-theme-focus: #2463D3;
+  --fni-theme-accent-text: #805D16;
+  --fni-theme-success: #16794B;
+  --fni-theme-warning: #8A5A0A;
+  --fni-theme-danger: #B42318;
+}
+html.dark {
+  color-scheme: dark;
+  --fni-theme-page: #12141B;
+  --fni-theme-surface: #1C202A;
+  --fni-theme-surface-raised: #252B37;
+  --fni-theme-surface-subtle: #30394A;
+  --fni-theme-text: #F2F4F8;
+  --fni-theme-text-secondary: #CBD5E1;
+  --fni-theme-text-muted: #AEBACC;
+  --fni-theme-border: #414958;
+  --fni-theme-divider: #343B49;
+  --fni-theme-focus: #8FB4FF;
+  --fni-theme-accent-text: #E7BD59;
+  --fni-theme-success: #72D6A5;
+  --fni-theme-warning: #F0C66A;
+  --fni-theme-danger: #FF929D;
+}
+
+/* Base surfaces and typography always follow the active theme. */
+html, body, #root { background-color: var(--fni-theme-page); color: var(--fni-theme-text); }
+html.dark body, html.dark #root { background-color: var(--fni-theme-page) !important; color: var(--fni-theme-text) !important; }
+html:not(.dark) [class*="text-slate-400"],
+html:not(.dark) [class*="text-gray-400"],
+html:not(.dark) [class*="text-zinc-400"],
+html:not(.dark) [class*="text-neutral-400"] { color: var(--fni-theme-text-muted) !important; }
+html:not(.dark) [class*="text-slate-500"],
+html:not(.dark) [class*="text-gray-500"],
+html:not(.dark) [class*="text-zinc-500"],
+html:not(.dark) [class*="text-neutral-500"] { color: var(--fni-theme-text-muted) !important; }
+html:not(.dark) [class*="text-[#98A2B3]"],
+html:not(.dark) [class*="text-[#A0AABD]"],
+html:not(.dark) [class*="text-[#B5BECC]"] { color: var(--fni-theme-text-muted) !important; }
+html:not(.dark) [class*="text-[#C6A45A]"],
+html:not(.dark) [class*="text-gold-"] { color: var(--fni-theme-accent-text) !important; }
+
+/* Neutral light surfaces are converted as a family in dark mode. */
+html.dark [class*="bg-white"],
+html.dark [class*="bg-canvas"],
+html.dark [class*="bg-slate-50"],
+html.dark [class*="bg-slate-100"],
+html.dark [class*="bg-slate-200"],
+html.dark [class*="bg-gray-50"],
+html.dark [class*="bg-gray-100"],
+html.dark [class*="bg-gray-200"],
+html.dark [class*="bg-zinc-50"],
+html.dark [class*="bg-zinc-100"],
+html.dark [class*="bg-neutral-50"],
+html.dark [class*="bg-neutral-100"],
+html.dark [class*="bg-[#F5F7FA]"],
+html.dark [class*="bg-[#F8FAFC]"],
+html.dark [class*="bg-[#FAFAFA]"],
+html.dark [class*="bg-[#F9FAFB]"],
+html.dark [class*="bg-[#F0F5FA]"],
+html.dark [class*="bg-[#E3E8EF]"] {
+  background-color: var(--fni-theme-surface) !important;
+  border-color: var(--fni-theme-border) !important;
+}
+html.dark [class*="bg-slate-50/"],
+html.dark [class*="bg-gray-50/"],
+html.dark [class*="bg-white/"] {
+  background-color: var(--fni-theme-surface) !important;
+}
+html.dark [class*="hover:bg-slate-50"]:hover,
+html.dark [class*="hover:bg-slate-100"]:hover,
+html.dark [class*="hover:bg-gray-50"]:hover,
+html.dark [class*="hover:bg-gray-100"]:hover,
+html.dark [class*="hover:bg-[#F5F7FA]"]:hover,
+html.dark [class*="hover:bg-[#EAF0F8]"]:hover {
+  background-color: var(--fni-theme-surface-subtle) !important;
+}
+
+/* Neutral text shades, including captions and disabled/helper text. */
+html.dark [class*="text-slate-300"],
+html.dark [class*="text-gray-300"],
+html.dark [class*="text-zinc-300"],
+html.dark [class*="text-neutral-300"] { color: #C5D0DE !important; }
+html.dark [class*="text-slate-400"],
+html.dark [class*="text-gray-400"],
+html.dark [class*="text-zinc-400"],
+html.dark [class*="text-neutral-400"],
+html.dark [class*="text-slate-500"],
+html.dark [class*="text-gray-500"],
+html.dark [class*="text-zinc-500"],
+html.dark [class*="text-neutral-500"],
+html.dark [class*="text-[#667085]"],
+html.dark [class*="text-[#98A2B3]"],
+html.dark [class*="text-[#A0AABD]"],
+html.dark [class*="text-[#778092]"] { color: var(--fni-theme-text-muted) !important; }
+html.dark [class*="text-slate-600"],
+html.dark [class*="text-slate-700"],
+html.dark [class*="text-gray-600"],
+html.dark [class*="text-gray-700"],
+html.dark [class*="text-zinc-600"],
+html.dark [class*="text-zinc-700"],
+html.dark [class*="text-neutral-600"],
+html.dark [class*="text-neutral-700"],
+html.dark [class*="text-[#475467]"],
+html.dark [class*="text-[#344054]"] { color: var(--fni-theme-text-secondary) !important; }
+
+/* Borders, dividers, table lines and native controls. */
+html.dark [class*="border-slate-100"],
+html.dark [class*="border-slate-200"],
+html.dark [class*="border-slate-300"],
+html.dark [class*="border-gray-100"],
+html.dark [class*="border-gray-200"],
+html.dark [class*="border-gray-300"],
+html.dark [class*="border-[#E3E8EF]"],
+html.dark [class*="divide-slate-100"] > * + *,
+html.dark [class*="divide-slate-200"] > * + *,
+html.dark hr,
+html.dark table th,
+html.dark table td { border-color: var(--fni-theme-divider) !important; }
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select {
+  background-color: #171B24 !important;
+  color: var(--fni-theme-text) !important;
+  border-color: var(--fni-theme-border) !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder,
+html.dark select:invalid { color: var(--fni-theme-text-muted) !important; opacity: 1; }
+html.dark input:disabled,
+html.dark textarea:disabled,
+html.dark select:disabled { background-color: #202631 !important; color: #AEBACC !important; border-color: #343B49 !important; opacity: 1; }
+html:not(.dark) input:disabled,
+html:not(.dark) textarea:disabled,
+html:not(.dark) select:disabled { color: #667085; background-color: #F1F3F6; }
+html.dark input:focus-visible,
+html.dark textarea:focus-visible,
+html.dark select:focus-visible,
+html.dark button:focus-visible,
+html.dark a:focus-visible { outline: 2px solid var(--fni-theme-focus); outline-offset: 2px; }
+html:not(.dark) input:focus-visible,
+html:not(.dark) textarea:focus-visible,
+html:not(.dark) select:focus-visible,
+html:not(.dark) button:focus-visible,
+html:not(.dark) a:focus-visible { outline: 2px solid var(--fni-theme-focus); outline-offset: 2px; }
+
+/* Preserve semantic status colours while keeping their contrast in dark mode. */
+html.dark [class*="bg-purple-50"],
+html.dark [class*="bg-violet-50"],
+html.dark [class*="bg-fuchsia-50"] { background-color: #302642 !important; border-color: #59436F !important; }
+html.dark [class*="text-purple-"],
+html.dark [class*="text-violet-"],
+html.dark [class*="text-fuchsia-"] { color: #D5B7FF !important; }
+html.dark [class*="bg-orange-50"],
+html.dark [class*="bg-amber-50"],
+html.dark [class*="bg-yellow-50"] { background-color: #382D17 !important; border-color: #6B5426 !important; }
+html.dark [class*="text-orange-"],
+html.dark [class*="text-amber-"],
+html.dark [class*="text-yellow-"] { color: #F0C66A !important; }
+html.dark [class*="bg-emerald-50"],
+html.dark [class*="bg-green-50"],
+html.dark [class*="bg-teal-50"] { background-color: #123326 !important; border-color: #286449 !important; }
+html.dark [class*="text-emerald-"],
+html.dark [class*="text-green-"],
+html.dark [class*="text-teal-"] { color: #72D6A5 !important; }
+html.dark [class*="bg-rose-50"],
+html.dark [class*="bg-red-50"],
+html.dark [class*="bg-pink-50"] { background-color: #3A2028 !important; border-color: #713544 !important; }
+html.dark [class*="text-rose-"],
+html.dark [class*="text-red-"],
+html.dark [class*="text-pink-"] { color: #FF929D !important; }
+html.dark [class*="bg-blue-50"],
+html.dark [class*="bg-indigo-50"],
+html.dark [class*="bg-cyan-50"] { background-color: #1B2D4A !important; border-color: #355A8E !important; }
+html.dark [class*="text-blue-"],
+html.dark [class*="text-indigo-"],
+html.dark [class*="text-cyan-"] { color: #9FC3FF !important; }
+
+/* Charts and data visualisations use the same readable foreground. */
+html.dark .recharts-text,
+html.dark .recharts-cartesian-axis-tick-value,
+html.dark .recharts-legend-item-text { fill: #C5D0DE !important; color: #C5D0DE !important; }
+html.dark .recharts-cartesian-grid line { stroke: #414958 !important; }
+html.dark .recharts-tooltip-wrapper > div { background-color: #1C202A !important; border-color: #414958 !important; color: #F2F4F8 !important; }
+html.dark ::selection { background: #355A8E; color: #FFFFFF; }
+html:not(.dark) ::selection { background: #E9D9B2; color: #142B4A; }
