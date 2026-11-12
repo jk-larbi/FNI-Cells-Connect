@@ -21,29 +21,30 @@ BEGIN
     RAISE EXCEPTION 'Select at least one cell';
   END IF;
 
-  SELECT array_agg(DISTINCT key_value), array_agg(DISTINCT name)
+  SELECT array_agg(DISTINCT key_value), array_agg(DISTINCT cell_name)
     INTO v_keys, v_names
   FROM (
-    SELECT c.id::text AS key_value, c.name
+    SELECT c.id::text AS key_value, c.name AS cell_name
     FROM public.cells c
     WHERE c.id::text = ANY(p_cell_ids) OR c.firebase_id = ANY(p_cell_ids)
     UNION ALL
-    SELECT c.firebase_id, c.name
+    SELECT c.firebase_id AS key_value, c.name AS cell_name
     FROM public.cells c
-    WHERE c.id::text = ANY(p_cell_ids) OR c.firebase_id = ANY(p_cell_ids)
-      AND c.firebase_id IS NOT NULL
-  ) matched;
+    WHERE c.firebase_id IS NOT NULL
+      AND (c.id::text = ANY(p_cell_ids) OR c.firebase_id = ANY(p_cell_ids))
+  ) matched
+  WHERE key_value IS NOT NULL;
 
   IF v_keys IS NULL OR cardinality(v_keys) = 0 THEN
     RAISE EXCEPTION 'No matching cell registrations were found';
   END IF;
 
   SELECT full_name INTO v_user_name
-  FROM public.profiles WHERE id = auth.uid();
+  FROM public.profiles WHERE supabase_user_id = auth.uid();
 
   INSERT INTO public.audit_logs (user_id, user_name, action, entity_type, entity_id, details, created_at)
   VALUES (
-    auth.uid(), COALESCE(v_user_name, 'Administrator'),
+    auth.uid()::text, COALESCE(v_user_name, 'Administrator'),
     'DELETE_CELL_REGISTRATIONS', 'cell',
     array_to_string(v_keys, ','),
     jsonb_build_object('cell_names', COALESCE(v_names, ARRAY[]::text[]),
