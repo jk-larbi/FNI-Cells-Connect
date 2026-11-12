@@ -532,3 +532,90 @@ html.dark .fni-simple-landing [class*="bg-[#142B4A]/5"] {
 html.dark .fni-simple-landing .border-white {
   border-color: #d7e1ef !important;
 }
+
+
+/* ==========================================================
+   FNI CONNECT FAMILY THEME — Telegram-inspired visual layer
+   Appearance only: all existing screens, roles and workflows
+   remain owned by their existing React components.
+   ========================================================== */
+:root {
+  --fni-blue: #2463D3;
+  --fni-blue-deep: #1D4FA8;
+  --fni-purple: #30245F;
+  --fni-gold: #D9A52B;
+  --fni-canvas: #F4F5F8;
+  --fni-border: #E6E9EF;
+  --fni-text: #202634;
+  --fni-muted: #778092;
+  --fni-dark: #12141B;
+  --fni-dark-surface: #1C202A;
+  --fni-dark-border: #343B49;
+}
+html, body, #root { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+html:not(.dark), html:not(.dark) body { background: var(--fni-canvas); color: var(--fni-text); }
+html:not(.dark) header,
+html:not(.dark) aside,
+html:not(.dark) .mobile-bottom-nav { background-color: #fff; border-color: var(--fni-border); }
+html:not(.dark) [class*="bg-[#142B4A]"],
+html:not(.dark) [class*="bg-navy-800"],
+html:not(.dark) [class*="bg-navy-900"] { background-color: var(--fni-blue) !important; }
+html:not(.dark) [class*="hover:bg-[#203D63]"]:hover { background-color: var(--fni-blue-deep) !important; }
+html:not(.dark) [class*="text-[#142B4A]"],
+html:not(.dark) [class*="text-navy-800"],
+html:not(.dark) [class*="text-navy-900"] { color: var(--fni-blue) !important; }
+html:not(.dark) [class*="text-[#C6A45A]"],
+html:not(.dark) [class*="text-gold-"] { color: var(--fni-gold) !important; }
+html:not(.dark) [class*="border-[#C6A45A]"] { border-color: var(--fni-gold) !important; }
+html:not(.dark) [class*="bg-[#142B4A]/"] { background-color: rgb(36 99 211 / .08) !important; }
+html:not(.dark) [class*="border-[#E3E8EF]"],
+html:not(.dark) [class*="border-slate-200"] { border-color: var(--fni-border) !important; }
+html:not(.dark) .bg-canvas,
+html:not(.dark) [class*="bg-[#F5F7FA]"] { background-color: var(--fni-canvas) !important; }
+html:not(.dark) [class*="rounded-xl"],
+html:not(.dark) [class*="rounded-2xl"] { transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+html:not(.dark) button { -webkit-tap-highlight-color: transparent; }
+html:not(.dark) button:focus-visible,
+html:not(.dark) a:focus-visible,
+html:not(.dark) input:focus-visible,
+html:not(.dark) select:focus-visible,
+html:not(.dark) textarea:focus-visible { outline: 2px solid var(--fni-blue); outline-offset: 2px; }
+
+/* Cleaner Telegram-like application shell without changing navigation logic. */
+@media (min-width: 768px) {
+  aside[class*="fixed"] { box-shadow: 1px 0 0 var(--fni-border); }
+  header { min-height: 60px; }
+}
+@media (max-width: 767px) {
+  header { min-height: 58px; }
+  .mobile-bottom-nav { box-shadow: 0 -4px 18px rgb(24 35 58 / .06) !important; backdrop-filter: blur(16px); }
+  .mobile-bottom-nav button { min-height: 58px; }
+  main { padding-left: 14px !important; padding-right: 14px !important; }
+}
+
+/* Unified dark palette from the FNI app. */
+html.dark, html.dark body, html.dark #root { background: var(--fni-dark) !important; color: #E8EAF0 !important; }
+html.dark header, html.dark aside, html.dark footer, html.dark .mobile-bottom-nav,
+html.dark [class*="bg-white"], html.dark .bg-canvas, html.dark .bg-slate-50 {
+  background-color: var(--fni-dark-surface) !important;
+  border-color: var(--fni-dark-border) !important;
+}
+html.dark [class*="bg-[#142B4A]"],
+html.dark [class*="bg-navy-800"],
+html.dark [class*="bg-navy-900"] { background-color: var(--fni-blue-deep) !important; }
+html.dark [class*="text-[#142B4A]"],
+html.dark [class*="text-navy-800"],
+html.dark [class*="text-navy-900"] { color: #A9C6FF !important; }
+html.dark [class*="text-[#C6A45A]"],
+html.dark [class*="text-gold-"] { color: #E7BD59 !important; }
+html.dark [class*="border-[#E3E8EF]"],
+html.dark [class*="border-slate-200"] { border-color: var(--fni-dark-border) !important; }
+html.dark [class*="bg-[#F5F7FA]"],
+html.dark [class*="bg-[#142B4A]/"] { background-color: #252B37 !important; }
+html.dark input, html.dark textarea, html.dark select { background-color: #171B24 !important; border-color: #414958 !important; color: #F2F4F8 !important; }
+html.dark button:focus-visible, html.dark a:focus-visible,
+html.dark input:focus-visible, html.dark select:focus-visible,
+html.dark textarea:focus-visible { outline-color: #8FB4FF; }
+@media (prefers-reduced-motion: reduce) {
+  html:not(.dark) [class*="rounded-xl"], html:not(.dark) [class*="rounded-2xl"] { transition: none; }
+}
