@@ -96,6 +96,7 @@ export interface Cell {
   target_attendance?: number;
   status?: 'Active' | 'Suspended' | 'Deactivated';
   is_active: boolean;
+  is_archived?: boolean;
   created_at: string;
   createdAt?: unknown;
 }
