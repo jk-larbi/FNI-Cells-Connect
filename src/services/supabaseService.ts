@@ -293,6 +293,23 @@ export class SupabaseService {
     }
   }
 
+  static async deleteCellRegistrations(cellIds: string[]): Promise<boolean> {
+    if (!this.isAvailable() || !cellIds.length) return false;
+    try {
+      const { error } = await supabase!.rpc('admin_delete_cell_registrations', {
+        p_cell_ids: cellIds,
+      });
+      if (error) {
+        console.warn('Supabase deleteCellRegistrations error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn('Supabase deleteCellRegistrations exception:', err);
+      return false;
+    }
+  }
+
   static async getCellById(cellId: string): Promise<Cell | null> {
     if (!this.isAvailable()) return null;
     try {
