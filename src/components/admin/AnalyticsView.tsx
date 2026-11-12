@@ -20,6 +20,15 @@ import {
   AlertTriangle,
   ArrowLeft,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 interface AnalyticsViewProps {
   onBack?: () => void;
@@ -308,6 +317,68 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack }) => {
           );
         })()}
       </div>
+
+      {/* Live cell performance comparison — values come from submitted reports */}
+      <section className="rounded-2xl border border-[#E3E8EF] bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-bold text-[#182230]">
+              <BarChart3 className="h-4 w-4 text-[#D9A72E]" />
+              Cell Performance Comparison
+            </h2>
+            <p className="mt-1 text-xs text-[#667085]">
+              Compare each registered cell using figures from its submitted meeting and evangelism reports.
+            </p>
+          </div>
+          <span className="rounded-full border border-[#173B8F]/15 bg-[#173B8F]/5 px-3 py-1 text-[11px] font-semibold text-[#173B8F]">
+            {selectedCell === 'All' ? `${cellStats.length} cells` : 'Selected cell'} · Live report data
+          </span>
+        </div>
+        {(() => {
+          const metricConfig = {
+            attendance: { label: 'Attendance', color: '#173B8F', format: (value: number) => value.toLocaleString() },
+            souls: { label: 'Souls won', color: '#D9A72E', format: (value: number) => value.toLocaleString() },
+            offerings: { label: 'Offerings (GHS)', color: '#39216B', format: (value: number) => `GHS ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+            compliance: { label: 'Reporting compliance (%)', color: '#23845B', format: (value: number) => `${value}%` },
+          };
+          const config = metricConfig[selectedMetric];
+          const performanceData = cellStats
+            .filter(cell => selectedCell === 'All' || cell.name === selectedCell)
+            .map(cell => ({
+              cell: cell.name,
+              value: selectedMetric === 'attendance' ? cell.totalAttendance
+                : selectedMetric === 'souls' ? cell.soulsWon
+                : selectedMetric === 'offerings' ? cell.offeringsGhs
+                : cell.compliance,
+            }));
+          return performanceData.length > 0 ? (
+            <>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#667085]">
+                <span>{config.label}</span>
+                <span>{selectedCell === 'All' ? 'Ranked by recorded performance' : 'Recorded performance for this cell'}</span>
+              </div>
+              <div className="h-[280px] w-full sm:h-[340px]" role="img" aria-label={`Bar chart showing ${config.label.toLowerCase()} by cell`}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={performanceData} margin={{ top: 8, right: 12, left: 0, bottom: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E3E8EF" />
+                    <XAxis dataKey="cell" tick={{ fill: '#667085', fontSize: 11 }} axisLine={{ stroke: '#CBD5E1' }} tickLine={false} interval={0} angle={performanceData.length > 5 ? -25 : 0} textAnchor={performanceData.length > 5 ? 'end' : 'middle'} height={performanceData.length > 5 ? 58 : 34} />
+                    <YAxis tick={{ fill: '#667085', fontSize: 11 }} axisLine={false} tickLine={false} width={selectedMetric === 'offerings' ? 72 : 44} tickFormatter={value => selectedMetric === 'offerings' ? `₵${Number(value).toLocaleString()}` : Number(value).toLocaleString()} />
+                    <Tooltip formatter={(value: number) => config.format(Number(value))} contentStyle={{ borderRadius: 12, border: '1px solid #E3E8EF', fontSize: 12 }} />
+                    <Bar dataKey="value" name={config.label} fill={config.color} radius={[6, 6, 0, 0]} maxBarSize={56} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="mt-2 text-[11px] text-[#667085]">Cells without submitted reports appear as zero only where the underlying report totals are zero. No sample or estimated figures are added.</p>
+            </>
+          ) : (
+            <div className="flex h-56 flex-col items-center justify-center rounded-xl border border-dashed border-[#CBD5E1] bg-[#F5F7FC] text-center">
+              <BarChart3 className="mb-2 h-7 w-7 text-[#98A2B3]" />
+              <p className="text-sm font-semibold text-[#344054]">No performance data to chart yet</p>
+              <p className="mt-1 max-w-sm text-xs text-[#667085]">Once cells submit meeting or evangelism reports, their recorded performance will appear here.</p>
+            </div>
+          );
+        })()}
+      </section>
 
       {/* Cells Breakdown & Compliance (Live Operational Tracking for Signed-up Cells) */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
