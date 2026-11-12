@@ -34,6 +34,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Suspended' | 'Deactivated'>('All');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCellIds, setSelectedCellIds] = useState<string[]>([]);
+  const [isDeletingCells, setIsDeletingCells] = useState(false);
 
   // Profile Drawer / Modal state
   const [selectedCell, setSelectedCell] = useState<Cell | null>(null);
@@ -128,6 +130,32 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     setEditingCell({});
   };
 
+  const handleDeleteCells = async (ids: string[], label: string) => {
+    if (!ids.length || isDeletingCells) return;
+    const confirmed = window.confirm(
+      `Permanently delete ${ids.length} ${label}? This also removes their meeting and evangelism reports, follow-up contacts, follow-up history, and offering records. Cell leader accounts and the audit trail will be retained. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+    try {
+      setIsDeletingCells(true);
+      const success = await CellService.deleteCells(ids);
+      if (!success) {
+        window.alert('The cells could not be deleted. Check the database migration and administrator permissions, then try again.');
+        return;
+      }
+      const removed = new Set(ids);
+      setCells(prev => prev.filter(cell => !removed.has(cell.id)));
+      setSelectedCellIds([]);
+      if (selectedCell && removed.has(selectedCell.id)) setSelectedCell(null);
+      window.alert(`${ids.length} cell registration(s) and their associated records were deleted.`);
+    } catch (error) {
+      console.error('Cell deletion failed:', error);
+      window.alert('Cell deletion failed. No success was reported.');
+    } finally {
+      setIsDeletingCells(false);
+    }
+  };
+
   // Filter cells
   const filteredCells = cells.filter(cell => {
     const q = searchQuery.toLowerCase();
@@ -166,7 +194,25 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedCellIds.length > 0 && (
+            <button
+              type="button"
+              disabled={isDeletingCells}
+              onClick={() => handleDeleteCells(selectedCellIds, 'selected cell registration(s)')}
+              className="px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold hover:bg-rose-100 disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete Selected ({selectedCellIds.length})
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={!cells.length || isDeletingCells}
+            onClick={() => handleDeleteCells(cells.map(cell => cell.id), 'all registered cells')}
+            className="px-3 py-2 rounded-xl border border-rose-200 text-rose-700 text-xs font-bold hover:bg-rose-50 disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Clear All Cells
+          </button>
           <button
             onClick={() => {
               setEditingCell({
@@ -230,7 +276,16 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
                 <th className="py-3 px-5 w-12 text-center">
-                  <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                  <input
+                    type="checkbox"
+                    aria-label="Select all visible cells"
+                    checked={filteredCells.length > 0 && filteredCells.every(cell => selectedCellIds.includes(cell.id))}
+                    onChange={event => setSelectedCellIds(prev => event.target.checked
+                      ? Array.from(new Set([...prev, ...filteredCells.map(cell => cell.id)]))
+                      : prev.filter(id => !filteredCells.some(cell => cell.id === id)))}
+                    onClick={event => event.stopPropagation()}
+                    className="h-4 w-4 accent-[#142B4A]"
+                  />
                 </th>
                 <th className="py-3 px-4">CELL NAME & LOCATION</th>
                 <th className="py-3 px-4">ASSIGNED LEADER</th>
@@ -266,8 +321,16 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                           : 'hover:bg-[#F5F7FA]'
                       }`}
                     >
-                      <td className="py-4 px-5 text-center">
-                        <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                      <td className="py-4 px-5 text-center" onClick={event => event.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${cell.name}`}
+                          checked={selectedCellIds.includes(cell.id)}
+                          onChange={event => setSelectedCellIds(prev => event.target.checked
+                            ? [...prev, cell.id]
+                            : prev.filter(id => id !== cell.id))}
+                          className="h-4 w-4 accent-[#142B4A]"
+                        />
                       </td>
 
                       <td className="py-4 px-4 whitespace-nowrap">
@@ -354,6 +417,18 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                             title="View History"
                           >
                             <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isDeletingCells}
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDeleteCells([cell.id], 'cell registration');
+                            }}
+                            className="w-8 h-8 rounded-full text-rose-600 hover:bg-rose-50 inline-flex items-center justify-center transition-colors disabled:opacity-50"
+                            title="Delete Cell and Its Records"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
