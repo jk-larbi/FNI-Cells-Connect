@@ -19,7 +19,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const base = 'inline-flex items-center justify-center font-medium transition-all duration-150 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+  const base = 'inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-navy disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none';
 
   const sizes = {
     sm: 'text-xs px-2.5 py-1.5 gap-1.5',
@@ -29,10 +29,10 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variants = {
     primary: 'bg-navy-800 hover:bg-navy-900 text-white shadow-subtle focus:ring-navy-600',
-    secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 focus:ring-slate-400',
+    secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-slate-700 focus:ring-slate-400',
     gold: 'bg-gold-500 hover:bg-gold-600 text-navy-950 font-semibold shadow-subtle focus:ring-gold-400',
-    outline: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 focus:ring-navy-600',
-    ghost: 'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 focus:ring-slate-300',
+    outline: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-100 dark:border-slate-700 focus:ring-navy-600',
+    ghost: 'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:hover:text-white focus:ring-slate-300',
     danger: 'bg-rose-600 hover:bg-rose-700 text-white shadow-subtle focus:ring-rose-500',
   };
 
