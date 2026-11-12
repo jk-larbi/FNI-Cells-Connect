@@ -10,6 +10,7 @@ import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeM
 import { PasswordRecoveryView } from './components/auth/PasswordRecoveryView';
 import { supabase } from './lib/supabase';
 import { ThemeProvider } from './context/ThemeContext';
+import { ThemeToggle } from './components/layout/ThemeToggle';
 
 const MainContent: React.FC = () => {
   const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
@@ -88,7 +89,7 @@ const MainContent: React.FC = () => {
 
   // 2. Mandatory First-Time Admin Password Change (Cannot be skipped)
   if (mustChangePassword) {
-    return (
+    return withPublicTheme(
       <div className="relative min-h-screen">
         <AuthView initialView="admin-login" onSuccess={() => {}} />
         <ForcePasswordChangeModal />
@@ -105,7 +106,6 @@ export const App: React.FC = () => {
     <ThemeProvider>
       <AuthProvider>
         <NotificationProvider>
-          <ThemeToggle />
           <MainContent />
         </NotificationProvider>
       </AuthProvider>
