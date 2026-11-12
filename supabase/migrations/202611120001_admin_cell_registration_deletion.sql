@@ -98,5 +98,5 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.admin_delete_cell_registrations(TEXT[]) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.admin_delete_cell_registrations(TEXT[]) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_cell_registrations(TEXT[]) TO authenticated;
