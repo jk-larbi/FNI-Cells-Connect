@@ -2,7 +2,8 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
-import { Menu, Bell, PlusCircle, Calendar, Clock, Flame, ArrowLeft, LogOut } from 'lucide-react';
+import { Menu, Bell, PlusCircle, Calendar, Clock, ArrowLeft, LogOut } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -60,7 +61,8 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <ThemeToggle placement="inline" />
           <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] text-[#142B4A] font-bold text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
             <Calendar className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
             <span>
