@@ -199,6 +199,15 @@ export class CellService {
     return { cell: newCell, isExistingAssociated: false };
   }
 
+  static async deleteCells(cellIds: string[]): Promise<boolean> {
+    if (!cellIds.length) return false;
+    const deleted = await SupabaseService.deleteCellRegistrations(cellIds);
+    if (!deleted) return false;
+    const removed = new Set(cellIds);
+    saveStoredCells(getStoredCells().filter(cell => !removed.has(cell.id)));
+    return true;
+  }
+
   static async updateCell(cell: Cell): Promise<void> {
     await SupabaseService.upsertCell(cell);
     const all = getStoredCells();
