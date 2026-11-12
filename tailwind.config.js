@@ -5,15 +5,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: '#F4F5F8', // FNI app canvas
+        canvas: '#F5F7FC', // FNI app canvas
         white: '#FFFFFF',
         brand: {
-          navy: '#2463D3',     // FNI Telegram-inspired blue
-          navyLight: '#1D4FA8',// Deeper FNI blue
-          gold: '#D9A52B',     // FNI gold accent
-          goldLight: '#F2D98E',// Light gold
-          grey: '#F4F5F8',     // Light grey
-          border: '#E6E9EF',   // Border grey
+          navy: '#173B8F',     // FNI Telegram-inspired blue
+          navyLight: '#39216B',// Deeper FNI blue
+          gold: '#D9A72E',     // FNI gold accent
+          goldLight: '#F3D987',// Light gold
+          grey: '#F5F7FC',     // Light grey
+          border: '#E2E7F0',   // Border grey
           text: '#202634',     // Primary text
           muted: '#778092',    // Secondary text
           success: '#23845B',  // Success green
@@ -29,17 +29,18 @@ export default {
           500: '#334E68',
           600: '#203D63', // Secondary navy
           700: '#1A3354',
-          800: '#2463D3', // FNI blue
-          900: '#1D4FA8',
+          800: '#173B8F', // FNI royal blue
+          900: '#39216B',
           950: '#172F67',
         },
-        gold: {
+        purple: { 50: '#F5F1FC', 100: '#E9E0F8', 500: '#39216B', 600: '#321C60', 700: '#28164D', 800: '#21133F', 900: '#180E30' },
+      gold: {
           50: '#FDFCF7',
           100: '#FAF6ED',
           200: '#E9D9B2', // Light gold
           300: '#DFCA96',
           400: '#D2B777',
-          500: '#D9A52B', // FNI gold
+          500: '#D9A72E', // FNI gold
           600: '#AB8B42',
           700: '#8A6E30',
           800: '#695221',
@@ -89,7 +90,7 @@ export default {
         '4xl': '2rem',
       },
       boxShadow: {
-        'subtle': '0 1px 2px 0 rgba(16, 24, 40, 0.05)',
+        'subtle': '0 1px 2px 0 rgba(23, 59, 143, 0.05)',
         'card': '0 1px 3px 0 rgba(16, 24, 40, 0.1), 0 1px 2px 0 rgba(16, 24, 40, 0.06)',
         'elevated': '0 4px 6px -2px rgba(16, 24, 40, 0.03), 0 12px 16px -4px rgba(16, 24, 40, 0.08)',
         'floating': '0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03)',
