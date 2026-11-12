@@ -54,11 +54,11 @@ export const Modal: React.FC<ModalProps> = ({
           onClick={onClose}
         />
         <div
-          className={`relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#111c2d] text-left shadow-floating transition-all sm:my-8 w-full ${maxWidthClasses[effectiveMaxWidth]} border border-slate-100 dark:border-[#26384d] flex flex-col max-h-[90vh]`}
+          className={`relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#202532] text-left shadow-floating transition-all sm:my-8 w-full ${maxWidthClasses[effectiveMaxWidth]} border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]`}
         >
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#26384d] px-6 py-4 bg-slate-50/60 dark:bg-[#172437] shrink-0">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#26384d] px-6 py-4 bg-slate-50 dark:bg-[#252B37] shrink-0">
             <div>
-              <h3 className="text-base font-semibold text-navy-900 dark:text-slate-50">{title}</h3>
+              <h3 className="text-base font-semibold text-navy-900 dark:text-slate-100">{title}</h3>
               {subtitle && <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">{subtitle}</p>}
             </div>
             <button
