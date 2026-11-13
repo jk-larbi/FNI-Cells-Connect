@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   bundledWebRuntime: false,
   android: {
+    useLegacyBridge: true,
     backgroundColor: '#173B8F',
     allowMixedContent: false,
   },
