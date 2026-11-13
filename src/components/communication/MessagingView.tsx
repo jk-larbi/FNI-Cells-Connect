@@ -430,9 +430,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="fni-messaging-view min-w-0 space-y-4 sm:space-y-6">
       {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           {onBack && (
             <button
@@ -444,49 +444,49 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <span>Back to Previous</span>
             </button>
           )}
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#142B4A]/10 text-[#142B4A] border border-[#142B4A]/20 mb-1.5">
+          <div className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#142B4A]/10 text-[#142B4A] border border-[#142B4A]/20 mb-1.5">
             <span>FNI Fellowship Exchange & Leadership Hub</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-[#142B4A] tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-[#142B4A] tracking-tight">
             Communications & Fellowship Chat
           </h1>
-          <p className="text-xs sm:text-sm text-[#667085] mt-1">
+          <p className="hidden sm:block text-xs sm:text-sm text-[#667085] mt-1">
             Open fellowship exchange for all tutors, prayer sharing, testimonies & direct pastoral oversight.
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center p-1 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
+        <div className="flex w-full sm:w-auto items-center p-1 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
           <button
             onClick={() => setActiveTab('community')}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
               activeTab === 'community'
                 ? 'bg-[#142B4A] text-white shadow-xs'
                 : 'text-[#667085] hover:text-[#142B4A]'
             }`}
           >
             <Users className="w-4 h-4 text-[#C6A45A]" />
-            <span>Tutor Community Forum</span>
+            <span>Community</span>
           </button>
           <button
             onClick={() => setActiveTab('private')}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
               activeTab === 'private'
                 ? 'bg-[#142B4A] text-white shadow-xs'
                 : 'text-[#667085] hover:text-[#142B4A]'
             }`}
           >
             <Lock className="w-4 h-4 text-[#C6A45A]" />
-            <span>Private Pastoral Line</span>
+            <span>Leadership</span>
           </button>
         </div>
       </div>
 
       {/* TAB 1: TUTOR COMMUNITY FORUM (Open Access, Emojis, Tagging & Telegram/WhatsApp Replies) */}
       {activeTab === 'community' && (
-        <div className="bg-white rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
+        <div className="fni-chat-panel bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
           {/* Forum Header */}
-          <div className="p-4 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-3">
+          <div className="px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-1">
                 <Users className="w-4 h-4" /> Fellowship Exchange Forum
@@ -494,7 +494,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <h2 className="font-black text-base sm:text-lg text-white">
                 Tutor Community & Fellowship Sharing
               </h2>
-              <p className="text-xs text-slate-200 mt-0.5">
+              <p className="hidden sm:block text-xs text-slate-200 mt-0.5">
                 Open to all fellowship tutors. Mention leaders with <span className="text-[#C6A45A] font-bold">@Name</span>, send emojis & reply to messages.
               </p>
             </div>
@@ -514,7 +514,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="p-4 sm:p-6 h-[460px] overflow-y-auto space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 h-[min(54dvh,460px)] min-h-[300px] sm:h-[460px] overflow-y-auto space-y-3 sm:space-y-4 bg-[#F5F7FA]">
             {communityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -764,7 +764,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Forum Compose Bar */}
-          <form onSubmit={handleSendCommunity} className="p-3 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-3 min-w-0">
+          <form onSubmit={handleSendCommunity} className="fni-chat-composer p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
             {communitySendError && (
               <p role="alert" className="text-xs font-semibold text-rose-600">{communitySendError}</p>
             )}
@@ -789,7 +789,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
 
               {/* Quick Emojis Bar */}
-              <div className="flex items-center gap-1.5 bg-[#F5F7FA] px-2.5 py-1 rounded-xl border border-[#E3E8EF]">
+              <div className="hidden sm:flex items-center gap-1.5 bg-[#F5F7FA] px-2.5 py-1 rounded-xl border border-[#E3E8EF]">
                 {QUICK_EMOJIS.map(emoji => (
                   <button
                     key={emoji}
@@ -808,56 +808,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
 
             {/* Input Row */}
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              {/* @ Tag Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setCommunityText(prev => prev + '@');
-                  setMentionQuery('');
-                  setShowMentionMenu(true);
-                  communityInputRef.current?.focus();
-                }}
-                className="w-11 h-11 rounded-2xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] flex items-center justify-center transition-colors border border-[#E3E8EF] shrink-0 cursor-pointer"
-                title="Tag a member (@mention)"
-              >
-                <AtSign className="w-4 h-4 text-[#C6A45A]" />
-              </button>
-
-              {/* Emoji Button */}
-              <button
-                type="button"
-                onClick={() => setShowCommunityEmoji(prev => !prev)}
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors border shrink-0 cursor-pointer ${
-                  showCommunityEmoji
-                    ? 'bg-[#142B4A] text-[#C6A45A] border-[#142B4A]'
-                    : 'bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#667085] border-[#E3E8EF]'
-                }`}
-                title="Open Emoji Palette"
-              >
-                <Smile className="w-5 h-5" />
-              </button>
-
-              {/* Main Text Input */}
-              <input
-                ref={communityInputRef}
-                type="text"
-                value={communityText}
-                onChange={handleCommunityInputChange}
-                placeholder="Share a message, prayer need, testimony or tag someone with @..."
-                className="flex-1 min-w-0 w-0 text-xs sm:text-sm rounded-2xl border border-[#E3E8EF] bg-[#F5F7FA] px-3 sm:px-4 py-3 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] focus:outline-none transition-all"
-              />
-
-              {/* Send Button */}
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                isLoading={isSendingCommunity}
-                leftIcon={<Send className="w-4 h-4 text-[#C6A45A]" />}
-                className="rounded-2xl px-3 sm:px-5 h-11 min-w-[44px] shrink-0"
-              >
-                <span className="hidden sm:inline">Send</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
+                <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
+                  <Smile className="w-5 h-5" />
+                </button>
+                <input ref={communityInputRef} type="text" value={communityText} onChange={handleCommunityInputChange} placeholder="Message the community" className="flex-1 min-w-0 w-0 border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white hover:text-[#142B4A] transition-colors cursor-pointer" title="Tag a member" aria-label="Tag a member">
+                  <AtSign className="w-4 h-4" />
+                </button>
+              </div>
+              <Button type="submit" variant="primary" size="md" isLoading={isSendingCommunity} className="h-11 w-11 min-w-[44px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message">
+                <Send className="w-4 h-4 text-[#C6A45A]" />
               </Button>
             </div>
           </form>
@@ -866,7 +828,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       {/* TAB 2: PRIVATE MESSAGING (Leadership Line with Replies & Emojis) */}
       {activeTab === 'private' && (
-        <div className="bg-white rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
+        <div className="fni-chat-panel bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
           {/* Header */}
           <div className="p-4 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -906,7 +868,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Messages Stream */}
-          <div className="p-4 sm:p-6 h-[440px] overflow-y-auto space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 h-[min(54dvh,440px)] min-h-[300px] sm:h-[440px] overflow-y-auto space-y-3 sm:space-y-4 bg-[#F5F7FA]">
             {privateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1075,7 +1037,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Private Input Box */}
-          <form onSubmit={handleSendPrivate} className="p-3 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+          <form onSubmit={handleSendPrivate} className="fni-chat-composer p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2 min-w-0 flex-wrap">
             {privateSendError && (
               <p role="alert" className="basis-full text-xs font-semibold text-rose-600">{privateSendError}</p>
             )}
@@ -1092,14 +1054,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Smile className="w-5 h-5" />
             </button>
 
-            <input
-              ref={privateInputRef}
-              type="text"
-              value={privateText}
-              onChange={e => setPrivateText(e.target.value)}
-              placeholder="Type your confidential message to leadership..."
-              className="flex-1 min-w-0 w-0 text-xs sm:text-sm rounded-2xl border border-[#E3E8EF] bg-[#F5F7FA] px-3 sm:px-4 py-3 text-[#182230] focus:bg-white focus:ring-2 focus:ring-[#142B4A] focus:outline-none transition-all"
-            />
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
+              <input ref={privateInputRef} type="text" value={privateText} onChange={e => setPrivateText(e.target.value)} placeholder="Message leadership" className="flex-1 min-w-0 w-0 border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+            </div>
 
             <Button
               type="submit"
@@ -1107,9 +1064,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               size="md"
               isLoading={isSendingPrivate}
               leftIcon={<Send className="w-4 h-4 text-[#C6A45A]" />}
-              className="rounded-2xl px-5 h-11 shrink-0"
+              className="h-11 w-11 min-w-[44px] !p-0 rounded-full shrink-0 flex items-center justify-center"
             >
-              Send
+              <Send className="w-4 h-4 text-[#C6A45A]" />
             </Button>
           </form>
         </div>

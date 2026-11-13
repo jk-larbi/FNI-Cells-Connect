@@ -189,7 +189,7 @@ export const AppLayout: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-24 md:pb-8">
+          <main className="flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>

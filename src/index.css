@@ -1003,3 +1003,19 @@ html.dark [class*="bg-gold-50"],
 html.dark [class*="bg-gold-100"] { background-color: #3A321F !important; border-color: #6D5A2C !important; }
 html.dark [class*="border-gold-"] { border-color: #806A34 !important; }
 html.dark [class*="text-gold-"] { color: #F0C75E !important; }
+
+
+/* Android-first responsive shell and pill-shaped messaging composer */
+@media (max-width: 639px) {
+  .fni-messaging-view { width: 100%; min-width: 0; }
+  .fni-chat-panel { border-left: 0; border-right: 0; border-radius: 1rem; box-shadow: 0 1px 3px rgba(16,35,63,.06); }
+  .fni-chat-stream { min-height: 280px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scroll-padding-bottom: 1rem; }
+  .fni-chat-composer { padding-bottom: max(.65rem, env(safe-area-inset-bottom)); }
+  .fni-chat-composer input { min-width: 0; box-shadow: none !important; }
+  .fni-chat-composer input:focus { box-shadow: none !important; outline: none !important; }
+  .fni-messaging-view button, .fni-messaging-view select { -webkit-tap-highlight-color: transparent; }
+}
+@media (max-width: 380px) {
+  .fni-messaging-view .fni-chat-stream { min-height: 250px; }
+  .fni-messaging-view .fni-chat-composer { gap: .4rem; }
+}

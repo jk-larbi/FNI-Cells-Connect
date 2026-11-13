@@ -27,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   const deadlineInfo = getCurrentDeadlineInfo();
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-3 sm:px-6 bg-white/95 backdrop-blur-md border-b border-[#E3E8EF] transition-all safe-top">
+    <header className="sticky top-0 z-30 min-h-14 sm:h-16 flex items-center justify-between gap-2 px-2.5 sm:px-6 bg-white/95 backdrop-blur-md border-b border-[#E3E8EF] transition-all safe-top">
       {/* Left: Mobile toggle & Back button & Deadline badge */}
       <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
         <button
@@ -62,8 +62,8 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <ThemeToggle placement="inline" />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] text-[#142B4A] font-bold text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
+          <div className="hidden sm:block"><ThemeToggle placement="inline" /></div>
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] text-[#142B4A] font-bold text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
             <Calendar className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
             <span>
               <span className="hidden md:inline">Cycle: </span>
@@ -80,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Quick actions, notifications, profile */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         {!isAdmin && onNavigateToForm && (
           <button
             onClick={onNavigateToForm}
@@ -112,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2 pl-2 text-left hover:opacity-90 transition-opacity focus:outline-none"
           title="Account Settings"
         >
-          <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#C6A45A] text-xs font-bold flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#142B4A] text-[#C6A45A] text-xs font-bold flex items-center justify-center shadow-sm overflow-hidden shrink-0">
             {currentUser?.avatar_url ? (
               <img
                 src={currentUser.avatar_url}
@@ -142,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Prominent Direct Logout Button (Always visible on mobile & desktop) */}
         <button
           onClick={logout}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-[#FFF5F5] hover:bg-[#FEE4E2] text-[#C74646] hover:text-[#B42318] border border-[#FECDCA] text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+          className="inline-flex items-center justify-center gap-1 sm:gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full sm:rounded-xl bg-[#FFF5F5] hover:bg-[#FEE4E2] text-[#C74646] hover:text-[#B42318] border border-[#FECDCA] text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
           title="Sign out of your account"
           aria-label="Sign out"
         >
