@@ -8,6 +8,7 @@ import { FollowUpService } from '../../services/followUpService';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact, SoulTargetMetrics } from '../../types';
 import { SoulTargetService } from '../../services/soulTargetService';
+import { LocationSharingPanel } from '../location/LocationSharingPanel';
 import {
   Users,
   Flame,
