@@ -1,4 +1,5 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { supabase } from '../lib/supabase';
 
 export type LocationActivity = 'evangelism' | 'cell_meeting';
@@ -73,6 +74,12 @@ async function attachWatcher(sessionId: string) {
   acceptingUpdates = true;
   lastPoint = null;
   if (Capacitor.isNativePlatform()) {
+    if (Capacitor.getPlatform() === 'android') {
+      const permission = await LocalNotifications.requestPermissions();
+      if (permission.display !== 'granted') {
+        throw new Error('Allow notifications so Android can show the required location-sharing indicator.');
+      }
+    }
     nativeWatcherId = await BackgroundGeo.addWatcher({
       backgroundTitle: 'FNI location sharing is active',
       backgroundMessage: 'Your location is shared with FNI administrators for this active session. Open FNI Cells Connect to stop sharing.',
