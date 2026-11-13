@@ -67,13 +67,17 @@ END; $$;
 CREATE OR REPLACE FUNCTION public.record_location_share_point(
   p_session_id uuid, p_latitude double precision, p_longitude double precision, p_accuracy_m double precision DEFAULT NULL
 ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,private,pg_temp AS $$
+DECLARE v_owner uuid; v_ended_at timestamptz;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
   IF p_latitude NOT BETWEEN -90 AND 90 OR p_longitude NOT BETWEEN -180 AND 180 THEN RAISE EXCEPTION 'Invalid coordinates'; END IF;
+  SELECT tutor_user_id,ended_at INTO v_owner,v_ended_at
+    FROM public.location_share_sessions WHERE id=p_session_id FOR UPDATE;
+  IF NOT FOUND OR v_owner <> auth.uid() OR v_ended_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Location sharing is not active';
+  END IF;
   INSERT INTO public.location_share_points(session_id,tutor_user_id,latitude,longitude,accuracy_m)
-  SELECT s.id,s.tutor_user_id,p_latitude,p_longitude,p_accuracy_m FROM public.location_share_sessions s
-   WHERE s.id=p_session_id AND s.tutor_user_id=auth.uid() AND s.ended_at IS NULL;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Location sharing is not active'; END IF;
+    VALUES(p_session_id,auth.uid(),p_latitude,p_longitude,p_accuracy_m);
 END; $$;
 
 CREATE OR REPLACE FUNCTION public.stop_location_share(p_session_id uuid)
