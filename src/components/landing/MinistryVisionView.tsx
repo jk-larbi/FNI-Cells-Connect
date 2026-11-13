@@ -138,7 +138,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
             </p>
           </div>
 
-          {/* 3. SOUL-WINNING TARGET WITH LIVE HARVEST TRACKING */}
+          {/* 3. SOUL-WINNING TARGET */}
           <div
             className={`p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white border border-[#142B4A] shadow-xl relative overflow-hidden transition-all duration-700 delay-600 transform ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
