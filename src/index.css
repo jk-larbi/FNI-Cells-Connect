@@ -1019,3 +1019,16 @@ html.dark [class*="text-gold-"] { color: #F0C75E !important; }
   .fni-messaging-view .fni-chat-stream { min-height: 250px; }
   .fni-messaging-view .fni-chat-composer { gap: .4rem; }
 }
+
+
+/* Community and leadership conversations use the page's single scroll container. */
+.fni-messaging-view .fni-chat-stream {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overscroll-behavior: auto !important;
+}
+@media (max-width: 639px) {
+  .fni-messaging-view .fni-chat-stream { min-height: 0 !important; }
+}
