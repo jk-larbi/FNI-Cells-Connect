@@ -153,9 +153,8 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
                   Annual Soul-Winning Target
                 </span>
               </div>
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-white bg-[#C6A45A]/25 px-2.5 py-0.5 rounded-full border border-[#C6A45A]/50 tracking-wider uppercase">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Live Tracking
+              <span className="text-[10px] font-bold text-white/80 bg-white/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                Current Progress
               </span>
             </div>
 
@@ -164,11 +163,11 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
                 {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : '3,000 Souls'}
               </div>
               <div className="text-xs sm:text-sm font-bold text-[#C6A45A]">
-                {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Live Harvest Stream'}
+                {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Progress recorded'}
               </div>
             </div>
 
-            {/* Live Progress Bar */}
+            {/* Soul-winning progress bar */}
             <div className="w-full bg-black/30 rounded-full h-2.5 my-3 overflow-hidden border border-white/10">
               <div
                 className="bg-gradient-to-r from-[#C6A45A] to-emerald-400 h-full rounded-full transition-all duration-700 shadow-sm"
