@@ -140,6 +140,28 @@ jobs:
           drawable.mkdir(parents=True, exist_ok=True)
           foreground.save(drawable / "ic_launcher_foreground.png", optimize=True)
 
+          # Replace Capacitor's default launch/splash artwork wherever the
+          # Android template provides it (portrait, landscape and density variants).
+          splash_targets = list(root.glob("res/drawable*/splash.png"))
+          if not splash_targets:
+              splash_targets = [drawable / "splash.png"]
+          for splash_path in splash_targets:
+              splash_path.parent.mkdir(parents=True, exist_ok=True)
+              try:
+                  with Image.open(splash_path) as existing:
+                      width, height = existing.size
+              except Exception:
+                  width, height = 2732, 2732
+              splash = Image.new("RGBA", (width, height), "#173B8F")
+              splash_mark = logo.copy()
+              max_w, max_h = int(width * 0.52), int(height * 0.52)
+              splash_mark.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+              splash.alpha_composite(
+                  splash_mark,
+                  ((width - splash_mark.width) // 2, (height - splash_mark.height) // 2)
+              )
+              splash.save(splash_path, optimize=True)
+
           values = root / "res/values"
           values.mkdir(parents=True, exist_ok=True)
           colors = values / "colors.xml"
