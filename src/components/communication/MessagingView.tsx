@@ -514,7 +514,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 h-[min(54dvh,460px)] min-h-[300px] sm:h-[460px] overflow-y-auto space-y-3 sm:space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4 bg-[#F5F7FA]">
             {communityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -868,7 +868,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 h-[min(54dvh,440px)] min-h-[300px] sm:h-[440px] overflow-y-auto space-y-3 sm:space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4 bg-[#F5F7FA]">
             {privateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
