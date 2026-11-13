@@ -42,8 +42,8 @@ jobs:
         run: npm run build
         env:
           CAPACITOR_BUILD: 'true'
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: https://cjskjazsrrbfyjepwyxa.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_0nQJMgCvgruw3CXX9YpBIg_Jq2rAx-Q
 
       - name: Generate Android project and sync web assets
         run: |
