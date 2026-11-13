@@ -164,6 +164,10 @@ jobs:
 
           values = root / "res/values"
           values.mkdir(parents=True, exist_ok=True)
+          # Capacitor's template already defines this color in its own XML.
+          # Remove every generated duplicate before writing the single canonical value.
+          for duplicate in root.glob("res/values*/ic_launcher_background.xml"):
+              duplicate.unlink()
           colors = values / "colors.xml"
           colors.write_text('''<?xml version="1.0" encoding="utf-8"?>
           <resources><color name="ic_launcher_background">#173B8F</color></resources>
