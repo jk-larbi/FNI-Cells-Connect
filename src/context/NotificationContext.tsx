@@ -281,6 +281,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Determine target tab and metadata
     const meta = notif.metadata || {};
+    // A location alert can include a server-generated Google Maps universal
+    // link. Open it from this user gesture, then keep the FNI dashboard in sync.
+    if (typeof meta.actionUrl === 'string') {
+      try {
+        const mapsUrl = new URL(meta.actionUrl);
+        if (mapsUrl.hostname === 'www.google.com' && mapsUrl.pathname.startsWith('/maps/')) {
+          window.open(mapsUrl.toString(), '_blank', 'noopener,noreferrer');
+        }
+      } catch {}
+    }
     let targetTab = meta.targetTab;
 
     if (!targetTab) {
