@@ -54,7 +54,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [loginPassword, setLoginPassword] = useState('');
   const [showTutorPassword, setShowTutorPassword] = useState(false);
 
-  // Administrator Login state (Email & Password via Supabase Auth)
+  // Administrator Login state (username or legacy email + password)
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
@@ -153,14 +153,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setSuccessNotice('');
 
     if (!adminEmail.trim() || !adminPassword) {
-      setErrorMessage('Please enter both administrator email and password.');
+      setErrorMessage('Please enter your administrator username and password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await loginAdmin({
-        email: adminEmail.trim(),
+        username: adminEmail.trim(),
         password: adminPassword,
       });
 
@@ -617,16 +617,17 @@ export const AuthView: React.FC<AuthViewProps> = ({
               <form onSubmit={handleAdminLogin} className="space-y-3.5">
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Administrator Email <span className="text-[#C74646]">*</span>
+                    Administrator Username <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
                     <input
-                      type="email"
+                      type="text"
                       required
+                      autoComplete="username"
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      placeholder="e.g. fniadmin@gmail.com"
+                      placeholder="e.g. fni_admin"
                       className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
