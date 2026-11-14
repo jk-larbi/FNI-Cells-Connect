@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Save,
   ArrowLeft,
+  Trash2,
 } from 'lucide-react';
 
 interface MyAccountViewProps {
@@ -22,7 +23,7 @@ interface MyAccountViewProps {
 }
 
 export const MyAccountView: React.FC<MyAccountViewProps> = ({ onBack }) => {
-  const { currentUser, changePassword, updateAvatar, logout } = useAuth();
+  const { currentUser, changePassword, updateAvatar, logout, deleteOwnAccount, isAdmin } = useAuth();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,6 +31,20 @@ export const MyAccountView: React.FC<MyAccountViewProps> = ({ onBack }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPass, setIsChangingPass] = useState(false);
   const [passNotice, setPassNotice] = useState<{ text: string; isError: boolean } | null>(null);
+  const [showDeletePanel, setShowDeletePanel] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') return;
+    setIsDeletingAccount(true);
+    setDeleteError('');
+    const result = await deleteOwnAccount();
+    setIsDeletingAccount(false);
+    if (!result.success) setDeleteError(result.error || 'Account deletion failed. Please contact FNI support.');
+    // On success, AuthContext signs the user out and returns them to the login screen.
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,6 +242,42 @@ export const MyAccountView: React.FC<MyAccountViewProps> = ({ onBack }) => {
             </button>
           </form>
         </div>
+
+      {!isAdmin && (
+        <section className="bg-white rounded-2xl border border-rose-200 p-5 shadow-sm space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <Trash2 className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-rose-700">Delete My Account</h3>
+              <p className="text-xs text-slate-600 mt-1">
+                Permanently remove your tutor login and personal profile from FNI Cells Connect. You can register again later using the same name and username.
+              </p>
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Your submitted reports may be retained for ministry records. Your account credentials and profile will be removed, and your cell will be left without an assigned tutor until an administrator updates it.
+          </p>
+          {!showDeletePanel ? (
+            <button type="button" onClick={() => setShowDeletePanel(true)} className="px-4 py-2 rounded-xl border border-rose-200 text-rose-700 text-xs font-bold hover:bg-rose-50">
+              Delete my account
+            </button>
+          ) : (
+            <div className="space-y-2 border-t border-rose-100 pt-3">
+              <p className="text-xs font-semibold text-slate-800">This cannot be undone. Type DELETE to confirm.</p>
+              <input value={deleteConfirmation} onChange={e => setDeleteConfirmation(e.target.value)} autoComplete="off" placeholder="Type DELETE" className="w-full p-2.5 rounded-xl border border-rose-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-200" />
+              {deleteError && <p role="alert" className="text-xs text-rose-700">{deleteError}</p>}
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => { setShowDeletePanel(false); setDeleteConfirmation(''); setDeleteError(''); }} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold">Cancel</button>
+                <button type="button" disabled={deleteConfirmation !== 'DELETE' || isDeletingAccount} onClick={handleDeleteAccount} className="px-4 py-2 rounded-xl bg-rose-700 text-white text-xs font-bold disabled:opacity-40">
+                  {isDeletingAccount ? 'Deleting account...' : 'Permanently delete account'}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
       </div>
     </div>
   );
