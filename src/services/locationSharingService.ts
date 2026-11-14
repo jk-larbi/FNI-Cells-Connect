@@ -222,10 +222,32 @@ export const LocationSharingService = {
     const { data, error } = await supabase
       .from('location_share_sessions')
       .select('*')
+      .is('trashed_at', null)
       .order('started_at', { ascending: false })
       .limit(100);
     if (error) throw error;
     return (data || []) as LocationSession[];
+  },
+
+  async getTrashSessions(): Promise<LocationSession[]> {
+    const { data, error } = await supabase
+      .from('location_share_sessions')
+      .select('*')
+      .not('trashed_at', 'is', null)
+      .order('trashed_at', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    return (data || []) as LocationSession[];
+  },
+
+  async moveSessionToTrash(sessionId: string): Promise<void> {
+    const { error } = await supabase.rpc('trash_location_share_session', { p_session_id: sessionId });
+    if (error) throw error;
+  },
+
+  async restoreSession(sessionId: string): Promise<void> {
+    const { error } = await supabase.rpc('restore_location_share_session', { p_session_id: sessionId });
+    if (error) throw error;
   },
 
   async getAdminActiveLocations(): Promise<ActiveTutorLocation[]> {
