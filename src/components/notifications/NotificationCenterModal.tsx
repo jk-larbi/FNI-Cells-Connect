@@ -153,7 +153,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       subtitle="Connected alerting across reports, reviews, pastoral messages, and teaching outlines"
       maxWidth="2xl"
     >
-      <div className="space-y-4 rounded-2xl bg-[#F1F4F8] p-3 text-[#172033]">
+      <div className="fni-notification-center space-y-4 rounded-2xl bg-[#F1F4F8] p-3 text-[#172033]">
         {/* Push Notification Device Status & Permission Card */}
         <div className="p-3.5 !bg-white rounded-2xl border border-[#D5DDE8] text-xs text-[#172033]">
           <div className="flex flex-wrap items-center justify-between gap-3">
