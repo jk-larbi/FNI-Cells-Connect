@@ -58,6 +58,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [showSoulModal, setShowSoulModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [soulMetricsUpdatedAt, setSoulMetricsUpdatedAt] = useState<Date | null>(null);
+  const [liveTicker, setLiveTicker] = useState(Date.now());
+
+  // Keep relative submission timestamps fresh in the review queue.
+  useEffect(() => {
+    const timer = setInterval(() => setLiveTicker(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Push Notifications state
   const { isPushEnabled, isPushSupported, requestPushPermission, dispatchNotification } = useNotifications();
