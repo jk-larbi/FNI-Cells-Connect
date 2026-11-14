@@ -4,6 +4,8 @@ import { Clock, MapPin, Navigation, Play, ShieldCheck, Square, RefreshCw, Extern
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { LocationSharingService, LocationSession, LocationPoint, LocationActivity, ActiveTutorLocation } from '../../services/locationSharingService';
+import { SupabaseService } from '../../services/supabaseService';
+import { Cell } from '../../types';
 
 interface Props {
   mode: 'tutor' | 'admin';
@@ -175,6 +177,8 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   const [activity, setActivity] = useState<LocationActivity>('evangelism');
   const [activeSession, setActiveSession] = useState<LocationSession | null>(null);
   const [sessions, setSessions] = useState<LocationSession[]>([]);
+  const [registeredCells, setRegisteredCells] = useState<Cell[]>([]);
+  const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
   const [activeLocations, setActiveLocations] = useState<ActiveTutorLocation[]>([]);
   const [selectedSession, setSelectedSession] = useState<LocationSession | null>(null);
   const [points, setPoints] = useState<LocationPoint[]>([]);
@@ -207,10 +211,12 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   };
 
   const loadAdminSessions = async () => {
-    const [rows, liveLocations] = await Promise.all([
+    const [rows, liveLocations, cells] = await Promise.all([
       LocationSharingService.getAdminSessions(),
       LocationSharingService.getAdminActiveLocations(),
+      SupabaseService.getCells(),
     ]);
+    setRegisteredCells((cells || []).filter(cell => !cell.is_archived));
     setActiveLocations(liveLocations);
     const activeRows = rows.filter(row => !row.ended_at);
     const activeIds = new Set(activeRows.map(row => row.id));
@@ -309,6 +315,9 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
         (mapPoints.length > 2 ? '&waypoints=' + encodeURIComponent(mapPoints.slice(1, -1).slice(0, 8).map(p => `${p.latitude},${p.longitude}`).join('|')) : '')
       : '';
     const latestPoint = mapPoints[mapPoints.length - 1];
+    const selectedCell = registeredCells.find(cell => cell.id === selectedCellId) || null;
+    const cellSessions = selectedCell ? sessions.filter(session => session.cell_id === selectedCell.id || session.cell_name === selectedCell.name) : [];
+    const cellActiveLocations = selectedCell ? activeLocations.filter(item => item.session.cell_id === selectedCell.id || item.session.cell_name === selectedCell.name) : [];
     return (
       <section className="fni-location-panel mb-6 rounded-2xl border border-[#E3E8EF] bg-white p-4 sm:p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -318,20 +327,45 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
           </div>
           <div className="flex items-center gap-2"><button onClick={enableAdminPush} disabled={busy} className="h-9 px-3 rounded-xl border border-[#E3E8EF] text-xs font-bold text-[#142B4A] disabled:opacity-60">Enable push alerts</button><button onClick={() => loadAdminSessions().catch(err => setError(err.message))} className="h-9 px-3 rounded-xl border border-[#E3E8EF] text-xs font-bold text-[#142B4A] flex items-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Refresh</button></div>
         </div>
+        <div className="mb-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div><h3 className="text-sm font-extrabold text-[#142B4A]">Registered cells</h3><p className="text-xs text-[#667085] mt-0.5">Choose a cell to view its live sharing sessions and complete location history.</p></div>
+            <span className="text-[11px] font-bold text-[#667085]">{registeredCells.length} cells</span>
+          </div>
+          {selectedCell ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-[#C6A45A]/50 bg-[#F7FAFE] p-3">
+              <div className="min-w-0"><p className="text-xs font-bold text-[#142B4A]">{selectedCell.name}</p><p className="text-[11px] text-[#667085]">{selectedCell.location || selectedCell.venue_address || 'Location not specified'} · {cellSessions.length} recorded session{cellSessions.length === 1 ? '' : 's'}</p></div>
+              <button type="button" onClick={() => { setSelectedCellId(null); setSelectedSession(null); setPoints([]); }} className="shrink-0 rounded-lg border border-[#E3E8EF] px-3 py-2 text-xs font-bold text-[#142B4A]">All cells</button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+              {registeredCells.map(cell => {
+                const cellRows = sessions.filter(session => session.cell_id === cell.id || session.cell_name === cell.name);
+                const liveCount = activeLocations.filter(item => item.session.cell_id === cell.id || item.session.cell_name === cell.name).length;
+                return <button key={cell.id} type="button" onClick={() => { setSelectedCellId(cell.id); setSelectedSession(null); setPoints([]); }} className="rounded-xl border border-[#E3E8EF] bg-white p-3 text-left hover:border-[#C6A45A] hover:bg-[#F7FAFE] transition-colors">
+                  <div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-[#142B4A] truncate">{cell.name}</span>{liveCount > 0 ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{liveCount} LIVE</span> : <span className="text-[10px] text-[#667085]">No live share</span>}</div>
+                  <p className="mt-1 text-[11px] text-[#667085] truncate">{cell.location || cell.venue_address || 'Location not specified'}</p>
+                  <p className="mt-2 text-[10px] font-semibold text-[#667085]">{cellRows.length} location record{cellRows.length === 1 ? '' : 's'} · View history →</p>
+                </button>;
+              })}
+              {registeredCells.length === 0 && <p className="col-span-full rounded-xl border border-dashed border-[#E3E8EF] p-5 text-center text-xs text-[#667085]">No registered cells were found.</p>}
+            </div>
+          )}
+        </div>
         {notice && <div role="status" className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-900">{notice}</div>}
-        <div className="mb-5 rounded-xl border border-[#D9E4F2] bg-[#F7FAFE] p-3 sm:p-4">
+        {selectedCell && <div className="mb-5 rounded-xl border border-[#D9E4F2] bg-[#F7FAFE] p-3 sm:p-4">
           <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
             <div>
-              <h3 className="text-sm font-extrabold text-[#142B4A]">All active tutors · Live map</h3>
-              <p className="text-xs text-[#667085] mt-1">{activeLocations.length} active sharing session{activeLocations.length === 1 ? '' : 's'} · live positions refresh automatically</p>
+              <h3 className="text-sm font-extrabold text-[#142B4A]">{selectedCell.name} · Live map</h3>
+              <p className="text-xs text-[#667085] mt-1">{cellActiveLocations.length} active sharing session{cellActiveLocations.length === 1 ? '' : 's'} · live positions refresh automatically</p>
             </div>
             <span className="text-[11px] text-[#667085]">Select a tutor to inspect their individual route</span>
           </div>
-          {activeLocations.length > 0 ? (
+          {cellActiveLocations.length > 0 ? (
             <>
-              <LiveTutorMap locations={activeLocations} selectedSessionId={selectedSession?.id} onSelectSession={inspectSession} />
+              <LiveTutorMap locations={cellActiveLocations} selectedSessionId={selectedSession?.id} onSelectSession={inspectSession} />
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {activeLocations.map((item, index) => (
+                {cellActiveLocations.map((item, index) => (
                   <div key={item.session.id} className="rounded-lg border border-[#E3E8EF] bg-white px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2">
@@ -353,11 +387,11 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
           ) : (
             <div className="rounded-lg bg-white border border-[#E3E8EF] p-5 text-center text-xs text-[#667085]">No tutors are sharing their location right now.</div>
           )}
-        </div>
+        </div>}
 
-        {sessions.length === 0 ? <p className="text-sm text-[#667085] py-5 text-center">No location-sharing sessions have been recorded.</p> : (
+        {selectedCell && (cellSessions.length === 0 ? <p className="text-sm text-[#667085] py-5 text-center">No location-sharing sessions have been recorded.</p> : (
           <div className="space-y-2">
-            {sessions.map(session => (
+            {cellSessions.map(session => (
               <button key={session.id} onClick={() => inspectSession(session)} className={`w-full text-left rounded-xl border p-3 transition-colors ${selectedSession?.id === session.id ? 'border-[#C6A45A] bg-amber-50/40' : 'border-[#E3E8EF] hover:bg-slate-50'}`}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold text-sm text-[#142B4A] truncate">{session.tutor_name}</span>
@@ -369,7 +403,7 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
             ))}
           </div>
         )}
-        {selectedSession && (
+        {selectedCell && selectedSession && (
           <div className="mt-4 border-t border-[#E3E8EF] pt-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div><div className="text-sm font-bold text-[#142B4A]">{selectedSession.tutor_name} · {selectedSession.ended_at ? 'Route history' : 'Live location'}</div><div className="text-xs text-[#667085]">{points.length} recorded points{!selectedSession.ended_at ? ' · refreshing every 10 seconds' : ''}</div></div>
