@@ -219,11 +219,11 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
       SupabaseService.getCells(),
       LocationSharingService.getTrashSessions(),
     ]);
-    setTrashSessions(trashedRows);
     const activeCells = (cells || []).filter(cell => !cell.is_archived);
     const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    setTrashSessions(trashedRows.filter(session => activeCellIds.has(session.cell_id)));
     setRegisteredCells(activeCells);
-    setActiveLocations(liveLocations.filter(location => activeCellIds.has(location.cell_id)));
+    setActiveLocations(liveLocations.filter(location => activeCellIds.has(location.session?.cell_id)));
     const activeRows = rows.filter(row => !row.ended_at);
     const activeIds = new Set(activeRows.map(row => row.id));
     if (knownActiveSessionIds.current === null) {
