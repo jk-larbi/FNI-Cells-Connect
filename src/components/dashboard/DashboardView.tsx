@@ -6,7 +6,6 @@ import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
-import { LocationSharingPanel } from '../location/LocationSharingPanel';
 import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics, CellPerformanceRecord } from '../../types';
 import { getCurrentDeadlineInfo, formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
@@ -211,8 +210,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
       </div>
-
-      <LocationSharingPanel mode="admin" />
 
       {/* Vision, Mission & Annual Soul-Winning Target Surface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
