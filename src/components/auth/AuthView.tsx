@@ -14,6 +14,7 @@ import {
   AlertCircle,
   LogIn,
   UserPlus,
+  Mail,
   Eye,
   EyeOff,
 } from 'lucide-react';
