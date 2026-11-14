@@ -127,8 +127,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   const finishMessageSwipe = (event: React.TouchEvent, message: MessageReply, target: 'community' | 'private') => {
     if (touchStartX.current === null) return;
-    const deltaX = event.changedTouches[0]?.clientX - touchStartX.current;
+    const endX = event.changedTouches[0]?.clientX;
+    const startX = touchStartX.current;
     touchStartX.current = null;
+    if (endX === undefined || startX === null) return;
+    const deltaX = endX - startX;
     // Telegram-style swipe right to reply; ignore vertical scrolling and short gestures.
     if (deltaX >= 64) {
       if (target === 'community') {
