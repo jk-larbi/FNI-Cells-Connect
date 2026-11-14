@@ -241,7 +241,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       const tutorMap = new Map<string, { id: string; name: string; cellName: string }>();
 
       cells.forEach(c => {
-        const id = c.tutorUid || c.id;
+        // Only expose real tutor Auth IDs as direct-message recipients.
+        const id = c.tutorUid || c.leader_id;
+        if (!id) return;
         tutorMap.set(id, {
           id,
           name: c.leader_name || 'Cell Leader',
