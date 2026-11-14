@@ -1108,6 +1108,21 @@ html.dark .fni-location-panel [class*="text-emerald-900"],
 html.dark .fni-location-panel [class*="text-emerald-800"] {
   color: #b9f3d2 !important;
 }
+html.dark .fni-location-panel [class~="bg-[#F7FAFE]"] {
+  background-color: #172437 !important;
+  border-color: #304258 !important;
+}
+html.dark .fni-location-panel .text-emerald-700 {
+  color: #7ee0aa !important;
+}
+html.dark .fni-location-panel .leaflet-tooltip {
+  background: #172437 !important;
+  border-color: #40546d !important;
+  color: #f1f5f9 !important;
+}
+html.dark .fni-location-panel .leaflet-tooltip-top:before {
+  border-top-color: #40546d !important;
+}
 html.dark .fni-location-panel [class*="bg-amber-50"] {
   background-color: #332712 !important;
   border-color: #574119 !important;
