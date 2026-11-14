@@ -622,6 +622,29 @@ export class AuthService {
     return { profile: current, isExistingCellAssociated: res.isExistingAssociated };
   }
 
+  // --- 8. ADMINISTRATOR PROFILE DETAILS ---
+  static async updateAdministratorProfile(userId: string, fullName: string, username: string): Promise<Profile> {
+    if (!isSupabaseConfigured || !supabase) throw new Error('Supabase service is unavailable.');
+    const cleanName = fullName.trim().replace(/\s+/g, ' ');
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+    if (cleanName.length < 2 || cleanName.length > 80) throw new Error('Full name must be between 2 and 80 characters.');
+    if (!/^[a-z0-9_]{3,20}$/.test(cleanUsername)) throw new Error('Username must be 3–20 characters and use only letters, numbers, or underscores.');
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user || authData.user.id !== userId) throw new Error('Your administrator session could not be verified. Please sign in again.');
+    const current = this.getCurrentProfile();
+    if (!current || current.id !== userId || !['admin', 'super_admin', 'national_admin'].includes(current.role)) throw new Error('Only the signed-in administrator can update these profile details.');
+    const { data, error } = await supabase.from('profiles').update({ full_name: cleanName, username: cleanUsername, updated_at: new Date().toISOString() }).eq('id', userId).select('*').maybeSingle();
+    if (error) {
+      if (error.code === '23505') throw new Error('That username is already in use. Please choose another one.');
+      throw new Error(error.message || 'Could not save administrator profile.');
+    }
+    if (!data) throw new Error('Your administrator profile record was not found. Please contact FNI support.');
+    const updated: Profile = { ...current, full_name: data.full_name || cleanName, username: data.username || cleanUsername };
+    this.setCurrentProfile(updated);
+    await supabase.auth.updateUser({ data: { ...authData.user.user_metadata, full_name: cleanName } }).catch(() => ({ error: null }));
+    return updated;
+  }
+
   // --- 8. AVATAR UPLOAD ---
   static async updateUserAvatar(userId: string, avatarUrl: string): Promise<Profile> {
     const current = this.getCurrentProfile();
