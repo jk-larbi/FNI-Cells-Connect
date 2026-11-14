@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Flame, Target, Eye, Compass } from 'lucide-react';
+import { ArrowRight, Binoculars, Send, Crosshair, TrendingUp, UsersRound } from 'lucide-react';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { SoulTargetMetrics } from '../../types';
 
@@ -109,7 +109,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
-                <Eye className="w-4 h-4" />
+                <Binoculars className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </div>
               <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Vision
@@ -127,7 +127,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
-                <Compass className="w-4 h-4" />
+                <Send className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </div>
               <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Mission
@@ -147,20 +147,22 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
             <div className="flex items-center justify-between gap-3 mb-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-xl bg-[#C6A45A] text-[#142B4A]">
-                  <Target className="w-4 h-4" />
+                  <Crosshair className="w-[18px] h-[18px]" strokeWidth={1.8} />
                 </div>
                 <span className="text-xs font-black uppercase tracking-wider text-[#C6A45A]">
                   Annual Soul-Winning Target
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-white/80 bg-white/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-white/80 bg-white/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <TrendingUp className="w-3.5 h-3.5" strokeWidth={1.8} />
                 Current Progress
               </span>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mt-2 mb-1">
-              <div className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : '3,000 Souls'}
+              <div className="inline-flex items-center gap-2 text-2xl sm:text-3xl font-black tracking-tight text-white">
+                <UsersRound className="w-5 h-5 text-[#C6A45A]" strokeWidth={1.8} />
+                {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : '5,000 Souls'}
               </div>
               <div className="text-xs sm:text-sm font-bold text-[#C6A45A]">
                 {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Progress recorded'}
