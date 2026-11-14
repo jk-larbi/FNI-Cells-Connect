@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { NotificationItem, NotificationType, NotificationChannel } from '../types';
 import { NotificationService } from '../services/notificationService';
 import { PushNotificationService } from '../services/pushNotificationService';
