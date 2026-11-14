@@ -224,7 +224,8 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
     setTrashSessions(trashedRows.filter(session => activeCellIds.has(session.cell_id)));
     setRegisteredCells(activeCells);
     setActiveLocations(liveLocations.filter(location => activeCellIds.has(location.session?.cell_id)));
-    const activeRows = rows.filter(row => !row.ended_at);
+    const visibleRows = rows.filter(row => activeCellIds.has(row.cell_id));
+    const activeRows = visibleRows.filter(row => !row.ended_at);
     const activeIds = new Set(activeRows.map(row => row.id));
     if (knownActiveSessionIds.current === null) {
       knownActiveSessionIds.current = activeIds;
@@ -234,9 +235,9 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
       newlyStarted.forEach(session => notifyAdmin(`${session.tutor_name} has started ${activityLabel(session.activity_type).toLowerCase()}.`, session.id));
       knownActiveSessionIds.current = activeIds;
     }
-    setSessions(rows);
+    setSessions(visibleRows);
     if (selectedSession) {
-      const refreshed = rows.find(row => row.id === selectedSession.id) || null;
+      const refreshed = visibleRows.find(row => row.id === selectedSession.id) || null;
       setSelectedSession(refreshed);
     }
   };
