@@ -3,6 +3,7 @@ import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact } from '..
 import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
+import { supabase } from '../../lib/supabase';
 import {
   Building,
   Search,
@@ -39,6 +40,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [selectedCellIds, setSelectedCellIds] = useState<string[]>([]);
   const [isDeletingCells, setIsDeletingCells] = useState(false);
   const [showArchivedCells, setShowArchivedCells] = useState(false);
+  const [tutorOptions, setTutorOptions] = useState<{ id: string; authId: string; name: string; cellName?: string }[]>([]);
+  const [loadingTutors, setLoadingTutors] = useState(false);
 
   // Profile Drawer / Modal state
   const [selectedCell, setSelectedCell] = useState<Cell | null>(null);
@@ -63,6 +66,29 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
   useEffect(() => {
     loadCells();
+    let mounted = true;
+    setLoadingTutors(true);
+    supabase.from('profiles')
+      .select('id,supabase_user_id,full_name,cell_name,role')
+      .eq('is_active', true)
+      .in('role', ['tutor', 'cell_leader', 'regional_leader'])
+      .order('full_name', { ascending: true })
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.error('Could not load tutor accounts for cell assignment:', error);
+          setTutorOptions([]);
+        } else {
+          setTutorOptions((data || []).map(profile => ({
+            id: profile.id,
+            authId: profile.supabase_user_id || profile.id,
+            name: profile.full_name || 'FNI Tutor',
+            cellName: profile.cell_name || undefined,
+          })));
+        }
+      })
+      .finally(() => { if (mounted) setLoadingTutors(false); });
+    return () => { mounted = false; };
   }, []);
 
   const openCellProfile = async (cell: Cell) => {
@@ -114,10 +140,14 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
           if (selectedCell?.id === merged.id) setSelectedCell(merged);
         }
       } else {
+        if (!editingCell.tutorUid || editingCell.tutorUid === 'admin-created') {
+          window.alert('Select an existing active tutor account before registering this cell.');
+          return;
+        }
         const { cell } = await CellService.registerCell({
           name: editingCell.name!,
           location: editingCell.location!,
-          tutorUid: editingCell.tutorUid || 'admin-created',
+          tutorUid: editingCell.tutorUid,
           leaderName: editingCell.leader_name || 'Assigned Leader',
           leaderPhone: editingCell.leader_phone || '',
           meetingDay: editingCell.meeting_day || 'Wednesday',
@@ -678,6 +708,33 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                 />
               </div>
+
+              {!editingCell.id && (
+                <div>
+                  <label className="block font-bold text-[#182230] mb-1">Assign Tutor Account</label>
+                  <select
+                    value={editingCell.tutorUid || ''}
+                    onChange={e => {
+                      const tutor = tutorOptions.find(option => option.authId === e.target.value);
+                      setEditingCell({ ...editingCell, tutorUid: e.target.value, leader_name: tutor?.name || editingCell.leader_name });
+                    }}
+                    required
+                    disabled={loadingTutors || tutorOptions.length === 0}
+                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-white"
+                  >
+                    <option value="">{loadingTutors ? 'Loading active tutors…' : 'Select the tutor responsible for this cell'}</option>
+                    {tutorOptions.map(tutor => (
+                      <option key={tutor.id} value={tutor.authId}>
+                        {tutor.name}{tutor.cellName ? ` · currently ${tutor.cellName}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[11px] text-[#667085]">
+                    The selected account will be assigned to this cell and its profile will be promoted to Tutor if needed.
+                    {!loadingTutors && tutorOptions.length === 0 ? ' No active tutor accounts are available yet.' : ''}
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
