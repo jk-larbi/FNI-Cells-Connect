@@ -382,6 +382,34 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
           )}
         </div>
         {notice && <div role="status" className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-900">{notice}</div>}
+        {!selectedCell && activeLocations.length > 0 && <div className="mb-5 rounded-xl border border-[#D9E4F2] bg-[#F7FAFE] p-3 sm:p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+            <div>
+              <h3 className="text-sm font-extrabold text-[#142B4A]">All active live routes</h3>
+              <p className="text-xs text-[#667085] mt-1">Follow every tutor currently sharing location, across all registered cells. Routes update automatically as new GPS points arrive.</p>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{activeLocations.length} LIVE</span>
+          </div>
+          <LiveTutorMap locations={activeLocations} selectedSessionId={selectedSession?.id} onSelectSession={inspectSession} />
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {activeLocations.map((item, index) => (
+              <div key={item.session.id} className="rounded-lg border border-[#E3E8EF] bg-white px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ROUTE_COLORS[index % ROUTE_COLORS.length] }} />
+                    <button type="button" onClick={() => inspectSession(item.session)} className="text-xs font-bold text-[#142B4A] truncate text-left hover:underline">{item.session.tutor_name}</button>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700">LIVE</span>
+                </div>
+                <p className="text-[11px] text-[#667085] mt-0.5">{item.session.cell_name || 'No cell assigned'} · {activityLabel(item.session.activity_type)}</p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-[#667085]">{item.points.length} route points</span>
+                  <button type="button" onClick={() => inspectSession(item.session)} className="text-[10px] font-bold text-[#142B4A] underline">Follow route</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>}
         {selectedCell && <div className="mb-5 rounded-xl border border-[#D9E4F2] bg-[#F7FAFE] p-3 sm:p-4">
           <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
             <div>
@@ -437,7 +465,7 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
             ))}
           </div>
         ))}
-        {selectedCell && selectedSession && (
+        {selectedSession && (
           <div className="mt-4 border-t border-[#E3E8EF] pt-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div><div className="text-sm font-bold text-[#142B4A]">{selectedSession.tutor_name} · {selectedSession.ended_at ? 'Route history' : 'Live location'}</div><div className="text-xs text-[#667085]">{points.length} recorded points{!selectedSession.ended_at ? ' · refreshing every 10 seconds' : ''}</div></div>
