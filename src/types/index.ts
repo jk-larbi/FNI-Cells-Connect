@@ -286,7 +286,14 @@ export interface MessageReply {
   content: string;
 }
 
-export interface ChatAttachment {\n  name: string;\n  path: string;\n  mimeType: string;\n  size: number;\n}\n\nexport interface PrivateMessage {
+export interface ChatAttachment {
+  name: string;
+  path: string;
+  mimeType: string;
+  size: number;
+}
+
+export interface PrivateMessage {
   id: string;
   senderUid: string;
   senderName: string;
@@ -300,6 +307,8 @@ export interface ChatAttachment {\n  name: string;\n  path: string;\n  mimeType:
   isRead: boolean;
   readAt?: string;
   replyTo?: MessageReply;
+  attachments?: ChatAttachment[];
+  deletedForEveryoneAt?: string;
 }
 
 export interface CommunityMessage {
@@ -314,6 +323,8 @@ export interface CommunityMessage {
   replyTo?: MessageReply;
   mentions?: string[];
   reactions?: { [emoji: string]: string[] };
+  attachments?: ChatAttachment[];
+  deletedForEveryoneAt?: string;
 }
 
 export interface InvitationCode {
