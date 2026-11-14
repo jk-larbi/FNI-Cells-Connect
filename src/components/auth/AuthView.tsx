@@ -42,8 +42,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Tutor Registration state (Simplified: Full Name, Phone Number, Cell Name + optional Co-Leader)
+  // Tutor Registration state (Email + password authentication; phone is profile contact information)
   const [regFullName, setRegFullName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -73,8 +74,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!regFullName.trim() || !regUsername.trim() || !regPhone.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
-      setErrorMessage('Please complete all required fields, including your username and password.');
+    if (!regFullName.trim() || !regEmail.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
+      setErrorMessage('Please complete your name, email, cell name, and password fields.');
       return;
     }
 
@@ -82,8 +83,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
     try {
       const res = await registerTutor({
         fullName: regFullName.trim(),
-        username: regUsername.trim(),
-        phoneNumber: regPhone.trim(),
+        email: regEmail.trim(),
+        username: regUsername.trim() || undefined,
+        phoneNumber: regPhone.trim() || undefined,
         password: regPassword,
         confirmPassword: regConfirmPassword,
         cellName: regCellName.trim(),
@@ -92,6 +94,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
       if (!res.success) {
         setErrorMessage(res.error || 'Registration failed.');
+      } else if (res.needsEmailVerification) {
+        setSuccessNotice(res.verificationNotice || `A confirmation link has been sent to ${regEmail}. Verify your email before logging in.`);
+        setCurrentView('tutor-login');
+        setLoginIdentifier(regEmail);
       } else {
         setSuccessNotice('Account created successfully. You are now signed in.');
         if (onSuccess) onSuccess();
@@ -108,14 +114,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setSuccessNotice('');
 
     if (!loginIdentifier.trim() || !loginPassword) {
-      setErrorMessage('Please enter your username and password.');
+      setErrorMessage('Please enter your registered email address and password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await loginTutor({
-        username: loginIdentifier.trim(),
+        email: loginIdentifier.trim(),
         password: loginPassword,
       });
 
@@ -301,7 +307,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Register Your Fellowship Cell
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Provide your name, contact phone, and cell details.
+                  Provide your name, email address, and fellowship details.
                 </p>
               </div>
 
@@ -324,21 +330,23 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* 2. Phone Number */}
+                {/* 2. Email Address */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    2. Phone Number <span className="text-[#C74646]">*</span>
+                    2. Email Address <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
-                    <Phone className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
-                    <input
-                      type="tel"
-                      required
-                      value={regPhone}
-                      onChange={(e) => setRegPhone(e.target.value)}
-                      placeholder="e.g. 0244123456"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
-                    />
+                    <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input type="email" required value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="e.g. tutor@example.com" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
+                  </div>
+                </div>
+
+                {/* Optional Phone Number — stored as contact detail, not used for authentication */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Phone Number <span className="text-[#667085] font-normal">(Optional)</span></label>
+                  <div className="relative group">
+                    <Phone className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input type="tel" value={regPhone} onChange={(e) => setRegPhone(e.target.value)} placeholder="e.g. 0244123456" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
                   </div>
                 </div>
 
@@ -360,14 +368,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* Username */}
-                <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">4. Username <span className="text-[#C74646]">*</span></label>
-                  <div className="relative group">
-                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
-                    <input type="text" required minLength={3} maxLength={24} pattern="[a-zA-Z0-9_]+" value={regUsername} onChange={(e) => setRegUsername(e.target.value)} placeholder="Choose a username" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
-                  </div>
-                </div>
                 {/* Password */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">5. Password <span className="text-[#C74646]">*</span></label>
@@ -542,7 +542,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       required
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
-                      placeholder="Enter your username"
+                      placeholder="Enter your email address"
                       className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
