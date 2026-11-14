@@ -155,6 +155,18 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
     );
   }
 
+  if (!cell?.id) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-5 text-center space-y-3">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#F5F7FA] border border-[#E3E8EF] flex items-center justify-center">
+          <Users className="w-7 h-7 text-[#667085]" />
+        </div>
+        <h2 className="text-lg font-black text-[#142B4A]">No cell currently assigned</h2>
+        <p className="text-sm text-[#667085] leading-relaxed">Your previous test cell has been cleared. Your tutor account is still active, but it is not linked to a cell. Contact an administrator or complete the cell registration process to continue cell reporting.</p>
+      </div>
+    );
+  }
+
   // Greeting based on time of day in Ghana
   const currentHour = new Date().getHours();
   const greetingIcon =
