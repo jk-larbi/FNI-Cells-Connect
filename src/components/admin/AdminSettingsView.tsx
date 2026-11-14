@@ -226,7 +226,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 flex items-center justify-center shrink-0"><User className="w-5 h-5 text-[#142B4A]" /></div>
-              <div><h2 className="text-sm font-bold text-[#142B4A]">Your Administrator Profile</h2><p className="text-xs text-[#667085] mt-1">Change the default “fniadmin” display name and set the username people will see across the admin portal.</p></div>
+              <div><h2 className="text-sm font-bold text-[#142B4A]">Your Administrator Profile</h2><p className="text-xs text-[#667085] mt-1">Set the administrator's full name and unique username. The username is also used for future administrator sign-ins.</p></div>
             </div>
             <form onSubmit={handleSaveAdministratorProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div><label className="block font-bold text-[#182230] mb-1">Full name</label><input type="text" required minLength={2} maxLength={80} value={profileFullName} onChange={e => setProfileFullName(e.target.value)} placeholder="Your real full name" className="w-full p-3 rounded-xl border border-[#D0D5DD] bg-white text-[#182230] placeholder:text-[#98A2B3] focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] focus:outline-none" /></div>
