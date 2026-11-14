@@ -54,14 +54,14 @@ async function savePoint(sessionId: string, location: NativeLocation) {
   if (!acceptingUpdates || activeSessionId !== sessionId) return;
   const now = Date.now();
   const previous = lastPoint;
-  if (previous && now - previous.at < 12000) return;
+  if (previous && now - previous.at < 5000) return;
   if (previous) {
     const rad = (v: number) => (v * Math.PI) / 180;
     const dLat = rad(location.latitude - previous.latitude);
     const dLng = rad(location.longitude - previous.longitude);
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(previous.latitude)) * Math.cos(rad(location.latitude)) * Math.sin(dLng / 2) ** 2;
     const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    if (distance < 20 && now - previous.at < 60000) return;
+    if (distance < 5 && now - previous.at < 20000) return;
   }
   lastPoint = { latitude: location.latitude, longitude: location.longitude, at: now };
   const { error } = await supabase.rpc('record_location_share_point', {
@@ -89,7 +89,7 @@ async function attachWatcher(sessionId: string) {
       backgroundMessage: 'Your location is shared with FNI administrators for this active session. Open FNI Cells Connect to stop sharing.',
       requestPermissions: true,
       stale: false,
-      distanceFilter: 20,
+      distanceFilter: 5,
     }, (location, error) => {
       if (error) {
         console.warn('FNI background location:', error.message || error.code);
@@ -153,11 +153,16 @@ export const LocationSharingService = {
         },
         created_at: new Date().toISOString(),
       };
-      const { data: pushData, error: pushError } = await supabase.functions.invoke('fni-web-push', {
-        body: { action: 'send_notification', notification },
-      });
-      if (pushError || pushData?.error) {
-        console.warn('FNI location push could not be delivered; the in-app alert remains saved:', pushData?.error || pushError?.message);
+      try {
+        const { data: pushData, error: pushError } = await supabase.functions.invoke('fni-web-push', {
+          body: { action: 'send_notification', notification },
+        });
+        if (pushError || pushData?.error) {
+          console.warn('FNI location push could not be delivered; the in-app alert remains saved:', pushData?.error || pushError?.message);
+        }
+      } catch (pushFailure) {
+        // A push gateway outage must never turn off a tutor's active GPS session.
+        console.warn('FNI location push request failed; the in-app alert remains saved:', pushFailure);
       }
       return sessionId;
     } catch (error) {
