@@ -116,8 +116,18 @@ export class CellService {
       created_at: new Date().toISOString(),
     };
 
-    await this.updateCell(syntheticCell);
-    return syntheticCell;
+    const registered = await this.registerCell({
+      name: cleanCellName,
+      location: syntheticCell.location || 'Central Campus',
+      tutorUid: user.id || 'tutor',
+      leaderName: syntheticCell.leader_name || 'Cell Leader',
+      leaderPhone: '',
+      meetingDay: syntheticCell.meeting_day,
+      meetingTime: syntheticCell.meeting_time,
+      venueAddress: syntheticCell.venue_address,
+      targetAttendance: syntheticCell.target_attendance,
+    });
+    return registered.cell;
   }
 
   static async registerCell(data: {
