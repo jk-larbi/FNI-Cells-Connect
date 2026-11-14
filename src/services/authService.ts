@@ -287,9 +287,6 @@ export class AuthService {
 
     const normalizedCell = normalizeCellName(cellName);
     try {
-      const { data: existingUsername, error: usernameLookupError } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
-      if (usernameLookupError) return { profile: null, cell: null, error: 'Could not verify username availability. Please try again.' };
-      if (existingUsername) return { profile: null, cell: null, error: 'That username is already taken. Please choose another.' };
       const allCells = await CellService.getCells();
       const existing = allCells.find(c => (c.normalized_name || normalizeCellName(c.name)) === normalizedCell);
       if (existing) {
