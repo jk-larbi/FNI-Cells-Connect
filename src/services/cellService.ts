@@ -92,42 +92,28 @@ export class CellService {
       if (byTutor) return byTutor;
     }
 
-    // 4. Automatically create and persist cell with the exact registered fellowship name
-    const cleanCellName = (user.cell_name || 'Fellowship Cell').trim();
-    const cellId = user.cell_id || `cell-${Date.now()}`;
-    const syntheticCell: Cell = {
-      id: cellId,
-      name: cleanCellName,
-      normalized_name: normalizeCellName(cleanCellName),
-      location: 'Central Campus',
-      code: `FNI-CEL-${(allCells.length + 1).toString().padStart(3, '0')}`,
-      tutorUid: user.id || 'tutor',
-      leader_id: user.id || 'tutor',
+    // Do not recreate a deleted or unassigned cell from stale profile/cache data.
+    // Cell registration must happen only through the explicit onboarding flow.
+    return {
+      id: '',
+      name: 'No cell assigned',
+      normalized_name: '',
+      location: '',
+      code: '',
+      tutorUid: user.id || '',
+      leader_id: user.id || '',
       leader_name: user.full_name || 'Cell Leader',
-      meeting_day: 'Wednesday',
-      meeting_time: '18:30',
-      venue_address: 'Fellowship Center',
-      target_attendance: 25,
-      total_members: 10,
-      active_members: 8,
-      new_members: 2,
-      status: 'Active',
-      is_active: true,
-      created_at: new Date().toISOString(),
+      meeting_day: '',
+      meeting_time: '',
+      venue_address: '',
+      target_attendance: 0,
+      total_members: 0,
+      active_members: 0,
+      new_members: 0,
+      status: 'Unassigned',
+      is_active: false,
+      created_at: '',
     };
-
-    const registered = await this.registerCell({
-      name: cleanCellName,
-      location: syntheticCell.location || 'Central Campus',
-      tutorUid: user.id || 'tutor',
-      leaderName: syntheticCell.leader_name || 'Cell Leader',
-      leaderPhone: '',
-      meetingDay: syntheticCell.meeting_day,
-      meetingTime: syntheticCell.meeting_time,
-      venueAddress: syntheticCell.venue_address,
-      targetAttendance: syntheticCell.target_attendance,
-    });
-    return registered.cell;
   }
 
   static async registerCell(data: {
