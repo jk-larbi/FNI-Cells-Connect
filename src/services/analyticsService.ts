@@ -23,11 +23,12 @@ export class AnalyticsService {
       Promise.resolve(AuthService.getAllProfiles()),
     ]);
 
-    // Filter scope by user cell if tutor
+    // Only data linked to a currently registered, non-archived cell is active.
+    const activeCellIds = new Set(allCells.map(cell => cell.id));
     let scopedCells = allCells;
-    let scopedMeetings = meetingReports;
-    let scopedEvang = evangelismReports;
-    let scopedContacts = contacts;
+    let scopedMeetings = meetingReports.filter(report => activeCellIds.has(report.cellId));
+    let scopedEvang = evangelismReports.filter(report => activeCellIds.has(report.cellId));
+    let scopedContacts = contacts.filter(contact => activeCellIds.has(contact.cellId));
 
     if (!isAdmin && userCellId) {
       scopedCells = allCells.filter(c => c.id === userCellId);
