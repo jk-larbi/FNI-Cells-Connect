@@ -153,7 +153,7 @@ REVOKE ALL ON FUNCTION public.register_cell_and_promote_tutor(text,text,text,tex
 GRANT EXECUTE ON FUNCTION public.register_cell_and_promote_tutor(text,text,text,text,text,text,text,text,text,text,integer,text) TO authenticated;
 
 -- Clean up any exact-name duplicates already present, re-pointing history before deletion.
-DO $
+DO $dedup$
 DECLARE g record; v_keep_id text; v_keep_app_id text; v_dupe_ids text[]; v_reference_ids text[]; v_table text;
 BEGIN
   FOR g IN
@@ -188,7 +188,7 @@ BEGIN
       DELETE FROM public.cells WHERE id=ANY(v_dupe_ids);
     END IF;
   END LOOP;
-END $;
+END $dedup$;
 
 UPDATE public.cells SET firebase_id=id WHERE firebase_id IS NULL;
 UPDATE public.cells SET normalized_name=regexp_replace(lower(trim(name)), '[^a-z0-9]', '', 'g')
