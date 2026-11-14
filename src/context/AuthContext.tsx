@@ -143,6 +143,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Re-fetch the signed-in profile when the tutor returns to an already-open portal.
+  // This ensures administrator-side cell unassignments are reflected without requiring a sign-out.
+  useEffect(() => {
+    if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
+    let active = true;
+    const syncProfile = async () => {
+      const updated = await AuthService.fetchProfileById(currentUser.id);
+      if (active && updated) setCurrentUser(updated);
+    };
+    window.addEventListener('focus', syncProfile);
+    document.addEventListener('visibilitychange', syncProfile);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', syncProfile);
+      document.removeEventListener('visibilitychange', syncProfile);
+    };
+  }, [currentUser?.id]);
+
   const showLoginView = () => {
     setIsLoggedOut(true);
   };
