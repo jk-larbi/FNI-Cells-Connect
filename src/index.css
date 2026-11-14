@@ -1309,3 +1309,59 @@ html.dark [class*="bg-[#142B4A]/10"] { background-color: rgb(65 105 180 / .22) !
 html.dark [class*="hover:bg-[#142B4A]/10"]:hover { background-color: rgb(65 105 180 / .30) !important; }
 html.dark [class*="bg-[#C6A45A]/"] { background-color: rgb(217 167 46 / .16) !important; }
 html.dark [class*="bg-purple-900"], html.dark [class*="bg-violet-900"] { background-color: #30264B !important; }
+
+
+/* Notification centre: keep the entire panel high-contrast in both themes.
+   This view intentionally stays light so dark-mode global overrides cannot
+   pair dark text with dark surfaces. */
+.fni-notification-center,
+html.dark .fni-notification-center {
+  background: #F1F4F8 !important;
+  color: #172033 !important;
+}
+html.dark .fni-notification-center [class*="bg-white"],
+html.dark .fni-notification-center [class~="bg-white"] {
+  background: #FFFFFF !important;
+  border-color: #D5DDE8 !important;
+}
+html.dark .fni-notification-center [class*="bg-[#E2E8F0]"],
+html.dark .fni-notification-center [class*="bg-slate-100"],
+html.dark .fni-notification-center [class*="bg-slate-200"] {
+  background: #E2E8F0 !important;
+}
+html.dark .fni-notification-center [class*="text-[#102A4C]"],
+html.dark .fni-notification-center [class*="text-[#142B4A]"],
+html.dark .fni-notification-center [class*="text-[#172033]"],
+html.dark .fni-notification-center [class*="text-[#263548]"],
+html.dark .fni-notification-center [class*="text-[#334155]"],
+html.dark .fni-notification-center [class*="text-[#475569]"],
+html.dark .fni-notification-center [class*="text-slate-600"],
+html.dark .fni-notification-center [class*="text-slate-700"] {
+  color: #263548 !important;
+}
+html.dark .fni-notification-center [class*="text-white"] {
+  color: #FFFFFF !important;
+}
+html.dark .fni-notification-center [class*="bg-[#142B4A]"] {
+  background: #142B4A !important;
+}
+html.dark .fni-notification-center [class*="bg-[#142B4A]"] *,
+html.dark .fni-notification-center [class*="bg-[#142B4A]"] span {
+  color: #FFFFFF !important;
+}
+html.dark .fni-notification-center [class*="bg-[#EAF1FA]"] {
+  background: #EAF1FA !important;
+}
+html.dark .fni-notification-center [class*="bg-[#EAF1FA]"] * {
+  color: #263548 !important;
+}
+html.dark .fni-notification-center button:not([class*="bg-[#142B4A]"]) {
+  color: #263548;
+}
+html.dark .fni-notification-center button[class*="bg-[#142B4A]"] {
+  color: #FFFFFF !important;
+}
+html.dark .fni-notification-center p,
+html.dark .fni-notification-center span {
+  text-shadow: none !important;
+}
