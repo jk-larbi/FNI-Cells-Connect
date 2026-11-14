@@ -86,11 +86,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (!supported) return;
 
       try {
-        await PushNotificationService.registerServiceWorker();
-        await navigator.serviceWorker.ready;
-        if (currentUser?.id && Notification.permission === 'granted') {
-          const active = await PushNotificationService.syncExistingSubscription();
-          if (!cancelled) setIsPushEnabled(active);
+        if (Capacitor.isNativePlatform()) {
+          if (currentUser?.id) {
+            const active = await PushNotificationService.syncExistingSubscription(currentUser.id);
+            if (!cancelled) setIsPushEnabled(active);
+          }
+        } else {
+          await PushNotificationService.registerServiceWorker();
+          await navigator.serviceWorker.ready;
+          if (currentUser?.id && Notification.permission === 'granted') {
+            const active = await PushNotificationService.syncExistingSubscription(currentUser.id);
+            if (!cancelled) setIsPushEnabled(active);
+          }
         }
       } catch (error) {
         console.warn('FNI background notification setup notice:', error);
@@ -144,6 +151,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
     }
+    const handleNativePushClick = (event: Event) => {
+      const data = (event as CustomEvent).detail || {};
+      setActiveNavigationTarget({
+        targetTab: data.targetTab || 'notifications',
+        reportId: data.reportId,
+        conversationId: data.conversationId,
+        materialId: data.materialId,
+      });
+    };
+    window.addEventListener('fni-native-push-click', handleNativePushClick);
 
     return () => {
       unsubscribe();
@@ -151,6 +168,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
       }
+      window.removeEventListener('fni-native-push-click', handleNativePushClick);
     };
   }, [currentUser?.id, currentUser?.role]);
 
