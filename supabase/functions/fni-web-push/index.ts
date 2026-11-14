@@ -25,10 +25,10 @@ let pushServerPromise: Promise<{ server: webpush.ApplicationServer; publicKey: s
 const fcmServiceAccountJson = Deno.env.get("FCM_SERVICE_ACCOUNT_JSON") || "";
 let fcmAccessTokenCache: { token: string; expiresAt: number } | null = null;
 const base64Url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))
-  .replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+  .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 const textBase64Url = (value: string) => base64Url(new TextEncoder().encode(value));
 function pemToBytes(pem: string): Uint8Array {
-  const clean = pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s/g, "");
+  const clean = pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, "");
   const binary = atob(clean);
   return Uint8Array.from(binary, char => char.charCodeAt(0));
 }
