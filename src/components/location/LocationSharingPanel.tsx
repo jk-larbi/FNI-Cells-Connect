@@ -129,7 +129,13 @@ const LiveTutorMap: React.FC<{
           }
         });
         if (valid.length) {
-          const bounds = L.latLngBounds(valid.map(item => [item.point!.latitude, item.point!.longitude]));
+          const boundsCoordinates = valid.flatMap(item => {
+            const route = (item.points || []).filter(point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
+            return route.length
+              ? route.map(point => [point.latitude, point.longitude])
+              : [[item.point!.latitude, item.point!.longitude]];
+          });
+          const bounds = L.latLngBounds(boundsCoordinates);
           const currentBounds = mapRef.current.getBounds();
           if (!hasFittedRef.current || !currentBounds.contains(bounds)) {
             mapRef.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
@@ -296,7 +302,6 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   };
 
   if (mode === 'admin') {
-    const livePoints = activeLocations.filter(item => item.point && Number.isFinite(item.point.latitude) && Number.isFinite(item.point.longitude));
     const mapPoints = points.filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
     const mapUrl = mapPoints.length > 1
       ? 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(`${mapPoints[0].latitude},${mapPoints[0].longitude}`) +
@@ -304,11 +309,6 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
         (mapPoints.length > 2 ? '&waypoints=' + encodeURIComponent(mapPoints.slice(1, -1).slice(0, 8).map(p => `${p.latitude},${p.longitude}`).join('|')) : '')
       : '';
     const latestPoint = mapPoints[mapPoints.length - 1];
-    const mapEmbedUrl = latestPoint
-      ? 'https://www.openstreetmap.org/export/embed.html?bbox=' +
-        encodeURIComponent(`${latestPoint.longitude - 0.004},${latestPoint.latitude - 0.004},${latestPoint.longitude + 0.004},${latestPoint.latitude + 0.004}`) +
-        '&layer=mapnik&marker=' + encodeURIComponent(`${latestPoint.latitude},${latestPoint.longitude}`)
-      : '';
     return (
       <section className="fni-location-panel mb-6 rounded-2xl border border-[#E3E8EF] bg-white p-4 sm:p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -331,10 +331,13 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
             <>
               <LiveTutorMap locations={activeLocations} selectedSessionId={selectedSession?.id} onSelectSession={inspectSession} />
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {activeLocations.map(item => (
+                {activeLocations.map((item, index) => (
                   <div key={item.session.id} className="rounded-lg border border-[#E3E8EF] bg-white px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
-                      <button type="button" onClick={() => inspectSession(item.session)} className="text-xs font-bold text-[#142B4A] truncate text-left hover:underline">{item.session.tutor_name}</button>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ROUTE_COLORS[index % ROUTE_COLORS.length] }} />
+                        <button type="button" onClick={() => inspectSession(item.session)} className="text-xs font-bold text-[#142B4A] truncate text-left hover:underline">{item.session.tutor_name}</button>
+                      </div>
                       <span className="text-[10px] font-bold text-emerald-700">LIVE</span>
                     </div>
                     <p className="text-[11px] text-[#667085] mt-0.5">{item.session.cell_name || 'No cell assigned'} · Started {dateLabel(item.session.started_at)}</p>
