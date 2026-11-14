@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Clock, MapPin, Navigation, Play, ShieldCheck, Square, RefreshCw, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { LocationSharingService, LocationSession, LocationPoint, LocationActivity } from '../../services/locationSharingService';
+import { LocationSharingService, LocationSession, LocationPoint, LocationActivity, ActiveTutorLocation } from '../../services/locationSharingService';
 
 interface Props {
   mode: 'tutor' | 'admin';
@@ -10,11 +10,124 @@ interface Props {
 const activityLabel = (type: LocationActivity) => type === 'evangelism' ? 'Evangelism outreach' : 'Cell meeting';
 const dateLabel = (value: string) => new Date(value).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 
+declare global {
+  interface Window { L?: any; }
+}
+
+let leafletLoader: Promise<void> | null = null;
+function ensureLeaflet(): Promise<void> {
+  if (window.L) return Promise.resolve();
+  if (!leafletLoader) {
+    leafletLoader = new Promise((resolve, reject) => {
+      if (!document.querySelector('link[data-fni-leaflet]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.dataset.fniLeaflet = 'true';
+        document.head.appendChild(link);
+      }
+      const existing = document.querySelector<HTMLScriptElement>('script[data-fni-leaflet]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Map library could not be loaded.')), { once: true });
+        if (window.L) resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.async = true;
+      script.dataset.fniLeaflet = 'true';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Map library could not be loaded.'));
+      document.body.appendChild(script);
+    });
+  }
+  return leafletLoader;
+}
+
+const LiveTutorMap: React.FC<{ locations: ActiveTutorLocation[] }> = ({ locations }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<Map<string, any>>(new Map());
+  const hasFittedRef = useRef(false);
+  const [mapError, setMapError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    const renderMap = async () => {
+      try {
+        await ensureLeaflet();
+        if (cancelled || !containerRef.current || !window.L) return;
+        const L = window.L;
+        if (!mapRef.current) {
+          mapRef.current = L.map(containerRef.current, { zoomControl: true, scrollWheelZoom: false }).setView([5.56, -0.20], 12);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors',
+          }).addTo(mapRef.current);
+        }
+
+        const valid = locations.filter(item => item.point &&
+          Number.isFinite(item.point.latitude) && Number.isFinite(item.point.longitude));
+        const ids = new Set(valid.map(item => item.session.id));
+        markersRef.current.forEach((marker, id) => {
+          if (!ids.has(id)) {
+            mapRef.current.removeLayer(marker);
+            markersRef.current.delete(id);
+          }
+        });
+        valid.forEach(item => {
+          const point = item.point!;
+          const coordinates: [number, number] = [point.latitude, point.longitude];
+          const label = item.session.tutor_name + (item.session.cell_name ? ' · ' + item.session.cell_name : '');
+          const existing = markersRef.current.get(item.session.id);
+          if (existing) {
+            existing.setLatLng(coordinates);
+            existing.setTooltipContent(label);
+          } else {
+            const marker = L.circleMarker(coordinates, {
+              radius: 9, color: '#ffffff', weight: 3, fillColor: '#1769d2', fillOpacity: 1,
+            }).addTo(mapRef.current).bindTooltip(label, { direction: 'top', offset: [0, -8] });
+            markersRef.current.set(item.session.id, marker);
+          }
+        });
+        if (!hasFittedRef.current && valid.length) {
+          const bounds = L.latLngBounds(valid.map(item => [item.point!.latitude, item.point!.longitude]));
+          mapRef.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
+          hasFittedRef.current = true;
+        }
+        mapRef.current.invalidateSize();
+        setMapError('');
+      } catch (error: any) {
+        if (!cancelled) setMapError(error?.message || 'Live map could not be loaded.');
+      }
+    };
+    void renderMap();
+    return () => { cancelled = true; };
+  }, [locations]);
+
+  useEffect(() => () => {
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+      markersRef.current.clear();
+    }
+  }, []);
+
+  return (
+    <div className="relative">
+      <div ref={containerRef} className="w-full h-[320px] sm:h-[380px] rounded-xl overflow-hidden bg-slate-100" aria-label="Map of all active tutor locations" />
+      {mapError && <div className="absolute inset-x-3 bottom-3 rounded-lg bg-white/95 border border-rose-200 p-2 text-xs text-rose-700">{mapError}</div>}
+    </div>
+  );
+};
+
 export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   const { currentUser } = useAuth();
   const [activity, setActivity] = useState<LocationActivity>('evangelism');
   const [activeSession, setActiveSession] = useState<LocationSession | null>(null);
   const [sessions, setSessions] = useState<LocationSession[]>([]);
+  const [activeLocations, setActiveLocations] = useState<ActiveTutorLocation[]>([]);
   const [selectedSession, setSelectedSession] = useState<LocationSession | null>(null);
   const [points, setPoints] = useState<LocationPoint[]>([]);
   const [busy, setBusy] = useState(false);
@@ -33,7 +146,11 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   };
 
   const loadAdminSessions = async () => {
-    const rows = await LocationSharingService.getAdminSessions();
+    const [rows, liveLocations] = await Promise.all([
+      LocationSharingService.getAdminSessions(),
+      LocationSharingService.getAdminActiveLocations(),
+    ]);
+    setActiveLocations(liveLocations);
     const activeRows = rows.filter(row => !row.ended_at);
     const activeIds = new Set(activeRows.map(row => row.id));
     if (knownActiveSessionIds.current === null) {
@@ -54,10 +171,10 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   useEffect(() => {
     if (mode === 'admin') {
       loadAdminSessions().catch(err => setError(err.message || 'Could not load location sessions.'));
-      const timer = window.setInterval(() => {
-        loadAdminSessions().catch(() => undefined);
-      }, 5000);
-      return () => window.clearInterval(timer);
+      const refresh = () => { loadAdminSessions().catch(err => setError(err?.message || 'Could not refresh live tutor locations.')); };
+      const unsubscribe = LocationSharingService.subscribeToAdminLocationChanges(refresh);
+      const timer = window.setInterval(refresh, 12000);
+      return () => { window.clearInterval(timer); unsubscribe(); };
     }
     let mounted = true;
     LocationSharingService.getMyActiveSession().then(async session => {
@@ -124,6 +241,12 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   };
 
   if (mode === 'admin') {
+    const livePoints = activeLocations.filter(item => item.point && Number.isFinite(item.point.latitude) && Number.isFinite(item.point.longitude));
+    const nativeMapsUrl = livePoints.length === 1
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${livePoints[0].point!.latitude},${livePoints[0].point!.longitude}`)}`
+      : livePoints.length > 1
+        ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(`${livePoints[0].point!.latitude},${livePoints[0].point!.longitude}`)}&destination=${encodeURIComponent(`${livePoints[livePoints.length - 1].point!.latitude},${livePoints[livePoints.length - 1].point!.longitude}`)}&waypoints=${encodeURIComponent(livePoints.slice(1, -1).slice(0, 9).map(item => `${item.point!.latitude},${item.point!.longitude}`).join('|'))}&travelmode=walking`
+        : '';
     const mapPoints = points.filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
     const mapUrl = mapPoints.length > 1
       ? 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(`${mapPoints[0].latitude},${mapPoints[0].longitude}`) +
@@ -146,6 +269,35 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
           <div className="flex items-center gap-2"><button onClick={() => { if ('Notification' in window) void Notification.requestPermission(); }} className="h-9 px-3 rounded-xl border border-[#E3E8EF] text-xs font-bold text-[#142B4A]">Enable alerts</button><button onClick={() => loadAdminSessions().catch(err => setError(err.message))} className="h-9 px-3 rounded-xl border border-[#E3E8EF] text-xs font-bold text-[#142B4A] flex items-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Refresh</button></div>
         </div>
         {notice && <div role="status" className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-900">{notice}</div>}
+        <div className="mb-5 rounded-xl border border-[#D9E4F2] bg-[#F7FAFE] p-3 sm:p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+            <div>
+              <h3 className="text-sm font-extrabold text-[#142B4A]">All active tutors · Live map</h3>
+              <p className="text-xs text-[#667085] mt-1">{activeLocations.length} active sharing session{activeLocations.length === 1 ? '' : 's'} · live positions refresh automatically</p>
+            </div>
+            {nativeMapsUrl && <a href={nativeMapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#142B4A] text-white px-3 py-2 text-xs font-bold"><Navigation className="w-3.5 h-3.5" /> Open in Maps</a>}
+          </div>
+          {activeLocations.length > 0 ? (
+            <>
+              <LiveTutorMap locations={activeLocations} />
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {activeLocations.map(item => (
+                  <div key={item.session.id} className="rounded-lg border border-[#E3E8EF] bg-white px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-[#142B4A] truncate">{item.session.tutor_name}</span>
+                      <span className="text-[10px] font-bold text-emerald-700">LIVE</span>
+                    </div>
+                    <p className="text-[11px] text-[#667085] mt-0.5">{item.session.cell_name || 'No cell assigned'} · {item.point ? dateLabel(item.point.captured_at) : 'Waiting for first GPS fix'}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-[#667085] mt-2">The live map inside FNI shows every active tutor as a separate marker. “Open in Maps” sends the latest positions to Google Maps as a route snapshot; external Maps apps do not receive a continuous live feed from FNI.</p>
+            </>
+          ) : (
+            <div className="rounded-lg bg-white border border-[#E3E8EF] p-5 text-center text-xs text-[#667085]">No tutors are sharing their location right now.</div>
+          )}
+        </div>
+
         {sessions.length === 0 ? <p className="text-sm text-[#667085] py-5 text-center">No location-sharing sessions have been recorded.</p> : (
           <div className="space-y-2">
             {sessions.map(session => (
