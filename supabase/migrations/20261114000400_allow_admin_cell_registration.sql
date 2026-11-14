@@ -119,7 +119,7 @@ BEGIN
       requiring_follow_up=greatest(coalesce(c.requiring_follow_up,0),coalesce((SELECT max(x.requiring_follow_up) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
       target_attendance=greatest(coalesce(c.target_attendance,0),coalesce((SELECT max(x.target_attendance) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
       updated_at=now() WHERE c.id=v_cell_id;
-    FOREACH v_table IN ARRAY ARRAY['cell_meeting_reports','evangelism_reports','evangelism_contacts','follow_ups','offerings','offering_records','cell_reports','private_messages','location_share_sessions'] LOOP
+    FOREACH v_table IN ARRAY ARRAY['cell_meeting_reports','evangelism_reports','evangelism_contacts','follow_ups','offerings','offering_records','cell_reports','community_members','private_messages','location_share_sessions'] LOOP
       IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=v_table AND column_name='cell_id') THEN
         EXECUTE format('UPDATE public.%I SET cell_id=$1 WHERE cell_id=ANY($2)',v_table) USING v_app_cell_id,v_reference_ids;
       END IF;
