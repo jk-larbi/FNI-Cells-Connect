@@ -1032,3 +1032,43 @@ html.dark [class*="text-gold-"] { color: #F0C75E !important; }
 @media (max-width: 639px) {
   .fni-messaging-view .fni-chat-stream { min-height: 0 !important; }
 }
+
+
+/* Tutor dashboard sanctuary header: intentional contrast in both themes. */
+.fni-tutor-sanctuary-header {
+  background: linear-gradient(112deg, #142B4A 0%, #1A365D 58%, #263F70 100%) !important;
+  border-color: #29466F !important;
+  color: #F8FAFF !important;
+}
+.fni-tutor-sanctuary-header .fni-sanctuary-muted { color: #E2EAF7 !important; }
+html.dark .fni-tutor-sanctuary-header {
+  background: linear-gradient(112deg, #111C35 0%, #192B50 54%, #292653 100%) !important;
+  border-color: #46577A !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.24) !important;
+}
+html.dark .fni-tutor-sanctuary-header h1,
+html.dark .fni-tutor-sanctuary-header p,
+html.dark .fni-tutor-sanctuary-header span { text-shadow: none; }
+html.dark .fni-tutor-sanctuary-header h1 { color: #FFFFFF !important; }
+html.dark .fni-tutor-sanctuary-header .text-slate-200,
+html.dark .fni-tutor-sanctuary-header .text-slate-300 { color: #E3EAF7 !important; }
+html.dark .fni-tutor-sanctuary-header .text-slate-400 { color: #B8C5DC !important; }
+html.dark .fni-tutor-sanctuary-header [class*="bg-white/10"] {
+  background-color: rgba(255,255,255,.12) !important;
+  border-color: rgba(255,255,255,.22) !important;
+}
+html.dark .fni-tutor-sanctuary-header [class~="bg-[#C6A45A]"] {
+  background-color: #F0C75E !important;
+  color: #17233D !important;
+}
+html.dark .fni-tutor-sanctuary-header button:first-child {
+  background: #F0C75E !important;
+  color: #17233D !important;
+}
+html.dark .fni-tutor-sanctuary-header button:first-child * { color: #17233D !important; }
+html.dark .fni-tutor-sanctuary-header button:last-child {
+  background: rgba(255,255,255,.12) !important;
+  color: #F8FAFF !important;
+  border-color: rgba(255,255,255,.28) !important;
+}
+html.dark .fni-tutor-sanctuary-header button:last-child svg { color: #F0C75E !important; }
