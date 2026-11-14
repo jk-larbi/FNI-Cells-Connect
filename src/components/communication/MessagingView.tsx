@@ -758,7 +758,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Standard Social Media / WhatsApp Emoji Drawer */}
           {showCommunityEmoji && (
-            <div className="absolute bottom-[78px] left-2 right-2 z-30 rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-xl space-y-2.5">
+            <div className="absolute bottom-[118px] left-2 right-2 z-30 rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-xl space-y-2.5">
               <div className="flex items-center justify-between pb-2 border-b border-[#E3E8EF] gap-2">
                 {/* Category Navigation Bar (WhatsApp / Telegram style) */}
                 <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
@@ -1041,7 +1041,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Standard Social Media / WhatsApp Emoji Drawer for Private Chat */}
           {showPrivateEmoji && (
-            <div className="border-t border-[#E3E8EF] bg-white p-3 shadow-md space-y-2.5">
+            <div className="absolute bottom-[68px] left-2 right-2 z-30 rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-xl space-y-2.5">
               <div className="flex items-center justify-between pb-2 border-b border-[#E3E8EF] gap-2">
                 {/* Category Navigation Bar (WhatsApp / Telegram style) */}
                 <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
