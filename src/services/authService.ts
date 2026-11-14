@@ -390,98 +390,34 @@ export class AuthService {
 
   // --- 3. ADMINISTRATOR AUTHENTICATION (AUTHENTICATE DIRECTLY AGAINST SUPABASE AUTH) ---
   static async signInAdmin(input: AdminLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
-    let email = input.email?.trim().toLowerCase() || '';
-    if (email && !email.includes('@')) {
-      email = `${email}@gmail.com`;
-    }
+    const identifier = (input.username || input.email || '').trim().toLowerCase().replace(/^@/, '');
     const password = input.password || '';
-
-    if (!email || !password) {
-      return { profile: null, error: 'Administrator email and password are required.' };
-    }
-
-    if (!isSupabaseConfigured || !supabase) {
-      return { profile: null, error: 'Supabase authentication service is unavailable.' };
-    }
+    if (!identifier || !password) return { profile: null, error: 'Administrator username and password are required.' };
+    if (!isSupabaseConfigured || !supabase) return { profile: null, error: 'Supabase authentication service is unavailable.' };
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { data, error } = await supabase.functions.invoke('tutor-auth', {
+        body: { action: 'admin-login', username: identifier, password },
       });
-
-      if (authError) {
-        return { profile: null, error: authError.message || 'Invalid administrator credentials.' };
+      if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
+        return { profile: null, error: data?.error || error?.message || 'Invalid administrator username or password.' };
       }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+      if (sessionError) return { profile: null, error: 'Could not establish your administrator session. Please try again.' };
 
-      if (!authData?.user) {
-        return { profile: null, error: 'Administrator authentication failed.' };
-      }
-
-      // Authoritative profile lookup from Supabase
-      let profile = await SupabaseService.getProfile(authData.user.id);
-
-      // If remote profile query failed due to PostgreSQL function permissions (e.g. 42501)
-      // or trigger error, but the user is the authenticated administrator
-      if (!profile && (email === 'fniadmin@gmail.com' || authData.user.email?.toLowerCase() === 'fniadmin@gmail.com')) {
-        profile = {
-          id: authData.user.id,
-          supabase_user_id: authData.user.id,
-          email: authData.user.email || 'fniadmin@gmail.com',
-          full_name: authData.user.user_metadata?.full_name || 'FNI Administrator',
-          role: 'super_admin',
-          is_active: true,
-          is_onboarded: true,
-          must_change_password: false,
-          created_at: authData.user.created_at || new Date().toISOString(),
-        };
-        // Attempt background persistence
-        SupabaseService.upsertProfile(profile).catch(() => {});
-      }
-
-      if (!profile) {
-        // Robust fallback for authenticated administrator
-        profile = {
-          id: authData.user.id,
-          supabase_user_id: authData.user.id,
-          email: authData.user.email || email || 'fniadmin@gmail.com',
-          full_name: authData.user.user_metadata?.full_name || 'FNI Administrator',
-          role: 'super_admin',
-          is_active: true,
-          is_onboarded: true,
-          must_change_password: false,
-          created_at: authData.user.created_at || new Date().toISOString(),
-        };
-        this.setCurrentProfile(profile);
-      }
-
-      // STRICT: Verify role is genuinely administrative in Supabase PostgreSQL
-      const isAdminRole =
-        profile.role === 'admin' ||
-        profile.role === 'super_admin' ||
-        profile.role === 'national_admin';
-
-      if (!isAdminRole) {
-        // User is authenticated in Supabase, but is not an authorized administrator
+      const profile = await SupabaseService.getProfile(data.user.id);
+      if (!profile || !['admin', 'super_admin', 'national_admin'].includes(profile.role) || !profile.is_active) {
         await supabase.auth.signOut();
         this.setCurrentProfile(null);
-        return {
-          profile: null,
-          error: 'Access denied: This account does not possess administrator privileges.',
-        };
+        return { profile: null, error: 'Access denied: this account is not an active FNI administrator.' };
       }
-
-      if (!profile.is_active) {
-        await supabase.auth.signOut();
-        this.setCurrentProfile(null);
-        return { profile: null, error: 'This administrator account has been deactivated.' };
-      }
-
       this.setCurrentProfile(profile);
-      SyncStateService.retryPendingSync().catch(() => {});
       return { profile, error: null };
-    } catch (err: any) {
-      return { profile: null, error: err?.message || 'Administrator authentication exception.' };
+    } catch (error: any) {
+      return { profile: null, error: error?.message || 'Administrator login failed unexpectedly.' };
     }
   }
 
