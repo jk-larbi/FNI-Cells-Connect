@@ -219,7 +219,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm relative">
           <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
             <div className="flex items-center gap-2">
-              <Cross className="w-4 h-4 text-[#C6A45A]" aria-label="FNI Kingdom Vision and Mission" strokeWidth={2} />
+              <Compass className="w-4 h-4 text-[#C6A45A]" aria-label="FNI Kingdom Vision and Mission" strokeWidth={2} />
               <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">
                 FNI Kingdom Vision & Mission
               </h2>
