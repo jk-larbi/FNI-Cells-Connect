@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { MessagingService } from '../../services/messagingService';
 import { supabase } from '../../lib/supabase';
 import { CellService } from '../../services/cellService';
-import { PrivateMessage, CommunityMessage, InvitationCode, MessageReply } from '../../types';
+import { PrivateMessage, CommunityMessage, InvitationCode, MessageReply, ChatAttachment } from '../../types';
 import {
   MessageSquare,
   Users,
@@ -24,6 +24,8 @@ import {
   CornerDownRight,
   Heart,
   MoreVertical,
+  Paperclip,
+  FileAudio,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -74,6 +76,21 @@ const STANDARD_EMOJI_CATEGORIES: Record<string, string[]> = {
   ],
 };
 
+
+const ChatAttachmentPreview: React.FC<{ attachment: ChatAttachment }> = ({ attachment }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    MessagingService.getChatAttachmentUrl(attachment.path).then(value => { if (active) setUrl(value); });
+    return () => { active = false; };
+  }, [attachment.path]);
+  if (!url) return <div className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-500">Loading attachment…</div>;
+  if (attachment.mimeType.startsWith('image/')) return <a href={url} target="_blank" rel="noreferrer" className="mt-2 block"><img src={url} alt={attachment.name} loading="lazy" className="max-h-72 max-w-full rounded-xl object-contain" /></a>;
+  if (attachment.mimeType.startsWith('video/')) return <video controls preload="metadata" src={url} className="mt-2 max-h-72 w-full rounded-xl" />;
+  if (attachment.mimeType.startsWith('audio/')) return <div className="mt-2 flex items-center gap-2 rounded-xl bg-black/5 p-2"><FileAudio className="h-5 w-5 shrink-0" /><audio controls preload="metadata" src={url} className="min-w-0 max-w-full" /></div>;
+  return <a href={url} target="_blank" rel="noreferrer" className="mt-2 block truncate text-xs underline">{attachment.name}</a>;
+};
+
 export const MessagingView: React.FC<MessagingViewProps> = ({
   initialConversationId,
   initialTab,
@@ -85,6 +102,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Private Messaging State
   const [privateMessages, setPrivateMessages] = useState<PrivateMessage[]>([]);
   const [privateText, setPrivateText] = useState('');
+  const [privateFiles, setPrivateFiles] = useState<File[]>([]);
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || '');
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
@@ -100,6 +118,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Community Messaging State
   const [communityMessages, setCommunityMessages] = useState<CommunityMessage[]>([]);
   const [communityText, setCommunityText] = useState('');
+  const [communityFiles, setCommunityFiles] = useState<File[]>([]);
   const [communityCategory, setCommunityCategory] = useState<'general' | 'announcement' | 'prayer_request' | 'testimony'>('general');
   const [isSendingCommunity, setIsSendingCommunity] = useState(false);
   const [communitySendError, setCommunitySendError] = useState<string | null>(null);
@@ -303,6 +322,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setPrivateSendError(null);
   };
 
+  const handleDeleteMessageForEveryone = async (messageId: string, scope: 'private' | 'community') => {
+    const confirmed = window.confirm('Delete this message and its attachments for everyone in this conversation?');
+    if (!confirmed) return;
+    const saved = await MessagingService.deleteMessageForEveryone(messageId, scope);
+    if (!saved) {
+      setPrivateSendError('The message could not be deleted for everyone. Please try again.');
+      return;
+    }
+    if (scope === 'private') await loadPrivateMessages();
+    else await loadCommunity();
+    setOpenMessageMenu(null);
+  };
+
   const handleHidePrivateMessage = async (messageId: string) => {
     const confirmed = window.confirm('Hide this message from your account only? The other participant will still see it.');
     if (!confirmed) return;
@@ -405,7 +437,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Private Message
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!privateText.trim() || privateSendLock.current) return;
+    if ((!privateText.trim() && privateFiles.length === 0) || privateSendLock.current) return;
     privateSendLock.current = true;
 
     const targetTutorId = isAdmin ? selectedTutorId : currentUser.id;
@@ -416,6 +448,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setIsSendingPrivate(true);
     setPrivateSendError(null);
     try {
+      const uploadedAttachments = await Promise.all(privateFiles.map(file => MessagingService.uploadChatAttachment(currentUser.id, file)));
       await MessagingService.sendPrivateMessage({
         senderUid: currentUser.id,
         senderName: currentUser.full_name,
@@ -426,8 +459,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         cellName: currentUser.cell_name,
         content: privateText.trim(),
         replyTo: privateReplyTo || undefined,
+        attachments: uploadedAttachments,
       });
       setPrivateText('');
+      setPrivateFiles([]);
       if (privateInputRef.current) privateInputRef.current.style.height = '40px';
       setPrivateReplyTo(null);
       setShowPrivateEmoji(false);
@@ -445,7 +480,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Community Message
   const handleSendCommunity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!communityText.trim() || communitySendLock.current) return;
+    if ((!communityText.trim() && communityFiles.length === 0) || communitySendLock.current) return;
     communitySendLock.current = true;
 
     // Detect mentioned names
@@ -456,6 +491,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setIsSendingCommunity(true);
     setCommunitySendError(null);
     try {
+      const uploadedAttachments = await Promise.all(communityFiles.map(file => MessagingService.uploadChatAttachment(currentUser.id, file)));
       await MessagingService.sendCommunityMessage({
         senderUid: currentUser.id,
         senderName: currentUser.full_name,
@@ -465,8 +501,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         category: communityCategory,
         replyTo: communityReplyTo || undefined,
         mentions: mentionsFound,
+        attachments: uploadedAttachments,
       });
       setCommunityText('');
+      setCommunityFiles([]);
       if (communityInputRef.current) communityInputRef.current.style.height = '40px';
       setCommunityReplyTo(null);
       setShowCommunityEmoji(false);
@@ -682,6 +720,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           </button>
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                              {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
                               <button type="button" onClick={() => { setCommunityReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); communityInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                             </div>
                           )}
@@ -708,7 +747,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                     {/* Message Body with Highlighted Mentions */}
                     <div className={isMine ? "text-xs sm:text-sm text-white leading-relaxed pl-11" : "text-xs sm:text-sm text-[#182230] leading-relaxed pl-11"}>
-                      {renderFormattedMessage(msg.content)}
+                      {msg.deletedForEveryoneAt ? <span className="italic opacity-70">This message was deleted</span> : renderFormattedMessage(msg.content)}
+                      {!msg.deletedForEveryoneAt && (msg.attachments || []).map(attachment => <ChatAttachmentPreview key={attachment.path} attachment={attachment} />)}
                     </div>
 
                     {/* Footer Actions: Emoji Reactions & Reply Button */}
@@ -923,6 +963,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
             {/* Input Row */}
             <div className="flex items-center gap-2 min-w-0">
+              <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="community-chat-files" onChange={e => setCommunityFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
+              <button type="button" onClick={() => document.getElementById('community-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
               <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
                   <Smile className="w-5 h-5" />
@@ -1058,6 +1100,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       {openMessageMenu === ("private:" + msg.id) && (
                         <div className="absolute right-1 top-8 z-40 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
                           <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
+                          {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'private')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
                           <button type="button" onClick={() => handleHidePrivateMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
                         </div>
                       )}
@@ -1195,7 +1238,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Smile className="w-5 h-5" />
             </button>
 
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
+            <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
+              <button type="button" onClick={() => document.getElementById('private-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
               <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message leadership" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
             </div>
 
