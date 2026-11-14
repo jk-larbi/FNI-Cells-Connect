@@ -222,7 +222,22 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
 
       {/* TAB 1: MINISTRY SETTINGS */}
       {activeTab === 'system' && (
-        <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm max-w-2xl">
+        <div className="space-y-5 max-w-2xl">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 flex items-center justify-center shrink-0"><User className="w-5 h-5 text-[#142B4A]" /></div>
+              <div><h2 className="text-sm font-bold text-[#142B4A]">Your Administrator Profile</h2><p className="text-xs text-[#667085] mt-1">Change the default “fniadmin” display name and set the username people will see across the admin portal.</p></div>
+            </div>
+            <form onSubmit={handleSaveAdministratorProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div><label className="block font-bold text-[#182230] mb-1">Full name</label><input type="text" required minLength={2} maxLength={80} value={profileFullName} onChange={e => setProfileFullName(e.target.value)} placeholder="Your real full name" className="w-full p-3 rounded-xl border border-[#D0D5DD] bg-white text-[#182230] placeholder:text-[#98A2B3] focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] focus:outline-none" /></div>
+              <div><label className="block font-bold text-[#182230] mb-1">Username</label><div className="flex items-center rounded-xl border border-[#D0D5DD] bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/20"><span className="pl-3 text-[#667085] font-bold">@</span><input type="text" required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" value={profileUsername} onChange={e => setProfileUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="your_username" className="w-full p-3 rounded-xl text-[#182230] placeholder:text-[#98A2B3] focus:outline-none" /></div><span className="text-[10px] text-[#667085] mt-1 block">3–20 letters, numbers or underscores.</span></div>
+              <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+                <button type="submit" disabled={isSavingProfile} className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] disabled:opacity-60">{isSavingProfile ? 'Saving profile...' : 'Save Name & Username'}</button>
+                {profileSaveNotice && <span className={`text-xs font-semibold ${profileSaveNotice.isError ? 'text-rose-700' : 'text-emerald-700'}`}>{profileSaveNotice.text}</span>}
+              </div>
+            </form>
+          </div>
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm max-w-2xl">
           <form onSubmit={handleSaveSystemSettings} className="space-y-4 text-xs">
             {systemSaveNotice && (
               <div className="p-3 bg-emerald-50 border-l-4 border-[#23845B] text-[#23845B] rounded-xl font-semibold flex items-center gap-2">
@@ -300,6 +315,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </button>
             </div>
           </form>
+          </div>
         </div>
       )}
 
