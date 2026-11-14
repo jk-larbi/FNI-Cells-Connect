@@ -271,8 +271,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete Selected ({selectedCellIds.length})
             </button>
           )}
-          {<button type="button" disabled={!cells.some(cell => !cell.is_archived) || isDeletingCells} onClick={() => handleArchiveCells(cells.filter(cell => !cell.is_archived).map(cell => cell.id), 'all registered cells')} className="px-3 py-2 rounded-xl border border-amber-200 text-amber-800 text-xs font-bold hover:bg-amber-50 disabled:opacity-50"><Archive className="w-3.5 h-3.5 inline mr-1" /> Clear All (Keep Records)</button>}
-          {showArchivedCells && <button type="button" disabled={!filteredCells.length || isDeletingCells} onClick={() => handleRestoreCells(filteredCells.map(cell => cell.id))} className="px-3 py-2 rounded-xl border border-emerald-200 text-emerald-700 text-xs font-bold hover:bg-emerald-50 disabled:opacity-50"><RotateCcw className="w-3.5 h-3.5 inline mr-1" /> Restore All</button>}
+          <button type="button" disabled={!cells.length || isDeletingCells} onClick={() => handleArchiveCells(cells.map(cell => cell.id), 'all registered cells')} className="px-3 py-2 rounded-xl border border-amber-200 text-amber-800 text-xs font-bold hover:bg-amber-50 disabled:opacity-50"><Archive className="w-3.5 h-3.5 inline mr-1" /> Clear All (Keep Records)</button>
           <button
             onClick={() => {
               setEditingCell({
