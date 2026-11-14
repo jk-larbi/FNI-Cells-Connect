@@ -287,7 +287,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       try {
         const mapsUrl = new URL(meta.actionUrl);
         if (mapsUrl.hostname === 'www.google.com' && mapsUrl.pathname.startsWith('/maps/')) {
-          window.open(mapsUrl.toString(), '_blank', 'noopener,noreferrer');
+          if (Capacitor.isNativePlatform()) window.location.href = mapsUrl.toString();
+          else window.open(mapsUrl.toString(), '_blank', 'noopener,noreferrer');
         }
       } catch {}
     }
