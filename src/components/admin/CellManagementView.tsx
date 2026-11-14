@@ -181,7 +181,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
   const handleArchiveCells = async (ids: string[], label: string) => {
     if (!ids.length || isDeletingCells) return;
-    const confirmed = window.confirm('Clear ' + label + ' from the Registered Cells screen? This only archives registrations. Leader accounts and assignments, reports, attendance, follow-ups, offerings and all history remain untouched. You can restore archived cells later.');
+    const confirmed = window.confirm('Clear ' + label + ' from the active FNI directory? The cell and its linked information will no longer appear anywhere in the Admin Portal. Historical records remain stored for record-keeping.');
     if (!confirmed) return;
     try {
       setIsDeletingCells(true);
