@@ -15,7 +15,7 @@ export class AnalyticsService {
       role === 'admin' || role === 'super_admin' || role === 'national_admin' || role === 'regional_leader';
 
     const [allCells, meetingReports, evangelismReports, contacts, settings, allProfiles] = await Promise.all([
-      CellService.getCells(),
+      CellService.getActiveCells(),
       ReportService.getCellMeetingReports(),
       ReportService.getEvangelismReports(),
       FollowUpService.getContacts(),
@@ -118,8 +118,10 @@ export class AnalyticsService {
       ReportService.getEvangelismReports(),
     ]);
 
-    let fMeetings = meetings;
-    let fEvang = evang;
+    const activeCells = await CellService.getActiveCells();
+    const activeIds = new Set(activeCells.map(cell => cell.id));
+    let fMeetings = meetings.filter(report => activeIds.has(report.cellId));
+    let fEvang = evang.filter(report => activeIds.has(report.cellId));
     if (!isAdmin && userCellId) {
       fMeetings = meetings.filter(m => m.cellId === userCellId);
       fEvang = evang.filter(e => e.cellId === userCellId);
