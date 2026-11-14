@@ -256,9 +256,13 @@ export class CellService {
   }
 
   static async updateCell(cell: Cell): Promise<void> {
-    await SupabaseService.upsertCell(cell);
+    const normalizedCell = { ...cell, normalized_name: normalizeCellName(cell.name) };
+    const saved = await SupabaseService.upsertCell(normalizedCell);
+    if (SupabaseService.isAvailable() && !saved) {
+      throw new Error('Cell changes could not be saved. Check whether another cell already uses this name.');
+    }
     const all = getStoredCells();
-    const updated = all.map(c => (c.id === cell.id ? cell : c));
+    const updated = all.map(c => (c.id === normalizedCell.id ? normalizedCell : c));
     saveStoredCells(updated);
   }
 }
