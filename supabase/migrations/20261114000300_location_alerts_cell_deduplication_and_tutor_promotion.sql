@@ -106,6 +106,13 @@ BEGIN
   v_reference_ids := coalesce(v_reference_ids, ARRAY[]::text[]);
 
   IF cardinality(v_dupe_ids) > 0 THEN
+    UPDATE public.cells c SET
+      total_members = greatest(coalesce(c.total_members,0), coalesce((SELECT max(x.total_members) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+      active_members = greatest(coalesce(c.active_members,0), coalesce((SELECT max(x.active_members) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+      new_members = greatest(coalesce(c.new_members,0), coalesce((SELECT max(x.new_members) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+      requiring_follow_up = greatest(coalesce(c.requiring_follow_up,0), coalesce((SELECT max(x.requiring_follow_up) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+      target_attendance = greatest(coalesce(c.target_attendance,0), coalesce((SELECT max(x.target_attendance) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+      updated_at=now() WHERE c.id=v_cell_id;
     FOREACH v_table IN ARRAY ARRAY[
       'cell_meeting_reports','evangelism_reports','evangelism_contacts','follow_ups',
       'offerings','offering_records','cell_reports','private_messages','location_share_sessions'
@@ -144,6 +151,49 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.register_cell_and_promote_tutor(text,text,text,text,text,text,text,text,text,text,integer,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.register_cell_and_promote_tutor(text,text,text,text,text,text,text,text,text,text,integer,text) TO authenticated;
+
+-- Clean up any exact-name duplicates already present, re-pointing history before deletion.
+DO $
+DECLARE g record; v_keep_id text; v_keep_app_id text; v_dupe_ids text[]; v_reference_ids text[]; v_table text;
+BEGIN
+  FOR g IN
+    SELECT regexp_replace(lower(trim(name)), '[^a-z0-9]', '', 'g') AS norm
+      FROM public.cells GROUP BY 1 HAVING count(*) > 1
+  LOOP
+    SELECT id INTO v_keep_id FROM public.cells
+     WHERE regexp_replace(lower(trim(name)), '[^a-z0-9]', '', 'g')=g.norm
+     ORDER BY is_archived ASC, is_active DESC, coalesce(total_members,0) DESC,
+              coalesce(active_members,0) DESC, created_at ASC, id ASC
+     LIMIT 1 FOR UPDATE;
+    SELECT coalesce(firebase_id,id) INTO v_keep_app_id FROM public.cells WHERE id=v_keep_id;
+    SELECT array_agg(id),array_agg(DISTINCT ref_id) INTO v_dupe_ids,v_reference_ids
+      FROM public.cells c CROSS JOIN LATERAL unnest(ARRAY[c.id,c.firebase_id]) AS ref(ref_id)
+     WHERE regexp_replace(lower(trim(c.name)), '[^a-z0-9]', '', 'g')=g.norm
+       AND c.id<>v_keep_id AND ref_id IS NOT NULL;
+    IF coalesce(cardinality(v_dupe_ids),0)>0 THEN
+      UPDATE public.cells c SET
+        total_members=greatest(coalesce(c.total_members,0),coalesce((SELECT max(x.total_members) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+        active_members=greatest(coalesce(c.active_members,0),coalesce((SELECT max(x.active_members) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+        new_members=greatest(coalesce(c.new_members,0),coalesce((SELECT max(x.new_members) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+        requiring_follow_up=greatest(coalesce(c.requiring_follow_up,0),coalesce((SELECT max(x.requiring_follow_up) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+        target_attendance=greatest(coalesce(c.target_attendance,0),coalesce((SELECT max(x.target_attendance) FROM public.cells x WHERE x.id=ANY(v_dupe_ids)),0)),
+        updated_at=now() WHERE c.id=v_keep_id;
+      FOREACH v_table IN ARRAY ARRAY['cell_meeting_reports','evangelism_reports','evangelism_contacts','follow_ups','offerings','offering_records','cell_reports','private_messages','location_share_sessions'] LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=v_table AND column_name='cell_id') THEN
+          EXECUTE format('UPDATE public.%I SET cell_id=$1 WHERE cell_id=ANY($2)',v_table) USING v_keep_app_id,v_reference_ids;
+        END IF;
+      END LOOP;
+      UPDATE public.profiles SET cell_id=v_keep_app_id,cell_name=(SELECT name FROM public.cells WHERE id=v_keep_id),updated_at=now()
+       WHERE cell_id=ANY(v_reference_ids);
+      DELETE FROM public.cells WHERE id=ANY(v_dupe_ids);
+    END IF;
+  END LOOP;
+END $;
+
+UPDATE public.cells SET normalized_name=regexp_replace(lower(trim(name)), '[^a-z0-9]', '', 'g')
+ WHERE normalized_name IS NULL OR normalized_name='';
+CREATE UNIQUE INDEX IF NOT EXISTS cells_normalized_name_unique
+  ON public.cells(normalized_name) WHERE normalized_name IS NOT NULL AND normalized_name<>'';
 
 CREATE OR REPLACE FUNCTION public.start_location_share(p_activity_type text, p_cell_id text DEFAULT NULL)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,private,pg_temp AS $$
