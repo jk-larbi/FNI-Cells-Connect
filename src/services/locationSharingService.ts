@@ -50,10 +50,13 @@ let browserWatchId: number | null = null;
 let activeSessionId: string | null = null;
 let lastPoint: { latitude: number; longitude: number; at: number } | null = null;
 let acceptingUpdates = false;
+let savingPoint = false;
 
 async function savePoint(sessionId: string, location: NativeLocation) {
-  if (!acceptingUpdates || activeSessionId !== sessionId) return;
-  const now = Date.now();
+  if (!acceptingUpdates || activeSessionId !== sessionId || savingPoint) return;
+  if (!Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) return;
+  if (Number.isFinite(location.accuracy) && location.accuracy > 100) return;
+  const now = Number.isFinite(location.time) ? Number(location.time) : Date.now();
   const previous = lastPoint;
   if (previous && now - previous.at < 5000) return;
   if (previous) {
@@ -64,14 +67,24 @@ async function savePoint(sessionId: string, location: NativeLocation) {
     const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     if (distance < 5 && now - previous.at < 20000) return;
   }
-  lastPoint = { latitude: location.latitude, longitude: location.longitude, at: now };
-  const { error } = await supabase.rpc('record_location_share_point', {
-    p_session_id: sessionId,
-    p_latitude: location.latitude,
-    p_longitude: location.longitude,
-    p_accuracy_m: Number.isFinite(location.accuracy) ? location.accuracy : null,
-  });
-  if (error && acceptingUpdates) console.warn('FNI location point was not saved:', error.message);
+  savingPoint = true;
+  try {
+    const { error } = await supabase.rpc('record_location_share_point', {
+      p_session_id: sessionId,
+      p_latitude: location.latitude,
+      p_longitude: location.longitude,
+      p_accuracy_m: Number.isFinite(location.accuracy) ? location.accuracy : null,
+    });
+    if (error) {
+      if (acceptingUpdates) console.warn('FNI location point was not saved; the next GPS update will retry:', error.message);
+      return;
+    }
+    if (acceptingUpdates && activeSessionId === sessionId) {
+      lastPoint = { latitude: location.latitude, longitude: location.longitude, at: now };
+    }
+  } finally {
+    savingPoint = false;
+  }
 }
 
 async function attachWatcher(sessionId: string) {
@@ -126,6 +139,7 @@ async function detachWatcher() {
   }
   activeSessionId = null;
   lastPoint = null;
+  savingPoint = false;
 }
 
 export const LocationSharingService = {
@@ -140,17 +154,24 @@ export const LocationSharingService = {
       await attachWatcher(sessionId);
       // The database RPC has already persisted the in-app alert. Deliver the
       // matching background push to every registered administrator device.
+      const { data: sessionDetails } = await supabase.from('location_share_sessions')
+        .select('tutor_name,cell_name,started_at,activity_type')
+        .eq('id', sessionId).maybeSingle();
+      const startedAt = sessionDetails?.started_at ? new Date(sessionDetails.started_at).toLocaleString() : new Date().toLocaleString();
       const notification = {
         id: `location-share-${sessionId}`,
         user_id: 'admin',
         title: 'Tutor started live location sharing',
-        message: 'A tutor has started sharing their live location. Open FNI Cells Connect to view all active tutors.',
+        message: `${sessionDetails?.tutor_name || 'A tutor'} · ${sessionDetails?.cell_name || 'No cell assigned'} started ${sessionDetails?.activity_type === 'cell_meeting' ? 'a cell meeting' : 'evangelism'} at ${startedAt}. Open FNI Cells Connect to view their live location.`,
         type: 'system_alert',
         metadata: {
           recipientRole: 'admin',
           targetTab: 'dashboard',
           category: 'location',
           sessionId,
+          tutorName: sessionDetails?.tutor_name || 'Tutor',
+          cellName: sessionDetails?.cell_name || null,
+          startedAt: sessionDetails?.started_at || new Date().toISOString(),
         },
         created_at: new Date().toISOString(),
       };
