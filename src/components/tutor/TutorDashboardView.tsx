@@ -231,7 +231,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   return (
     <div className="space-y-6">
       {/* 1. FELLOWSHIP PASTORAL SANCTUARY HEADER */}
-      <div className="bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white rounded-3xl p-6 sm:p-7 shadow-sm relative overflow-hidden border border-[#142B4A]">
+      <div className="fni-tutor-sanctuary-header bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white rounded-3xl p-6 sm:p-7 shadow-sm relative overflow-hidden border border-[#142B4A]">
         {/* Subtle decorative gold glow */}
         <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-[#C6A45A]/10 blur-3xl pointer-events-none" />
         <div className="absolute -left-12 -bottom-12 w-48 h-48 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
