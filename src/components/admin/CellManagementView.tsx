@@ -25,7 +25,6 @@ import {
   UserCheck,
   ArrowLeft,
   Archive,
-  RotateCcw,
 } from 'lucide-react';
 
 interface CellManagementViewProps {
@@ -39,7 +38,6 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCellIds, setSelectedCellIds] = useState<string[]>([]);
   const [isDeletingCells, setIsDeletingCells] = useState(false);
-  const [showArchivedCells, setShowArchivedCells] = useState(false);
   const [tutorOptions, setTutorOptions] = useState<{ id: string; authId: string; name: string; cellName?: string }[]>([]);
   const [loadingTutors, setLoadingTutors] = useState(false);
 
@@ -58,7 +56,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     try {
       setIsLoading(true);
       const list = await CellService.getCells();
-      setCells(list);
+      setCells(list.filter(cell => !cell.is_archived));
     } finally {
       setIsLoading(false);
     }
@@ -190,24 +188,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       const success = await CellService.archiveCells(ids);
       if (!success) { window.alert('The cells could not be cleared. Check administrator permissions and try again.'); return; }
       const archived = new Set(ids);
-      setCells(prev => prev.map(cell => archived.has(cell.id) ? { ...cell, is_archived: true } : cell));
+      setCells(prev => prev.filter(cell => !archived.has(cell.id)));
       setSelectedCellIds([]);
       if (selectedCell && archived.has(selectedCell.id)) setSelectedCell(null);
       window.alert(ids.length + ' cell registration(s) cleared from the directory. Their data and leader assignments were preserved.');
     } catch (error) { console.error('Cell archive failed:', error); window.alert('Could not clear the cells.'); }
     finally { setIsDeletingCells(false); }
-  };
-
-  const handleRestoreCells = async (ids: string[]) => {
-    if (!ids.length || isDeletingCells) return;
-    try {
-      setIsDeletingCells(true);
-      const success = await CellService.restoreCells(ids);
-      if (!success) { window.alert('The archived cells could not be restored.'); return; }
-      const restored = new Set(ids);
-      setCells(prev => prev.map(cell => restored.has(cell.id) ? { ...cell, is_archived: false } : cell));
-      setSelectedCellIds([]);
-    } finally { setIsDeletingCells(false); }
   };
 
   const handleDeleteCells = async (ids: string[], label: string) => {
@@ -237,7 +223,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   };
 
   // Filter cells
-  const filteredCells = cells.filter(cell => Boolean(cell.is_archived) === showArchivedCells).filter(cell => {
+  const filteredCells = cells.filter(cell => !cell.is_archived).filter(cell => {
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       !q ||
@@ -275,8 +261,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setShowArchivedCells(v => !v)} className="px-3 py-2 rounded-xl border border-[#E3E8EF] text-[#142B4A] text-xs font-bold hover:bg-[#F5F7FA]">{showArchivedCells ? 'View Registered Cells' : 'Archived Cells (' + cells.filter(c => c.is_archived).length + ')'}</button>
-          {selectedCellIds.length > 0 && !showArchivedCells && (
+          {selectedCellIds.length > 0 && (
             <button
               type="button"
               disabled={isDeletingCells}
@@ -286,7 +271,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete Selected ({selectedCellIds.length})
             </button>
           )}
-          {!showArchivedCells && <button type="button" disabled={!cells.some(cell => !cell.is_archived) || isDeletingCells} onClick={() => handleArchiveCells(cells.filter(cell => !cell.is_archived).map(cell => cell.id), 'all registered cells')} className="px-3 py-2 rounded-xl border border-amber-200 text-amber-800 text-xs font-bold hover:bg-amber-50 disabled:opacity-50"><Archive className="w-3.5 h-3.5 inline mr-1" /> Clear All (Keep Records)</button>}
+          {<button type="button" disabled={!cells.some(cell => !cell.is_archived) || isDeletingCells} onClick={() => handleArchiveCells(cells.filter(cell => !cell.is_archived).map(cell => cell.id), 'all registered cells')} className="px-3 py-2 rounded-xl border border-amber-200 text-amber-800 text-xs font-bold hover:bg-amber-50 disabled:opacity-50"><Archive className="w-3.5 h-3.5 inline mr-1" /> Clear All (Keep Records)</button>}
           {showArchivedCells && <button type="button" disabled={!filteredCells.length || isDeletingCells} onClick={() => handleRestoreCells(filteredCells.map(cell => cell.id))} className="px-3 py-2 rounded-xl border border-emerald-200 text-emerald-700 text-xs font-bold hover:bg-emerald-50 disabled:opacity-50"><RotateCcw className="w-3.5 h-3.5 inline mr-1" /> Restore All</button>}
           <button
             onClick={() => {
@@ -342,7 +327,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             Registered Cells ({filteredCells.length})
           </h2>
           <span className="text-xs text-[#667085]">
-            {showArchivedCells ? 'Archived registrations — records and leader assignments preserved' : 'Auto-populated from tutor registrations & admin additions'}
+            Auto-populated from active tutor registrations & admin additions
           </span>
         </div>
 
@@ -498,12 +483,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                             disabled={isDeletingCells}
                             onClick={e => {
                               e.stopPropagation();
-                              showArchivedCells ? handleRestoreCells([cell.id]) : handleDeleteCells([cell.id], 'cell registration');
+                              handleDeleteCells([cell.id], 'cell registration');
                             }}
                             className="w-8 h-8 rounded-full text-rose-600 hover:bg-rose-50 inline-flex items-center justify-center transition-colors disabled:opacity-50"
-                            title={showArchivedCells ? "Restore Cell" : "Permanently Delete Cell and Its Records"}
+                            title="Permanently Delete Cell and Its Records"
                           >
-                            {showArchivedCells ? <RotateCcw className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
