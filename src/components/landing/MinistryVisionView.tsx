@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Binoculars, Send, Crosshair, TrendingUp, UsersRound } from 'lucide-react';
+import { ArrowRight, BookOpen, Megaphone, Footprints, TrendingUp, UsersRound } from 'lucide-react';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { SoulTargetMetrics } from '../../types';
 
@@ -109,7 +109,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
-                <Binoculars className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                <BookOpen className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </div>
               <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Vision
@@ -127,7 +127,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
-                <Send className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                <Megaphone className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </div>
               <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Mission
@@ -147,7 +147,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
             <div className="flex items-center justify-between gap-3 mb-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-xl bg-[#C6A45A] text-[#142B4A]">
-                  <Crosshair className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                  <Footprints className="w-[18px] h-[18px]" strokeWidth={1.8} />
                 </div>
                 <span className="text-xs font-black uppercase tracking-wider text-[#C6A45A]">
                   Annual Soul-Winning Target
