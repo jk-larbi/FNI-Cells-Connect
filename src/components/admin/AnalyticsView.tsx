@@ -53,7 +53,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack }) => {
       const [dashStats, sysSettings, cellList, trends, cStats] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
-        CellService.getCells(),
+        CellService.getActiveCells(),
         AnalyticsService.getWeeklyTrends('admin'),
         AnalyticsService.getCellPerformance(),
       ]);
