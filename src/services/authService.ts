@@ -631,7 +631,21 @@ export class AuthService {
   }
 
 
-  // --- ACCOUNT DELETION (SERVER-VERIFIED TUTOR SELF-SERVICE) ---
+  // --- ACCOUNT DELETION (SERVER-VERIFIED SELF-SERVICE + ADMIN MANAGEMENT) ---
+  static async deleteUserAccount(targetUserId: string): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Account service is unavailable.' };
+    if (!targetUserId) return { success: false, error: 'Select an account to delete.' };
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-own-account', { body: { confirmation: 'DELETE', targetUserId } });
+      if (error || !data?.success) return { success: false, error: data?.error || error?.message || 'Account deletion failed.' };
+      this.saveProfiles(this.getAllProfiles().filter(profile => profile.id !== targetUserId));
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Account deletion failed. Please try again.' };
+    }
+  }
+
+  // --- ACCOUNT DELETION (SERVER-VERIFIED SELF-SERVICE) ---
   static async deleteOwnAccount(): Promise<{ success: boolean; error?: string }> {
     if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Account service is unavailable.' };
     try {
