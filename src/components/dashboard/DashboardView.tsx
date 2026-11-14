@@ -6,6 +6,7 @@ import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
+import { LocationSharingPanel } from '../location/LocationSharingPanel';
 import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics, CellPerformanceRecord } from '../../types';
 import { getCurrentDeadlineInfo, formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
@@ -1416,6 +1417,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       )}
+      <div className="mt-6">
+        <LocationSharingPanel mode="admin" />
+      </div>
     </div>
   );
 };
