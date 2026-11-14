@@ -45,6 +45,7 @@ Deno.serve(async (req: Request) => {
       const { error: archiveError } = await admin.from("cells").update({
         name: archivedName, normalized_name: normalizedArchivedName, is_active: false, is_archived: true,
         tutor_uid: null, leader_id: null, leader_name: "Unassigned",
+        leader_phone: null, co_leader_name: null,
       }).eq("id", ownedCell.id);
       if (archiveError) return json({ error: "Your cell could not be safely archived. Please contact FNI support." }, 500);
     }
