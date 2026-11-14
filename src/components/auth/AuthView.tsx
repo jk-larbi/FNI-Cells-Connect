@@ -69,30 +69,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [isSendingReset, setIsSendingReset] = useState(false);
 
 
-  const handleSocialAuth = async (provider: 'google' | 'apple', isSignup = false) => {
-    setErrorMessage('');
-    setSuccessNotice('');
-    let pendingTutor: { fullName: string; cellName: string; phoneNumber?: string; coLeaderName?: string } | undefined;
-    if (isSignup) {
-      if (!regFullName.trim() || !regCellName.trim()) {
-        setErrorMessage('Enter your full name and cell fellowship name before continuing with Google or Apple.');
-        return;
-      }
-      pendingTutor = {
-        fullName: regFullName.trim(),
-        cellName: regCellName.trim(),
-        phoneNumber: regPhone.trim() || undefined,
-        coLeaderName: regCoLeaderName.trim() || undefined,
-      };
-    }
-    setIsLoading(true);
-    const result = await AuthService.signInWithProvider(provider, pendingTutor);
-    if (result.error) {
-      setErrorMessage(result.error);
-      setIsLoading(false);
-    }
-  };
-
   // 1. Handle Tutor Registration (Strict Supabase Only - Simplified 3 Fields + Optional Co-Leader)
   const handleTutorSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
