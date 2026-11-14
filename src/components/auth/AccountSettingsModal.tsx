@@ -13,8 +13,11 @@ interface AccountSettingsModalProps {
 }
 
 export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, changePassword, updateAvatar, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
+  const { currentUser, changePassword, updateAvatar, deleteOwnAccount } = useAuth();
+  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'delete'>('profile');
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Password change state
   const [newPassword, setNewPassword] = useState('');
@@ -50,6 +53,15 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') return;
+    setIsDeleting(true);
+    setDeleteError('');
+    const result = await deleteOwnAccount();
+    setIsDeleting(false);
+    if (!result.success) setDeleteError(result.error || 'Account deletion failed. Please try again.');
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -78,6 +90,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
           >
             Security & Password
           </button>
+          <button type="button" onClick={() => setActiveTab('delete')} className={activeTab === 'delete' ? 'px-3 py-1.5 rounded-lg bg-rose-600 text-white' : 'px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50'}>Delete Account</button>
         </div>
 
         {activeTab === 'profile' && (
@@ -232,6 +245,17 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
               Update Password
             </Button>
           </form>
+        )}
+
+        {activeTab === 'delete' && (
+          <div className="space-y-3 text-xs">
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-rose-800"><div className="font-bold text-sm mb-1">Permanently delete this account</div>This removes your sign-in account and FNI profile, including personal account details. You will be signed out immediately. This action cannot be undone.</div>
+            <p className="text-slate-600">You can register again later using the same username and other credentials once deletion has completed.</p>
+            <label className="block font-semibold text-slate-700">Type DELETE to confirm</label>
+            <input value={deleteConfirmation} onChange={e => setDeleteConfirmation(e.target.value)} placeholder="DELETE" className="w-full rounded-xl border border-slate-200 p-2.5" />
+            {deleteError && <div role="alert" className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-rose-700">{deleteError}</div>}
+            <Button type="button" variant="danger" size="md" isLoading={isDeleting} disabled={deleteConfirmation !== 'DELETE' || isDeleting} onClick={handleDeleteAccount} className="w-full rounded-xl">Permanently Delete My Account</Button>
+          </div>
         )}
       </div>
     </Modal>
