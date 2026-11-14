@@ -40,11 +40,11 @@ export class CellService {
       // A successful empty Supabase response is authoritative. Clear stale
       // offline data instead of resurrecting deleted cell registrations.
       saveStoredCells(supaCells);
-      return supaCells;
+      return supaCells.filter(cell => !cell.is_archived);
     }
 
     // Only use the offline cache when Supabase is unavailable or the request failed.
-    return getStoredCells();
+    return getStoredCells().filter(cell => !cell.is_archived);
   }
 
   static async getActiveCells(): Promise<Cell[]> {
@@ -55,11 +55,11 @@ export class CellService {
   static async getCellById(cellId: string): Promise<Cell | null> {
     // 1. Primary: Supabase
     const supaCell = await SupabaseService.getCellById(cellId);
-    if (supaCell) return supaCell;
+    if (supaCell && !supaCell.is_archived) return supaCell;
 
     // 2. Cache
     const all = getStoredCells();
-    return all.find(c => c.id === cellId) || null;
+    return all.find(c => c.id === cellId && !c.is_archived) || null;
   }
 
   /**
