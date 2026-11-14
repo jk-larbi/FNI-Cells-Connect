@@ -217,7 +217,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm relative">
           <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
             <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-[#C6A45A]" />
+              <span className="text-base leading-none" role="img" aria-label="Christ-centered mission">✝️</span>
               <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">
                 FNI Kingdom Vision & Mission
               </h2>
@@ -261,7 +261,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-[#C6A45A]" />
+                <span className="text-base leading-none" role="img" aria-label="Kingdom harvest target">🌾</span>
                 <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider group-hover:text-gold-700 transition-colors">
                   Soul-Winning Target
                 </h2>
@@ -1231,7 +1231,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-gold-50 text-gold-600 border border-gold-200 flex items-center justify-center">
-                  <Target className="w-5 h-5" />
+                  <span className="text-lg leading-none" role="img" aria-label="Kingdom harvest target">🌾</span>
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-navy-950">Annual Soul-Winning Target Breakdown</h3>
