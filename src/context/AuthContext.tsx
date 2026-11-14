@@ -40,6 +40,7 @@ interface AuthContextType {
   updateAvatar: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
   updateProfileDetails: (fullName: string, username: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  deleteOwnAccount: () => Promise<{ success: boolean; error?: string }>;
   showLoginView: () => void;
   refreshProfile: () => Promise<void>;
   isFirebaseActive: boolean;
@@ -238,6 +239,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteOwnAccount = async () => {
+    const result = await AuthService.deleteOwnAccount();
+    if (result.success) {
+      setCurrentUser(GUEST_PROFILE);
+      setIsLoggedOut(true);
+    }
+    return result;
+  };
+
   const logout = async () => {
     await AuthService.signOut();
     setCurrentUser(GUEST_PROFILE);
@@ -285,6 +295,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateAvatar,
         updateProfileDetails,
         logout,
+        deleteOwnAccount,
         showLoginView,
         refreshProfile,
         isFirebaseActive: false,
