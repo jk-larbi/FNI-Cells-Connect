@@ -68,12 +68,13 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     loadCells();
     let mounted = true;
     setLoadingTutors(true);
-    supabase.from('profiles')
-      .select('id,supabase_user_id,full_name,cell_name,role')
-      .eq('is_active', true)
-      .in('role', ['tutor', 'cell_leader', 'regional_leader'])
-      .order('full_name', { ascending: true })
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from('profiles')
+          .select('id,supabase_user_id,full_name,cell_name,role')
+          .eq('is_active', true)
+          .in('role', ['tutor', 'cell_leader', 'regional_leader'])
+          .order('full_name', { ascending: true });
         if (!mounted) return;
         if (error) {
           console.error('Could not load tutor accounts for cell assignment:', error);
@@ -86,8 +87,10 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             cellName: profile.cell_name || undefined,
           })));
         }
-      })
-      .finally(() => { if (mounted) setLoadingTutors(false); });
+      } finally {
+        if (mounted) setLoadingTutors(false);
+      }
+    })();
     return () => { mounted = false; };
   }, []);
 
