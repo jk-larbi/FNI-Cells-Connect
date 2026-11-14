@@ -459,7 +459,8 @@ export interface TutorLoginInput {
 }
 
 export interface AdminLoginInput {
-  email: string;
+  username?: string;
+  email?: string;
   password: string;
 }
 
