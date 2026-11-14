@@ -69,6 +69,22 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
     return () => { mounted = false; };
   }, [mode]);
 
+  useEffect(() => {
+    if (mode !== 'admin' || !selectedSession) return;
+    let mounted = true;
+    const refreshPoints = async () => {
+      try {
+        const latestPoints = await LocationSharingService.getSessionPoints(selectedSession.id);
+        if (mounted) setPoints(latestPoints);
+      } catch (err: any) {
+        if (mounted) setError(err?.message || 'Could not refresh live location.');
+      }
+    };
+    void refreshPoints();
+    const timer = window.setInterval(() => { void refreshPoints(); }, 10000);
+    return () => { mounted = false; window.clearInterval(timer); };
+  }, [mode, selectedSession?.id]);
+
   const startSharing = async () => {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -110,6 +126,12 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
         '&destination=' + encodeURIComponent(`${mapPoints[mapPoints.length - 1].latitude},${mapPoints[mapPoints.length - 1].longitude}`) +
         (mapPoints.length > 2 ? '&waypoints=' + encodeURIComponent(mapPoints.slice(1, -1).slice(0, 8).map(p => `${p.latitude},${p.longitude}`).join('|')) : '')
       : '';
+    const latestPoint = mapPoints[mapPoints.length - 1];
+    const mapEmbedUrl = latestPoint
+      ? 'https://www.openstreetmap.org/export/embed.html?bbox=' +
+        encodeURIComponent(`${latestPoint.longitude - 0.004},${latestPoint.latitude - 0.004},${latestPoint.longitude + 0.004},${latestPoint.latitude + 0.004}`) +
+        '&layer=mapnik&marker=' + encodeURIComponent(`${latestPoint.latitude},${latestPoint.longitude}`)
+      : '';
     return (
       <section className="mb-6 rounded-2xl border border-[#E3E8EF] bg-white p-4 sm:p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -137,9 +159,11 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
         {selectedSession && (
           <div className="mt-4 border-t border-[#E3E8EF] pt-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <div><div className="text-sm font-bold text-[#142B4A]">{selectedSession.tutor_name} · Route history</div><div className="text-xs text-[#667085]">{points.length} recorded location points</div></div>
+              <div><div className="text-sm font-bold text-[#142B4A]">{selectedSession.tutor_name} · {selectedSession.ended_at ? 'Route history' : 'Live location'}</div><div className="text-xs text-[#667085]">{points.length} recorded points{!selectedSession.ended_at ? ' · refreshing every 10 seconds' : ''}</div></div>
               {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#142B4A] text-white px-3 py-2 text-xs font-bold">Open route <ExternalLink className="w-3 h-3" /></a>}
             </div>
+            {mapEmbedUrl && <iframe title={`Location of ${selectedSession.tutor_name}`} src={mapEmbedUrl} className="w-full h-64 rounded-xl border border-[#E3E8EF] mb-3" loading="lazy" referrerPolicy="no-referrer" />}
+            {latestPoint && <p className="text-[11px] text-[#667085] mb-2">Latest coordinates: {latestPoint.latitude.toFixed(5)}, {latestPoint.longitude.toFixed(5)} · {dateLabel(latestPoint.captured_at)}</p>}
             {points.length === 0 ? <p className="text-xs text-[#667085]">No location points were recorded for this session.</p> : (
               <div className="max-h-48 overflow-y-auto space-y-1.5">
                 {points.map(point => <div key={point.id} className="flex items-center justify-between gap-2 text-[11px] text-[#667085] border-b border-slate-100 pb-1"><span className="font-mono">{point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}</span><span>{dateLabel(point.captured_at)}</span></div>)}
