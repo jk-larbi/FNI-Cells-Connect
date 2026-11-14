@@ -212,6 +212,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      <LocationSharingPanel mode="admin" />
+
       {/* Vision, Mission & Annual Soul-Winning Target Surface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Vision & Mission Card */}
@@ -1417,9 +1419,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       )}
-      <div className="mt-6">
-        <LocationSharingPanel mode="admin" />
-      </div>
+
     </div>
   );
 };
