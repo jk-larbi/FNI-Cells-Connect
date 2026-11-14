@@ -24,6 +24,7 @@ export interface LocationPoint {
 export interface ActiveTutorLocation {
   session: LocationSession;
   point: LocationPoint | null;
+  points: LocationPoint[];
 }
 interface NativeLocation {
   latitude: number;
@@ -215,15 +216,14 @@ export const LocationSharingService = {
     if (error) throw error;
     const active = (sessions || []) as LocationSession[];
     return Promise.all(active.map(async session => {
-      const { data: point, error: pointError } = await supabase
+      const { data: route, error: pointError } = await supabase
         .from('location_share_points')
         .select('*')
         .eq('session_id', session.id)
-        .order('captured_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('captured_at', { ascending: true });
       if (pointError) throw pointError;
-      return { session, point: (point as LocationPoint | null) || null };
+      const points = (route || []) as LocationPoint[];
+      return { session, point: points[points.length - 1] || null, points };
     }));
   },
 
