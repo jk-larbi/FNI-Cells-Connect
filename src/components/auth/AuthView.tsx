@@ -46,7 +46,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [regFullName, setRegFullName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
-  const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regCellName, setRegCellName] = useState('');
@@ -84,7 +83,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       const res = await registerTutor({
         fullName: regFullName.trim(),
         email: regEmail.trim(),
-        username: regUsername.trim() || undefined,
+        username: regEmail Address.trim() || undefined,
         phoneNumber: regPhone.trim() || undefined,
         password: regPassword,
         confirmPassword: regConfirmPassword,
