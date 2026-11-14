@@ -630,7 +630,31 @@ export class AuthService {
     return current;
   }
 
-  // --- 9. SIGN OUT ---
+
+  // --- ACCOUNT DELETION (SERVER-VERIFIED TUTOR SELF-SERVICE) ---
+  static async deleteOwnAccount(): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Account service is unavailable.' };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return { success: false, error: 'Please sign in again before deleting your account.' };
+      const { data, error } = await supabase.functions.invoke('delete-own-account', { body: { confirmation: 'DELETE' } });
+      if (error || !data?.success) return { success: false, error: data?.error || error?.message || 'Account deletion failed.' };
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      setSupabaseAccessToken(null);
+      this.setCurrentProfile(null);
+      try {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROFILE);
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+        const directory = this.getAllProfiles().filter(profile => profile.id !== session.user.id);
+        this.saveProfiles(directory);
+      } catch {}
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Account deletion failed. Please try again.' };
+    }
+  }
+
+  // --- 10. SIGN OUT ---
   static async signOut(): Promise<void> {
     if (isSupabaseConfigured && supabase) {
       try {
