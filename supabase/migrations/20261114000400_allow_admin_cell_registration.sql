@@ -136,3 +136,5 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.register_cell_and_promote_tutor(text,text,text,text,text,text,text,text,text,text,integer,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.register_cell_and_promote_tutor(text,text,text,text,text,text,text,text,text,text,integer,text) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
