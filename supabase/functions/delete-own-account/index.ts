@@ -29,11 +29,25 @@ Deno.serve(async (req: Request) => {
         if (error) console.warn("Avatar cleanup warning:", error.message);
       }
     }
+    // Archive the old cell under a new normalized name so the same cell name can be
+    // registered again during testing, while preserving the historical cell record.
+    const { data: ownedCell, error: cellLookupError } = await admin.from("cells")
+      .select("id, name").eq("tutor_uid", user.id).maybeSingle();
+    if (cellLookupError) return json({ error: "Your cell association could not be checked. Please try again." }, 500);
+    if (ownedCell) {
+      const archivedName = `Archived - ${String(ownedCell.name || "Cell")}`;
+      const normalizedArchivedName = archivedName.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const { error: archiveError } = await admin.from("cells").update({
+        name: archivedName, normalized_name: normalizedArchivedName, is_active: false, is_archived: true,
+        tutor_uid: null, leader_id: null, leader_name: "Unassigned",
+      }).eq("id", ownedCell.id);
+      if (archiveError) return json({ error: "Your cell could not be safely archived. Please contact FNI support." }, 500);
+    }
+
     const cleanup = await Promise.all([
       admin.from("device_tokens").delete().eq("user_id", user.id),
       admin.from("group_chat_members").delete().eq("user_id", user.id),
       admin.from("location_share_sessions").update({ trashed_by: null }).eq("trashed_by", user.id),
-      admin.from("cells").update({ tutor_uid: null, leader_id: null, leader_name: "Unassigned" }).eq("tutor_uid", user.id),
       admin.from("audit_logs").update({ user_id: null, user_name: "Deleted account" }).eq("user_id", user.id),
     ]);
     const failed = cleanup.find(item => item.error)?.error;
