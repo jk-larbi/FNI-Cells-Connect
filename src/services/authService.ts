@@ -272,6 +272,19 @@ export class AuthService {
         auth_provider: 'email',
         created_at: now,
       };
+      // With email confirmation enabled, Supabase returns no session yet.
+      // The auth.users trigger creates the base profile; do not attempt an
+      // authenticated profile upsert until the user has verified and signed in.
+      if (!authData.session) {
+        return {
+          profile: null,
+          cell: newCell,
+          error: null,
+          needsEmailVerification: true,
+          verificationNotice: `Registration successful! A confirmation email has been sent to ${email}. Please verify your email before logging in.`,
+        };
+      }
+
       const saved = await SupabaseService.upsertProfile(profile);
       if (!saved) {
         console.error('Tutor profile could not be saved after email registration.');
@@ -284,16 +297,6 @@ export class AuthService {
         entity_id: uid,
         details: { tutor_name: fullName, email, cell_name: cellName },
       });
-
-      if (!authData.session) {
-        return {
-          profile: null,
-          cell: newCell,
-          error: null,
-          needsEmailVerification: true,
-          verificationNotice: `Registration successful! A confirmation email has been sent to ${email}. Please verify your email before logging in.`,
-        };
-      }
 
       this.setCurrentProfile(profile);
       return { profile, cell: newCell, error: null, needsEmailVerification: false };
