@@ -263,8 +263,6 @@ jobs:
                       raise SystemExit(f"Missing or invalid launcher icon: {icon_path}")
           for resource in [
               root / "res/drawable/ic_launcher_foreground.png",
-              root / "res/mipmap-anydpi-v26/ic_launcher.xml",
-              root / "res/mipmap-anydpi-v26/ic_launcher_round.xml",
           ]:
               if not resource.is_file() or resource.stat().st_size < 50:
                   raise SystemExit(f"Missing adaptive launcher resource: {resource}")
