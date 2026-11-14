@@ -47,6 +47,11 @@ export class CellService {
     return getStoredCells();
   }
 
+  static async getActiveCells(): Promise<Cell[]> {
+    const cells = await this.getCells();
+    return cells.filter(cell => !cell.is_archived);
+  }
+
   static async getCellById(cellId: string): Promise<Cell | null> {
     // 1. Primary: Supabase
     const supaCell = await SupabaseService.getCellById(cellId);
