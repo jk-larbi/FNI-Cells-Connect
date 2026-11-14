@@ -21,6 +21,10 @@ export interface LocationPoint {
   accuracy_m: number | null;
   captured_at: string;
 }
+export interface ActiveTutorLocation {
+  session: LocationSession;
+  point: LocationPoint | null;
+}
 interface NativeLocation {
   latitude: number;
   longitude: number;
@@ -133,6 +137,28 @@ export const LocationSharingService = {
     const sessionId = data as string;
     try {
       await attachWatcher(sessionId);
+      // The database RPC has already persisted the in-app alert. Deliver the
+      // matching background push to every registered administrator device.
+      const notification = {
+        id: `location-share-${sessionId}`,
+        user_id: 'admin',
+        title: 'Tutor started live location sharing',
+        message: 'A tutor has started sharing their live location. Open FNI Cells Connect to view all active tutors.',
+        type: 'system_alert',
+        metadata: {
+          recipientRole: 'admin',
+          targetTab: 'dashboard',
+          category: 'location',
+          sessionId,
+        },
+        created_at: new Date().toISOString(),
+      };
+      const { data: pushData, error: pushError } = await supabase.functions.invoke('fni-web-push', {
+        body: { action: 'send_notification', notification },
+      });
+      if (pushError || pushData?.error) {
+        console.warn('FNI location push could not be delivered; the in-app alert remains saved:', pushData?.error || pushError?.message);
+      }
       return sessionId;
     } catch (error) {
       await supabase.rpc('stop_location_share', { p_session_id: sessionId });
@@ -173,6 +199,36 @@ export const LocationSharingService = {
       .limit(100);
     if (error) throw error;
     return (data || []) as LocationSession[];
+  },
+
+  async getAdminActiveLocations(): Promise<ActiveTutorLocation[]> {
+    const { data: sessions, error } = await supabase
+      .from('location_share_sessions')
+      .select('*')
+      .is('ended_at', null)
+      .order('started_at', { ascending: false });
+    if (error) throw error;
+    const active = (sessions || []) as LocationSession[];
+    return Promise.all(active.map(async session => {
+      const { data: point, error: pointError } = await supabase
+        .from('location_share_points')
+        .select('*')
+        .eq('session_id', session.id)
+        .order('captured_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (pointError) throw pointError;
+      return { session, point: (point as LocationPoint | null) || null };
+    }));
+  },
+
+  subscribeToAdminLocationChanges(onChange: () => void): () => void {
+    const channel = supabase
+      .channel('fni-admin-live-locations')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'location_share_sessions' }, onChange)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'location_share_points' }, onChange)
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
   },
 
   async getSessionPoints(sessionId: string): Promise<LocationPoint[]> {
