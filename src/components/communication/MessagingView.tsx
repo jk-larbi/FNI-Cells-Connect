@@ -93,7 +93,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [showPrivateEmoji, setShowPrivateEmoji] = useState(false);
   const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
   const [openChatMenu, setOpenChatMenu] = useState(false);
-  const privateLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const privateLongPressTimer = useRef<number | null>(null);
   const privateLongPressTriggered = useRef(false);
   const [privateEmojiCategory, setPrivateEmojiCategory] = useState<string>('Smileys & Faces');
 
