@@ -57,15 +57,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
   const [showSoulModal, setShowSoulModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [liveTicker, setLiveTicker] = useState(Date.now());
-
-  // Real-time live submission tracking ticker
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setLiveTicker(Date.now());
-    }, 15000);
-    return () => clearInterval(timer);
-  }, []);
+  const [soulMetricsUpdatedAt, setSoulMetricsUpdatedAt] = useState<Date | null>(null);
 
   // Push Notifications state
   const { isPushEnabled, isPushSupported, requestPushPermission, dispatchNotification } = useNotifications();
@@ -119,6 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setSettings(systemSettings);
       setRecentQueue(queue.slice(0, 7));
       setSoulMetrics(sMetrics);
+      setSoulMetricsUpdatedAt(new Date());
       setCellPerformance(cPerf);
       setEditVision(systemSettings.vision);
       setEditMission(systemSettings.mission);
@@ -134,6 +127,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     // Live Soul Target Tracking Subscription (Real-time updates from cells and evangelism)
     const unsubSoul = SoulTargetService.subscribeToLiveSoulTracking(liveM => {
       setSoulMetrics(liveM);
+      setSoulMetricsUpdatedAt(new Date());
       setStats(prev => prev ? {
         ...prev,
         soulsWon: liveM.verifiedSoulsWon,
@@ -174,6 +168,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const currentSoulsWon = soulMetrics ? soulMetrics.verifiedSoulsWon : stats.soulsWon;
   const targetPercent = Math.min(100, Math.round((currentSoulsWon / soulTarget) * 100));
   const remainingTarget = Math.max(0, soulTarget - currentSoulsWon);
+  const today = new Date();
+  const currentMonthName = today.toLocaleString('en', { month: 'short' });
+  const currentWeekLabel = `Week ${Math.ceil(today.getDate() / 7)} (${currentMonthName})`;
+  const currentQuarterLabel = `Q${Math.floor(today.getMonth() / 3) + 1} ${soulMetrics?.year ?? today.getFullYear()}`;
+  const currentWeekSouls = soulMetrics?.weeklyProgress.find(item => item.week === currentWeekLabel)?.souls ?? 0;
+  const currentMonthSouls = soulMetrics?.monthlyProgress.find(item => item.month === currentMonthName)?.souls ?? 0;
+  const currentQuarterSouls = soulMetrics?.quarterlyProgress.find(item => item.quarter === currentQuarterLabel)?.souls ?? 0;
 
   return (
     <div className="space-y-6">
@@ -255,72 +256,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Annual Soul-Winning Target Progress Card */}
-        <div
-          onClick={() => setShowSoulModal(true)}
-          className="bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm flex flex-col justify-between hover:border-gold-400 hover:shadow-md cursor-pointer transition-all group"
-          title="Click to view full soul-winning target breakdown and cell contributions"
-        >
+        <div onClick={() => setShowSoulModal(true)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSoulModal(true); } }} className="bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm flex flex-col justify-between hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all group focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40" title="Open the audited annual soul-winning progress and cell contributions">
           <div>
-            <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
-              <div className="flex items-center gap-2">
-                <Wheat className="w-4 h-4 text-[#C6A45A]" aria-label="Kingdom harvest target" />
-                <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider group-hover:text-gold-700 transition-colors">
-                  Soul-Winning Target
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Tracking
-                </span>
-                <span className="text-xs font-bold text-[#23845B]">
-                  {targetPercent}% Achieved
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs text-[#667085]">Conversions Recorded</span>
-                <span className="text-2xl font-black text-[#142B4A]">{currentSoulsWon}</span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full bg-[#E3E8EF] rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-[#23845B] h-full rounded-full transition-all duration-500"
-                  style={{ width: `${targetPercent}%` }}
-                />
-              </div>
-
-              <div className="flex justify-between text-[11px] text-[#667085] pt-1 border-t border-[#E3E8EF]">
-                <div>
-                  Target: <span className="font-bold text-[#182230]">{soulTarget.toLocaleString()}</span>
-                </div>
-                <div>
-                  Remaining: <span className="font-bold text-[#D99A32]">{remainingTarget.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[10px] text-[#667085] pt-1 bg-[#F5F7FA] p-2 rounded-lg border border-[#E3E8EF]">
-                <span>Outreach: <strong className="text-[#182230]">+{soulMetrics?.soulsFromEvangelism || 0}</strong></span>
-                <span>Cell Meetings: <strong className="text-[#182230]">+{soulMetrics?.soulsFromCells || 0}</strong></span>
-              </div>
-            </div>
+            <div className="flex items-center justify-between gap-3 mb-4 border-b border-[#E3E8EF] pb-3"><div className="flex items-center gap-2 min-w-0"><Wheat className="w-4 h-4 text-[#C6A45A] shrink-0" aria-label="Kingdom harvest target" /><h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">Soul-Winning Target</h2></div><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200 shrink-0"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live updates</span></div>
+            <div className="flex items-end justify-between gap-3"><div><span className="block text-[10px] font-bold uppercase tracking-wider text-[#667085]">Approved conversions</span><div className="text-3xl font-black leading-tight text-[#142B4A] tabular-nums">{currentSoulsWon.toLocaleString()}</div><span className="text-[11px] text-[#667085]">of {soulTarget.toLocaleString()} annual goal</span></div><div className="text-right shrink-0"><div className="text-2xl font-black text-[#23845B] tabular-nums">{targetPercent}%</div><span className="text-[10px] font-semibold text-[#667085]">achieved</span></div></div>
+            <div className="mt-3 w-full bg-[#E9EDF2] rounded-full h-3 overflow-hidden" role="progressbar" aria-label="Annual soul-winning target progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={targetPercent}><div className="bg-[#23845B] h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${targetPercent}%` }} /></div>
+            <div className="grid grid-cols-2 gap-2 mt-4"><div className="rounded-xl bg-[#F5F7FA] border border-[#E3E8EF] p-3"><span className="block text-[10px] text-[#667085] font-semibold">Remaining</span><strong className="block text-lg text-[#142B4A] tabular-nums">{remainingTarget.toLocaleString()}</strong></div><div className="rounded-xl bg-amber-50 border border-amber-200 p-3"><span className="block text-[10px] text-amber-800 font-semibold">Awaiting approval</span><strong className="block text-lg text-amber-900 tabular-nums">{(soulMetrics?.pendingSouls ?? 0).toLocaleString()}</strong></div></div>
+            <div className="grid grid-cols-2 gap-2 mt-2 text-[11px]"><div className="flex items-center justify-between gap-2 rounded-lg border border-[#E3E8EF] px-3 py-2"><span className="text-[#667085]">Outreach conversions</span><strong className="text-[#182230] tabular-nums">+{(soulMetrics?.soulsFromEvangelism ?? 0).toLocaleString()}</strong></div><div className="flex items-center justify-between gap-2 rounded-lg border border-[#E3E8EF] px-3 py-2"><span className="text-[#667085]">First-time visitors</span><strong className="text-[#182230] tabular-nums">+{(soulMetrics?.firstTimersFromCells ?? 0).toLocaleString()}</strong></div></div>
           </div>
-
-          <div className="mt-4 pt-3 border-t border-[#E3E8EF] flex items-center justify-between text-[11px] text-[#667085]">
-            <span className="text-gold-700 font-bold group-hover:underline">Click for Breakdown &rarr;</span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onNavigateToTab('analytics');
-              }}
-              className="font-bold text-[#142B4A] hover:underline flex items-center gap-0.5"
-            >
-              Analytics <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
+          <div className="mt-4 pt-3 border-t border-[#E3E8EF] flex items-center justify-between gap-3 text-[11px]"><div className="min-w-0"><span className="block text-[#142B4A] font-bold group-hover:underline">View full breakdown →</span><span className="block text-[10px] text-[#667085] mt-0.5">{soulMetricsUpdatedAt ? `Updated ${soulMetricsUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Waiting for live data'}</span></div><button onClick={e => { e.stopPropagation(); onNavigateToTab('analytics'); }} className="font-bold text-[#142B4A] hover:underline flex items-center gap-1 shrink-0">Analytics <ArrowRight className="w-3 h-3" /></button></div>
         </div>
       </div>
 
@@ -1254,11 +1198,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div>
                   <span className="text-[10px] font-bold text-gold-400 uppercase tracking-wider block">Verified Souls Harvested</span>
                   <div className="text-3xl font-black text-white mt-0.5">
-                    {soulMetrics?.verifiedSoulsWon || stats.soulsWon} <span className="text-sm font-semibold text-slate-400">/ {soulTarget.toLocaleString()} Goal</span>
+                    {soulMetrics?.verifiedSoulsWon ?? stats.soulsWon} <span className="text-sm font-semibold text-slate-400">/ {soulTarget.toLocaleString()} Goal</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-black text-gold-400">{soulMetrics?.percentageAchieved || targetPercent}%</div>
+                  <div className="text-2xl font-black text-gold-400">{soulMetrics?.percentageAchieved ?? targetPercent}%</div>
                   <span className="text-[10px] text-slate-300">Achieved</span>
                 </div>
               </div>
@@ -1267,14 +1211,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="w-full bg-navy-900 rounded-full h-3 overflow-hidden border border-navy-800">
                 <div
                   className="bg-gold-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${soulMetrics?.percentageAchieved || targetPercent}%` }}
+                  style={{ width: `${soulMetrics?.percentageAchieved ?? targetPercent}%` }}
                 />
               </div>
 
               <div className="flex justify-between text-[11px] text-slate-300 pt-1">
-                <span>Remaining: <strong className="text-white">{soulMetrics?.remainingSouls || remainingTarget} souls</strong></span>
-                <span>Annual Cycle: <strong>{new Date().getFullYear()}</strong></span>
+                <span>Remaining: <strong className="text-white">{soulMetrics?.remainingSouls ?? remainingTarget} souls</strong></span>
+                <span>Annual Cycle: <strong>{soulMetrics?.year ?? new Date().getFullYear()}</strong></span>
               </div>
+              <div className="grid grid-cols-2 gap-2 pt-1"><div className="rounded-xl bg-white/10 border border-white/10 p-2.5"><span className="block text-[10px] text-slate-300">Awaiting report approval</span><strong className="text-lg text-amber-300 tabular-nums">{(soulMetrics?.pendingSouls ?? 0).toLocaleString()}</strong></div><div className="rounded-xl bg-white/10 border border-white/10 p-2.5"><span className="block text-[10px] text-slate-300">First-time cell visitors</span><strong className="text-lg text-white tabular-nums">{(soulMetrics?.firstTimersFromCells ?? 0).toLocaleString()}</strong></div></div>
             </div>
 
             {/* Time Breakdown Cards */}
@@ -1282,21 +1227,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase">This Week</span>
                 <div className="text-lg font-black text-navy-950 mt-1">
-                  +{soulMetrics?.weeklyProgress.reduce((acc, w) => acc + w.souls, 0) || 0}
+                  +{currentWeekSouls}
                 </div>
                 <span className="text-[10px] text-emerald-700 font-semibold">Active harvest</span>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase">This Month</span>
                 <div className="text-lg font-black text-navy-950 mt-1">
-                  +{soulMetrics?.monthlyProgress.reduce((acc, m) => acc + m.souls, 0) || stats.soulsWon}
+                  +{currentMonthSouls}
                 </div>
                 <span className="text-[10px] text-slate-500">Current month</span>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase">This Quarter</span>
                 <div className="text-lg font-black text-navy-950 mt-1">
-                  +{soulMetrics?.quarterlyProgress.reduce((acc, q) => acc + q.souls, 0) || stats.soulsWon}
+                  +{currentQuarterSouls}
                 </div>
                 <span className="text-[10px] text-gold-700 font-semibold">Q{Math.floor(new Date().getMonth() / 3) + 1} Harvest</span>
               </div>
@@ -1314,7 +1259,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div>
                         <span className="font-semibold text-navy-950 block">{c.cellName}</span>
                         <span className="text-[10px] text-slate-500">
-                          Outreach: +{c.fromEvangelism || 0} &bull; Meetings: +{c.fromCells || 0}
+                          Approved outreach conversions: +{c.fromEvangelism || 0}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1334,7 +1279,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span className="italic">Live tracking verified from weekly cell meeting returns & field evangelism reports.</span>
+              <span className="italic">Only approved outreach conversions count toward the goal. First-time visitors are tracked separately.</span>
               <button
                 onClick={() => setShowSoulModal(false)}
                 className="px-4 py-1.5 bg-navy-950 text-white rounded-xl font-bold text-xs hover:bg-navy-900"
