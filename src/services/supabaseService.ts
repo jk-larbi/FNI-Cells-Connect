@@ -348,6 +348,38 @@ export class SupabaseService {
     }
   }
 
+  static async registerCellAndPromoteTutor(input: {
+    name: string; location: string; tutorUid: string; leaderName: string; leaderPhone: string;
+    regionId?: string; regionName?: string; meetingDay?: string; meetingTime?: string;
+    venueAddress?: string; targetAttendance?: number; fullName?: string;
+  }): Promise<{ cell: Cell; isExistingAssociated: boolean; duplicatesRemoved: number }> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Cell registration cannot be completed safely.');
+    const { data, error } = await supabase!.rpc('register_cell_and_promote_tutor', {
+      p_name: input.name,
+      p_location: input.location || input.venueAddress || '',
+      p_tutor_uid: input.tutorUid,
+      p_leader_name: input.leaderName,
+      p_leader_phone: input.leaderPhone,
+      p_region_id: input.regionId || null,
+      p_region_name: input.regionName || null,
+      p_meeting_day: input.meetingDay || 'Wednesday',
+      p_meeting_time: input.meetingTime || '18:30',
+      p_venue_address: input.venueAddress || input.location || null,
+      p_target_attendance: Number(input.targetAttendance) || 20,
+      p_full_name: input.fullName || input.leaderName,
+    });
+    if (error) throw new Error(error.message || 'Cell registration failed.');
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result?.cell_id) throw new Error('The server did not return the registered cell.');
+    const { data: cellRow, error: cellError } = await supabase!.from('cells').select('*').eq('id', result.cell_id).single();
+    if (cellError || !cellRow) throw new Error(cellError?.message || 'The registered cell could not be loaded.');
+    return {
+      cell: mapCellFromDb(cellRow),
+      isExistingAssociated: Boolean(result.is_existing_associated),
+      duplicatesRemoved: Number(result.duplicates_removed || 0),
+    };
+  }
+
   static async upsertCell(cell: Cell): Promise<boolean> {
     if (!this.isAvailable()) return false;
     const payload: any = {
