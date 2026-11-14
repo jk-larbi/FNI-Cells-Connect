@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, RefreshCw, Search, FileText, Users, Flame } from 'lucide-react';
 import { UnifiedReportItem } from '../../types';
 import { ReportService } from '../../services/reportService';
+import { CellService } from '../../services/cellService';
 
 type ReceivedGroup = 'evangelism' | 'meeting';
 
@@ -18,8 +19,12 @@ export const ReceivedReportsView: React.FC = () => {
     if (refresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const queue = await ReportService.getUnifiedReviewQueue({ reportType: 'all' });
-      setReports(queue.filter(report => isApproved(report.status)));
+      const [queue, activeCells] = await Promise.all([
+        ReportService.getUnifiedReviewQueue({ reportType: 'all' }),
+        CellService.getActiveCells(),
+      ]);
+      const activeIds = new Set(activeCells.map(cell => cell.id));
+      setReports(queue.filter(report => activeIds.has(report.cellId) && isApproved(report.status)));
     } finally {
       setLoading(false);
       setRefreshing(false);
