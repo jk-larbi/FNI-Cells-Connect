@@ -40,12 +40,18 @@ BEGIN
   END IF;
 
   IF v_actor_is_admin THEN
-    v_cell_tutor_uid := coalesce(nullif(trim(p_tutor_uid),''),'admin-created');
-    IF v_cell_tutor_uid NOT IN ('admin-created','unassigned') THEN
-      SELECT * INTO v_target_profile FROM public.profiles
-       WHERE id=v_cell_tutor_uid OR supabase_user_id::text=v_cell_tutor_uid
-       LIMIT 1 FOR UPDATE;
+    v_cell_tutor_uid := nullif(trim(p_tutor_uid),'');
+    IF v_cell_tutor_uid IS NULL OR v_cell_tutor_uid IN ('admin-created','unassigned') THEN
+      RAISE EXCEPTION 'Select an existing active tutor account before registering this cell';
     END IF;
+    SELECT * INTO v_target_profile FROM public.profiles
+     WHERE (id=v_cell_tutor_uid OR supabase_user_id::text=v_cell_tutor_uid)
+       AND is_active=true
+     LIMIT 1 FOR UPDATE;
+    IF v_target_profile.id IS NULL THEN
+      RAISE EXCEPTION 'The selected tutor account could not be found or is inactive';
+    END IF;
+    v_cell_tutor_uid := coalesce(v_target_profile.supabase_user_id::text,v_target_profile.id);
   ELSE
     v_target_profile := v_profile;
     v_cell_tutor_uid := v_uid;
