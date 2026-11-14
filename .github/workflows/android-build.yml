@@ -156,13 +156,10 @@ jobs:
           application.set(f"{{{android_ns}}}roundIcon", "@mipmap/ic_launcher_round")
           manifest.write(manifest_path, encoding="utf-8", xml_declaration=True)
           logo = Image.open("public/fni-official-logo.jpg").convert("RGBA")
-          # Keep the complete official logo visible, with a clean FNI royal-blue surround.
+          # Use the official square artwork edge-to-edge. Do not place it inside
+          # a smaller blue tile: that creates a visible box inside the launcher icon.
           def make_icon(size):
-              canvas = Image.new("RGBA", (size, size), "#173B8F")
-              mark = logo.copy()
-              mark.thumbnail((int(size * 0.68), int(size * 0.68)), Image.Resampling.LANCZOS)
-              canvas.alpha_composite(mark, ((size - mark.width) // 2, (size - mark.height) // 2))
-              return canvas.convert("RGB")
+              return logo.resize((size, size), Image.Resampling.LANCZOS).convert("RGB")
 
           for density, size in {
               "mdpi": 48, "hdpi": 72, "xhdpi": 96,
