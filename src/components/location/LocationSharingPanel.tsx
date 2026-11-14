@@ -402,7 +402,7 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
               </button>
             ))}
           </div>
-        )}
+        ))}
         {selectedCell && selectedSession && (
           <div className="mt-4 border-t border-[#E3E8EF] pt-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -410,9 +410,9 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
               {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#142B4A] text-white px-3 py-2 text-xs font-bold">Open route <ExternalLink className="w-3 h-3" /></a>}
             </div>
             <LiveTutorMap
-              locations={activeLocations.some(item => item.session.id === selectedSession.id)
-                ? activeLocations
-                : [...activeLocations, { session: selectedSession, point: latestPoint || null, points }]}
+              locations={cellActiveLocations.some(item => item.session.id === selectedSession.id)
+                ? cellActiveLocations
+                : [...cellActiveLocations, { session: selectedSession, point: latestPoint || null, points }]}
               selectedSessionId={selectedSession.id}
               onSelectSession={inspectSession}
             />
