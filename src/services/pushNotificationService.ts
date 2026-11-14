@@ -48,6 +48,20 @@ export class PushNotificationService {
     return Notification.permission;
   }
 
+  static async getPermissionStateAsync(): Promise<NotificationPermission | 'unsupported'> {
+    if (isNativeAndroid()) {
+      try {
+        const permission = await PushNotifications.checkPermissions();
+        if (permission.receive === 'granted') return 'granted';
+        if (permission.receive === 'denied') return 'denied';
+        return 'default';
+      } catch {
+        return 'default';
+      }
+    }
+    return this.getPermissionState();
+  }
+
   static getSupportMessage(): string | null {
     if (typeof window === 'undefined') return 'Push alerts are unavailable in this environment. In-app notifications remain available.';
     if (isNativeAndroid()) return null;
