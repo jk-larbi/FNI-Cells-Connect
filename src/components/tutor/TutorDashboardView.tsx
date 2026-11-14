@@ -53,7 +53,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
 
   // Push Notifications state
-  const { isPushEnabled, requestPushPermission } = useNotifications();
+  const { isPushEnabled, isPushSupported, pushPermission, requestPushPermission } = useNotifications();
   const [pushStatusMsg, setPushStatusMsg] = useState<string | null>(null);
   const [isRequestingPush, setIsRequestingPush] = useState(false);
 
@@ -567,7 +567,6 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
         <div className="lg:col-span-5 space-y-6">
           {/* PASTORAL WORD & DEVOTIONAL INSPIRATION */}
           <div className="bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white rounded-3xl p-5 sm:p-6 shadow-xs border border-[#142B4A] relative overflow-hidden">
-            <BookOpen className="w-20 h-20 text-[#C6A45A]/15 absolute -right-2 -bottom-2 pointer-events-none" />
             <div className="flex items-center gap-2 text-[#C6A45A] text-xs font-bold uppercase tracking-wider">
               <span className="p-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4" />
@@ -576,6 +575,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             </div>
 
             <div className="mt-3 relative z-10">
+              <h3 className="text-lg sm:text-xl font-black tracking-tight text-white mb-2">Your Labour Is Not in Vain</h3>
               <p className="text-sm sm:text-base font-serif italic text-slate-100 leading-relaxed">
                 &ldquo;For God is not unjust to forget your work and labor of love which you have shown toward His name, in that you have ministered to the saints, and do minister.&rdquo;
               </p>
@@ -738,8 +738,12 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             </div>
             <p className="text-xs sm:text-sm text-[#667085] mt-1 leading-normal">
               {isPushEnabled
-                ? 'Your device receives instant alerts when administrators review your reports or send pastoral announcements.'
-                : 'Turn on device push alerts so you never miss review feedback, corrections, or weekly announcements.'}
+                ? 'Your device receives alerts when administrators review your reports or send pastoral announcements.'
+                : !isPushSupported
+                  ? PushNotificationService.getSupportMessage() || 'System notifications are unavailable here. You can still receive alerts inside FNI while the portal is open.'
+                  : pushPermission === 'denied'
+                    ? 'Notifications are blocked by your browser. Change this site’s notification permission in browser settings, then reload FNI.'
+                    : 'Enable device alerts to receive report feedback, corrections, and weekly announcements even when FNI is not open.'}
             </p>
             {pushStatusMsg && (
               <p className="text-xs text-[#203D63] bg-blue-50 px-2.5 py-1 rounded-md mt-1.5 border border-blue-100">
@@ -759,17 +763,17 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
               <Bell className="w-4 h-4 text-[#C6A45A]" />
               <span>Test Alert</span>
             </button>
-          ) : (
+          ) : isPushSupported && pushPermission !== 'denied' ? (
             <button
               type="button"
               onClick={handleEnablePush}
               disabled={isRequestingPush}
-              className="h-10 px-4 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs sm:text-sm font-bold transition-colors shadow-2xs flex items-center gap-2 cursor-pointer"
+              className="h-10 px-4 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs sm:text-sm font-bold transition-colors shadow-2xs flex items-center gap-2 cursor-pointer disabled:opacity-60"
             >
               <Bell className="w-4 h-4 text-[#C6A45A]" />
               <span>{isRequestingPush ? 'Enabling...' : 'Enable Alerts'}</span>
             </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

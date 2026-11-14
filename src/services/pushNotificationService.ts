@@ -46,7 +46,7 @@ export class PushNotificationService {
       return 'Background push requires the secure HTTPS FNI website. Open the official FNI link rather than an HTTP or local preview.';
     }
     if (!('Notification' in window)) {
-      return 'This browser does not expose the Notifications API. Keep FNI open to receive in-app alerts.';
+      return 'This browser cannot show system notifications. You can still receive alerts inside FNI while the portal is open.';
     }
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       return 'This browser does not support web push on this device. In-app real-time alerts remain available.';

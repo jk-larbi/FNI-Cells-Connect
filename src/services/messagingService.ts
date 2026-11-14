@@ -92,23 +92,51 @@ export class MessagingService {
     return msg;
   }
 
-  static async getPrivateConversation(tutorUid: string): Promise<PrivateMessage[]> {
+  static async getPrivateConversation(tutorUid: string, viewerUid: string, conversationId: string): Promise<PrivateMessage[]> {
     try {
-      const supaMsgs = await SupabaseService.getPrivateMessages(tutorUid);
-      if (supaMsgs !== null) {
-        setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
-        return supaMsgs
-          .filter(m => m.senderUid === tutorUid || m.recipientUid === tutorUid)
-          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      }
+      const [supaMsgs, preference, hiddenIds] = await Promise.all([
+        SupabaseService.getPrivateMessages(tutorUid),
+        SupabaseService.getPrivateChatPreference(viewerUid, conversationId),
+        SupabaseService.getHiddenPrivateMessageIds(viewerUid),
+      ]);
+      if (supaMsgs === null || preference === null || hiddenIds === null) return [];
+
+      setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
+      const hidden = new Set(hiddenIds);
+      const cutoffs = [preference.clearedAt, preference.deletedAt]
+        .filter((value): value is string => Boolean(value))
+        .map(value => new Date(value).getTime())
+        .filter(Number.isFinite);
+      const cutoff = cutoffs.length ? Math.max(...cutoffs) : 0;
+
+      return supaMsgs
+        .filter(m =>
+          (m.senderUid === tutorUid || m.recipientUid === tutorUid) &&
+          !hidden.has(m.id) &&
+          new Date(m.createdAt).getTime() > cutoff
+        )
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     } catch (e) {
       console.warn('Notice querying Supabase private conversation:', e);
+      return [];
     }
+  }
 
-    const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
-    return all
-      .filter(m => m.senderUid === tutorUid || m.recipientUid === tutorUid)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  static async clearPrivateConversation(viewerUid: string, conversationId: string): Promise<boolean> {
+    return SupabaseService.savePrivateChatPreference(viewerUid, conversationId, {
+      clearedAt: new Date().toISOString(),
+      deletedAt: null,
+    });
+  }
+
+  static async deletePrivateConversation(viewerUid: string, conversationId: string): Promise<boolean> {
+    return SupabaseService.savePrivateChatPreference(viewerUid, conversationId, {
+      deletedAt: new Date().toISOString(),
+    });
+  }
+
+  static async hidePrivateMessageForUser(viewerUid: string, messageId: string): Promise<boolean> {
+    return SupabaseService.hidePrivateMessageForUser(viewerUid, messageId);
   }
 
   static async getAdminConversations(): Promise<

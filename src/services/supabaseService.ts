@@ -804,6 +804,82 @@ export class SupabaseService {
     }
   }
 
+  static async getPrivateChatPreference(
+    userUid: string,
+    conversationId: string
+  ): Promise<{ clearedAt: string | null; deletedAt: string | null } | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('private_chat_preferences')
+        .select('cleared_at,deleted_at')
+        .eq('user_id', userUid)
+        .eq('conversation_id', conversationId)
+        .maybeSingle();
+      if (error) throw error;
+      return { clearedAt: data?.cleared_at || null, deletedAt: data?.deleted_at || null };
+    } catch (error) {
+      console.warn('Could not load personal private-chat settings:', error);
+      return null;
+    }
+  }
+
+  static async savePrivateChatPreference(
+    userUid: string,
+    conversationId: string,
+    updates: { clearedAt?: string | null; deletedAt?: string | null }
+  ): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    const existing = await this.getPrivateChatPreference(userUid, conversationId);
+    if (!existing) return false;
+    const payload = {
+      user_id: userUid,
+      conversation_id: conversationId,
+      cleared_at: updates.clearedAt !== undefined ? updates.clearedAt : existing.clearedAt,
+      deleted_at: updates.deletedAt !== undefined ? updates.deletedAt : existing.deletedAt,
+      updated_at: new Date().toISOString(),
+    };
+    try {
+      const { error } = await supabase!
+        .from('private_chat_preferences')
+        .upsert(payload, { onConflict: 'user_id,conversation_id' });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Could not save personal private-chat settings:', error);
+      return false;
+    }
+  }
+
+  static async getHiddenPrivateMessageIds(userUid: string): Promise<string[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('private_message_hidden_for_user')
+        .select('message_id')
+        .eq('user_id', userUid);
+      if (error) throw error;
+      return (data || []).map(row => row.message_id);
+    } catch (error) {
+      console.warn('Could not load personal message visibility settings:', error);
+      return null;
+    }
+  }
+
+  static async hidePrivateMessageForUser(userUid: string, messageId: string): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { error } = await supabase!
+        .from('private_message_hidden_for_user')
+        .upsert({ user_id: userUid, message_id: messageId }, { onConflict: 'user_id,message_id' });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Could not hide private message for this user:', error);
+      return false;
+    }
+  }
+
   static async sendPrivateMessage(msg: PrivateMessage): Promise<boolean> {
     if (!this.isAvailable()) return false;
     const payload = {

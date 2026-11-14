@@ -92,6 +92,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
   const [showPrivateEmoji, setShowPrivateEmoji] = useState(false);
   const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
+  const [openChatMenu, setOpenChatMenu] = useState(false);
+  const privateLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const privateLongPressTriggered = useRef(false);
   const [privateEmojiCategory, setPrivateEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Community Messaging State
@@ -271,9 +274,74 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const loadPrivateMessages = async () => {
     const tutorId = isAdmin ? selectedTutorId : currentUser.id;
     if (!tutorId) return;
-    const msgs = await MessagingService.getPrivateConversation(tutorId);
+    const conversationId = isAdmin ? selectedTutorId : 'admin';
+    const msgs = await MessagingService.getPrivateConversation(tutorId, currentUser.id, conversationId);
     setPrivateMessages(msgs);
     await MessagingService.markPrivateMessagesRead(tutorId, currentUser.id);
+  };
+
+  const handlePrivateChatAction = async (action: 'clear' | 'delete') => {
+    const confirmed = window.confirm(
+      action === 'clear'
+        ? 'Clear this personal chat from your account? The other participant will keep their messages.'
+        : 'Delete this personal chat from your account? The other participant will keep their messages. New messages can make the chat appear again.'
+    );
+    if (!confirmed) return;
+
+    const conversationId = isAdmin ? selectedTutorId : 'admin';
+    const saved = action === 'clear'
+      ? await MessagingService.clearPrivateConversation(currentUser.id, conversationId)
+      : await MessagingService.deletePrivateConversation(currentUser.id, conversationId);
+
+    if (!saved) {
+      setPrivateSendError('We could not update this chat. Check your connection and try again.');
+      return;
+    }
+    setPrivateMessages([]);
+    setPrivateReplyTo(null);
+    setOpenChatMenu(false);
+    setPrivateSendError(null);
+  };
+
+  const handleHidePrivateMessage = async (messageId: string) => {
+    const confirmed = window.confirm('Hide this message from your account only? The other participant will still see it.');
+    if (!confirmed) return;
+    const saved = await MessagingService.hidePrivateMessageForUser(currentUser.id, messageId);
+    if (!saved) {
+      setPrivateSendError('This message could not be hidden. Please try again.');
+      return;
+    }
+    setPrivateMessages(previous => previous.filter(message => message.id !== messageId));
+    setOpenMessageMenu(null);
+  };
+
+  const beginPrivateMessageTouch = (event: React.TouchEvent<HTMLDivElement>, messageId: string) => {
+    beginMessageSwipe(event);
+    privateLongPressTriggered.current = false;
+    if (privateLongPressTimer.current) window.clearTimeout(privateLongPressTimer.current);
+    privateLongPressTimer.current = window.setTimeout(() => {
+      privateLongPressTriggered.current = true;
+      setOpenMessageMenu(`private:${messageId}`);
+    }, 550);
+  };
+
+  const finishPrivateMessageTouch = (event: React.TouchEvent<HTMLDivElement>, message: MessageReply) => {
+    if (privateLongPressTimer.current) {
+      window.clearTimeout(privateLongPressTimer.current);
+      privateLongPressTimer.current = null;
+    }
+    if (privateLongPressTriggered.current) {
+      privateLongPressTriggered.current = false;
+      return;
+    }
+    finishMessageSwipe(event, message, 'private');
+  };
+
+  const cancelPrivateMessageLongPress = () => {
+    if (privateLongPressTimer.current) {
+      window.clearTimeout(privateLongPressTimer.current);
+      privateLongPressTimer.current = null;
+    }
   };
 
   const loadCommunity = async () => {
@@ -895,22 +963,35 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             </div>
 
-            {isAdmin && tutorList.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-200 font-medium">Select Tutor:</span>
-                <select
-                  value={selectedTutorId}
-                  onChange={e => setSelectedTutorId(e.target.value)}
-                  className="bg-[#142B4A] border border-[#E3E8EF]/30 text-white text-xs rounded-xl px-3 py-2 font-bold focus:outline-none"
-                >
-                  {tutorList.map(t => (
-                    <option key={t.id} value={t.id} className="text-slate-900 bg-white">
-                      {t.name} ({t.cellName})
-                    </option>
-                  ))}
-                </select>
+            <div className="flex items-center gap-2">
+              {isAdmin && tutorList.length > 0 && (
+                <>
+                  <span className="text-xs text-slate-200 font-medium">Select Tutor:</span>
+                  <select
+                    value={selectedTutorId}
+                    onChange={e => { setSelectedTutorId(e.target.value); setOpenChatMenu(false); }}
+                    className="bg-[#142B4A] border border-[#E3E8EF]/30 text-white text-xs rounded-xl px-3 py-2 font-bold focus:outline-none max-w-[180px]"
+                  >
+                    {tutorList.map(t => (
+                      <option key={t.id} value={t.id} className="text-slate-900 bg-white">
+                        {t.name} ({t.cellName})
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              <div className="relative">
+                <button type="button" onClick={() => setOpenChatMenu(value => !value)} aria-label="Personal chat options" aria-expanded={openChatMenu} className="p-2 rounded-xl border border-white/15 text-white hover:bg-white/10">
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                {openChatMenu && (
+                  <div className="absolute right-0 top-full z-40 mt-1 min-w-40 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                    <button type="button" onClick={() => handlePrivateChatAction('clear')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Clear chat</button>
+                    <button type="button" onClick={() => handlePrivateChatAction('delete')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete chat</button>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Messages Stream */}
@@ -960,9 +1041,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     )}
 
                     <div
-                      onTouchStart={beginMessageSwipe}
-                      onTouchEnd={event => finishMessageSwipe(event, { id: msg.id, senderName: msg.senderName, content: msg.content }, 'private')}
-                      className={`fni-swipe-message max-w-md p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed group relative ${
+                      onTouchStart={event => beginPrivateMessageTouch(event, msg.id)}
+                      onTouchMove={cancelPrivateMessageLongPress}
+                      onTouchEnd={event => finishPrivateMessageTouch(event, { id: msg.id, senderName: msg.senderName, content: msg.content })}
+                      onTouchCancel={cancelPrivateMessageLongPress}
+                      onContextMenu={event => { event.preventDefault(); setOpenMessageMenu("private:" + msg.id); }}
+                      className={`fni-swipe-message max-w-md p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed group relative select-text ${
                         isMine
                           ? 'bg-[#142B4A] text-white rounded-tr-none shadow-2xs'
                           : 'bg-white text-[#182230] border border-[#E3E8EF] rounded-tl-none shadow-2xs'
@@ -974,6 +1058,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       {openMessageMenu === ("private:" + msg.id) && (
                         <div className="absolute right-1 top-8 z-40 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
                           <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
+                          <button type="button" onClick={() => handleHidePrivateMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
                         </div>
                       )}
                       {renderFormattedMessage(msg.content)}
