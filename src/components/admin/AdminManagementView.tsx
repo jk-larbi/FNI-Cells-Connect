@@ -3,6 +3,7 @@ import { Region, Cell, ReportingPeriod, Profile, UserRole, CellReport } from '..
 import { INITIAL_PROFILES } from '../../services/mockData';
 import { ReportService } from '../../services/reportService';
 import { AuthService } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
 import { StatCard, ActionStatCard } from '../dashboard/StatCard';
@@ -23,9 +24,12 @@ import {
   Search,
   FileSpreadsheet,
   Phone,
+  Trash2,
 } from 'lucide-react';
 
 export const AdminManagementView: React.FC = () => {
+  const { currentUser, deleteUserAccount } = useAuth();
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods'>('users');
   const [users, setUsers] = useState<Profile[]>(() => AuthService.getAllProfiles());
   const [regions, setRegions] = useState<Region[]>([]);
@@ -33,6 +37,16 @@ export const AdminManagementView: React.FC = () => {
   const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'cell' | 'region' | 'period' | 'user'>('user');
+
+  const handleDeleteUser = async (user: Profile) => {
+    if (!window.confirm(`Permanently delete ${user.full_name}'s account and personal profile? They can register again afterwards.`)) return;
+    setDeletingUserId(user.id);
+    const result = await deleteUserAccount(user.id);
+    setDeletingUserId(null);
+    if (!result.success) { window.alert(result.error || 'Account deletion failed.'); return; }
+    setUsers(previous => previous.filter(item => item.id !== user.id));
+    window.alert(`${user.full_name}'s account has been deleted.`);
+  };
 
   // Filter states
   const [nameFilter, setNameFilter] = useState('');
@@ -485,6 +499,16 @@ export const AdminManagementView: React.FC = () => {
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                         </button>
+                        {user.id !== currentUser.id && (
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={deletingUserId === user.id}
+                            className="p-1.5 rounded-lg text-rose-500 hover:text-white hover:bg-rose-600 disabled:opacity-50 transition-colors"
+                            title="Permanently delete account"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
