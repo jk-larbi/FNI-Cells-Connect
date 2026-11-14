@@ -106,7 +106,7 @@ export class MessagingService {
     return msg;
   }
 
-  static async getPrivateConversation(tutorUid: string, viewerUid: string, conversationId: string): Promise<PrivateMessage[]> {
+  static async getPrivateConversation(tutorUid: string, viewerUid: string, conversationId: string, isAdmin = false): Promise<PrivateMessage[]> {
     try {
       const [supaMsgs, preference, hiddenIds] = await Promise.all([
         SupabaseService.getPrivateMessages(tutorUid),
@@ -122,13 +122,16 @@ export class MessagingService {
         .map(value => new Date(value).getTime())
         .filter(Number.isFinite);
       const cutoff = cutoffs.length ? Math.max(...cutoffs) : 0;
+      const belongsToConversation = (message: PrivateMessage) => {
+        if (isAdmin || conversationId === 'admin') {
+          return message.senderUid === tutorUid || message.recipientUid === tutorUid;
+        }
+        return (message.senderUid === tutorUid && message.recipientUid === conversationId) ||
+          (message.senderUid === conversationId && message.recipientUid === tutorUid);
+      };
 
       return supaMsgs
-        .filter(m =>
-          (m.senderUid === tutorUid || m.recipientUid === tutorUid) &&
-          !hidden.has(m.id) &&
-          new Date(m.createdAt).getTime() > cutoff
-        )
+        .filter(m => belongsToConversation(m) && !hidden.has(m.id) && new Date(m.createdAt).getTime() > cutoff)
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     } catch (e) {
       console.warn('Notice querying Supabase private conversation:', e);
@@ -199,13 +202,20 @@ export class MessagingService {
     return summaries.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
   }
 
-  static async markPrivateMessagesRead(tutorUid: string, readerUid: string): Promise<void> {
+  static async markPrivateMessagesRead(tutorUid: string, readerUid: string, conversationId = 'admin', isAdmin = false): Promise<void> {
     const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
     const readAt = new Date().toISOString();
     const readIds: string[] = [];
+    const belongsToConversation = (message: PrivateMessage) => {
+      if (isAdmin || conversationId === 'admin') {
+        return message.senderUid === tutorUid || message.recipientUid === tutorUid;
+      }
+      return (message.senderUid === tutorUid && message.recipientUid === conversationId) ||
+        (message.senderUid === conversationId && message.recipientUid === tutorUid);
+    };
 
     const updated = all.map(m => {
-      if ((m.senderUid === tutorUid || m.recipientUid === tutorUid) && m.senderUid !== readerUid && !m.isRead) {
+      if (belongsToConversation(m) && m.senderUid !== readerUid && !m.isRead) {
         readIds.push(m.id);
         return { ...m, isRead: true, readAt };
       }
