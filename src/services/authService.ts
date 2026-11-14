@@ -625,7 +625,7 @@ export class AuthService {
   // --- 8. ADMINISTRATOR PROFILE DETAILS ---
   static async updateAdministratorProfile(userId: string, fullName: string, username: string): Promise<Profile> {
     if (!isSupabaseConfigured || !supabase) throw new Error('Supabase service is unavailable.');
-    const cleanName = fullName.trim().replace(/\\s+/g, ' ');
+    const cleanName = fullName.trim().replace(/\s+/g, ' ');
     const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
     if (cleanName.length < 2 || cleanName.length > 80) throw new Error('Full name must be between 2 and 80 characters.');
     if (!/^[a-z0-9_]{3,20}$/.test(cleanUsername)) throw new Error('Username must be 3–20 characters and use only letters, numbers, or underscores.');
