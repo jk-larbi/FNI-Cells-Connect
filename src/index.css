@@ -1142,3 +1142,12 @@ html.dark .fni-chat-panel .fni-swipe-message [class*="text-[#182230]"] {
 html.dark .fni-chat-panel .fni-swipe-message [class*="text-[#667085]"] {
   color: #b7c5d6 !important;
 }
+
+
+/* Consistent Telegram-like Lucide icon treatment across the application.
+   Keep the official FNI wordmark/logo artwork unchanged. */
+svg.lucide {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
