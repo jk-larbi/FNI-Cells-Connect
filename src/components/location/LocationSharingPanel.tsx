@@ -221,10 +221,10 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
     ]);
     const activeCells = (cells || []).filter(cell => !cell.is_archived);
     const activeCellIds = new Set(activeCells.map(cell => cell.id));
-    setTrashSessions(trashedRows.filter(session => activeCellIds.has(session.cell_id)));
+    setTrashSessions(trashedRows.filter(session => Boolean(session.cell_id) && activeCellIds.has(session.cell_id!)));
     setRegisteredCells(activeCells);
-    setActiveLocations(liveLocations.filter(location => activeCellIds.has(location.session?.cell_id)));
-    const visibleRows = rows.filter(row => activeCellIds.has(row.cell_id));
+    setActiveLocations(liveLocations.filter(location => Boolean(location.session?.cell_id) && activeCellIds.has(location.session!.cell_id!)));
+    const visibleRows = rows.filter(row => Boolean(row.cell_id) && activeCellIds.has(row.cell_id!));
     const activeRows = visibleRows.filter(row => !row.ended_at);
     const activeIds = new Set(activeRows.map(row => row.id));
     if (knownActiveSessionIds.current === null) {
