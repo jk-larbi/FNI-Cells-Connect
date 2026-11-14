@@ -459,6 +459,24 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
           )}
         </div>}
 
+        {!selectedCell && <div className="mb-5 rounded-xl border border-[#E3E8EF] bg-white p-3 sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div><h3 className="text-sm font-extrabold text-[#142B4A]">All-cell journey history</h3><p className="text-xs text-[#667085] mt-1">Review completed routes from every registered cell. You do not need to monitor the live map while outreach is happening.</p></div>
+            <span className="text-[11px] font-bold text-[#667085]">{sessions.filter(session => Boolean(session.ended_at)).length} completed sessions</span>
+          </div>
+          {sessions.filter(session => Boolean(session.ended_at)).length === 0 ? <p className="rounded-lg border border-dashed border-[#E3E8EF] p-4 text-center text-xs text-[#667085]">Completed journey routes will appear here after tutors stop sharing.</p> : (
+            <div className="space-y-2">
+              {sessions.filter(session => Boolean(session.ended_at)).map(session => (
+                <div key={session.id} className={`rounded-lg border p-3 ${selectedSession?.id === session.id ? 'border-[#C6A45A] bg-amber-50/40' : 'border-[#E3E8EF]'}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0"><p className="text-xs font-bold text-[#142B4A]">{session.tutor_name} · {session.cell_name || 'No cell assigned'}</p><p className="text-[11px] text-[#667085] mt-0.5">{activityLabel(session.activity_type)} · {dateLabel(session.started_at)}{session.ended_at ? ` – ${dateLabel(session.ended_at)}` : ''}</p></div>
+                    <button type="button" onClick={() => inspectSession(session)} className="shrink-0 rounded-lg border border-[#D0D5DD] px-3 py-2 text-[10px] font-bold text-[#142B4A] hover:bg-slate-50">View saved route</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>}
         {showTrash && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/50 p-3">
           <div className="flex items-center justify-between gap-2 mb-2"><h3 className="text-sm font-extrabold text-[#142B4A]">Location history · Trash</h3><span className="text-[11px] text-[#667085]">Restorable records</span></div>
           {trashSessions.length === 0 ? <p className="text-xs text-[#667085] py-3">Trash is empty.</p> : <div className="space-y-2">{trashSessions.map(session => <div key={session.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white border border-amber-100 p-3"><div><p className="text-xs font-bold text-[#142B4A]">{session.tutor_name} · {session.cell_name || 'No cell assigned'}</p><p className="text-[11px] text-[#667085]">{activityLabel(session.activity_type)} · {dateLabel(session.started_at)}</p></div><button type="button" disabled={busy} onClick={() => restoreSession(session)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#D0D5DD] px-3 py-2 text-xs font-bold text-[#142B4A] disabled:opacity-50"><RotateCcw className="w-3.5 h-3.5" /> Restore</button></div>)}</div>}
