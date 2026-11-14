@@ -153,14 +153,14 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       subtitle="Connected alerting across reports, reviews, pastoral messages, and teaching outlines"
       maxWidth="2xl"
     >
-      <div className="space-y-4">
+      <div className="space-y-4 rounded-2xl bg-[#F1F4F8] p-3 text-[#172033]">
         {/* Push Notification Device Status & Permission Card */}
-        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+        <div className="p-3.5 !bg-white rounded-2xl border border-[#D5DDE8] text-xs text-[#172033]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-gold-600" />
               <div>
-                <span className="font-bold text-[#142B4A]">Device Push Notification Status: </span>
+                <span className="font-bold !text-[#102A4C]">Device Push Notification Status: </span>
                 {isPushEnabled ? (
                   <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[11px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" /> Active & Registered
@@ -228,7 +228,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                   categoryFilter === cat.id
                     ? 'bg-[#142B4A] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-[#E2E8F0] text-[#263548] hover:bg-[#CBD5E1]'
                 }`}
               >
                 {cat.label}
@@ -256,16 +256,16 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         </div>
 
         {/* Channel Filter Pills */}
-        <div className="flex items-center gap-2 text-xs text-slate-500 overflow-x-auto pb-1">
-          <span className="font-medium text-slate-400 text-[11px]">Channel:</span>
+        <div className="flex items-center gap-2 text-xs text-[#475569] overflow-x-auto pb-1">
+          <span className="font-medium text-[#475569] text-[11px]">Channel:</span>
           {(['all', 'in_app', 'whatsapp', 'email'] as const).map(ch => (
             <button
               key={ch}
               onClick={() => setChannelFilter(ch)}
               className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
                 channelFilter === ch
-                  ? 'bg-slate-800 text-white font-bold'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-[#142B4A] text-white font-bold'
+                  : 'bg-[#E2E8F0] text-[#263548] hover:bg-slate-200'
               }`}
             >
               {ch === 'all' ? 'All Channels' : ch === 'in_app' ? 'In-App' : ch === 'whatsapp' ? 'WhatsApp' : 'Email'}
@@ -276,10 +276,10 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         {/* Notification List */}
         <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar overscroll-contain">
           {filteredNotifs.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <Bell className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="font-semibold text-slate-600">No notifications in this view.</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+            <div className="py-12 text-center text-xs text-[#334155] !bg-white rounded-2xl border border-dashed border-[#CBD5E1]">
+              <Bell className="w-8 h-8 text-[#64748B] mx-auto mb-2" />
+              <p className="font-semibold text-[#172033]">No notifications in this view.</p>
+              <p className="text-[11px] text-[#475569] mt-0.5">
                 New submissions, reviews, messages and announcements will automatically appear in real time.
               </p>
             </div>
@@ -307,8 +307,8 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   onClick={() => handleItemClick(n)}
                   className={`p-3.5 rounded-2xl border text-xs transition-all cursor-pointer relative group ${
                     n.is_read
-                      ? 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50/50'
-                      : 'bg-gradient-to-r from-blue-50/70 to-white border-[#142B4A]/30 text-navy-950 font-medium shadow-xs hover:border-[#142B4A]'
+                      ? '!bg-white border-[#CBD5E1] !text-[#263548] hover:border-[#94A3B8] hover:!bg-[#F8FAFC]'
+                      : '!bg-[#EAF1FA] border-[#9FB4D0] !text-[#172033] font-semibold shadow-sm hover:!bg-[#E1EBF7] hover:border-[#142B4A]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -323,7 +323,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                      <span className="text-[10px] !text-[#475569] whitespace-nowrap">
                         {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       {hasAction && (
@@ -332,13 +332,13 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-600 mt-2 leading-relaxed pl-7">
+                  <p className="text-xs !text-[#263548] mt-2 leading-relaxed pl-7">
                     {n.message}
                   </p>
 
-                  <div className="mt-2.5 pl-7 flex items-center justify-between text-[10px] text-slate-400">
+                  <div className="mt-2.5 pl-7 flex items-center justify-between text-[10px] !text-[#475569]">
                     <div className="flex items-center gap-2">
-                      <span className="uppercase tracking-wider font-semibold text-slate-500">
+                      <span className="uppercase tracking-wider font-semibold text-[#475569]">
                         {n.channel || 'IN_APP'}
                       </span>
                       {n.metadata?.cellName && (
@@ -349,7 +349,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-[#142B4A] font-semibold group-hover:underline">
+                      <span className="!text-[#102A4C] font-bold group-hover:underline">
                         {actionLabel} &rarr;
                       </span>
                       {!n.is_read && (
@@ -358,7 +358,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                             e.stopPropagation();
                             markAsRead(n.id);
                           }}
-                          className="hover:text-emerald-700 text-slate-500 font-medium ml-2"
+                          className="hover:text-emerald-800 !text-[#334155] font-semibold ml-2"
                         >
                           Mark read
                         </button>
