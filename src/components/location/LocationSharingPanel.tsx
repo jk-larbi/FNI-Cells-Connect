@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Clock, MapPin, Navigation, Play, ShieldCheck, Square, RefreshCw, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LocationSharingService, LocationSession, LocationPoint, LocationActivity } from '../../services/locationSharingService';
@@ -20,9 +20,26 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const knownActiveSessionIds = useRef<Set<string> | null>(null);
 
   const loadAdminSessions = async () => {
     const rows = await LocationSharingService.getAdminSessions();
+    const activeRows = rows.filter(row => !row.ended_at);
+    const activeIds = new Set(activeRows.map(row => row.id));
+    if (knownActiveSessionIds.current === null) {
+      knownActiveSessionIds.current = activeIds;
+    } else {
+      const newlyStarted = activeRows.filter(row => !knownActiveSessionIds.current?.has(row.id));
+      if (newlyStarted.length) {
+        const latest = newlyStarted[0];
+        const message = `${latest.tutor_name} has started ${activityLabel(latest.activity_type).toLowerCase()}.`;
+        setNotice(message);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('FNI Evangelism Tracking', { body: message });
+        }
+      }
+      knownActiveSessionIds.current = activeIds;
+    }
     setSessions(rows);
     if (selectedSession) {
       const refreshed = rows.find(row => row.id === selectedSession.id) || null;
@@ -98,10 +115,11 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="text-base font-black text-[#142B4A] flex items-center gap-2"><MapPin className="w-4 h-4 text-[#C6A45A]" /> Session location records</h2>
-            <p className="text-xs text-[#667085] mt-1">Only sessions tutors deliberately started. Location is not collected after they stop sharing.</p>
+            <p className="text-xs text-[#667085] mt-1">Live sessions appear here when tutors start sharing. Location is not collected after they stop sharing.</p>
           </div>
           <button onClick={() => loadAdminSessions().catch(err => setError(err.message))} className="h-9 px-3 rounded-xl border border-[#E3E8EF] text-xs font-bold text-[#142B4A] flex items-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Refresh</button>
         </div>
+        {notice && <div role="status" className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-900">{notice}</div>}
         {sessions.length === 0 ? <p className="text-sm text-[#667085] py-5 text-center">No location-sharing sessions have been recorded.</p> : (
           <div className="space-y-2">
             {sessions.map(session => (
