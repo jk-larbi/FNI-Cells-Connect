@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Clock, MapPin, Navigation, Play, ShieldCheck, Square, RefreshCw, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -9,6 +10,10 @@ interface Props {
   cellId?: string | null;
 }
 const activityLabel = (type: LocationActivity) => type === 'evangelism' ? 'Evangelism outreach' : 'Cell meeting';
+const openNativeMaps = (url: string) => {
+  if (Capacitor.isNativePlatform()) window.location.href = url;
+  else window.open(url, '_blank', 'noopener,noreferrer');
+};
 const dateLabel = (value: string) => new Date(value).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 
 declare global {
@@ -290,7 +295,7 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
               <h3 className="text-sm font-extrabold text-[#142B4A]">All active tutors · Live map</h3>
               <p className="text-xs text-[#667085] mt-1">{activeLocations.length} active sharing session{activeLocations.length === 1 ? '' : 's'} · live positions refresh automatically</p>
             </div>
-            {nativeMapsUrl && <a href={nativeMapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#142B4A] text-white px-3 py-2 text-xs font-bold"><Navigation className="w-3.5 h-3.5" /> Open in Maps</a>}
+            {nativeMapsUrl && <button type="button" onClick={() => openNativeMaps(nativeMapsUrl)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#142B4A] text-white px-3 py-2 text-xs font-bold"><Navigation className="w-3.5 h-3.5" /> Open in Maps</button>}
           </div>
           {activeLocations.length > 0 ? (
             <>
