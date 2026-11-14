@@ -18,6 +18,7 @@ import {
   Phone,
   Eye,
   EyeOff,
+  Chrome,
 } from 'lucide-react';
 
 export type AuthFlowView = 'tutor-signup' | 'login-select' | 'tutor-login' | 'admin-login';
@@ -66,6 +67,31 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
+
+
+  const handleSocialAuth = async (provider: 'google' | 'apple', isSignup = false) => {
+    setErrorMessage('');
+    setSuccessNotice('');
+    let pendingTutor: { fullName: string; cellName: string; phoneNumber?: string; coLeaderName?: string } | undefined;
+    if (isSignup) {
+      if (!regFullName.trim() || !regCellName.trim()) {
+        setErrorMessage('Enter your full name and cell fellowship name before continuing with Google or Apple.');
+        return;
+      }
+      pendingTutor = {
+        fullName: regFullName.trim(),
+        cellName: regCellName.trim(),
+        phoneNumber: regPhone.trim() || undefined,
+        coLeaderName: regCoLeaderName.trim() || undefined,
+      };
+    }
+    setIsLoading(true);
+    const result = await AuthService.signInWithProvider(provider, pendingTutor);
+    if (result.error) {
+      setErrorMessage(result.error);
+      setIsLoading(false);
+    }
+  };
 
   // 1. Handle Tutor Registration (Strict Supabase Only - Simplified 3 Fields + Optional Co-Leader)
   const handleTutorSignUp = async (e: React.FormEvent) => {
@@ -366,6 +392,23 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
+
+                {/* Social registration — cell details above are retained for first-time tutors */}
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#E3E8EF]" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#98A2B3]">Or continue with</span>
+                    <div className="h-px flex-1 bg-[#E3E8EF]" />
+                  </div>
+                  <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('google', true)} className="w-full py-3 px-4 bg-white border border-[#D0D5DD] hover:border-[#142B4A] rounded-xl text-xs font-semibold text-[#182230] flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
+                    <Chrome className="w-4 h-4" /> Continue with Google
+                  </button>
+                  <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('apple', true)} className="w-full py-3 px-4 bg-black hover:bg-[#222] rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
+                    <span className="text-lg leading-none"></span> Continue with Apple
+                  </button>
+                  <p className="text-[10px] text-center text-[#667085]">You'll confirm your account with the provider, then return to finish setting up your FNI cell.</p>
+                </div>
+
                 {/* Password */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">5. Password <span className="text-[#C74646]">*</span></label>
@@ -527,6 +570,20 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </p>
               </div>
 
+
+              <div className="space-y-2">
+                <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('google')} className="w-full py-3 px-4 bg-white border border-[#D0D5DD] hover:border-[#142B4A] rounded-xl text-xs font-semibold text-[#182230] flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
+                  <Chrome className="w-4 h-4" /> Continue with Google
+                </button>
+                <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('apple')} className="w-full py-3 px-4 bg-black hover:bg-[#222] rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
+                  <span className="text-lg leading-none"></span> Continue with Apple
+                </button>
+                <div className="flex items-center gap-3 py-1">
+                  <div className="h-px flex-1 bg-[#E3E8EF]" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#98A2B3]">Or sign in with email</span>
+                  <div className="h-px flex-1 bg-[#E3E8EF]" />
+                </div>
+              </div>
               <form onSubmit={handleTutorLogin} className="space-y-3.5">
                 {/* 1. Email or Full Name */}
                 <div className="text-left">
