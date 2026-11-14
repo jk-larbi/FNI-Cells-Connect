@@ -259,21 +259,16 @@ export class AuthService {
     verificationNotice?: string;
   }> {
     const fullName = input.fullName?.trim();
-    const email = input.email?.trim().toLowerCase();
     const cellName = input.cellName?.trim();
-    const phoneNumber = input.phoneNumber?.trim() || '';
-    const username = input.username?.trim().toLowerCase() || undefined;
+    const username = input.username?.trim().toLowerCase() || '';
     const password = input.password || '';
     const coLeaderName = input.coLeaderName?.trim();
 
-    if (!fullName || !email || !cellName || !username || !password) {
-      return { profile: null, cell: null, error: 'Full name, username, email address, cell name, and password are required.' };
+    if (!fullName || !cellName || !username || !password) {
+      return { profile: null, cell: null, error: 'Full name, username, cell name, and password are required.' };
     }
     if (!/^[a-z0-9_]{3,20}$/.test(username)) {
       return { profile: null, cell: null, error: 'Username must be 3–20 characters and use only lowercase letters, numbers, or underscores.' };
-    }
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
-      return { profile: null, cell: null, error: 'Please enter a valid email address.' };
     }
     if (password.length < 6 || password.length > 128) {
       return { profile: null, cell: null, error: 'Password must be between 6 and 128 characters.' };
@@ -288,38 +283,24 @@ export class AuthService {
     const normalizedCell = normalizeCellName(cellName);
     try {
       const allCells = await CellService.getCells();
-      const existing = allCells.find(c => (c.normalized_name || normalizeCellName(c.name)) === normalizedCell);
-      if (existing) {
+      if (allCells.some(c => (c.normalized_name || normalizeCellName(c.name)) === normalizedCell)) {
         return { profile: null, cell: null, error: `Cell "${cellName}" is already registered. If this is your cell, please log in instead.` };
       }
-    } catch (error) {
-      console.warn('Could not pre-check duplicate cell name:', error);
-    }
 
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            cell_name: cellName,
-            username,
-            phone_number: phoneNumber || undefined,
-            role: 'tutor',
-          },
-        },
+      const { data, error } = await supabase.functions.invoke('tutor-auth', {
+        body: { action: 'register', fullName, username, password, cellName },
       });
-      if (authError) {
-        const message = authError.message || '';
-        if (message.toLowerCase().includes('profiles_username_lower_unique') || message.toLowerCase().includes('duplicate key')) {
-          return { profile: null, cell: null, error: 'That username is already taken. Please choose another.' };
-        }
-        return { profile: null, cell: null, error: message };
+      if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
+        return { profile: null, cell: null, error: data?.error || error?.message || 'Account creation failed. Please try again.' };
       }
-      if (!authData?.user) return { profile: null, cell: null, error: 'Failed to create user account in Supabase Auth.' };
 
-      const uid = authData.user.id;
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+      if (sessionError) return { profile: null, cell: null, error: 'Your account was created, but sign-in could not be completed. Please log in.' };
+
+      const uid = data.user.id;
       const now = new Date().toISOString();
       const cellId = `cell-${uid}`;
       const newCell: Cell = {
@@ -332,7 +313,6 @@ export class AuthService {
         leader_id: uid,
         leader_name: coLeaderName ? `${fullName} & ${coLeaderName}` : fullName,
         co_leader_name: coLeaderName || undefined,
-        leader_phone: phoneNumber || undefined,
         meeting_day: 'Wednesday',
         meeting_time: '18:30',
         venue_address: 'Fellowship Center',
@@ -346,45 +326,27 @@ export class AuthService {
       const profile: Profile = {
         id: uid,
         supabase_user_id: uid,
-        email,
+        email: '',
         username,
         full_name: fullName,
-        phone_number: phoneNumber || undefined,
         cell_id: cellId,
         cell_name: cellName,
         role: 'tutor',
         is_active: true,
         is_onboarded: true,
         must_change_password: false,
-        auth_provider: 'email',
+        auth_provider: 'credentials',
         created_at: now,
       };
-      // With email confirmation enabled, Supabase returns no session yet.
-      // The auth.users trigger creates the base profile; do not attempt an
-      // authenticated profile upsert until the user has verified and signed in.
-      if (!authData.session) {
-        return {
-          profile: null,
-          cell: newCell,
-          error: null,
-          needsEmailVerification: true,
-          verificationNotice: `Registration successful! A confirmation email has been sent to ${email}. Please verify your email before logging in.`,
-        };
-      }
-
       const saved = await SupabaseService.upsertProfile(profile);
-      if (!saved) {
-        console.error('Tutor profile could not be saved after email registration.');
-        return { profile: null, cell: newCell, error: 'Your account was created, but your profile could not be saved. Please contact FNI support.' };
-      }
+      if (!saved) return { profile: null, cell: newCell, error: 'Your account was created, but your profile could not be saved. Please contact FNI support.' };
 
       ReportService.recordAuditLog({
         action: 'TUTOR_REGISTERED_CELL',
         entity_type: 'users',
         entity_id: uid,
-        details: { tutor_name: fullName, email, cell_name: cellName },
+        details: { tutor_name: fullName, username, cell_name: cellName },
       });
-
       this.setCurrentProfile(profile);
       return { profile, cell: newCell, error: null, needsEmailVerification: false };
     } catch (error: any) {
@@ -394,36 +356,30 @@ export class AuthService {
 
   // --- 2. TUTOR LOGIN (EMAIL + PASSWORD) ---
   static async signInTutor(input: TutorLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
-    const identifier = (input.email || input.username || input.fullName || '').trim().toLowerCase();
+    const identifier = (input.username || input.email || input.fullName || '').trim().toLowerCase();
     const password = input.password || '';
-    if (!identifier || !password) return { profile: null, error: 'Email address and password are required.' };
+    if (!identifier || !password) return { profile: null, error: 'Username and password are required.' };
     if (!isSupabaseConfigured || !supabase) return { profile: null, error: 'Supabase authentication service is unavailable.' };
 
     try {
-      let email = identifier;
-      if (!identifier.includes('@')) {
-        const { data, error } = await supabase.from('profiles').select('email').eq('username', identifier).maybeSingle();
-        if (error || !data?.email) return { profile: null, error: 'Enter the email address used during registration.' };
-        email = data.email.toLowerCase();
+      const { data, error } = await supabase.functions.invoke('tutor-auth', {
+        body: { action: 'login', username: identifier, password },
+      });
+      if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
+        return { profile: null, error: data?.error || error?.message || 'Invalid username or password.' };
       }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+      if (sessionError) return { profile: null, error: 'Could not establish your session. Please try again.' };
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError) {
-        if (authError.message.toLowerCase().includes('email not confirmed')) {
-          return { profile: null, error: 'Please verify your email address using the link sent to your inbox before signing in.' };
-        }
-        return { profile: null, error: 'Invalid email address or password.' };
-      }
-      if (!authData?.user) return { profile: null, error: 'Authentication failed. No user returned by Supabase.' };
-
-      let profile = await SupabaseService.getProfile(authData.user.id);
-      if (!profile) return { profile: null, error: 'Your account profile could not be loaded. Please contact FNI support.' };
-      if (profile.role !== 'tutor' || !profile.is_active) {
+      const profile = await SupabaseService.getProfile(data.user.id);
+      if (!profile || profile.role !== 'tutor' || !profile.is_active) {
         await supabase.auth.signOut();
         this.setCurrentProfile(null);
         return { profile: null, error: 'This tutor account is inactive or not authorized.' };
       }
-
       this.setCurrentProfile(profile);
       SyncStateService.retryPendingSync().catch(() => {});
       return { profile, error: null };
