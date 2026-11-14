@@ -1,6 +1,7 @@
 import { SupabaseService } from './supabaseService';
 import { OfferingRecord, OfferingAggregation, UserRole } from '../types';
 import { ReportService } from './reportService';
+import { CellService } from './cellService';
 
 const STORAGE_KEY = 'fni_offerings_store_v1';
 
@@ -136,6 +137,11 @@ export class FinanceService {
     let all = Array.from(map.values()).sort(
       (a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime()
     );
+
+    // Never expose financial records belonging to archived/deleted cells in the active portal.
+    const activeCells = await CellService.getActiveCells();
+    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    all = all.filter(record => activeCellIds.has(record.cellId));
 
     // If caller is tutor, scope to their cell
     if (!isAuthorized && cellId) {
