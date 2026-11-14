@@ -181,17 +181,18 @@ export class AuthService {
     verificationNotice?: string;
   }> {
     const fullName = input.fullName?.trim();
-    const username = input.username?.trim().toLowerCase();
-    const phoneNumber = input.phoneNumber?.trim();
+    const email = input.email?.trim().toLowerCase();
     const cellName = input.cellName?.trim();
+    const phoneNumber = input.phoneNumber?.trim() || '';
+    const username = input.username?.trim().toLowerCase() || undefined;
     const password = input.password || '';
     const coLeaderName = input.coLeaderName?.trim();
 
-    if (!fullName || !username || !phoneNumber || !cellName || !password) {
-      return { profile: null, cell: null, error: 'Enter your full name, username, phone number, cell name, and password.' };
+    if (!fullName || !email || !cellName || !password) {
+      return { profile: null, cell: null, error: 'Full name, email address, cell name, and password are required.' };
     }
-    if (!/^[a-z0-9_]{3,24}$/.test(username)) {
-      return { profile: null, cell: null, error: 'Username must be 3–24 characters and contain only letters, numbers, or underscores.' };
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      return { profile: null, cell: null, error: 'Please enter a valid email address.' };
     }
     if (password.length < 6 || password.length > 128) {
       return { profile: null, cell: null, error: 'Password must be between 6 and 128 characters.' };
@@ -215,20 +216,23 @@ export class AuthService {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('tutor-auth', {
-        body: { action: 'register', fullName, username, phoneNumber, cellName, password },
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            cell_name: cellName,
+            username,
+            phone_number: phoneNumber || undefined,
+            role: 'tutor',
+          },
+        },
       });
-      if (error || data?.error || !data?.session || !data?.user) {
-        return { profile: null, cell: null, error: data?.error || error?.message || 'Registration could not be completed. Please try again.' };
-      }
+      if (authError) return { profile: null, cell: null, error: authError.message };
+      if (!authData?.user) return { profile: null, cell: null, error: 'Failed to create user account in Supabase Auth.' };
 
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-      if (sessionError) return { profile: null, cell: null, error: 'Your account was created, but sign-in could not be completed. Please log in.' };
-
-      const uid = data.user.id;
+      const uid = authData.user.id;
       const now = new Date().toISOString();
       const cellId = `cell-${uid}`;
       const newCell: Cell = {
@@ -241,7 +245,7 @@ export class AuthService {
         leader_id: uid,
         leader_name: coLeaderName ? `${fullName} & ${coLeaderName}` : fullName,
         co_leader_name: coLeaderName || undefined,
-        leader_phone: phoneNumber,
+        leader_phone: phoneNumber || undefined,
         meeting_day: 'Wednesday',
         meeting_time: '18:30',
         venue_address: 'Fellowship Center',
@@ -252,61 +256,84 @@ export class AuthService {
       };
       await CellService.updateCell(newCell);
 
-      const profile = await SupabaseService.getProfile(uid) || {
+      const profile: Profile = {
         id: uid,
         supabase_user_id: uid,
-        email: '',
+        email,
         username,
         full_name: fullName,
-        phone_number: phoneNumber,
+        phone_number: phoneNumber || undefined,
+        cell_id: cellId,
         cell_name: cellName,
-        role: 'tutor' as const,
+        role: 'tutor',
         is_active: true,
         is_onboarded: true,
         must_change_password: false,
-        auth_provider: 'credentials' as const,
+        auth_provider: 'email',
         created_at: now,
       };
-      this.setCurrentProfile(profile);
+      const saved = await SupabaseService.upsertProfile(profile);
+      if (!saved) {
+        console.error('Tutor profile could not be saved after email registration.');
+        return { profile: null, cell: newCell, error: 'Your account was created, but your profile could not be saved. Please contact FNI support.' };
+      }
+
       ReportService.recordAuditLog({
         action: 'TUTOR_REGISTERED_CELL',
         entity_type: 'users',
         entity_id: uid,
-        details: { tutor_name: fullName, username, cell_name: cellName },
+        details: { tutor_name: fullName, email, cell_name: cellName },
       });
+
+      if (!authData.session) {
+        return {
+          profile: null,
+          cell: newCell,
+          error: null,
+          needsEmailVerification: true,
+          verificationNotice: `Registration successful! A confirmation email has been sent to ${email}. Please verify your email before logging in.`,
+        };
+      }
+
+      this.setCurrentProfile(profile);
       return { profile, cell: newCell, error: null, needsEmailVerification: false };
     } catch (error: any) {
       return { profile: null, cell: null, error: error?.message || 'Registration failed. Please try again.' };
     }
   }
 
-  // --- 2. TUTOR LOGIN (USERNAME + PASSWORD; NO EMAIL DELIVERY) ---
+  // --- 2. TUTOR LOGIN (EMAIL + PASSWORD) ---
   static async signInTutor(input: TutorLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
-    const username = input.username?.trim().toLowerCase() || '';
+    const identifier = (input.email || input.username || input.fullName || '').trim().toLowerCase();
     const password = input.password || '';
-    if (!username || !password) return { profile: null, error: 'Username and password are required.' };
+    if (!identifier || !password) return { profile: null, error: 'Email address and password are required.' };
     if (!isSupabaseConfigured || !supabase) return { profile: null, error: 'Supabase authentication service is unavailable.' };
 
     try {
-      const { data, error } = await supabase.functions.invoke('tutor-auth', {
-        body: { action: 'login', username, password },
-      });
-      if (error || data?.error || !data?.session || !data?.user) {
-        return { profile: null, error: data?.error || error?.message || 'Invalid username or password.' };
+      let email = identifier;
+      if (!identifier.includes('@')) {
+        const { data, error } = await supabase.from('profiles').select('email').eq('username', identifier).maybeSingle();
+        if (error || !data?.email) return { profile: null, error: 'Enter the email address used during registration.' };
+        email = data.email.toLowerCase();
       }
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-      if (sessionError) return { profile: null, error: 'Login could not be completed. Please try again.' };
 
-      let profile = await SupabaseService.getProfile(data.user.id);
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) {
+        if (authError.message.toLowerCase().includes('email not confirmed')) {
+          return { profile: null, error: 'Please verify your email address using the link sent to your inbox before signing in.' };
+        }
+        return { profile: null, error: 'Invalid email address or password.' };
+      }
+      if (!authData?.user) return { profile: null, error: 'Authentication failed. No user returned by Supabase.' };
+
+      let profile = await SupabaseService.getProfile(authData.user.id);
       if (!profile) return { profile: null, error: 'Your account profile could not be loaded. Please contact FNI support.' };
-      if (!profile.is_active) {
+      if (profile.role !== 'tutor' || !profile.is_active) {
         await supabase.auth.signOut();
         this.setCurrentProfile(null);
-        return { profile: null, error: 'This account has been deactivated. Please contact church leadership.' };
+        return { profile: null, error: 'This tutor account is inactive or not authorized.' };
       }
+
       this.setCurrentProfile(profile);
       SyncStateService.retryPendingSync().catch(() => {});
       return { profile, error: null };
