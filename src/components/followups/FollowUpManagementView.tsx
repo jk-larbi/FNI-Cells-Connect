@@ -84,14 +84,29 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
       const cellFilter = isAdmin
         ? undefined
         : { cellId: currentUser.cell_id || undefined, tutorUid: currentUser.id };
-      const [contactsList, sum, cellList] = await Promise.all([
+      const [contactsList, cellList] = await Promise.all([
         FollowUpService.getContacts(cellFilter),
-        FollowUpService.getSummary(typeof cellFilter === 'string' ? cellFilter : cellFilter?.cellId),
-        CellService.getCells(),
+        CellService.getActiveCells(),
       ]);
-      setContacts(contactsList);
-      setSummary(sum);
-      setCells(cellList);
+      const activeCells = cellList;
+      const activeIds = new Set(activeCells.map(cell => cell.id));
+      const visibleContacts = contactsList.filter(contact => activeIds.has(contact.cellId));
+      const completed = visibleContacts.filter(contact =>
+        contact.followUpStatus === 'Completed' || contact.followUpStatus === 'Joined a cell' ||
+        contact.followUpStatus === 'Joined Ministry'
+      ).length;
+      const requiringFollowUp = visibleContacts.filter(contact =>
+        contact.followUpStatus === 'Follow-up required' || contact.followUpStatus === 'Not contacted' ||
+        contact.followUpStatus === 'Interested' || contact.followUpStatus === 'Contacted'
+      ).length;
+      setContacts(visibleContacts);
+      setSummary({
+        totalContacts: visibleContacts.length,
+        requiringFollowUp,
+        completed,
+        outstanding: Math.max(0, visibleContacts.length - completed),
+      });
+      setCells(activeCells);
     } finally {
       setIsLoading(false);
     }
