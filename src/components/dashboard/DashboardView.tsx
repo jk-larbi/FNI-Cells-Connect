@@ -36,6 +36,7 @@ import {
   ShieldCheck,
   Check,
   X,
+  Wheat,
 } from 'lucide-react';
 
 interface DashboardViewProps {
