@@ -122,6 +122,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const communityEndRef = useRef<HTMLDivElement>(null);
   const privateEndRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
+  const privateSendLock = useRef(false);
+  const communitySendLock = useRef(false);
 
   const beginMessageSwipe = (event: React.TouchEvent) => {
     touchStartX.current = event.touches[0]?.clientX ?? null;
@@ -335,7 +337,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Private Message
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!privateText.trim() || isSendingPrivate) return;
+    if (!privateText.trim() || privateSendLock.current) return;
+    privateSendLock.current = true;
 
     const targetTutorId = isAdmin ? selectedTutorId : currentUser.id;
     const targetTutorName = isAdmin
@@ -357,6 +360,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         replyTo: privateReplyTo || undefined,
       });
       setPrivateText('');
+      if (privateInputRef.current) privateInputRef.current.style.height = '40px';
       setPrivateReplyTo(null);
       setShowPrivateEmoji(false);
       await loadPrivateMessages();
@@ -365,6 +369,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       console.error('Private message send failed:', error);
       setPrivateSendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
     } finally {
+      privateSendLock.current = false;
       setIsSendingPrivate(false);
     }
   };
@@ -372,7 +377,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Community Message
   const handleSendCommunity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!communityText.trim() || isSendingCommunity) return;
+    if (!communityText.trim() || communitySendLock.current) return;
+    communitySendLock.current = true;
 
     // Detect mentioned names
     const mentionsFound = memberDirectory
@@ -393,6 +399,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         mentions: mentionsFound,
       });
       setCommunityText('');
+      if (communityInputRef.current) communityInputRef.current.style.height = '40px';
       setCommunityReplyTo(null);
       setShowCommunityEmoji(false);
       setShowMentionMenu(false);
@@ -402,6 +409,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       console.error('Community message send failed:', error);
       setCommunitySendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
     } finally {
+      communitySendLock.current = false;
       setIsSendingCommunity(false);
     }
   };
@@ -851,7 +859,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
                   <Smile className="w-5 h-5" />
                 </button>
-                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
                 <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white hover:text-[#142B4A] transition-colors cursor-pointer" title="Tag a member" aria-label="Tag a member">
                   <AtSign className="w-4 h-4" />
                 </button>
@@ -1103,7 +1111,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </button>
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
-              <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message leadership" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+              <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message leadership" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
             </div>
 
             <Button
