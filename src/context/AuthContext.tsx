@@ -95,6 +95,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!isMounted) return;
 
         if (session?.user) {
+          const pendingOAuth = sessionStorage.getItem('fni_pending_oauth_tutor');
+          if (pendingOAuth) {
+            try {
+              const profile = await AuthService.completeOAuthTutorRegistration(JSON.parse(pendingOAuth));
+              sessionStorage.removeItem('fni_pending_oauth_tutor');
+              setCurrentUser(profile);
+              setIsLoggedOut(false);
+              return;
+            } catch (error) {
+              console.error('FNI social registration could not be completed:', error);
+              sessionStorage.removeItem('fni_pending_oauth_tutor');
+              await supabase.auth.signOut();
+              setCurrentUser(GUEST_PROFILE);
+              setIsLoggedOut(true);
+              return;
+            }
+          }
           const profile = await AuthService.fetchProfileById(session.user.id);
           if (profile && profile.is_active) {
             setCurrentUser(profile);
