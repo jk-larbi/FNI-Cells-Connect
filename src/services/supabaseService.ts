@@ -114,7 +114,7 @@ function mapEvangelismReportFromDb(row: any): EvangelismReport {
     tutorUid: row.tutor_uid,
     cellName: row.cell_name,
     tutorName: row.tutor_name,
-    date: row.date,
+    date: row.report_date,
     location: row.location,
     teamMembers: Array.isArray(row.team_members) ? row.team_members : [],
     preSetTarget: row.pre_set_target !== undefined ? Number(row.pre_set_target) : undefined,
@@ -484,7 +484,7 @@ export class SupabaseService {
   static async getEvangelismReports(filters?: { cellId?: string; tutorUid?: string }): Promise<EvangelismReport[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      let query = supabase!.from('evangelism_reports').select('*').order('date', { ascending: false });
+      let query = supabase!.from('evangelism_reports').select('*').order('report_date', { ascending: false });
       if (filters?.cellId) query = query.eq('cell_id', filters.cellId);
       if (filters?.tutorUid) query = query.eq('tutor_uid', filters.tutorUid);
       const { data, error } = await query;
@@ -507,7 +507,7 @@ export class SupabaseService {
       tutor_uid: report.tutorUid,
       cell_name: report.cellName,
       tutor_name: report.tutorName,
-      date: report.date,
+      report_date: report.date,
       location: report.location,
       team_members: report.teamMembers || [],
       pre_set_target: report.preSetTarget || 0,
@@ -1045,34 +1045,20 @@ export class SupabaseService {
   }
 
   // --- Soul Target Config (Dual-Table Reconciliation: 'soul_target_configs' <-> 'soul_targets') ---
+  // --- Soul Target Config (canonical table: soul_target_configs) ---
   static async getSoulTargetConfig(year: number = 2026): Promise<SoulTargetConfig | null> {
     if (!this.isAvailable()) return null;
     try {
-      // 1. Primary Live Table: 'soul_target_configs'
-      const { data: cfgData, error: cfgError } = await supabase!
+      const { data, error } = await supabase!
         .from('soul_target_configs')
         .select('*')
         .eq('year', year)
         .maybeSingle();
 
-      if (!cfgError && cfgData) {
-        return {
-          id: cfgData.id,
-          year: cfgData.year,
-          annualTarget: cfgData.annual_target,
-          auditHistory: Array.isArray(cfgData.audit_history) ? cfgData.audit_history : [],
-          updatedAt: cfgData.updated_at,
-          updatedBy: cfgData.updated_by || 'Administrator',
-        };
+      if (error || !data) {
+        if (error) console.warn('Supabase getSoulTargetConfig error:', error.message);
+        return null;
       }
-
-      // 2. Compatibility Fallback: 'soul_targets'
-      const { data, error } = await supabase!
-        .from('soul_targets')
-        .select('*')
-        .eq('year', year)
-        .maybeSingle();
-      if (error || !data) return null;
       return {
         id: data.id,
         year: data.year,
@@ -1082,6 +1068,7 @@ export class SupabaseService {
         updatedBy: data.updated_by || 'Administrator',
       };
     } catch (err) {
+      console.warn('Supabase getSoulTargetConfig exception:', err);
       return null;
     }
   }
@@ -1093,36 +1080,23 @@ export class SupabaseService {
       year: config.year,
       annual_target: config.annualTarget,
       audit_history: config.auditHistory || [],
-      description: `National Soul-Winning Milestone Target for ${config.year}`,
       updated_by: config.updatedBy || '',
     };
 
     try {
-      // Upsert to soul_target_configs
-      const { error: cfgErr } = await supabase!.from('soul_target_configs').upsert(payload, { onConflict: 'year' });
-      if (!cfgErr) {
-        SyncStateService.recordSuccessfulSync('soul_target_configs', String(config.year));
-        // Also keep soul_targets synchronized if present
-        try {
-          await supabase!.from('soul_targets').upsert(payload, { onConflict: 'year' });
-        } catch {}
-        return true;
+      const { error } = await supabase!.from('soul_target_configs').upsert(payload, { onConflict: 'year' });
+      if (error) {
+        console.warn('Supabase upsertSoulTargetConfig error:', error.message);
+        SyncStateService.recordFailedSync({
+          table: 'soul_target_configs',
+          id: String(config.year),
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
       }
-
-      // Fallback to soul_targets
-      const { error } = await supabase!.from('soul_targets').upsert(payload, { onConflict: 'year' });
-      if (!error) {
-        SyncStateService.recordSuccessfulSync('soul_targets', String(config.year));
-        return true;
-      }
-
-      SyncStateService.recordFailedSync({
-        table: 'soul_target_configs',
-        id: String(config.year),
-        payload,
-        errorMessage: error.message,
-      });
-      return false;
+      SyncStateService.recordSuccessfulSync('soul_target_configs', String(config.year));
+      return true;
     } catch (err: any) {
       SyncStateService.recordFailedSync({
         table: 'soul_target_configs',
