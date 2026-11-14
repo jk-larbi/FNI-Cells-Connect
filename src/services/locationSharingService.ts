@@ -219,14 +219,21 @@ export const LocationSharingService = {
   },
 
   async getAdminSessions(): Promise<LocationSession[]> {
-    const { data, error } = await supabase
-      .from('location_share_sessions')
-      .select('*')
-      .is('trashed_at', null)
-      .order('started_at', { ascending: false })
-      .limit(100);
-    if (error) throw error;
-    return (data || []) as LocationSession[];
+    const pageSize = 500;
+    const allSessions: LocationSession[] = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabase
+        .from('location_share_sessions')
+        .select('*')
+        .is('trashed_at', null)
+        .order('started_at', { ascending: false })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      const page = (data || []) as LocationSession[];
+      allSessions.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return allSessions;
   },
 
   async getTrashSessions(): Promise<LocationSession[]> {
