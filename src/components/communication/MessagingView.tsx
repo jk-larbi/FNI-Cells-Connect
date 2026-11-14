@@ -635,7 +635,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             }`}
           >
             <Lock className="w-4 h-4 text-[#C6A45A]" />
-            <span>Leadership</span>
+            <span>Private Chat</span>
           </button>
         </div>
       </div>
