@@ -1,6 +1,6 @@
 import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { PrivateMessage, CommunityMessage, InvitationCode, UserRole, MessageReply } from '../types';
+import { PrivateMessage, CommunityMessage, InvitationCode, UserRole, MessageReply, ChatAttachment } from '../types';
 
 const STORAGE_KEYS = {
   PRIVATE: 'fni_private_messages_v1',
@@ -27,6 +27,18 @@ function setStored<T>(key: string, val: T): void {
 }
 
 export class MessagingService {
+  static async uploadChatAttachment(userUid: string, file: File): Promise<ChatAttachment> {
+    return SupabaseService.uploadChatAttachment(userUid, file);
+  }
+
+  static async getChatAttachmentUrl(path: string): Promise<string | null> {
+    return SupabaseService.getChatAttachmentUrl(path);
+  }
+
+  static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
+    return SupabaseService.deleteMessageForEveryone(messageId, scope);
+  }
+
   // =========================================================================
   // 1. PRIVATE TUTOR-ADMIN MESSAGING
   // =========================================================================
@@ -41,6 +53,7 @@ export class MessagingService {
     cellName?: string;
     content: string;
     replyTo?: MessageReply;
+    attachments?: ChatAttachment[];
   }): Promise<PrivateMessage> {
     const id = `pmsg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const nowIso = new Date().toISOString();
@@ -58,6 +71,7 @@ export class MessagingService {
       createdAt: nowIso,
       isRead: false,
       replyTo: data.replyTo,
+      attachments: data.attachments || [],
     };
 
     // A message is only considered sent after the authoritative Supabase write succeeds.
@@ -224,6 +238,7 @@ export class MessagingService {
     category?: 'general' | 'announcement' | 'prayer_request' | 'testimony';
     replyTo?: MessageReply;
     mentions?: string[];
+    attachments?: ChatAttachment[];
   }): Promise<CommunityMessage> {
     const id = `cmsg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const nowIso = new Date().toISOString();
@@ -240,6 +255,7 @@ export class MessagingService {
       replyTo: data.replyTo,
       mentions: data.mentions,
       reactions: {},
+      attachments: data.attachments || [],
     };
 
     // A community post is only considered sent after the authoritative Supabase write succeeds.
