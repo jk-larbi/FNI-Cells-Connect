@@ -1166,3 +1166,139 @@ svg.lucide {
   stroke-linejoin: round;
   stroke-width: 2;
 }
+
+
+/* ==========================================================
+   FNI RESPONSIVE + THEME TOKENS (final cascade)
+   Keeps the established royal-blue / purple / gold identity
+   while avoiding the conflicting legacy dark-mode overrides.
+   ========================================================== */
+:root {
+  color-scheme: light;
+  --fni-brand-blue: #173B8F;
+  --fni-brand-purple: #39216B;
+  --fni-brand-gold: #D9A72E;
+  --fni-page: #F4F6FB;
+  --fni-surface: #FFFFFF;
+  --fni-surface-raised: #F8FAFD;
+  --fni-surface-subtle: #EDF1F7;
+  --fni-text: #182230;
+  --fni-text-secondary: #475467;
+  --fni-text-muted: #667085;
+  --fni-border: #E0E6F0;
+  --fni-divider: #E9EDF4;
+  --fni-focus: #315DB5;
+}
+html.dark {
+  color-scheme: dark;
+  --fni-page: #101522;
+  --fni-surface: #171F30;
+  --fni-surface-raised: #1D293D;
+  --fni-surface-subtle: #26344B;
+  --fni-text: #F4F6FB;
+  --fni-text-secondary: #CBD5E1;
+  --fni-text-muted: #A6B3C5;
+  --fni-border: #35445C;
+  --fni-divider: #2A384E;
+  --fni-focus: #9AB9FF;
+}
+html, body, #root { min-height: 100%; background: var(--fni-page); color: var(--fni-text); }
+body { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
+html.dark body, html.dark #root { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
+
+/* Surface hierarchy: keep cards distinguishable from the page. */
+html.dark [class~="bg-white"], html.dark [class*="bg-white/"],
+html.dark [class~="bg-canvas"], html.dark [class~="bg-slate-50"],
+html.dark [class~="bg-gray-50"], html.dark [class*="bg-[#F5F7FA]"],
+html.dark [class*="bg-[#F8FAFC]"], html.dark [class*="bg-[#F7FAFE]"] {
+  background-color: var(--fni-surface) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark [class~="bg-slate-100"], html.dark [class~="bg-slate-200"],
+html.dark [class~="bg-gray-100"], html.dark [class~="bg-gray-200"],
+html.dark [class*="bg-[#E3E8EF]"] {
+  background-color: var(--fni-surface-subtle) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark header, html.dark aside, html.dark footer,
+html.dark .mobile-bottom-nav {
+  background-color: var(--fni-surface) !important;
+  border-color: var(--fni-border) !important;
+}
+
+/* Typography and icons. */
+html.dark h1, html.dark h2, html.dark h3, html.dark h4,
+html.dark h5, html.dark h6,
+html.dark [class*="text-[#182230]"], html.dark [class*="text-slate-900"],
+html.dark [class*="text-slate-800"], html.dark [class*="text-gray-900"],
+html.dark [class*="text-gray-800"] { color: var(--fni-text) !important; }
+html.dark [class*="text-[#667085]"], html.dark [class*="text-[#475467]"],
+html.dark [class*="text-slate-700"], html.dark [class*="text-slate-600"],
+html.dark [class*="text-slate-500"], html.dark [class*="text-gray-700"],
+html.dark [class*="text-gray-600"], html.dark [class*="text-gray-500"] {
+  color: var(--fni-text-secondary) !important;
+}
+html.dark [class*="border-[#E3E8EF]"], html.dark [class*="border-slate-100"],
+html.dark [class*="border-slate-200"], html.dark [class*="border-gray-100"],
+html.dark [class*="border-gray-200"], html.dark hr,
+html.dark table th, html.dark table td { border-color: var(--fni-divider) !important; }
+
+/* FNI blue/purple/gold brand colours remain intentional accents. */
+html.dark [class*="bg-[#142B4A]"], html.dark [class*="bg-navy-900"],
+html.dark [class*="bg-navy-950"] { background-color: #244A91 !important; }
+html.dark [class*="text-[#142B4A]"], html.dark [class*="text-navy-900"],
+html.dark [class*="text-navy-950"] { color: #B9CEFF !important; }
+html.dark [class*="bg-purple-"], html.dark [class*="bg-violet-"] { background-color: #30264B !important; }
+html.dark [class*="text-purple-"], html.dark [class*="text-violet-"] { color: #D9C1FF !important; }
+html.dark [class*="text-[#C6A45A]"], html.dark [class*="text-gold-"] { color: #F2CA68 !important; }
+html.dark [class*="border-[#C6A45A]"], html.dark [class*="border-gold-"] { border-color: #9A7938 !important; }
+html.dark [class*="bg-[#C6A45A]"], html.dark [class~="bg-gold-500"] { background-color: #D9A72E !important; color: #1B2433 !important; }
+
+/* Inputs, controls and dropdowns use the same readable surfaces. */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea, html.dark select {
+  background-color: #121A29 !important;
+  color: var(--fni-text) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark input::placeholder, html.dark textarea::placeholder { color: var(--fni-text-muted) !important; opacity: 1; }
+html.dark input:disabled, html.dark textarea:disabled, html.dark select:disabled {
+  background-color: #202B3E !important; color: #A6B3C5 !important; opacity: 1;
+}
+html.dark [class*="bg-emerald-50"], html.dark [class*="bg-green-50"] { background-color: #15392D !important; border-color: #28634A !important; }
+html.dark [class*="text-emerald-"], html.dark [class*="text-green-"] { color: #8CE0B5 !important; }
+html.dark [class*="bg-amber-50"], html.dark [class*="bg-yellow-50"] { background-color: #3A301C !important; border-color: #6D5729 !important; }
+html.dark [class*="text-amber-"], html.dark [class*="text-yellow-"] { color: #F3CE79 !important; }
+html.dark [class*="bg-rose-50"], html.dark [class*="bg-red-50"] { background-color: #3A242D !important; border-color: #75404C !important; }
+html.dark [class*="text-rose-"], html.dark [class*="text-red-"] { color: #FFA2AE !important; }
+html.dark [class*="bg-blue-50"], html.dark [class*="bg-indigo-50"] { background-color: #1D3152 !important; border-color: #385B8D !important; }
+html.dark [class*="text-blue-"], html.dark [class*="text-indigo-"] { color: #A9C8FF !important; }
+html.dark * { scrollbar-color: #53627A transparent; }
+html.dark ::selection { background: #315DB588; color: #FFFFFF; }
+
+/* Scale the shell and controls for compact phones through large displays. */
+html { font-size: clamp(14px, calc(13.5px + .16vw), 16px); }
+button, input, select, textarea { max-width: 100%; }
+button { min-height: 2.25rem; }
+main { min-width: 0; }
+main > * { min-width: 0; }
+img, video, canvas { max-width: 100%; }
+.table-scroll-container { max-width: 100%; }
+@media (max-width: 767px) {
+  html { font-size: 15px; }
+  main { padding-left: clamp(.625rem, 3vw, 1rem); padding-right: clamp(.625rem, 3vw, 1rem); }
+  main .grid { min-width: 0; }
+  main [class*="min-w-[240px]"] { min-width: 0 !important; width: 100%; }
+  main table { font-size: .78rem; }
+  main button, main a[role="button"] { min-height: 2.5rem; }
+  header { min-height: 3.5rem; }
+}
+@media (max-width: 390px) {
+  html { font-size: 14px; }
+  main { padding-left: .625rem; padding-right: .625rem; }
+  .mobile-bottom-nav button { min-width: 0; }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  html { font-size: 15px; }
+  main { padding-left: 1.25rem; padding-right: 1.25rem; }
+}
