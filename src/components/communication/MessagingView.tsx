@@ -119,6 +119,27 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const privateInputRef = useRef<HTMLInputElement>(null);
   const communityEndRef = useRef<HTMLDivElement>(null);
   const privateEndRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
+
+  const beginMessageSwipe = (event: React.TouchEvent) => {
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const finishMessageSwipe = (event: React.TouchEvent, message: MessageReply, target: 'community' | 'private') => {
+    if (touchStartX.current === null) return;
+    const deltaX = event.changedTouches[0]?.clientX - touchStartX.current;
+    touchStartX.current = null;
+    // Telegram-style swipe right to reply; ignore vertical scrolling and short gestures.
+    if (deltaX >= 64) {
+      if (target === 'community') {
+        setCommunityReplyTo(message);
+        communityInputRef.current?.focus();
+      } else {
+        setPrivateReplyTo(message);
+        privateInputRef.current?.focus();
+      }
+    }
+  };
 
   // Sync when initialConversationId changes externally (e.g. notification click)
   useEffect(() => {
@@ -532,7 +553,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-2xs space-y-2.5 transition-all"
+                    className="fni-swipe-message p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-2xs space-y-2.5 transition-all"
+                    onTouchStart={beginMessageSwipe}
+                    onTouchEnd={event => finishMessageSwipe(event, { id: msg.id, senderName: msg.senderName, content: msg.content }, 'community')}
                   >
                     {/* Header Row: Sender, Tag Badge & Time */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -914,7 +937,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     )}
 
                     <div
-                      className={`max-w-md p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed group relative ${
+                      onTouchStart={beginMessageSwipe}
+                      onTouchEnd={event => finishMessageSwipe(event, { id: msg.id, senderName: msg.senderName, content: msg.content }, 'private')}
+                      className={`fni-swipe-message max-w-md p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed group relative ${
                         isMine
                           ? 'bg-[#142B4A] text-white rounded-tr-none shadow-2xs'
                           : 'bg-white text-[#182230] border border-[#E3E8EF] rounded-tl-none shadow-2xs'
