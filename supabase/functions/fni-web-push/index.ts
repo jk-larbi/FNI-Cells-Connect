@@ -220,6 +220,15 @@ Deno.serve(async req => {
 
     let deliveryMetadata = notification.metadata || {};
     if (deliveryMetadata.category === "location") {
+      const sessionId = String(deliveryMetadata.sessionId || "");
+      const { data: ownedSession, error: sessionError } = await db.from("location_share_sessions")
+        .select("id,tutor_user_id,ended_at")
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (sessionError) return json({ error: "Could not verify the location-sharing session" }, 500);
+      if (!ownedSession || ownedSession.tutor_user_id !== auth.user.id || ownedSession.ended_at) {
+        return json({ error: "Only the tutor who owns an active sharing session can send its location alert" }, 403);
+      }
       const snapshot = await getActiveTutorMapsSnapshot();
       if (snapshot.url) {
         deliveryMetadata = {
