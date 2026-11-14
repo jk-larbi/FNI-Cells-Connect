@@ -625,23 +625,55 @@ export class AuthService {
   // --- 8. ADMINISTRATOR PROFILE DETAILS ---
   static async updateAdministratorProfile(userId: string, fullName: string, username: string): Promise<Profile> {
     if (!isSupabaseConfigured || !supabase) throw new Error('Supabase service is unavailable.');
-    const cleanName = fullName.trim().replace(/\s+/g, ' ');
+    const cleanName = fullName.trim().replace(/\\s+/g, ' ');
     const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
     if (cleanName.length < 2 || cleanName.length > 80) throw new Error('Full name must be between 2 and 80 characters.');
     if (!/^[a-z0-9_]{3,20}$/.test(cleanUsername)) throw new Error('Username must be 3–20 characters and use only letters, numbers, or underscores.');
+
     const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user || authData.user.id !== userId) throw new Error('Your administrator session could not be verified. Please sign in again.');
-    const current = this.getCurrentProfile();
-    if (!current || current.id !== userId || !['admin', 'super_admin', 'national_admin'].includes(current.role)) throw new Error('Only the signed-in administrator can update these profile details.');
-    const { data, error } = await supabase.from('profiles').update({ full_name: cleanName, username: cleanUsername, updated_at: new Date().toISOString() }).eq('id', userId).select('*').maybeSingle();
-    if (error) {
-      if (error.code === '23505') throw new Error('That username is already in use. Please choose another one.');
-      throw new Error(error.message || 'Could not save administrator profile.');
+    const authUser = authData?.user;
+    if (authError || !authUser || authUser.id !== userId) throw new Error('Your administrator session could not be verified. Sign out and sign in again.');
+
+    const current = this.getCurrentProfile() || await SupabaseService.getProfile(authUser.id);
+    if (!current || current.id !== authUser.id || !['admin', 'super_admin', 'national_admin'].includes(current.role)) {
+      throw new Error('The signed-in account is not recognised as an administrator. Refresh your session and try again.');
     }
-    if (!data) throw new Error('Your administrator profile record was not found. Please contact FNI support.');
-    const updated: Profile = { ...current, full_name: data.full_name || cleanName, username: data.username || cleanUsername };
+
+    // Match the Auth UUID against both supported profile identity columns. Check the returned row:
+    // Postgres RLS can return zero updated rows without throwing an error.
+    let update = await supabase.from('profiles')
+      .update({ full_name: cleanName, username: cleanUsername, updated_at: new Date().toISOString() })
+      .eq('id', authUser.id)
+      .select('id, supabase_user_id, full_name, username')
+      .maybeSingle();
+    if (!update.data && !update.error) {
+      update = await supabase.from('profiles')
+        .update({ full_name: cleanName, username: cleanUsername, updated_at: new Date().toISOString() })
+        .eq('supabase_user_id', authUser.id)
+        .select('id, supabase_user_id, full_name, username')
+        .maybeSingle();
+    }
+    if (update.error) {
+      if (update.error.code === '23505') throw new Error('That username is already in use. Please choose another one.');
+      throw new Error(`Profile could not be saved: ${update.error.message}`);
+    }
+    if (!update.data) throw new Error('No administrator profile row was updated. Check your connection and permissions, then try again.');
+
+    // Keep Auth metadata aligned too, but the profiles table remains the source of truth for FNI display.
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: { ...authUser.user_metadata, full_name: cleanName, username: cleanUsername },
+    });
+    if (metadataError) console.warn('Administrator profile saved, but Auth metadata could not be refreshed:', metadataError.message);
+
+    const refreshed = await SupabaseService.getProfile(authUser.id);
+    const updated: Profile = {
+      ...(refreshed || current),
+      id: update.data.id,
+      supabase_user_id: update.data.supabase_user_id || authUser.id,
+      full_name: update.data.full_name || cleanName,
+      username: update.data.username || cleanUsername,
+    };
     this.setCurrentProfile(updated);
-    await supabase.auth.updateUser({ data: { ...authData.user.user_metadata, full_name: cleanName } }).catch(() => ({ error: null }));
     return updated;
   }
 
