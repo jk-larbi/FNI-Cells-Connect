@@ -80,7 +80,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const supported = PushNotificationService.isPushSupported();
       if (!cancelled) {
         setIsPushSupported(supported);
-        setPushPermission(PushNotificationService.getPermissionState());
+        setPushPermission(await PushNotificationService.getPermissionStateAsync());
         setIsPushEnabled(false);
       }
       if (!supported) return;
@@ -102,7 +102,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } catch (error) {
         console.warn('FNI background notification setup notice:', error);
       }
-      if (!cancelled) setPushPermission(PushNotificationService.getPermissionState());
+      if (!cancelled) setPushPermission(await PushNotificationService.getPermissionStateAsync());
     };
     void initializePush();
     return () => { cancelled = true; };
@@ -283,7 +283,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       currentUser.id,
       isAdmin ? 'admin' : 'tutor'
     );
-    setPushPermission(PushNotificationService.getPermissionState());
+    setPushPermission(await PushNotificationService.getPermissionStateAsync());
     if (res.success) {
       setIsPushEnabled(true);
     }
