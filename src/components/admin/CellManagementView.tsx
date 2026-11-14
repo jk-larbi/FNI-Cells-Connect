@@ -99,38 +99,48 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     e.preventDefault();
     if (!editingCell.name || !editingCell.location) return;
 
-    if (editingCell.id) {
-      // Update
-      const full = cells.find(c => c.id === editingCell.id);
-      if (full) {
-        const merged: Cell = {
-          ...full,
-          ...editingCell,
+    try {
+      if (editingCell.id) {
+        const full = cells.find(c => c.id === editingCell.id);
+        if (full) {
+          const merged: Cell = {
+            ...full,
+            ...editingCell,
+            name: editingCell.name!,
+            location: editingCell.location!,
+          };
+          await CellService.updateCell(merged);
+          setCells(prev => prev.map(c => (c.id === merged.id ? merged : c)));
+          if (selectedCell?.id === merged.id) setSelectedCell(merged);
+        }
+      } else {
+        const { cell } = await CellService.registerCell({
           name: editingCell.name!,
           location: editingCell.location!,
-        };
-        await CellService.updateCell(merged);
-        setCells(prev => prev.map(c => (c.id === merged.id ? merged : c)));
-        if (selectedCell?.id === merged.id) setSelectedCell(merged);
+          tutorUid: editingCell.tutorUid || 'admin-created',
+          leaderName: editingCell.leader_name || 'Assigned Leader',
+          leaderPhone: editingCell.leader_phone || '',
+          meetingDay: editingCell.meeting_day || 'Wednesday',
+          meetingTime: editingCell.meeting_time || '18:30',
+          venueAddress: editingCell.venue_address || editingCell.location,
+          targetAttendance: editingCell.target_attendance || 20,
+        });
+        const normalized = cell.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        setCells(prev => [
+          cell,
+          ...prev.filter(existing =>
+            existing.id !== cell.id &&
+            existing.name.toLowerCase().replace(/[^a-z0-9]/g, '') !== normalized
+          ),
+        ]);
       }
-    } else {
-      // Create new cell
-      const { cell } = await CellService.registerCell({
-        name: editingCell.name!,
-        location: editingCell.location!,
-        tutorUid: editingCell.tutorUid || 'admin-created',
-        leaderName: editingCell.leader_name || 'Assigned Leader',
-        leaderPhone: editingCell.leader_phone || '',
-        meetingDay: editingCell.meeting_day || 'Wednesday',
-        meetingTime: editingCell.meeting_time || '18:30',
-        venueAddress: editingCell.venue_address || editingCell.location,
-        targetAttendance: editingCell.target_attendance || 20,
-      });
-      setCells(prev => [cell, ...prev]);
-    }
 
-    setIsEditModalOpen(false);
-    setEditingCell({});
+      setIsEditModalOpen(false);
+      setEditingCell({});
+    } catch (error: any) {
+      console.error('Cell registration/update failed:', error);
+      window.alert(error?.message || 'The cell could not be saved. Please check the details and try again.');
+    }
   };
 
   const handleArchiveCells = async (ids: string[], label: string) => {
