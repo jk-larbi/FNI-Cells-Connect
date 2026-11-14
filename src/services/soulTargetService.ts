@@ -100,136 +100,68 @@ export class SoulTargetService {
    */
   static async calculateMetrics(): Promise<SoulTargetMetrics> {
     const [config, settings, evangelismReports, meetingReports, cells] = await Promise.all([
-      this.getConfig(),
-      SettingsService.getSettings(),
-      ReportService.getEvangelismReports(),
-      ReportService.getCellMeetingReports(),
-      CellService.getCells(),
+      this.getConfig(), SettingsService.getSettings(), ReportService.getEvangelismReports(),
+      ReportService.getCellMeetingReports(), CellService.getCells(),
     ]);
-
+    const year = config.year || new Date().getFullYear();
     const annualTarget = settings.annualSoulWinningTarget || config.annualTarget || 5000;
-
-    // Filter valid reports (approved, newly submitted, or under review)
-    const validEvang = evangelismReports.filter(
-      r => r.status === 'Approved' || r.status === 'approved' || r.status === 'Newly Submitted' || r.status === 'submitted' || r.status === 'under_review'
-    );
-    const validMeetings = meetingReports.filter(
-      r => r.status === 'Approved' || r.status === 'approved' || r.status === 'Newly Submitted' || r.status === 'submitted' || r.status === 'under_review'
-    );
+    const isInTargetYear = (value?: string) => {
+      if (!value) return false;
+      const date = new Date(value);
+      return !Number.isNaN(date.getTime()) && date.getFullYear() === year;
+    };
+    const isApproved = (status: string) => status === 'Approved' || status === 'approved';
+    const isPending = (status: string) => ['Newly Submitted', 'submitted', 'under_review'].includes(status);
+    // Only approved field conversions count toward the annual soul-winning target.
+    const validEvang = evangelismReports.filter(r => isApproved(r.status) && isInTargetYear(r.date || r.submittedAt));
+    const pendingEvang = evangelismReports.filter(r => isPending(r.status) && isInTargetYear(r.date || r.submittedAt));
+    // Cell meeting newMembers means first-time visitors contacted, not conversions.
+    const validMeetings = meetingReports.filter(r => isApproved(r.status) && isInTargetYear(r.meetingDate || r.submittedAt));
+    const firstTimersFromCells = validMeetings.reduce((sum, r) => sum + (Number(r.newMembers) || 0), 0);
+    const pendingSouls = pendingEvang.reduce((sum, r) => sum + (Number(r.verifiedSoulsWon ?? r.conversions) || 0), 0);
 
     let soulsFromEvangelism = 0;
-    let soulsFromCells = 0;
-
     const weeklyMap = new Map<string, number>();
     const monthlyMap = new Map<string, number>();
     const quarterlyMap = new Map<string, number>();
-    const cellMap = new Map<string, { cellName: string; souls: number; fromEvangelism: number; fromCells: number }>();
+    const cellMap = new Map<string, { cellName: string; souls: number; fromEvangelism: number }>();
     const teamMap = new Map<string, { souls: number; outings: number }>();
+    cells.forEach(cell => cellMap.set(cell.id, { cellName: cell.name, souls: 0, fromEvangelism: 0 }));
 
-    // Seed existing cells into cellMap so all cells appear in contributions
-    cells.forEach(c => {
-      cellMap.set(c.id, {
-        cellName: c.name,
-        souls: 0,
-        fromEvangelism: 0,
-        fromCells: 0,
-      });
-    });
-
-    // 1. Process Evangelism Outreach Reports
-    for (const rep of validEvang) {
-      const souls = Number(rep.verifiedSoulsWon ?? rep.conversions) || 0;
+    for (const report of validEvang) {
+      const souls = Math.max(0, Number(report.verifiedSoulsWon ?? report.conversions) || 0);
       soulsFromEvangelism += souls;
-
-      const dateObj = new Date(rep.date || rep.submittedAt || Date.now());
-      const monthName = dateObj.toLocaleString('default', { month: 'short' });
-      const weekLabel = `Week ${Math.ceil(dateObj.getDate() / 7)} (${monthName})`;
-      const quarterLabel = `Q${Math.floor(dateObj.getMonth() / 3) + 1} ${dateObj.getFullYear()}`;
-
-      weeklyMap.set(weekLabel, (weeklyMap.get(weekLabel) || 0) + souls);
-      monthlyMap.set(monthName, (monthlyMap.get(monthName) || 0) + souls);
-      quarterlyMap.set(quarterLabel, (quarterlyMap.get(quarterLabel) || 0) + souls);
-
-      const cellId = rep.cellId;
-      const c = cellMap.get(cellId) || { cellName: rep.cellName, souls: 0, fromEvangelism: 0, fromCells: 0 };
-      cellMap.set(cellId, {
-        cellName: rep.cellName,
-        souls: c.souls + souls,
-        fromEvangelism: c.fromEvangelism + souls,
-        fromCells: c.fromCells,
-      });
-
-      const leader = rep.tutorName || 'Field Team';
-      const t = teamMap.get(leader) || { souls: 0, outings: 0 };
-      teamMap.set(leader, { souls: t.souls + souls, outings: t.outings + 1 });
+      const date = new Date(report.date || report.submittedAt);
+      const month = date.toLocaleString('en', { month: 'short' });
+      const week = `Week ${Math.ceil(date.getDate() / 7)} (${month})`;
+      const quarter = `Q${Math.floor(date.getMonth() / 3) + 1} ${date.getFullYear()}`;
+      weeklyMap.set(week, (weeklyMap.get(week) || 0) + souls);
+      monthlyMap.set(month, (monthlyMap.get(month) || 0) + souls);
+      quarterlyMap.set(quarter, (quarterlyMap.get(quarter) || 0) + souls);
+      const cell = cellMap.get(report.cellId) || { cellName: report.cellName || 'Unassigned Cell', souls: 0, fromEvangelism: 0 };
+      cellMap.set(report.cellId, { cellName: report.cellName || cell.cellName, souls: cell.souls + souls, fromEvangelism: cell.fromEvangelism + souls });
+      const leader = report.tutorName || 'Field Team';
+      const team = teamMap.get(leader) || { souls: 0, outings: 0 };
+      teamMap.set(leader, { souls: team.souls + souls, outings: team.outings + 1 });
     }
 
-    // 2. Process Cell Meeting Reports (New members & converts added to cell)
-    for (const rep of validMeetings) {
-      const cellSouls = Number(rep.newMembers) || 0;
-      soulsFromCells += cellSouls;
-
-      const dateObj = new Date(rep.meetingDate || rep.submittedAt || Date.now());
-      const monthName = dateObj.toLocaleString('default', { month: 'short' });
-      const weekLabel = `Week ${Math.ceil(dateObj.getDate() / 7)} (${monthName})`;
-      const quarterLabel = `Q${Math.floor(dateObj.getMonth() / 3) + 1} ${dateObj.getFullYear()}`;
-
-      weeklyMap.set(weekLabel, (weeklyMap.get(weekLabel) || 0) + cellSouls);
-      monthlyMap.set(monthName, (monthlyMap.get(monthName) || 0) + cellSouls);
-      quarterlyMap.set(quarterLabel, (quarterlyMap.get(quarterLabel) || 0) + cellSouls);
-
-      const cellId = rep.cellId;
-      const c = cellMap.get(cellId) || { cellName: rep.cellName, souls: 0, fromEvangelism: 0, fromCells: 0 };
-      cellMap.set(cellId, {
-        cellName: rep.cellName,
-        souls: c.souls + cellSouls,
-        fromEvangelism: c.fromEvangelism,
-        fromCells: c.fromCells + cellSouls,
-      });
-
-      const leader = rep.tutorName || 'Cell Tutor';
-      const t = teamMap.get(leader) || { souls: 0, outings: 0 };
-      teamMap.set(leader, { souls: t.souls + cellSouls, outings: t.outings + 1 });
-    }
-
-    const verifiedSoulsWon = soulsFromEvangelism + soulsFromCells;
+    const verifiedSoulsWon = soulsFromEvangelism;
     const remainingSouls = Math.max(0, annualTarget - verifiedSoulsWon);
-    const percentageAchieved = annualTarget > 0
-      ? Math.min(100, Math.round((verifiedSoulsWon / annualTarget) * 100))
-      : 0;
-
-    const cellContributions = Array.from(cellMap.entries())
-      .map(([cellId, d]) => ({
-        cellId,
-        cellName: d.cellName,
-        souls: d.souls,
-        percentage: verifiedSoulsWon > 0 ? Math.round((d.souls / verifiedSoulsWon) * 100) : 0,
-        fromEvangelism: d.fromEvangelism,
-        fromCells: d.fromCells,
-      }))
-      .sort((a, b) => b.souls - a.souls);
-
-    const teamContributions = Array.from(teamMap.entries())
-      .map(([leaderName, d]) => ({
-        leaderName,
-        souls: d.souls,
-        outings: d.outings,
-      }))
-      .sort((a, b) => b.souls - a.souls);
+    const percentageAchieved = annualTarget > 0 ? Math.min(100, Math.round((verifiedSoulsWon / annualTarget) * 100)) : 0;
+    const cellContributions = Array.from(cellMap.entries()).map(([cellId, data]) => ({
+      cellId, cellName: data.cellName, souls: data.souls,
+      percentage: verifiedSoulsWon > 0 ? Math.round((data.souls / verifiedSoulsWon) * 100) : 0,
+      fromEvangelism: data.fromEvangelism, fromCells: 0,
+    })).sort((a, b) => b.souls - a.souls);
+    const teamContributions = Array.from(teamMap.entries()).map(([leaderName, data]) => ({ leaderName, souls: data.souls, outings: data.outings })).sort((a, b) => b.souls - a.souls);
 
     return {
-      annualTarget,
-      year: config.year || 2026,
-      verifiedSoulsWon,
-      remainingSouls,
-      percentageAchieved,
-      soulsFromEvangelism,
-      soulsFromCells,
+      annualTarget, year, verifiedSoulsWon, remainingSouls, percentageAchieved,
+      soulsFromEvangelism, soulsFromCells: 0, firstTimersFromCells, pendingSouls,
       weeklyProgress: Array.from(weeklyMap.entries()).map(([week, souls]) => ({ week, souls })),
       monthlyProgress: Array.from(monthlyMap.entries()).map(([month, souls]) => ({ month, souls })),
       quarterlyProgress: Array.from(quarterlyMap.entries()).map(([quarter, souls]) => ({ quarter, souls })),
-      cellContributions,
-      teamContributions,
+      cellContributions, teamContributions,
     };
   }
 
@@ -293,6 +225,9 @@ export class SoulTargetService {
       }
     }
 
+    // Periodic reconciliation is a fallback if a device temporarily loses its Realtime socket.
+    const refreshTimer = typeof window !== 'undefined' ? window.setInterval(() => this.notifySubscribers(), 30000) : null;
+
     // Cross-tab storage synchronization
     const handleStorage = (e: StorageEvent) => {
       if (
@@ -316,6 +251,7 @@ export class SoulTargetService {
       }
       if (typeof window !== 'undefined') {
         window.removeEventListener('storage', handleStorage);
+        if (refreshTimer !== null) window.clearInterval(refreshTimer);
       }
     };
   }
