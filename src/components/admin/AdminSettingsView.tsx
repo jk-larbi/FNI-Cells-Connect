@@ -323,7 +323,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {activeTab === 'security' && (
         <div className="space-y-6 max-w-md">
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
-            <div><h3 className="text-sm font-bold text-[#182230]">Administrator Profile</h3><p className="text-xs text-[#667085] mt-0.5">Set the name and username shown in the administrator portal, activity records, and leadership communications.</p></div>
+            <div><h3 className="text-sm font-bold text-[#182230]">Administrator Profile</h3><p className="text-xs text-[#667085] mt-0.5">Set the name and unique username shown across FNI. The username can be used with the existing password to sign in.</p></div>
             <form onSubmit={handleSaveAdministratorProfile} className="space-y-3 text-xs">
               {profileSaveNotice && <div className={`p-3 rounded-xl border-l-4 font-semibold ${profileSaveNotice.isError ? 'bg-[#FFF5F5] border-[#C74646] text-[#C74646]' : 'bg-emerald-50 border-[#23845B] text-[#23845B]'}`}>{profileSaveNotice.text}</div>}
               <div><label className="block font-bold text-[#182230] mb-1">Full name</label><input type="text" required minLength={2} maxLength={80} value={profileFullName} onChange={e => setProfileFullName(e.target.value)} placeholder="Enter your full name" className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none" /></div>
