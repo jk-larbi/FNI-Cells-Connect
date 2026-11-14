@@ -77,6 +77,24 @@ const STANDARD_EMOJI_CATEGORIES: Record<string, string[]> = {
 };
 
 
+const SelectedChatFilePreview: React.FC<{ file: File; onRemove: () => void }> = ({ file, onRemove }) => {
+  const [previewUrl, setPreviewUrl] = useState('');
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  return (
+    <div className="flex max-w-[180px] items-center gap-2 rounded-xl border border-[#DCE3EC] bg-white p-2">
+      {previewUrl && file.type.startsWith('image/') ? <img src={previewUrl} alt={file.name} className="h-10 w-10 rounded-lg object-cover" /> :
+       previewUrl && file.type.startsWith('video/') ? <video src={previewUrl} muted className="h-10 w-10 rounded-lg object-cover" /> :
+       <FileAudio className="h-6 w-6 shrink-0 text-[#229ED9]" />}
+      <span className="min-w-0 truncate text-[11px] text-[#182230]">{file.name}</span>
+      <button type="button" onClick={onRemove} aria-label="Remove attachment" className="shrink-0 rounded-full p-1 text-[#667085] hover:bg-rose-50 hover:text-rose-600"><X className="h-3.5 w-3.5" /></button>
+    </div>
+  );
+};
+
 const ChatAttachmentPreview: React.FC<{ attachment: ChatAttachment }> = ({ attachment }) => {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -963,7 +981,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
             {/* Input Row */}
             <div className="flex items-center gap-2 min-w-0">
-              {communityFiles.length > 0 && <div className="flex flex-wrap gap-1.5 pb-1">{communityFiles.map((file,index) => <button key={file.name + index} type="button" onClick={() => setCommunityFiles(files => files.filter((_,i) => i !== index))} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700">{file.name} ×</button>)}</div>}
+              {communityFiles.length > 0 && <div className="flex flex-wrap gap-2 pb-1">{communityFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setCommunityFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
               <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="community-chat-files" onChange={e => setCommunityFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
               <button type="button" onClick={() => document.getElementById('community-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
               <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
@@ -1240,7 +1258,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Smile className="w-5 h-5" />
             </button>
 
-            {privateFiles.length > 0 && <div className="basis-full flex flex-wrap gap-1.5 pb-1">{privateFiles.map((file,index) => <button key={file.name + index} type="button" onClick={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700">{file.name} ×</button>)}</div>}
+            {privateFiles.length > 0 && <div className="basis-full flex flex-wrap gap-2 pb-1">{privateFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
             <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
               <button type="button" onClick={() => document.getElementById('private-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
               <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
