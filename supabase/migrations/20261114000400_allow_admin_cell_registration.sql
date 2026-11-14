@@ -51,6 +51,10 @@ BEGIN
     v_cell_tutor_uid := v_uid;
   END IF;
 
+  IF v_target_profile.id IS NOT NULL AND v_target_profile.role IN ('admin','super_admin','national_admin') THEN
+    RAISE EXCEPTION 'Administrator accounts cannot be assigned as cell tutors';
+  END IF;
+
   v_normalized := regexp_replace(lower(trim(p_name)), '[^a-z0-9]', '', 'g');
   IF length(v_normalized)<3 THEN RAISE EXCEPTION 'Cell name must contain at least three letters or numbers'; END IF;
   PERFORM pg_advisory_xact_lock(hashtext(v_normalized));
