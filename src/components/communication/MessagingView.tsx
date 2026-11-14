@@ -23,6 +23,7 @@ import {
   X,
   CornerDownRight,
   Heart,
+  MoreVertical,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -90,6 +91,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateSendError, setPrivateSendError] = useState<string | null>(null);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
   const [showPrivateEmoji, setShowPrivateEmoji] = useState(false);
+  const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
   const [privateEmojiCategory, setPrivateEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Community Messaging State
@@ -115,8 +117,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [newCodeSuccess, setNewCodeSuccess] = useState<string | null>(null);
 
   // Input refs
-  const communityInputRef = useRef<HTMLInputElement>(null);
-  const privateInputRef = useRef<HTMLInputElement>(null);
+  const communityInputRef = useRef<HTMLTextAreaElement>(null);
+  const privateInputRef = useRef<HTMLTextAreaElement>(null);
   const communityEndRef = useRef<HTMLDivElement>(null);
   const privateEndRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
@@ -295,7 +297,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   // Handle typing in Community chat to detect @mentions
-  const handleCommunityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCommunityInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setCommunityText(val);
 
@@ -333,7 +335,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Private Message
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!privateText.trim()) return;
+    if (!privateText.trim() || isSendingPrivate) return;
 
     const targetTutorId = isAdmin ? selectedTutorId : currentUser.id;
     const targetTutorName = isAdmin
@@ -370,7 +372,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Community Message
   const handleSendCommunity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!communityText.trim()) return;
+    if (!communityText.trim() || isSendingCommunity) return;
 
     // Detect mentioned names
     const mentionsFound = memberDirectory
@@ -508,7 +510,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       {/* TAB 1: TUTOR COMMUNITY FORUM (Open Access, Emojis, Tagging & Telegram/WhatsApp Replies) */}
       {activeTab === 'community' && (
-        <div className="fni-chat-panel bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
+        <div className="fni-chat-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
           {/* Forum Header */}
           <div className="px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div>
@@ -556,7 +558,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className="fni-swipe-message p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-2xs space-y-2.5 transition-all"
+                    className={isMine ? "fni-swipe-message w-fit max-w-[92%] sm:max-w-[78%] ml-auto p-4 rounded-2xl border border-[#142B4A] bg-[#142B4A] text-white shadow-2xs space-y-2.5 transition-all" : "fni-swipe-message w-fit max-w-[92%] sm:max-w-[78%] mr-auto p-4 rounded-2xl border border-[#E3E8EF] bg-white text-[#182230] shadow-2xs space-y-2.5 transition-all"}
                     onTouchStart={beginMessageSwipe}
                     onTouchEnd={event => finishMessageSwipe(event, { id: msg.id, senderName: msg.senderName, content: msg.content }, 'community')}
                   >
@@ -568,7 +570,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs sm:text-sm text-[#142B4A]">
+                            <span className={isMine ? "font-bold text-xs sm:text-sm text-white" : "font-bold text-xs sm:text-sm text-[#142B4A]"}>
                               {msg.senderName}
                             </span>
                             {msg.senderRole === 'admin' && (
@@ -619,7 +621,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     )}
 
                     {/* Message Body with Highlighted Mentions */}
-                    <div className="text-xs sm:text-sm text-[#182230] leading-relaxed pl-11">
+                    <div className={isMine ? "text-xs sm:text-sm text-white leading-relaxed pl-11" : "text-xs sm:text-sm text-[#182230] leading-relaxed pl-11"}>
                       {renderFormattedMessage(msg.content)}
                     </div>
 
@@ -738,7 +740,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Standard Social Media / WhatsApp Emoji Drawer */}
           {showCommunityEmoji && (
-            <div className="border-t border-[#E3E8EF] bg-white p-3 shadow-md space-y-2.5">
+            <div className="absolute bottom-[78px] left-2 right-2 z-30 rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-xl space-y-2.5">
               <div className="flex items-center justify-between pb-2 border-b border-[#E3E8EF] gap-2">
                 {/* Category Navigation Bar (WhatsApp / Telegram style) */}
                 <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
@@ -839,7 +841,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
                   <Smile className="w-5 h-5" />
                 </button>
-                <input ref={communityInputRef} type="text" value={communityText} onChange={handleCommunityInputChange} placeholder="Message the community" className="flex-1 min-w-0 w-0 border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
                 <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white hover:text-[#142B4A] transition-colors cursor-pointer" title="Tag a member" aria-label="Tag a member">
                   <AtSign className="w-4 h-4" />
                 </button>
@@ -1083,7 +1085,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </button>
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
-              <input ref={privateInputRef} type="text" value={privateText} onChange={e => setPrivateText(e.target.value)} placeholder="Message leadership" className="flex-1 min-w-0 w-0 border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+              <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message leadership" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
             </div>
 
             <Button
@@ -1091,7 +1093,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               variant="primary"
               size="md"
               isLoading={isSendingPrivate}
-              leftIcon={<Send className="w-4 h-4 text-[#C6A45A]" />}
               className="h-11 w-11 min-w-[44px] !p-0 rounded-full shrink-0 flex items-center justify-center"
             >
               <Send className="w-4 h-4 text-[#C6A45A]" />
