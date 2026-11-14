@@ -261,7 +261,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-base leading-none" role="img" aria-label="Kingdom harvest target">🌾</span>
+                <Wheat className="w-4 h-4 text-[#C6A45A]" aria-label="Kingdom harvest target" />
                 <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider group-hover:text-gold-700 transition-colors">
                   Soul-Winning Target
                 </h2>
@@ -1231,7 +1231,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-gold-50 text-gold-600 border border-gold-200 flex items-center justify-center">
-                  <span className="text-lg leading-none" role="img" aria-label="Kingdom harvest target">🌾</span>
+                  <Wheat className="w-5 h-5 text-gold-600" aria-label="Kingdom harvest target" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-navy-950">Annual Soul-Winning Target Breakdown</h3>
