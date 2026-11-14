@@ -458,7 +458,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if ((!privateText.trim() && privateFiles.length === 0) || privateSendLock.current) return;
     privateSendLock.current = true;
 
-    const targetTutorId = isAdmin ? selectedTutorId : currentUser.id;
     const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
     const recipientName = isAdmin
       ? tutorList.find(t => t.id === selectedTutorId)?.name || 'Tutor'
