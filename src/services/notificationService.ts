@@ -289,11 +289,12 @@ export class NotificationService {
     content: string;
   }): Promise<void> {
     const isLeadership = ['admin', 'super_admin', 'national_admin'].includes(params.senderRole);
-    const targetUserId = isLeadership ? params.recipientUid : 'admin';
+    const isTutorDirectMessage = !isLeadership && params.recipientUid !== 'admin';
+    const targetUserId = isLeadership || isTutorDirectMessage ? params.recipientUid : 'admin';
 
     const title = isLeadership
       ? `Leadership Message from ${params.senderName}`
-      : `Message from ${params.senderName} (${params.cellName || 'Cell Leader'})`;
+      : isTutorDirectMessage ? `Private message from ${params.senderName}` : `Message from ${params.senderName} (${params.cellName || 'Cell Leader'})`;
 
     const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
     const idempotencyKey = `notif-pmsg-${params.messageId}`;
@@ -313,7 +314,7 @@ export class NotificationService {
         senderName: params.senderName,
         category: 'messages',
         targetTab: 'messages',
-        recipientRole: isLeadership ? 'tutor' : 'admin',
+        recipientRole: isLeadership || isTutorDirectMessage ? 'tutor' : 'admin',
       },
     });
   }
