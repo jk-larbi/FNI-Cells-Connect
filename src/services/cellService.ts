@@ -136,7 +136,24 @@ export class CellService {
     const rawName = data.name.trim();
     const normalized = normalizeCellName(rawName);
 
-    // 1. Fetch current cells from Supabase or local cache
+    // Supabase registration is handled transactionally: normalize, deduplicate,
+    // preserve historical references, and promote the registering leader to tutor.
+    if (SupabaseService.isAvailable()) {
+      const result = await SupabaseService.registerCellAndPromoteTutor({
+        ...data,
+        fullName: data.leaderName,
+      });
+      const all = await this.getCells();
+      const canonicalNorm = normalizeCellName(result.cell.name);
+      const updated = [result.cell, ...all.filter(cell =>
+        cell.id !== result.cell.id &&
+        normalizeCellName(cell.normalized_name || cell.name) !== canonicalNorm
+      )];
+      saveStoredCells(updated);
+      return { cell: result.cell, isExistingAssociated: result.isExistingAssociated };
+    }
+
+    // Offline-only fallback for environments without Supabase.
     const allCells = await this.getCells();
 
     // 2. Strong duplicate detection via normalized string comparison
