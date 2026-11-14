@@ -784,6 +784,35 @@ export class SupabaseService {
     }
   }
 
+  static async uploadChatAttachment(userUid: string, file: File): Promise<{ name: string; path: string; mimeType: string; size: number }> {
+    if (!this.isAvailable()) throw new Error('Media uploads are unavailable while offline.');
+    if (!/^(image|video|audio)\\//i.test(file.type)) throw new Error('Only pictures, videos and audio files are supported.');
+    if (file.size > 50 * 1024 * 1024) throw new Error('Each attachment must be 50 MB or smaller.');
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
+    const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
+    const { error } = await supabase!.storage.from('fni-chat-media').upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw new Error(error.message || 'Could not upload attachment.');
+    return { name: file.name, path, mimeType: file.type, size: file.size };
+  }
+
+  static async getChatAttachmentUrl(path: string): Promise<string | null> {
+    if (!this.isAvailable()) return null;
+    const { data, error } = await supabase!.storage.from('fni-chat-media').createSignedUrl(path, 3600);
+    if (error) return null;
+    return data.signedUrl;
+  }
+
+  static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    const rpc = scope === 'private' ? 'fni_delete_private_message_for_everyone' : 'fni_delete_community_message_for_everyone';
+    const { data, error } = await supabase!.rpc(rpc, { p_message_id: messageId });
+    if (error) {
+      console.warn('Delete for everyone failed:', error.message);
+      return false;
+    }
+    return data === true;
+  }
+
   // --- Private Messages ---
   static async getPrivateMessages(userUid: string): Promise<PrivateMessage[] | null> {
     if (!this.isAvailable()) return null;
