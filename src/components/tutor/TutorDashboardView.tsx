@@ -33,6 +33,7 @@ import {
   Sun,
   Moon,
   ChevronRight,
+  Wheat,
 } from 'lucide-react';
 
 interface TutorDashboardViewProps {
@@ -580,7 +581,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
                 &ldquo;For God is not unjust to forget your work and labor of love which you have shown toward His name, in that you have ministered to the saints, and do minister.&rdquo;
               </p>
               <div className="text-right text-xs font-bold text-[#C6A45A] mt-2 flex items-center justify-end gap-1.5">
-                <span className="text-sm">📖</span>
+                <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Hebrews 6:10</span>
               </div>
             </div>
@@ -596,7 +597,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             <div className="flex items-center justify-between pb-3.5 border-b border-[#E3E8EF]">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#C6A45A] flex items-center justify-center border border-amber-100 shrink-0">
-                  <span className="text-xl leading-none" role="img" aria-label="Souls harvest">🌾</span>
+                  <Wheat className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
                   <h3 className="text-sm sm:text-base font-black text-[#142B4A]">2026 Kingdom Soul Harvest</h3>
