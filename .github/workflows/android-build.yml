@@ -146,6 +146,14 @@ jobs:
           ]:
               if permission not in existing_permissions:
                   ET.SubElement(manifest_root, "uses-permission", {f"{{{android_ns}}}name": permission})
+
+          # Do not rely on Capacitor's template defaults: explicitly bind both
+          # launcher entry points to the FNI-generated icon resources.
+          application = manifest_root.find("application")
+          if application is None:
+              raise SystemExit("AndroidManifest.xml has no application element")
+          application.set(f"{{{android_ns}}}icon", "@mipmap/ic_launcher")
+          application.set(f"{{{android_ns}}}roundIcon", "@mipmap/ic_launcher_round")
           manifest.write(manifest_path, encoding="utf-8", xml_declaration=True)
           logo = Image.open("public/fni-official-logo.jpg").convert("RGBA")
           # Keep the complete official logo visible, with a clean FNI royal-blue surround.
@@ -235,6 +243,26 @@ jobs:
               app_name = ET.SubElement(resources, "string", {"name": "app_name"})
           app_name.text = "FNI Cells Connect"
           tree.write(strings, encoding="utf-8", xml_declaration=True)
+
+          # Fail the build if any launcher resource or manifest binding is missing.
+          for density in ["mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"]:
+              for filename in ["ic_launcher.png", "ic_launcher_round.png"]:
+                  icon_path = root / f"res/mipmap-{density}" / filename
+                  if not icon_path.is_file() or icon_path.stat().st_size < 100:
+                      raise SystemExit(f"Missing or invalid launcher icon: {icon_path}")
+          for resource in [
+              root / "res/drawable/ic_launcher_foreground.png",
+              root / "res/mipmap-anydpi-v26/ic_launcher.xml",
+              root / "res/mipmap-anydpi-v26/ic_launcher_round.xml",
+          ]:
+              if not resource.is_file() or resource.stat().st_size < 50:
+                  raise SystemExit(f"Missing adaptive launcher resource: {resource}")
+          checked = ET.parse(manifest_path).getroot().find("application")
+          if checked.get(f"{{{android_ns}}}icon") != "@mipmap/ic_launcher":
+              raise SystemExit("Manifest is not configured to use the FNI launcher icon")
+          if checked.get(f"{{{android_ns}}}roundIcon") != "@mipmap/ic_launcher_round":
+              raise SystemExit("Manifest is not configured to use the FNI round launcher icon")
+          print("Verified FNI launcher icon files and AndroidManifest icon bindings.")
           PY
 
       - name: Configure permanent Android release signing
@@ -303,6 +331,18 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease --no-daemon
+
+      - name: Verify packaged APK launcher icon resources
+        run: |
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          test -s "$APK"
+          "$AAPT" dump badging "$APK" | tee /tmp/fni-apk-badging.txt
+          grep -q "application-icon" /tmp/fni-apk-badging.txt
+          "$AAPT" dump resources "$APK" > /tmp/fni-apk-resources.txt
+          grep -q "mipmap/ic_launcher" /tmp/fni-apk-resources.txt
+          grep -q "mipmap/ic_launcher_round" /tmp/fni-apk-resources.txt
+          echo "APK contains both configured FNI launcher icon resources."
 
       - name: Publish permanent GitHub Release with APK
         env:
