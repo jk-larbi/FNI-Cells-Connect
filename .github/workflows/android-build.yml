@@ -113,7 +113,8 @@ jobs:
           print("Firebase Android configuration validated.")
           PY
           else
-            echo "::warning::Firebase Android config is missing. Add firebase/google-services.json to enable Android FCM registration."
+            echo "::error::Firebase Android config is required. Add firebase/google-services.json before publishing an Android APK."
+            exit 1
           fi
           npx cap sync android
 
