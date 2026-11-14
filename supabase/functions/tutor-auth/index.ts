@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
         return json({ error: "Enter your administrator username and password." }, 400);
       }
 
-      let lookup = admin.from("profiles").select("id,email,is_active,role,username");
+      let lookup = admin.from("profiles").select("id,supabase_user_id,email,is_active,role,username");
       lookup = identifier.includes("@")
         ? lookup.eq("email", identifier)
         : lookup.eq("username", identifier);
@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
       const email = String(profile.email || "").trim().toLowerCase();
       if (!email) return json({ error: "This administrator account has no sign-in email configured. Contact FNI support." }, 403);
       const { data: signedIn, error: signInError } = await auth.auth.signInWithPassword({ email, password });
-      if (signInError || !signedIn.session || !signedIn.user || signedIn.user.id !== profile.id) {
+      if (signInError || !signedIn.session || !signedIn.user || signedIn.user.id !== String(profile.supabase_user_id || profile.id)) {
         return json({ error: "Invalid administrator username or password." }, 401);
       }
       return json({ user: signedIn.user, session: signedIn.session });
