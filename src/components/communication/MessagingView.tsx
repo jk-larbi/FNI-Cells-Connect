@@ -121,7 +121,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateMessages, setPrivateMessages] = useState<PrivateMessage[]>([]);
   const [privateText, setPrivateText] = useState('');
   const [privateFiles, setPrivateFiles] = useState<File[]>([]);
-  const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || '');
+  const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || (isAdmin ? '' : 'admin'));
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
   const [privateSendError, setPrivateSendError] = useState<string | null>(null);
@@ -259,9 +259,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         }
       });
 
-      const tList = Array.from(tutorMap.values());
+      const tList = Array.from(tutorMap.values()).filter(t => isAdmin || t.id !== currentUser.id);
       setTutorList(tList);
-      if (tList.length > 0 && !selectedTutorId) {
+      if (isAdmin && tList.length > 0 && !selectedTutorId) {
         setSelectedTutorId(tList[0].id);
       }
 
@@ -310,11 +310,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   const loadPrivateMessages = async () => {
     const tutorId = isAdmin ? selectedTutorId : currentUser.id;
-    if (!tutorId) return;
-    const conversationId = isAdmin ? selectedTutorId : 'admin';
-    const msgs = await MessagingService.getPrivateConversation(tutorId, currentUser.id, conversationId);
+    const conversationId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    if (!tutorId || !conversationId) { setPrivateMessages([]); return; }
+    const msgs = await MessagingService.getPrivateConversation(tutorId, currentUser.id, conversationId, isAdmin);
     setPrivateMessages(msgs);
-    await MessagingService.markPrivateMessagesRead(tutorId, currentUser.id);
+    await MessagingService.markPrivateMessagesRead(tutorId, currentUser.id, conversationId, isAdmin);
   };
 
   const handlePrivateChatAction = async (action: 'clear' | 'delete') => {
@@ -325,7 +325,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     );
     if (!confirmed) return;
 
-    const conversationId = isAdmin ? selectedTutorId : 'admin';
+    const conversationId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
     const saved = action === 'clear'
       ? await MessagingService.clearPrivateConversation(currentUser.id, conversationId)
       : await MessagingService.deletePrivateConversation(currentUser.id, conversationId);
@@ -459,9 +459,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     privateSendLock.current = true;
 
     const targetTutorId = isAdmin ? selectedTutorId : currentUser.id;
-    const targetTutorName = isAdmin
+    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    const recipientName = isAdmin
       ? tutorList.find(t => t.id === selectedTutorId)?.name || 'Tutor'
-      : currentUser.full_name;
+      : recipientId === 'admin' ? 'Administrator / Leadership' : tutorList.find(t => t.id === recipientId)?.name || 'FNI Tutor';
 
     setIsSendingPrivate(true);
     setPrivateSendError(null);
@@ -471,8 +472,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         senderUid: currentUser.id,
         senderName: currentUser.full_name,
         senderRole: currentUser.role,
-        recipientUid: isAdmin ? targetTutorId : 'admin',
-        recipientName: isAdmin ? targetTutorName : 'Administrator / Leadership',
+        recipientUid: recipientId,
+        recipientName,
         cellId: currentUser.cell_id,
         cellName: currentUser.cell_name,
         content: privateText.trim(),
@@ -1014,28 +1015,29 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <h3 className="font-bold text-sm sm:text-base text-white">
                   {isAdmin
                     ? 'Confidential Pastoral Oversight Line'
-                    : 'Confidential Leadership Line (Tutor ↔ Leadership)'}
+                    : selectedTutorId === 'admin' ? 'Confidential Leadership Line' : 'Private Tutor Conversation'}
                 </h3>
                 <p className="text-xs text-slate-200 mt-0.5">
                   {isAdmin
                     ? 'Select a tutor to inspect their private communication channel'
-                    : 'Private, direct communication with ministry leadership. Not shared in the community forum.'}
+                    : selectedTutorId === 'admin' ? 'Private, direct communication with ministry leadership.' : 'A private conversation between you and this tutor. Not shared in the community forum.'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {isAdmin && tutorList.length > 0 && (
+              {(isAdmin ? tutorList.length > 0 : true) && (
                 <>
-                  <span className="text-xs text-slate-200 font-medium">Select Tutor:</span>
+                  <span className="text-xs text-slate-200 font-medium">{isAdmin ? 'Select Tutor:' : 'Chat with:'}</span>
                   <select
-                    value={selectedTutorId}
-                    onChange={e => { setSelectedTutorId(e.target.value); setOpenChatMenu(false); }}
-                    className="bg-[#142B4A] border border-[#E3E8EF]/30 text-white text-xs rounded-xl px-3 py-2 font-bold focus:outline-none max-w-[180px]"
+                    value={isAdmin ? selectedTutorId : (selectedTutorId || 'admin')}
+                    onChange={e => { setSelectedTutorId(e.target.value); setPrivateMessages([]); setPrivateReplyTo(null); setOpenChatMenu(false); }}
+                    className="bg-[#142B4A] border border-[#E3E8EF]/30 text-white text-xs rounded-xl px-3 py-2 font-bold focus:outline-none max-w-[210px]"
                   >
+                    {!isAdmin && <option value="admin" className="text-slate-900 bg-white">FNI Leadership</option>}
                     {tutorList.map(t => (
                       <option key={t.id} value={t.id} className="text-slate-900 bg-white">
-                        {t.name} ({t.cellName})
+                        {t.name}{t.cellName ? ` · ${t.cellName}` : ''}
                       </option>
                     ))}
                   </select>
@@ -1262,7 +1264,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
               <button type="button" onClick={() => document.getElementById('private-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
               <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
-              <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message leadership" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+              <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={selectedTutorId === "admin" ? "Message FNI Leadership" : "Write a private message…"} className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
             </div>
 
             <Button
