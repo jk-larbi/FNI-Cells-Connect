@@ -24,6 +24,7 @@ import {
   MessagesSquare,
   ContactRound,
   X,
+  MapPin,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -50,6 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Administrator Portal Navigation: Full institutional oversight
   const adminNavItems = [
     { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'location-sharing' as AppNavTab, label: 'Cell Location History', icon: MapPin },
     { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
     { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users },
     { id: 'report-review' as AppNavTab, label: 'Accept / Decline Reports', icon: FileCheck },
