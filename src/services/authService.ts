@@ -3,12 +3,12 @@
  * Pure Supabase Authentication & Identity Service (Strict Production Backend)
  * 
  * Strict Security Rules:
- * - 100% Supabase Auth native integration (signUp, signInWithPassword, signOut, resetPassword)
- * - Zero artificial email addresses; requires genuine user email address
+ * - Supabase Auth native sessions with username + password for tutor accounts
+ * - Tutor usernames map to private internal Auth identifiers; no email or phone is collected
  * - Zero local-only account creation or PBKDF2 local password hash storage
  * - Zero client-side administrator bypasses (admin123 and demo role-switching permanently removed)
  * - Strict server-side role verification: self-registration NEVER grants administrative roles (always 'tutor')
- * - Full email verification handling: users without confirmed session cannot access protected sessions
+ * - Tutor credentials are created and verified server-side; administrator email login remains separate
  * - Complete session persistence, automatic token refresh, and lifecycle synchronization
  */
 
