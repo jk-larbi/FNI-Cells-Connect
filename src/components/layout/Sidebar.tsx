@@ -74,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: ContactRound },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
     { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessageSquare },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
     { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: History },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'my-account' as AppNavTab, label: 'My Account', icon: User },
