@@ -18,7 +18,6 @@ import {
   Phone,
   Eye,
   EyeOff,
-  Chrome,
 } from 'lucide-react';
 
 export type AuthFlowView = 'tutor-signup' | 'login-select' | 'tutor-login' | 'admin-login';
@@ -45,6 +44,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
   // Tutor Registration state (Email + password authentication; phone is profile contact information)
   const [regFullName, setRegFullName] = useState('');
+  const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -99,8 +99,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!regFullName.trim() || !regEmail.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
-      setErrorMessage('Please complete your name, email, cell name, and password fields.');
+    if (!regFullName.trim() || !regUsername.trim() || !regEmail.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
+      setErrorMessage('Please complete your name, username, email, cell name, and password fields.');
       return;
     }
 
@@ -108,6 +108,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     try {
       const res = await registerTutor({
         fullName: regFullName.trim(),
+        username: regUsername.trim().toLowerCase(),
         email: regEmail.trim(),
         phoneNumber: regPhone.trim() || undefined,
         password: regPassword,
@@ -354,7 +355,19 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* 2. Email Address */}
+                {/* 2. Username */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    2. Username <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative group">
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input type="text" required minLength={3} maxLength={20} pattern="[a-zA-Z0-9_]{3,20}" value={regUsername} onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="e.g. samuel_mensah" autoCapitalize="none" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
+                  </div>
+                  <p className="text-[10px] text-[#667085] mt-1">3–20 characters; letters, numbers, and underscores only.</p>
+                </div>
+
+                {/* 3. Email Address */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
                     2. Email Address <span className="text-[#C74646]">*</span>
@@ -374,10 +387,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
 
-                {/* 3. Cell Fellowship Name */}
+                {/* 4. Cell Fellowship Name */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    3. Cell Fellowship Name <span className="text-[#C74646]">*</span>
+                    4. Cell Fellowship Name <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -393,36 +406,20 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </div>
 
 
-                {/* Social registration — cell details above are retained for first-time tutors */}
-                <div className="space-y-2 pt-2">
-                  <div className="flex items-center gap-3">
-                    <div className="h-px flex-1 bg-[#E3E8EF]" />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#98A2B3]">Or continue with</span>
-                    <div className="h-px flex-1 bg-[#E3E8EF]" />
-                  </div>
-                  <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('google', true)} className="w-full py-3 px-4 bg-white border border-[#D0D5DD] hover:border-[#142B4A] rounded-xl text-xs font-semibold text-[#182230] flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
-                    <Chrome className="w-4 h-4" /> Continue with Google
-                  </button>
-                  <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('apple', true)} className="w-full py-3 px-4 bg-black hover:bg-[#222] rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
-                    <span className="text-lg leading-none"></span> Continue with Apple
-                  </button>
-                  <p className="text-[10px] text-center text-[#667085]">You'll confirm your account with the provider, then return to finish setting up your FNI cell.</p>
-                </div>
-
                 {/* Password */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">5. Password <span className="text-[#C74646]">*</span></label>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">6. Password <span className="text-[#C74646]">*</span></label>
                   <input type="password" required minLength={6} maxLength={128} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Create a password (at least 6 characters)" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
                 </div>
                 {/* Confirm Password */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">6. Confirm Password <span className="text-[#C74646]">*</span></label>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">7. Confirm Password <span className="text-[#C74646]">*</span></label>
                   <input type="password" required minLength={6} maxLength={128} value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
                 </div>
                 {/* 7. Second Cell Leader / Co-Leader (Optional) */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    4. Co-Leader Full Name <span className="text-[#667085] font-normal">(Optional — for paired cells)</span>
+                    5. Co-Leader Full Name <span className="text-[#667085] font-normal">(Optional — for paired cells)</span>
                   </label>
                   <div className="relative group">
                     <Users className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -566,34 +563,21 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Tutor Log In
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Sign in with the username and password you created.
+                  Sign in with your registered email address and password.
                 </p>
               </div>
 
 
-              <div className="space-y-2">
-                <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('google')} className="w-full py-3 px-4 bg-white border border-[#D0D5DD] hover:border-[#142B4A] rounded-xl text-xs font-semibold text-[#182230] flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
-                  <Chrome className="w-4 h-4" /> Continue with Google
-                </button>
-                <button type="button" disabled={isLoading} onClick={() => handleSocialAuth('apple')} className="w-full py-3 px-4 bg-black hover:bg-[#222] rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-3 transition-colors disabled:opacity-50">
-                  <span className="text-lg leading-none"></span> Continue with Apple
-                </button>
-                <div className="flex items-center gap-3 py-1">
-                  <div className="h-px flex-1 bg-[#E3E8EF]" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#98A2B3]">Or sign in with email</span>
-                  <div className="h-px flex-1 bg-[#E3E8EF]" />
-                </div>
-              </div>
               <form onSubmit={handleTutorLogin} className="space-y-3.5">
                 {/* 1. Email or Full Name */}
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Username / phone / email <span className="text-[#C74646]">*</span>
+                    Email Address <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
                     <input
-                      type="text"
+                      type="email"
                       required
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
