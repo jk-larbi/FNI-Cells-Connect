@@ -430,7 +430,7 @@ export const AdminManagementView: React.FC = () => {
                       ) ? (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gold-50 border border-gold-200/80 text-gold-800 font-bold text-xs">
                           <Building className="w-3 h-3 text-gold-600" />
-                          <span>{user.cell_name}</span>
+                          <span>{cells.find(cell => cell.id === user.cell_id || cell.name.toLowerCase() === user.cell_name!.toLowerCase())?.name}</span>
                         </div>
                       ) : (
                         <span className="text-[11px] font-medium text-slate-400 italic">
