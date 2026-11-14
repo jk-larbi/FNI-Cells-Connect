@@ -244,6 +244,17 @@ jobs:
           app_name.text = "FNI Cells Connect"
           tree.write(strings, encoding="utf-8", xml_declaration=True)
 
+          # Use the generated full-colour PNG launcher assets on all Android versions.
+          # The adaptive-icon XML can cause some launchers to fall back to the generic
+          # Android/Capacitor robot when the foreground layer is not resolved correctly.
+          # Removing these two v26 XML overrides makes Android use our verified FNI PNGs.
+          for adaptive_icon in [
+              root / "res/mipmap-anydpi-v26/ic_launcher.xml",
+              root / "res/mipmap-anydpi-v26/ic_launcher_round.xml",
+          ]:
+              if adaptive_icon.exists():
+                  adaptive_icon.unlink()
+
           # Fail the build if any launcher resource or manifest binding is missing.
           for density in ["mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"]:
               for filename in ["ic_launcher.png", "ic_launcher_round.png"]:
