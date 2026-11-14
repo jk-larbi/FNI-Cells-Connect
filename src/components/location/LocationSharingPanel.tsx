@@ -72,6 +72,7 @@ const LiveTutorMap: React.FC<{
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
   const routesRef = useRef<Map<string, any>>(new Map());
+  const startMarkersRef = useRef<Map<string, any>>(new Map());
   const hasFittedRef = useRef(false);
   const [mapError, setMapError] = useState('');
 
@@ -99,6 +100,9 @@ const LiveTutorMap: React.FC<{
         routesRef.current.forEach((route, id) => {
           if (!ids.has(id)) { mapRef.current.removeLayer(route); routesRef.current.delete(id); }
         });
+        startMarkersRef.current.forEach((marker, id) => {
+          if (!ids.has(id)) { mapRef.current.removeLayer(marker); startMarkersRef.current.delete(id); }
+        });
         valid.forEach((item, index) => {
           const point = item.point!;
           const coordinates: [number, number] = [point.latitude, point.longitude];
@@ -118,6 +122,14 @@ const LiveTutorMap: React.FC<{
             markersRef.current.set(item.session.id, marker);
           }
           const routePoints = (item.points || []).filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+          if (routePoints.length > 0) {
+            const startCoordinates: [number, number] = [routePoints[0].latitude, routePoints[0].longitude];
+            const startMarker = startMarkersRef.current.get(item.session.id);
+            if (startMarker) startMarker.setLatLng(startCoordinates);
+            else startMarkersRef.current.set(item.session.id, L.circleMarker(startCoordinates, {
+              radius: 6, color: '#ffffff', weight: 2, fillColor: '#16a34a', fillOpacity: 1,
+            }).addTo(mapRef.current).bindTooltip('Journey started here', { direction: 'top' }));
+          }
           if (routePoints.length > 1) {
             const latLngs = routePoints.map(p => [p.latitude, p.longitude]);
             const route = routesRef.current.get(item.session.id);
@@ -160,6 +172,7 @@ const LiveTutorMap: React.FC<{
       mapRef.current = null;
       markersRef.current.clear();
       routesRef.current.clear();
+      startMarkersRef.current.clear();
     }
   }, []);
 
