@@ -25,8 +25,9 @@ Deno.serve(async (req: Request) => {
     if (targetUserId !== user.id && !callerIsAdmin) return json({ error: "Only an administrator can delete another account." }, 403);
     const { data: profile, error: profileError } = await admin.from("profiles").select("id, role, avatar_url").eq("id", targetUserId).maybeSingle();
     if (profileError) { console.error("Target profile lookup failed:", profileError); return json({ error: "The selected account could not be verified." }, 500); }
-    if (!profile) return json({ error: "No FNI profile was found for this account." }, 404);
-    const avatarUrl = String(profile.avatar_url || ""), marker = "/storage/v1/object/public/", markerIndex = avatarUrl.indexOf(marker);
+    if (!profile && targetUserId !== user.id) return json({ error: "No FNI profile was found for this account." }, 404);
+    const targetProfile = profile || { id: targetUserId, role: callerProfile?.role || "admin", avatar_url: null };
+    const avatarUrl = String(targetProfile.avatar_url || ""), marker = "/storage/v1/object/public/", markerIndex = avatarUrl.indexOf(marker);
     if (markerIndex >= 0) {
       const objectPath = avatarUrl.slice(markerIndex + marker.length), slash = objectPath.indexOf("/");
       if (slash > 0) {
