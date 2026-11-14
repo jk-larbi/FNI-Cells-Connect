@@ -51,10 +51,20 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
         ReportService.getCellMeetingReports(),
         ReportService.getEvangelismReports(),
       ]);
-      setProfiles(pList.filter(p => p.role === 'tutor' || p.role === 'cell_leader'));
-      setCells(cList);
-      setMeetingReports(mList);
-      setEvangReports(eList);
+      const activeCells = cList.filter(cell => !cell.is_archived);
+      const activeIds = new Set(activeCells.map(cell => cell.id));
+      const activeTutors = pList.filter(profile =>
+        (profile.role === 'tutor' || profile.role === 'cell_leader') &&
+        activeCells.some(cell =>
+          cell.id === profile.cell_id ||
+          cell.tutorUid === profile.id ||
+          (profile.cell_name && cell.name.toLowerCase() === profile.cell_name.toLowerCase())
+        )
+      );
+      setProfiles(activeTutors);
+      setCells(activeCells);
+      setMeetingReports(mList.filter(report => activeIds.has(report.cellId)));
+      setEvangReports(eList.filter(report => activeIds.has(report.cellId)));
     } finally {
       setIsLoading(false);
     }
