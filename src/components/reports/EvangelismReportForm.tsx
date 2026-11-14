@@ -471,9 +471,9 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="p-4 sm:p-5 bg-white rounded-2xl border-2 border-navy-200 shadow-sm flex flex-col justify-between gap-3">
+            <div className="p-4 sm:p-5 !bg-[#FFFFFF] rounded-2xl border-2 border-[#D5DCEB] shadow-md flex flex-col justify-between gap-3">
               <div>
-                <label className="block text-sm font-extrabold text-[#101B3D] mb-2 leading-snug">
+                <label className="block text-sm font-extrabold text-[#07142F] mb-2 leading-snug">
                   Pre-Set Target <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -482,10 +482,10 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
                   required
                   value={preSetTarget}
                   onChange={e => setPreSetTarget(e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full text-xl font-black text-[#101B3D] bg-white border-2 border-slate-300 rounded-xl p-3 placeholder:text-slate-400 focus:border-[#263B75] focus:ring-2 focus:ring-[#263B75]/20 focus:outline-none"
+                  className="w-full text-xl font-black text-[#07142F] !bg-[#FFFFFF] border-2 border-[#AEBBD2] rounded-xl p-3 placeholder:text-slate-400 focus:border-[#263B75] focus:ring-2 focus:ring-[#263B75]/20 focus:outline-none"
                 />
               </div>
-              <span className="text-xs sm:text-sm text-[#33436B] mt-1 block font-semibold leading-relaxed">
+              <span className="text-xs sm:text-sm text-[#172554] mt-1 block font-bold leading-relaxed">
                 Faith goal set before outreach
               </span>
             </div>
