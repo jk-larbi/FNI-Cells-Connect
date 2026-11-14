@@ -51,10 +51,25 @@ function ensureLeaflet(): Promise<void> {
   return leafletLoader;
 }
 
-const LiveTutorMap: React.FC<{ locations: ActiveTutorLocation[] }> = ({ locations }) => {
+const ROUTE_COLORS = ['#1769d2', '#d9485f', '#0f9d78', '#8b5cf6', '#d97706', '#0891b2', '#be185d', '#4d7c0f'];
+const distanceBetween = (a: LocationPoint, b: LocationPoint) => {
+  const rad = (v: number) => v * Math.PI / 180;
+  const dLat = rad(b.latitude - a.latitude);
+  const dLng = rad(b.longitude - a.longitude);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.latitude)) * Math.cos(rad(b.latitude)) * Math.sin(dLng / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+};
+const formatDistance = (meters: number) => meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`;
+
+const LiveTutorMap: React.FC<{
+  locations: ActiveTutorLocation[];
+  selectedSessionId?: string;
+  onSelectSession?: (session: LocationSession) => void;
+}> = ({ locations, selectedSessionId, onSelectSession }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
+  const routesRef = useRef<Map<string, any>>(new Map());
   const hasFittedRef = useRef(false);
   const [mapError, setMapError] = useState('');
 
@@ -77,24 +92,40 @@ const LiveTutorMap: React.FC<{ locations: ActiveTutorLocation[] }> = ({ location
           Number.isFinite(item.point.latitude) && Number.isFinite(item.point.longitude));
         const ids = new Set(valid.map(item => item.session.id));
         markersRef.current.forEach((marker, id) => {
-          if (!ids.has(id)) {
-            mapRef.current.removeLayer(marker);
-            markersRef.current.delete(id);
-          }
+          if (!ids.has(id)) { mapRef.current.removeLayer(marker); markersRef.current.delete(id); }
         });
-        valid.forEach(item => {
+        routesRef.current.forEach((route, id) => {
+          if (!ids.has(id)) { mapRef.current.removeLayer(route); routesRef.current.delete(id); }
+        });
+        valid.forEach((item, index) => {
           const point = item.point!;
           const coordinates: [number, number] = [point.latitude, point.longitude];
           const label = item.session.tutor_name + (item.session.cell_name ? ' · ' + item.session.cell_name : '');
+          const color = ROUTE_COLORS[index % ROUTE_COLORS.length];
           const existing = markersRef.current.get(item.session.id);
           if (existing) {
             existing.setLatLng(coordinates);
             existing.setTooltipContent(label);
+            existing.setStyle({ fillColor: color, radius: item.session.id === selectedSessionId ? 11 : 9 });
           } else {
             const marker = L.circleMarker(coordinates, {
-              radius: 9, color: '#ffffff', weight: 3, fillColor: '#1769d2', fillOpacity: 1,
+              radius: item.session.id === selectedSessionId ? 11 : 9,
+              color: '#ffffff', weight: 3, fillColor: color, fillOpacity: 1,
             }).addTo(mapRef.current).bindTooltip(label, { direction: 'top', offset: [0, -8] });
+            if (onSelectSession) marker.on('click', () => onSelectSession(item.session));
             markersRef.current.set(item.session.id, marker);
+          }
+          const routePoints = (item.points || []).filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+          if (routePoints.length > 1) {
+            const latLngs = routePoints.map(p => [p.latitude, p.longitude]);
+            const route = routesRef.current.get(item.session.id);
+            if (route) route.setLatLngs(latLngs);
+            else routesRef.current.set(item.session.id, L.polyline(latLngs, {
+              color, weight: item.session.id === selectedSessionId ? 6 : 4, opacity: item.session.id === selectedSessionId ? 0.95 : 0.72,
+            }).addTo(mapRef.current));
+          } else if (routesRef.current.has(item.session.id)) {
+            mapRef.current.removeLayer(routesRef.current.get(item.session.id));
+            routesRef.current.delete(item.session.id);
           }
         });
         if (valid.length) {
@@ -120,6 +151,7 @@ const LiveTutorMap: React.FC<{ locations: ActiveTutorLocation[] }> = ({ location
       mapRef.current.remove();
       mapRef.current = null;
       markersRef.current.clear();
+      routesRef.current.clear();
     }
   }, []);
 
@@ -265,11 +297,6 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
 
   if (mode === 'admin') {
     const livePoints = activeLocations.filter(item => item.point && Number.isFinite(item.point.latitude) && Number.isFinite(item.point.longitude));
-    const nativeMapsUrl = livePoints.length === 1
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${livePoints[0].point!.latitude},${livePoints[0].point!.longitude}`)}`
-      : livePoints.length > 1
-        ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(`${livePoints[0].point!.latitude},${livePoints[0].point!.longitude}`)}&destination=${encodeURIComponent(`${livePoints[livePoints.length - 1].point!.latitude},${livePoints[livePoints.length - 1].point!.longitude}`)}&waypoints=${encodeURIComponent(livePoints.slice(1, -1).slice(0, 9).map(item => `${item.point!.latitude},${item.point!.longitude}`).join('|'))}&travelmode=walking`
-        : '';
     const mapPoints = points.filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
     const mapUrl = mapPoints.length > 1
       ? 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(`${mapPoints[0].latitude},${mapPoints[0].longitude}`) +
@@ -298,19 +325,23 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
               <h3 className="text-sm font-extrabold text-[#142B4A]">All active tutors · Live map</h3>
               <p className="text-xs text-[#667085] mt-1">{activeLocations.length} active sharing session{activeLocations.length === 1 ? '' : 's'} · live positions refresh automatically</p>
             </div>
-            {nativeMapsUrl && <button type="button" onClick={() => openNativeMaps(nativeMapsUrl)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#142B4A] text-white px-3 py-2 text-xs font-bold"><Navigation className="w-3.5 h-3.5" /> Open in Maps</button>}
+            <span className="text-[11px] text-[#667085]">Select a tutor to inspect their individual route</span>
           </div>
           {activeLocations.length > 0 ? (
             <>
-              <LiveTutorMap locations={activeLocations} />
+              <LiveTutorMap locations={activeLocations} selectedSessionId={selectedSession?.id} onSelectSession={inspectSession} />
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {activeLocations.map(item => (
                   <div key={item.session.id} className="rounded-lg border border-[#E3E8EF] bg-white px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-[#142B4A] truncate">{item.session.tutor_name}</span>
+                      <button type="button" onClick={() => inspectSession(item.session)} className="text-xs font-bold text-[#142B4A] truncate text-left hover:underline">{item.session.tutor_name}</button>
                       <span className="text-[10px] font-bold text-emerald-700">LIVE</span>
                     </div>
-                    <p className="text-[11px] text-[#667085] mt-0.5">{item.session.cell_name || 'No cell assigned'} · {item.point ? dateLabel(item.point.captured_at) : 'Waiting for first GPS fix'}</p>
+                    <p className="text-[11px] text-[#667085] mt-0.5">{item.session.cell_name || 'No cell assigned'} · Started {dateLabel(item.session.started_at)}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-[#667085]">{item.points.length} GPS points</span>
+                      {item.point && <button type="button" onClick={() => openNativeMaps(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.point!.latitude},${item.point!.longitude}`)}`)} className="text-[10px] font-bold text-[#142B4A] underline">Open this tutor in Maps</button>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -341,8 +372,21 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
               <div><div className="text-sm font-bold text-[#142B4A]">{selectedSession.tutor_name} · {selectedSession.ended_at ? 'Route history' : 'Live location'}</div><div className="text-xs text-[#667085]">{points.length} recorded points{!selectedSession.ended_at ? ' · refreshing every 10 seconds' : ''}</div></div>
               {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#142B4A] text-white px-3 py-2 text-xs font-bold">Open route <ExternalLink className="w-3 h-3" /></a>}
             </div>
-            {mapEmbedUrl && <iframe title={`Location of ${selectedSession.tutor_name}`} src={mapEmbedUrl} className="w-full h-64 rounded-xl border border-[#E3E8EF] mb-3" loading="lazy" referrerPolicy="no-referrer" />}
-            {latestPoint && <p className="text-[11px] text-[#667085] mb-2">Latest coordinates: {latestPoint.latitude.toFixed(5)}, {latestPoint.longitude.toFixed(5)} · {dateLabel(latestPoint.captured_at)}</p>}
+            <LiveTutorMap
+              locations={activeLocations.some(item => item.session.id === selectedSession.id)
+                ? activeLocations
+                : [...activeLocations, { session: selectedSession, point: latestPoint || null, points }]}
+              selectedSessionId={selectedSession.id}
+              onSelectSession={inspectSession}
+            />
+            {latestPoint && <p className="text-[11px] text-[#667085] mb-2">Latest coordinates: {latestPoint.latitude.toFixed(5)}, {latestPoint.longitude.toFixed(5)} · Updated {dateLabel(latestPoint.captured_at)}</p>}
+            <p className="text-[11px] text-[#667085] mb-3">
+              Started {dateLabel(selectedSession.started_at)} · {points.length > 0 ? `Distance travelled: ${formatDistance(points.slice(1).reduce((sum, point, index) => {
+                const previous = points[index];
+                const accuracyOk = (previous.accuracy_m ?? 0) <= 100 && (point.accuracy_m ?? 0) <= 100;
+                return sum + (accuracyOk ? distanceBetween(previous, point) : 0);
+              }, 0))}` : 'Distance unavailable until GPS points are recorded'}
+            </p>
             {points.length === 0 ? <p className="text-xs text-[#667085]">No location points were recorded for this session.</p> : (
               <div className="max-h-48 overflow-y-auto space-y-1.5">
                 {points.map(point => <div key={point.id} className="flex items-center justify-between gap-2 text-[11px] text-[#667085] border-b border-slate-100 pb-1"><span className="font-mono">{point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}</span><span>{dateLabel(point.captured_at)}</span></div>)}
