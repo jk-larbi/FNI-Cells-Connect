@@ -874,7 +874,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       {/* TAB 2: PRIVATE MESSAGING (Leadership Line with Replies & Emojis) */}
       {activeTab === 'private' && (
-        <div className="fni-chat-panel bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
+        <div className="fni-chat-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
           {/* Header */}
           <div className="p-4 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
