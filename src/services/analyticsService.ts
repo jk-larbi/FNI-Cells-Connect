@@ -277,7 +277,7 @@ export class AnalyticsService {
 
   static async exportAnalyticsCsv(): Promise<string> {
     const [cells, meetings, evang, contacts] = await Promise.all([
-      CellService.getCells(),
+      CellService.getActiveCells(),
       ReportService.getCellMeetingReports(),
       ReportService.getEvangelismReports(),
       FollowUpService.getContacts(),
