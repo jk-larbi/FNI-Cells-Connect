@@ -38,7 +38,14 @@ export class AnalyticsService {
     }
 
     const totalCells = scopedCells.length;
-    const registeredTutors = allProfiles.filter(p => p.role === 'tutor' || p.role === 'cell_leader');
+    const registeredTutors = allProfiles.filter(profile =>
+      (profile.role === 'tutor' || profile.role === 'cell_leader') &&
+      scopedCells.some(cell =>
+        cell.id === profile.cell_id ||
+        cell.tutorUid === profile.id ||
+        (profile.cell_name && cell.name.toLowerCase() === profile.cell_name.toLowerCase())
+      )
+    );
     const activeCellLeaders = isAdmin ? registeredTutors.length : (scopedCells.filter(c => c.is_active && c.tutorUid).length || 1);
 
     // Meeting and Evangelism counts
@@ -150,7 +157,7 @@ export class AnalyticsService {
    */
   static async getCellPerformance(): Promise<CellPerformanceRecord[]> {
     const [cells, meetings, evang, allProfiles] = await Promise.all([
-      CellService.getCells(),
+      CellService.getActiveCells(),
       ReportService.getCellMeetingReports(),
       ReportService.getEvangelismReports(),
       Promise.resolve(AuthService.getAllProfiles()),
