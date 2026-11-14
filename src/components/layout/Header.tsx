@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <div className="hidden sm:block"><ThemeToggle placement="inline" /></div>
+          <ThemeToggle placement="inline" />
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] text-[#142B4A] font-bold text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
             <Calendar className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
             <span>
