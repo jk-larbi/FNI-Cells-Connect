@@ -299,6 +299,8 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
         </div>
       </div>
 
+      <LocationSharingPanel mode="tutor" cellId={cell?.id || null} />
+
       {/* 2. WEEKLY REPORTING CYCLE & CELEBRATION CARD */}
       <div className="bg-white rounded-3xl border border-[#E3E8EF] p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
