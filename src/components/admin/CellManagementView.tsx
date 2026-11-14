@@ -87,6 +87,11 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             cellName: profile.cell_name || undefined,
           })));
         }
+      } catch (error) {
+        if (mounted) {
+          console.error('Tutor account lookup failed:', error);
+          setTutorOptions([]);
+        }
       } finally {
         if (mounted) setLoadingTutors(false);
       }
