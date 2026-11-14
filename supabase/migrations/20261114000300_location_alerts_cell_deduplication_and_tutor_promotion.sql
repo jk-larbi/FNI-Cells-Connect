@@ -190,6 +190,7 @@ BEGIN
   END LOOP;
 END $;
 
+UPDATE public.cells SET firebase_id=id WHERE firebase_id IS NULL;
 UPDATE public.cells SET normalized_name=regexp_replace(lower(trim(name)), '[^a-z0-9]', '', 'g')
  WHERE normalized_name IS NULL OR normalized_name='';
 CREATE UNIQUE INDEX IF NOT EXISTS cells_normalized_name_unique
