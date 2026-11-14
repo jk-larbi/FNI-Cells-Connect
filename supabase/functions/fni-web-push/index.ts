@@ -59,7 +59,7 @@ async function deviceId(profileId: string, endpoint: string) {
 
 async function getActiveTutorMapsSnapshot(): Promise<{ url: string | null; count: number }> {
   const { data: sessions, error } = await db.from("location_share_sessions")
-    .select("id").is("ended_at", null).order("started_at", { ascending: false }).limit(50);
+    .select("id").is("ended_at", null).order("started_at", { ascending: false }).limit(100);
   if (error || !sessions?.length) return { url: null, count: 0 };
 
   const locations = await Promise.all(sessions.map(async (session: any) => {
@@ -73,17 +73,16 @@ async function getActiveTutorMapsSnapshot(): Promise<{ url: string | null; count
     return { latitude: Number(point.latitude), longitude: Number(point.longitude) };
   }));
   const valid = locations.filter((point): point is { latitude: number; longitude: number } => Boolean(point));
-  if (!valid.length) return { url: null, count: 0 };
-  const coord = (point: { latitude: number; longitude: number }) => `${point.latitude},${point.longitude}`;
-  if (valid.length === 1) {
-    return {
-      url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coord(valid[0]))}`,
-      count: 1,
-    };
+  if (valid.length !== 1) {
+    // A Google Maps directions URL would falsely imply that separate tutors
+    // travelled together. Multi-tutor alerts therefore open the FNI dashboard.
+    return { url: null, count: valid.length };
   }
-  const waypoints = valid.slice(1, -1).slice(0, 9).map(coord).join("|");
-  const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(coord(valid[0]))}&destination=${encodeURIComponent(coord(valid[valid.length - 1]))}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ""}&travelmode=walking`;
-  return { url, count: valid.length };
+  const coordinate = `${valid[0].latitude},${valid[0].longitude}`;
+  return {
+    url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinate)}`,
+    count: 1,
+  };
 }
 
 Deno.serve(async req => {
