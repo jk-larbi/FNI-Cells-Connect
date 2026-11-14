@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Bell,
 } from 'lucide-react';
+import { LocationSharingPanel } from '../location/LocationSharingPanel';
 
 // Administrator Portal Views
 import { DashboardView } from '../dashboard/DashboardView';
@@ -155,6 +156,7 @@ export const AppLayout: React.FC = () => {
   // Fallback guard: if a non-admin is accidentally on an admin tab, redirect to tutor dashboard
   const effectiveTab: AppNavTab = !isAdmin && (
     currentTab === 'dashboard' ||
+    currentTab === 'location-sharing' ||
     currentTab === 'cell-management' ||
     currentTab === 'cell-leaders' ||
     currentTab === 'report-review' ||
@@ -193,6 +195,7 @@ export const AppLayout: React.FC = () => {
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
+                {effectiveTab === 'location-sharing' && <LocationSharingPanel mode="admin" />}
                 {effectiveTab === 'dashboard' && (
                   <DashboardView
                     onNavigateToTab={tab => navigateToTab(tab)}
