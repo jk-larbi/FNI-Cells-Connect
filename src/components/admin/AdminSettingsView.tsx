@@ -29,7 +29,7 @@ interface AdminSettingsViewProps {
 }
 
 export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) => {
-  const { currentUser, changePassword, updateAvatar } = useAuth();
+  const { currentUser, changePassword, updateAvatar, updateProfileDetails } = useAuth();
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [activeTab, setActiveTab] = useState<'system' | 'security' | 'audit'>('system');
@@ -54,6 +54,10 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   const [notificationEmail, setNotificationEmail] = useState('');
   const [emailSaveNotice, setEmailSaveNotice] = useState<{ text: string; isError: boolean } | null>(null);
   const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const [profileFullName, setProfileFullName] = useState(currentUser?.full_name || '');
+  const [profileUsername, setProfileUsername] = useState(currentUser?.username || '');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveNotice, setProfileSaveNotice] = useState<{ text: string; isError: boolean } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -91,6 +95,22 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
     } finally {
       setIsSavingSystem(false);
     }
+  };
+
+  useEffect(() => {
+    setProfileFullName(currentUser?.full_name || '');
+    setProfileUsername(currentUser?.username || '');
+  }, [currentUser?.id, currentUser?.full_name, currentUser?.username]);
+
+  const handleSaveAdministratorProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+    setProfileSaveNotice(null);
+    const result = await updateProfileDetails(profileFullName, profileUsername);
+    setProfileSaveNotice(result.success
+      ? { text: 'Administrator name and username updated across FNI.', isError: false }
+      : { text: result.error || 'Could not update administrator profile.', isError: true });
+    setIsSavingProfile(false);
   };
 
   const handleSaveNotificationEmail = async (e: React.FormEvent) => {
@@ -286,6 +306,16 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {/* TAB 2: ADMINISTRATOR PROFILE & SECURITY */}
       {activeTab === 'security' && (
         <div className="space-y-6 max-w-md">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
+            <div><h3 className="text-sm font-bold text-[#182230]">Administrator Profile</h3><p className="text-xs text-[#667085] mt-0.5">Set the name and username shown in the administrator portal, activity records, and leadership communications.</p></div>
+            <form onSubmit={handleSaveAdministratorProfile} className="space-y-3 text-xs">
+              {profileSaveNotice && <div className={`p-3 rounded-xl border-l-4 font-semibold ${profileSaveNotice.isError ? 'bg-[#FFF5F5] border-[#C74646] text-[#C74646]' : 'bg-emerald-50 border-[#23845B] text-[#23845B]'}`}>{profileSaveNotice.text}</div>}
+              <div><label className="block font-bold text-[#182230] mb-1">Full name</label><input type="text" required minLength={2} maxLength={80} value={profileFullName} onChange={e => setProfileFullName(e.target.value)} placeholder="Enter your full name" className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none" /></div>
+              <div><label className="block font-bold text-[#182230] mb-1">Username</label><div className="flex items-center rounded-xl border border-[#E3E8EF] focus-within:ring-2 focus-within:ring-[#142B4A]/20"><span className="pl-3 text-[#667085] font-bold">@</span><input type="text" required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" value={profileUsername} onChange={e => setProfileUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="your_username" className="w-full p-2.5 rounded-xl focus:outline-none" /></div><span className="text-[10px] text-[#667085] mt-1 block">3–20 characters. Letters, numbers, and underscores only.</span></div>
+              <button type="submit" disabled={isSavingProfile} className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold disabled:opacity-60">{isSavingProfile ? 'Saving profile...' : 'Save Profile Details'}</button>
+            </form>
+          </div>
+
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
             <div>
               <h3 className="text-sm font-bold text-[#182230]">Email Notifications</h3>
