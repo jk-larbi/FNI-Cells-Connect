@@ -166,7 +166,7 @@ export const LocationSharingService = {
         type: 'system_alert',
         metadata: {
           recipientRole: 'admin',
-          targetTab: 'dashboard',
+          targetTab: 'location-sharing',
           category: 'location',
           sessionId,
           tutorName: sessionDetails?.tutor_name || 'Tutor',
