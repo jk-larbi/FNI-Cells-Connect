@@ -241,13 +241,26 @@ export const LocationSharingService = {
   },
 
   async moveSessionToTrash(sessionId: string): Promise<void> {
-    const { error } = await supabase.rpc('trash_location_share_session', { p_session_id: sessionId });
+    const { data, error } = await supabase.from('location_share_sessions')
+      .update({ trashed_at: new Date().toISOString(), trashed_by: (await supabase.auth.getUser()).data.user?.id })
+      .eq('id', sessionId)
+      .not('ended_at', 'is', null)
+      .is('trashed_at', null)
+      .select('id')
+      .maybeSingle();
     if (error) throw error;
+    if (!data) throw new Error('This session is already in Trash, still active, or you do not have permission to move it.');
   },
 
   async restoreSession(sessionId: string): Promise<void> {
-    const { error } = await supabase.rpc('restore_location_share_session', { p_session_id: sessionId });
+    const { data, error } = await supabase.from('location_share_sessions')
+      .update({ trashed_at: null, trashed_by: null })
+      .eq('id', sessionId)
+      .not('trashed_at', 'is', null)
+      .select('id')
+      .maybeSingle();
     if (error) throw error;
+    if (!data) throw new Error('This session is not in Trash or you do not have permission to restore it.');
   },
 
   async getAdminActiveLocations(): Promise<ActiveTutorLocation[]> {
