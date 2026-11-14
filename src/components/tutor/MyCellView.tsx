@@ -108,10 +108,27 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
     }
   };
 
-  if (isLoading || !cell) {
+  if (isLoading) {
     return (
       <div className="py-24 text-center text-xs text-[#667085] font-medium">
         Loading cell profile...
+      </div>
+    );
+  }
+
+  if (!cell?.id) {
+    return (
+      <div className="max-w-xl mx-auto py-16 px-5 text-center space-y-3">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#F5F7FA] border border-[#E3E8EF] flex items-center justify-center">
+          <Building className="w-7 h-7 text-[#667085]" />
+        </div>
+        <h2 className="text-lg font-black text-[#142B4A]">No cell assigned to your account</h2>
+        <p className="text-sm text-[#667085] leading-relaxed">The previous test cell has been cleared. Your tutor login remains active, but there is no cell profile to display or edit. Please contact an administrator or register a new cell through the approved onboarding process.</p>
+        {onBack && (
+          <button type="button" onClick={onBack} className="mt-2 px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold">
+            Back to Dashboard
+          </button>
+        )}
       </div>
     );
   }
