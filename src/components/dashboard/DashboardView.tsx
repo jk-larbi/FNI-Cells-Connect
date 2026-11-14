@@ -1133,13 +1133,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             'report_approved',
                             'in_app'
                           );
-                          const [updatedStats, updatedQueue] = await Promise.all([
-                            AnalyticsService.getDashboardStats('admin'),
-                            ReportService.getUnifiedReviewQueue(),
-                            CellService.getActiveCells(),
-                          ]);
-                          setStats(updatedStats);
-                          setRecentQueue(updatedQueue.slice(0, 5));
+                          const [updatedStats, updatedQueue, activeCells] = await Promise.all([
+                             AnalyticsService.getDashboardStats('admin'),
+                             ReportService.getUnifiedReviewQueue(),
+                             CellService.getActiveCells(),
+                           ]);
+                           const activeIds = new Set(activeCells.map(cell => cell.id));
+                           setStats(updatedStats);
+                           setRecentQueue(updatedQueue.filter(report => activeIds.has(report.cellId)).slice(0, 5));
                         }}
                         className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-50 text-[#23845B] hover:bg-emerald-100 font-extrabold text-xs flex items-center justify-center gap-1 border border-emerald-200 shadow-2xs cursor-pointer min-h-[40px]"
                       >
