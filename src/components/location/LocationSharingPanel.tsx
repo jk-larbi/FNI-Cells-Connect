@@ -38,13 +38,11 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
     const activeIds = new Set(activeRows.map(row => row.id));
     if (knownActiveSessionIds.current === null) {
       knownActiveSessionIds.current = activeIds;
+      activeRows.forEach(session => notifyAdmin(`${session.tutor_name} is currently sharing their location for ${activityLabel(session.activity_type).toLowerCase()}.`, session.id));
     } else {
-      const newlyStarted = activeRows.filter(row => !knownActiveSessionIds.current?.has(row.id));
       const newlyStarted = activeRows.filter(row => !knownActiveSessionIds.current?.has(row.id));
       newlyStarted.forEach(session => notifyAdmin(`${session.tutor_name} has started ${activityLabel(session.activity_type).toLowerCase()}.`, session.id));
       knownActiveSessionIds.current = activeIds;
-    } else {
-      activeRows.forEach(session => notifyAdmin(`${session.tutor_name} is currently sharing their location for ${activityLabel(session.activity_type).toLowerCase()}.`, session.id));
     }
     setSessions(rows);
     if (selectedSession) {
