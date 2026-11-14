@@ -1,61 +1,35 @@
 -- Reversible trash for completed location-sharing sessions.
--- Active sessions cannot be trashed; their GPS watcher must be stopped first.
+-- Keep the session and its GPS points in place so restoration is lossless.
 ALTER TABLE public.location_share_sessions
   ADD COLUMN IF NOT EXISTS trashed_at timestamptz,
   ADD COLUMN IF NOT EXISTS trashed_by uuid REFERENCES auth.users(id);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'location_share_sessions_trashed_only_when_stopped'
+      AND conrelid = 'public.location_share_sessions'::regclass
+  ) THEN
+    ALTER TABLE public.location_share_sessions
+      ADD CONSTRAINT location_share_sessions_trashed_only_when_stopped
+      CHECK (trashed_at IS NULL OR ended_at IS NOT NULL);
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS location_share_sessions_trash_idx
   ON public.location_share_sessions(trashed_at DESC)
   WHERE trashed_at IS NOT NULL;
 
-CREATE OR REPLACE FUNCTION public.trash_location_share_session(p_session_id uuid)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path=public,private,pg_temp
-AS $$
-DECLARE v_owner uuid; v_ended_at timestamptz; v_count integer;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
-  SELECT tutor_user_id, ended_at INTO v_owner, v_ended_at
-    FROM public.location_share_sessions WHERE id=p_session_id FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Location session not found'; END IF;
-  IF v_ended_at IS NULL THEN RAISE EXCEPTION 'Stop live sharing before moving this session to Trash'; END IF;
-  IF v_owner <> auth.uid() AND NOT private.is_admin() THEN
-    RAISE EXCEPTION 'You are not authorised to move this session to Trash';
-  END IF;
-  UPDATE public.location_share_sessions
-    SET trashed_at=now(), trashed_by=auth.uid()
-    WHERE id=p_session_id AND trashed_at IS NULL;
-  GET DIAGNOSTICS v_count=ROW_COUNT;
-  RETURN v_count=1;
-END;
-$$;
+DROP POLICY IF EXISTS location_sessions_owner_or_admin_trash_update
+  ON public.location_share_sessions;
+CREATE POLICY location_sessions_owner_or_admin_trash_update
+  ON public.location_share_sessions
+  FOR UPDATE TO authenticated
+  USING (tutor_user_id = (select auth.uid()) OR (select private.is_admin()))
+  WITH CHECK (tutor_user_id = (select auth.uid()) OR (select private.is_admin()));
 
-CREATE OR REPLACE FUNCTION public.restore_location_share_session(p_session_id uuid)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path=public,private,pg_temp
-AS $$
-DECLARE v_owner uuid; v_count integer;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
-  SELECT tutor_user_id INTO v_owner
-    FROM public.location_share_sessions WHERE id=p_session_id AND trashed_at IS NOT NULL FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Trashed location session not found'; END IF;
-  IF v_owner <> auth.uid() AND NOT private.is_admin() THEN
-    RAISE EXCEPTION 'You are not authorised to restore this session';
-  END IF;
-  UPDATE public.location_share_sessions
-    SET trashed_at=NULL, trashed_by=NULL
-    WHERE id=p_session_id AND trashed_at IS NOT NULL;
-  GET DIAGNOSTICS v_count=ROW_COUNT;
-  RETURN v_count=1;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.trash_location_share_session(uuid) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.restore_location_share_session(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.trash_location_share_session(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.restore_location_share_session(uuid) TO authenticated;
+-- Preserve the existing read-only policy and grant only the two archive columns.
+REVOKE UPDATE ON public.location_share_sessions FROM anon, authenticated;
+GRANT UPDATE (trashed_at, trashed_by)
+  ON public.location_share_sessions TO authenticated;
