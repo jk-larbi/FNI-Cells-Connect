@@ -114,8 +114,8 @@ BEGIN
         EXECUTE format('UPDATE public.%I SET cell_id=$1 WHERE cell_id=ANY($2)',v_table) USING v_app_cell_id,v_reference_ids;
       END IF;
     END LOOP;
-    UPDATE public.profiles SET cell_id=v_app_cell_id,cell_name=trim(p_name),updated_at=now()
-     WHERE cell_id=ANY(v_reference_ids);
+    UPDATE public.profiles AS p SET cell_id=v_app_cell_id,cell_name=trim(p_name),updated_at=now()
+     WHERE p.cell_id=ANY(v_reference_ids);
     DELETE FROM public.cells WHERE id=ANY(v_dupe_ids);
     GET DIAGNOSTICS v_deleted=ROW_COUNT;
   END IF;
