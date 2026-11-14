@@ -286,7 +286,7 @@ export interface MessageReply {
   content: string;
 }
 
-export interface PrivateMessage {
+export interface ChatAttachment {\n  name: string;\n  path: string;\n  mimeType: string;\n  size: number;\n}\n\nexport interface PrivateMessage {
   id: string;
   senderUid: string;
   senderName: string;
