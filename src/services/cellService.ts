@@ -110,7 +110,6 @@ export class CellService {
       total_members: 0,
       active_members: 0,
       new_members: 0,
-      status: 'Unassigned',
       is_active: false,
       created_at: '',
     };
