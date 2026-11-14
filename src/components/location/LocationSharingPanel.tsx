@@ -97,10 +97,13 @@ const LiveTutorMap: React.FC<{ locations: ActiveTutorLocation[] }> = ({ location
             markersRef.current.set(item.session.id, marker);
           }
         });
-        if (!hasFittedRef.current && valid.length) {
+        if (valid.length) {
           const bounds = L.latLngBounds(valid.map(item => [item.point!.latitude, item.point!.longitude]));
-          mapRef.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
-          hasFittedRef.current = true;
+          const currentBounds = mapRef.current.getBounds();
+          if (!hasFittedRef.current || !currentBounds.contains(bounds)) {
+            mapRef.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
+            hasFittedRef.current = true;
+          }
         }
         mapRef.current.invalidateSize();
         setMapError('');
