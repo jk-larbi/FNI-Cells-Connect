@@ -600,6 +600,7 @@ export class AuthService {
       leaderName: input.fullName,
       leaderPhone: input.phoneNumber,
       regionId: input.regionId,
+      regionName: input.regionName,
       meetingDay: input.meetingDay,
       meetingTime: input.meetingTime,
       venueAddress: input.venueAddress,
@@ -611,11 +612,13 @@ export class AuthService {
     current.cell_name = res.cell.name;
     current.phone_number = input.phoneNumber;
     current.region_id = input.regionId;
+    current.role = 'tutor';
+    current.is_active = true;
     current.is_onboarded = true;
 
+    // The Supabase registration RPC updates the profile in the same database
+    // transaction as the cell registration. Keep the local session in sync.
     this.setCurrentProfile(current);
-    await SupabaseService.upsertProfile(current);
-
     return { profile: current, isExistingCellAssociated: res.isExistingAssociated };
   }
 
