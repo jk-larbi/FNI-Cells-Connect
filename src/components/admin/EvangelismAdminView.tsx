@@ -48,8 +48,10 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
         ReportService.getUnifiedReviewQueue(),
         CellService.getCells(),
       ]);
-      setReports(unifiedQueue);
-      setCells(cList);
+      const activeCells = cList.filter(cell => !cell.is_archived);
+      const activeIds = new Set(activeCells.map(cell => cell.id));
+      setReports(unifiedQueue.filter(report => activeIds.has(report.cellId)));
+      setCells(activeCells);
     } catch (err) {
       console.warn('Error loading evangelism & cell harvest reports:', err);
     } finally {
