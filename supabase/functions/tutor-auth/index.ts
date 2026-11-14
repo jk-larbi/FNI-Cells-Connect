@@ -58,15 +58,19 @@ Deno.serve(async (req: Request) => {
       }
 
       const userId = created.user.id;
-      const { error: profileError } = await admin.from("profiles").insert({
+      // The auth.users trigger creates the base profile first. Upsert enriches that row
+      // with the tutor registration fields instead of failing on the existing primary key.
+      const { error: profileError } = await admin.from("profiles").upsert({
         id: userId, supabase_user_id: userId, email: "", username,
         full_name: fullName, phone_number: phone, cell_name: cellName,
         role: "tutor", is_active: true, is_onboarded: true,
         must_change_password: false, auth_provider: "credentials",
-      });
+      }, { onConflict: "id" });
       if (profileError) {
+        await admin.from("profiles").delete().eq("id", userId);
         await admin.auth.admin.deleteUser(userId);
         if (profileError.code === "23505") return json({ error: "That username is already taken. Please choose another." }, 409);
+        console.error("Tutor profile upsert failed:", profileError);
         return json({ error: "Your profile could not be created. Please try again." }, 500);
       }
 
