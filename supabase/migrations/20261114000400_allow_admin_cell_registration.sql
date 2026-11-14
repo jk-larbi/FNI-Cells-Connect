@@ -56,7 +56,7 @@ BEGIN
   PERFORM pg_advisory_xact_lock(hashtext(v_normalized));
 
   SELECT c.id INTO v_cell_id FROM public.cells c
-   WHERE regexp_replace(lower(coalesce(nullif(c.normalized_name,''),c.name)), '[^a-z0-9]', '', 'g')=v_normalized
+   WHERE regexp_replace(lower(trim(c.name)), '[^a-z0-9]', '', 'g')=v_normalized
    ORDER BY c.is_archived ASC,c.is_active DESC,coalesce(c.total_members,0) DESC,
             coalesce(c.active_members,0) DESC,c.created_at ASC,c.id ASC
    LIMIT 1 FOR UPDATE;
@@ -95,7 +95,7 @@ BEGIN
   SELECT coalesce(firebase_id,id) INTO v_app_cell_id FROM public.cells WHERE id=v_cell_id;
   SELECT array_agg(id),array_agg(DISTINCT ref_id) INTO v_dupe_ids,v_reference_ids
     FROM public.cells c CROSS JOIN LATERAL unnest(ARRAY[c.id,c.firebase_id]) AS ref(ref_id)
-   WHERE regexp_replace(lower(coalesce(nullif(c.normalized_name,''),c.name)), '[^a-z0-9]', '', 'g')=v_normalized
+   WHERE regexp_replace(lower(trim(c.name)), '[^a-z0-9]', '', 'g')=v_normalized
      AND c.id<>v_cell_id AND ref_id IS NOT NULL;
   v_dupe_ids:=coalesce(v_dupe_ids,ARRAY[]::text[]);
   v_reference_ids:=coalesce(v_reference_ids,ARRAY[]::text[]);
