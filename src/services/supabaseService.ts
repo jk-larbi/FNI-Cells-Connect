@@ -198,6 +198,8 @@ function mapPrivateMessageFromDb(row: any): PrivateMessage {
     isRead: Boolean(row.is_read),
     readAt: row.read_at,
     replyTo: row.reply_to,
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
   };
 }
 
@@ -214,6 +216,8 @@ function mapCommunityMessageFromDb(row: any): CommunityMessage {
     replyTo: row.reply_to,
     mentions: Array.isArray(row.mentions) ? row.mentions : [],
     reactions: typeof row.reactions === 'object' && row.reactions !== null ? row.reactions : {},
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
   };
 }
 
@@ -786,7 +790,7 @@ export class SupabaseService {
 
   static async uploadChatAttachment(userUid: string, file: File): Promise<{ name: string; path: string; mimeType: string; size: number }> {
     if (!this.isAvailable()) throw new Error('Media uploads are unavailable while offline.');
-    if (!/^(image|video|audio)\\//i.test(file.type)) throw new Error('Only pictures, videos and audio files are supported.');
+    if (!(file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))) throw new Error('Only pictures, videos and audio files are supported.');
     if (file.size > 50 * 1024 * 1024) throw new Error('Each attachment must be 50 MB or smaller.');
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
     const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
@@ -924,6 +928,8 @@ export class SupabaseService {
       is_read: Boolean(msg.isRead),
       read_at: msg.readAt || null,
       reply_to: msg.replyTo || null,
+      attachments: msg.attachments || [],
+      deleted_for_everyone_at: msg.deletedForEveryoneAt || null,
     };
 
     try {
@@ -999,6 +1005,8 @@ export class SupabaseService {
       reply_to: msg.replyTo || null,
       mentions: msg.mentions || [],
       reactions: msg.reactions || {},
+      attachments: msg.attachments || [],
+      deleted_for_everyone_at: msg.deletedForEveryoneAt || null,
     };
 
     try {
