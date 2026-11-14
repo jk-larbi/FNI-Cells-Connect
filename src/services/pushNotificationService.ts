@@ -149,6 +149,14 @@ export class PushNotificationService {
         reject(new Error('Android did not return an FCM device token. Check the Firebase Android configuration and try again.'));
       }, 20000);
       try {
+        await PushNotifications.createChannel({
+          id: 'fni_updates',
+          name: 'FNI Updates',
+          description: 'Messages, reports and important FNI activity',
+          importance: 5,
+          sound: 'default',
+          vibration: true,
+        });
         registrationListener = await PushNotifications.addListener('registration', async ({ value }) => {
           if (settled) return;
           try {
