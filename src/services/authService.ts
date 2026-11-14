@@ -172,6 +172,84 @@ export class AuthService {
     }
   }
 
+
+  // --- SOCIAL AUTHENTICATION (GOOGLE / APPLE) ---
+  static async signInWithProvider(
+    provider: 'google' | 'apple',
+    pendingTutor?: { fullName: string; cellName: string; phoneNumber?: string; coLeaderName?: string }
+  ): Promise<{ error: string | null }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase authentication service is unavailable.' };
+    }
+    try {
+      if (pendingTutor) {
+        sessionStorage.setItem('fni_pending_oauth_tutor', JSON.stringify(pendingTutor));
+      } else {
+        sessionStorage.removeItem('fni_pending_oauth_tutor');
+      }
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo }
+      });
+      if (error) {
+        sessionStorage.removeItem('fni_pending_oauth_tutor');
+        return { error: error.message };
+      }
+      return { error: null };
+    } catch (error: any) {
+      sessionStorage.removeItem('fni_pending_oauth_tutor');
+      return { error: error?.message || 'Could not start social sign-in.' };
+    }
+  }
+
+  static async completeOAuthTutorRegistration(input: {
+    fullName: string; cellName: string; phoneNumber?: string; coLeaderName?: string;
+  }): Promise<Profile> {
+    if (!supabase) throw new Error('Supabase authentication service is unavailable.');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Social sign-in did not return an authenticated user.');
+    const email = user.email || '';
+    if (!email) throw new Error('The selected provider did not return an email address.');
+    const fullName = input.fullName.trim();
+    const cellName = input.cellName.trim();
+    const normalizedCell = normalizeCellName(cellName);
+    const cells = await CellService.getCells();
+    if (cells.some(c => (c.normalized_name || normalizeCellName(c.name)) === normalizedCell && c.tutorUid !== user.id)) {
+      throw new Error(`Cell "${cellName}" is already registered. Please contact FNI support.`);
+    }
+    const now = new Date().toISOString();
+    const cellId = `cell-${user.id}`;
+    const phoneNumber = input.phoneNumber?.trim() || '';
+    const cell: Cell = {
+      id: cellId, name: cellName, normalized_name: normalizedCell,
+      location: 'Fellowship Center', code: `FNI-CEL-${Date.now().toString().slice(-4)}`,
+      tutorUid: user.id, leader_id: user.id,
+      leader_name: input.coLeaderName?.trim() ? `${fullName} & ${input.coLeaderName.trim()}` : fullName,
+      co_leader_name: input.coLeaderName?.trim() || undefined,
+      leader_phone: phoneNumber || undefined, meeting_day: 'Wednesday', meeting_time: '18:30',
+      venue_address: 'Fellowship Center', target_attendance: 25, status: 'Active',
+      is_active: true, created_at: now,
+    };
+    await CellService.updateCell(cell);
+    const profile: Profile = {
+      id: user.id, supabase_user_id: user.id, email,
+      full_name: fullName, phone_number: phoneNumber || undefined,
+      cell_id: cellId, cell_name: cellName, role: 'tutor',
+      is_active: true, is_onboarded: true, must_change_password: false,
+      auth_provider: user.app_metadata?.provider === 'apple' ? 'apple' : 'google',
+      created_at: user.created_at || now,
+    };
+    const saved = await SupabaseService.upsertProfile(profile);
+    if (!saved) throw new Error('Your social account was created, but the FNI tutor profile could not be saved.');
+    ReportService.recordAuditLog({
+      action: 'TUTOR_REGISTERED_CELL', entity_type: 'users', entity_id: user.id,
+      details: { tutor_name: fullName, email, cell_name: cellName, auth_provider: profile.auth_provider },
+    });
+    this.setCurrentProfile(profile);
+    return profile;
+  }
+
   // --- 1. TUTOR REGISTRATION (STRICT SUPABASE AUTH ONLY) ---
   static async registerTutor(input: TutorRegistrationInput): Promise<{
     profile: Profile | null;
