@@ -21,7 +21,8 @@ import {
   Send,
   DollarSign,
   BookOpen,
-  MessageSquare,
+  MessagesSquare,
+  ContactRound,
   X,
 } from 'lucide-react';
 
@@ -57,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
     { id: 'finance' as AppNavTab, label: 'Offering Aggregation', icon: DollarSign },
     { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessageSquare },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
     { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3 },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings },
@@ -70,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: FileText },
     { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: Flame },
     { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: FileCheck },
-    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: Users },
+    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: ContactRound },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
     { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
     { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessageSquare },
@@ -198,12 +199,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#142B4A] text-white shadow-sm'
+                      ? 'bg-[#229ED9]/10 text-[#1677A8] border border-[#229ED9]/20 shadow-none'
                       : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#C6A45A]' : 'text-[#667085]'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#229ED9]' : 'text-[#667085]'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
                   {item.badge && item.badge > 0 ? (
