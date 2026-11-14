@@ -57,6 +57,35 @@ async function deviceId(profileId: string, endpoint: string) {
   return `webpush_${profileId}_${hex.slice(0, 24)}`;
 }
 
+async function getActiveTutorMapsSnapshot(): Promise<{ url: string | null; count: number }> {
+  const { data: sessions, error } = await db.from("location_share_sessions")
+    .select("id").is("ended_at", null).order("started_at", { ascending: false }).limit(50);
+  if (error || !sessions?.length) return { url: null, count: 0 };
+
+  const locations = await Promise.all(sessions.map(async (session: any) => {
+    const { data: point } = await db.from("location_share_points")
+      .select("latitude,longitude,captured_at")
+      .eq("session_id", session.id)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!point || !Number.isFinite(Number(point.latitude)) || !Number.isFinite(Number(point.longitude))) return null;
+    return { latitude: Number(point.latitude), longitude: Number(point.longitude) };
+  }));
+  const valid = locations.filter((point): point is { latitude: number; longitude: number } => Boolean(point));
+  if (!valid.length) return { url: null, count: 0 };
+  const coord = (point: { latitude: number; longitude: number }) => `${point.latitude},${point.longitude}`;
+  if (valid.length === 1) {
+    return {
+      url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coord(valid[0]))}`,
+      count: 1,
+    };
+  }
+  const waypoints = valid.slice(1, -1).slice(0, 9).map(coord).join("|");
+  const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(coord(valid[0]))}&destination=${encodeURIComponent(coord(valid[valid.length - 1]))}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ""}&travelmode=walking`;
+  return { url, count: valid.length };
+}
+
 Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -189,12 +218,30 @@ Deno.serve(async req => {
       .select("id,user_id,token").in("user_id", recipientIds);
     if (deviceError) return json({ error: "Could not load registered browser devices" }, 500);
 
+    let deliveryMetadata = notification.metadata || {};
+    if (deliveryMetadata.category === "location") {
+      const snapshot = await getActiveTutorMapsSnapshot();
+      if (snapshot.url) {
+        deliveryMetadata = {
+          ...deliveryMetadata,
+          targetTab: "dashboard",
+          actionUrl: snapshot.url,
+          mapSnapshot: true,
+          activeTutorCount: snapshot.count,
+        };
+        const { error: updateError } = await db.from("notifications")
+          .update({ metadata: deliveryMetadata, action_url: snapshot.url, target_tab: "dashboard" })
+          .eq("id", notification.id);
+        if (updateError) console.warn("Could not attach Maps link to the in-app location alert:", updateError.message);
+      }
+    }
+
     const { server } = await getPushServer();
     const payload = JSON.stringify({
       title: String(notification.title).slice(0, 140),
       body: String(notification.message).slice(0, 500),
       tag: String(notification.id).slice(0, 120),
-      data: notification.metadata || {},
+      data: deliveryMetadata,
       timestamp: notification.created_at || new Date().toISOString(),
     });
 
