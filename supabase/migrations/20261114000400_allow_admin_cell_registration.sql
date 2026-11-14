@@ -92,6 +92,7 @@ BEGIN
     WHERE id=v_cell_id;
   END IF;
 
+  UPDATE public.cells SET firebase_id=id WHERE id=v_cell_id AND firebase_id IS NULL;
   SELECT coalesce(firebase_id,id) INTO v_app_cell_id FROM public.cells WHERE id=v_cell_id;
   SELECT array_agg(id),array_agg(DISTINCT ref_id) INTO v_dupe_ids,v_reference_ids
     FROM public.cells c CROSS JOIN LATERAL unnest(ARRAY[c.id,c.firebase_id]) AS ref(ref_id)
