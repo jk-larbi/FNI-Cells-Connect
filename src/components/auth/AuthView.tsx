@@ -83,7 +83,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
       const res = await registerTutor({
         fullName: regFullName.trim(),
         email: regEmail.trim(),
-        username: regEmail Address.trim() || undefined,
         phoneNumber: regPhone.trim() || undefined,
         password: regPassword,
         confirmPassword: regConfirmPassword,
