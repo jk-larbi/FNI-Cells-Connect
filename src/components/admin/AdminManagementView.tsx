@@ -106,7 +106,7 @@ export const AdminManagementView: React.FC = () => {
         ReportService.getPeriods(),
       ]);
       setRegions(r);
-      setCells(c);
+      setCells(c.filter(cell => !cell.is_archived));
       setPeriods(p);
       setUsers(AuthService.getAllProfiles());
       if (r.length > 0) {
@@ -227,7 +227,7 @@ export const AdminManagementView: React.FC = () => {
     return matchesName && matchesRole;
   });
 
-  const filteredCells = cells.filter(c => {
+  const filteredCells = cells.filter(c => !c.is_archived).filter(c => {
     const q = cellSearchQuery.toLowerCase();
     const matchesQuery = !cellSearchQuery.trim() || 
       c.name.toLowerCase().includes(q) || 
