@@ -266,8 +266,11 @@ export class AuthService {
     const password = input.password || '';
     const coLeaderName = input.coLeaderName?.trim();
 
-    if (!fullName || !email || !cellName || !password) {
-      return { profile: null, cell: null, error: 'Full name, email address, cell name, and password are required.' };
+    if (!fullName || !email || !cellName || !username || !password) {
+      return { profile: null, cell: null, error: 'Full name, username, email address, cell name, and password are required.' };
+    }
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+      return { profile: null, cell: null, error: 'Username must be 3–20 characters and use only lowercase letters, numbers, or underscores.' };
     }
     if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
       return { profile: null, cell: null, error: 'Please enter a valid email address.' };
@@ -284,6 +287,9 @@ export class AuthService {
 
     const normalizedCell = normalizeCellName(cellName);
     try {
+      const { data: existingUsername, error: usernameLookupError } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
+      if (usernameLookupError) return { profile: null, cell: null, error: 'Could not verify username availability. Please try again.' };
+      if (existingUsername) return { profile: null, cell: null, error: 'That username is already taken. Please choose another.' };
       const allCells = await CellService.getCells();
       const existing = allCells.find(c => (c.normalized_name || normalizeCellName(c.name)) === normalizedCell);
       if (existing) {
@@ -307,7 +313,13 @@ export class AuthService {
           },
         },
       });
-      if (authError) return { profile: null, cell: null, error: authError.message };
+      if (authError) {
+        const message = authError.message || '';
+        if (message.toLowerCase().includes('profiles_username_lower_unique') || message.toLowerCase().includes('duplicate key')) {
+          return { profile: null, cell: null, error: 'That username is already taken. Please choose another.' };
+        }
+        return { profile: null, cell: null, error: message };
+      }
       if (!authData?.user) return { profile: null, cell: null, error: 'Failed to create user account in Supabase Auth.' };
 
       const uid = authData.user.id;
