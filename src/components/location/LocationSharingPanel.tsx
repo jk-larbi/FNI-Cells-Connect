@@ -220,8 +220,10 @@ export const LocationSharingPanel: React.FC<Props> = ({ mode, cellId }) => {
       LocationSharingService.getTrashSessions(),
     ]);
     setTrashSessions(trashedRows);
-    setRegisteredCells((cells || []).filter(cell => !cell.is_archived));
-    setActiveLocations(liveLocations);
+    const activeCells = (cells || []).filter(cell => !cell.is_archived);
+    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    setRegisteredCells(activeCells);
+    setActiveLocations(liveLocations.filter(location => activeCellIds.has(location.cell_id)));
     const activeRows = rows.filter(row => !row.ended_at);
     const activeIds = new Set(activeRows.map(row => row.id));
     if (knownActiveSessionIds.current === null) {
