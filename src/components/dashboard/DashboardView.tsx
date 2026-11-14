@@ -4,6 +4,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { PushNotificationService } from '../../services/pushNotificationService';
 import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
+import { CellService } from '../../services/cellService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics, CellPerformanceRecord } from '../../types';
@@ -107,16 +108,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [dashStats, systemSettings, queue, sMetrics, cPerf] = await Promise.all([
+      const [dashStats, systemSettings, queue, sMetrics, cPerf, activeCells] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
         ReportService.getUnifiedReviewQueue(),
         SoulTargetService.calculateMetrics(),
         AnalyticsService.getCellPerformance(),
+        CellService.getActiveCells(),
       ]);
+      const activeCellIds = new Set(activeCells.map(cell => cell.id));
       setStats(dashStats);
       setSettings(systemSettings);
-      setRecentQueue(queue.slice(0, 7));
+      setRecentQueue(queue.filter(report => activeCellIds.has(report.cellId)).slice(0, 7));
       setSoulMetrics(sMetrics);
       setSoulMetricsUpdatedAt(new Date());
       setCellPerformance(cPerf);
@@ -989,12 +992,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                   'in_app'
                                 );
                                 // Refresh dashboard
-                                const [updatedStats, updatedQueue] = await Promise.all([
+                                const [updatedStats, updatedQueue, activeCells] = await Promise.all([
                                   AnalyticsService.getDashboardStats('admin'),
                                   ReportService.getUnifiedReviewQueue(),
+                                  CellService.getActiveCells(),
                                 ]);
                                 setStats(updatedStats);
-                                setRecentQueue(updatedQueue.slice(0, 5));
+                                setRecentQueue(updatedQueue.filter(report => activeCells.some(cell => cell.id === report.cellId)).slice(0, 5));
                               }}
                               className="px-2 py-1 rounded-lg bg-emerald-50 text-[#23845B] hover:bg-emerald-100 inline-flex items-center gap-1 text-[11px] font-bold transition-colors shadow-2xs cursor-pointer border border-emerald-200"
                               title="Accept Report"
@@ -1132,6 +1136,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           const [updatedStats, updatedQueue] = await Promise.all([
                             AnalyticsService.getDashboardStats('admin'),
                             ReportService.getUnifiedReviewQueue(),
+                            CellService.getActiveCells(),
                           ]);
                           setStats(updatedStats);
                           setRecentQueue(updatedQueue.slice(0, 5));
