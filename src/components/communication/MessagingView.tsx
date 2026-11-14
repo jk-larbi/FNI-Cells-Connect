@@ -579,7 +579,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-[#667085]">
+                          <div className={isMine ? "text-xs text-white/70" : "text-xs text-[#667085]"}>
                             {msg.cellName || 'FNI Ministry'}
                           </div>
                         </div>
@@ -597,9 +597,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         }`}>
                           {(msg.category || 'general').replace('_', ' ')}
                         </span>
-                        <span className="text-xs text-[#667085]">
+                        <span className={isMine ? "text-xs text-white/70" : "text-xs text-[#667085]"}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
+                        <div className="relative">
+                          <button type="button" onClick={() => setOpenMessageMenu(openMessageMenu === ("community:" + msg.id) ? null : ("community:" + msg.id))} className={isMine ? "p-1 rounded-lg text-white/80 hover:bg-white/10" : "p-1 rounded-lg text-[#667085] hover:bg-[#F5F7FA]"} aria-label="Message options">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                          {openMessageMenu === ("community:" + msg.id) && (
+                            <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                              <button type="button" onClick={() => { setCommunityReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); communityInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -610,11 +620,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         className="p-2.5 rounded-xl bg-[#142B4A]/5 border-l-4 border-[#C6A45A] text-xs cursor-pointer hover:bg-[#142B4A]/10 transition-colors ml-11"
                         title="Click to view original message"
                       >
-                        <div className="flex items-center gap-1.5 font-bold text-[#142B4A]">
+                        <div className={isMine ? "flex items-center gap-1.5 font-bold text-white" : "flex items-center gap-1.5 font-bold text-[#142B4A]"}>
                           <CornerDownRight className="w-3.5 h-3.5 text-[#C6A45A]" />
                           <span>Replying to {msg.replyTo.senderName}</span>
                         </div>
-                        <p className="text-[#667085] truncate mt-0.5 text-xs">
+                        <p className={isMine ? "text-white/70 truncate mt-0.5 text-xs" : "text-[#667085] truncate mt-0.5 text-xs"}>
                           {msg.replyTo.content}
                         </p>
                       </div>
@@ -950,6 +960,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           : 'bg-white text-[#182230] border border-[#E3E8EF] rounded-tl-none shadow-2xs'
                       }`}
                     >
+                      <button type="button" onClick={() => setOpenMessageMenu(openMessageMenu === ("private:" + msg.id) ? null : ("private:" + msg.id))} className={`absolute top-1 right-1 z-10 rounded-lg p-1 ${isMine ? 'text-white/80 hover:bg-white/10' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label="Message options">
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {openMessageMenu === ("private:" + msg.id) && (
+                        <div className="absolute right-1 top-8 z-40 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                          <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
+                        </div>
+                      )}
                       {renderFormattedMessage(msg.content)}
 
                       {/* Floating Reply Button on Hover */}
