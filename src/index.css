@@ -1302,3 +1302,10 @@ img, video, canvas { max-width: 100%; }
   html { font-size: 15px; }
   main { padding-left: 1.25rem; padding-right: 1.25rem; }
 }
+
+/* Preserve translucent FNI brand tints; do not turn opacity utilities into solid fills. */
+html.dark [class*="bg-[#142B4A]/5"] { background-color: rgb(65 105 180 / .16) !important; border-color: rgb(117 153 218 / .24) !important; }
+html.dark [class*="bg-[#142B4A]/10"] { background-color: rgb(65 105 180 / .22) !important; border-color: rgb(117 153 218 / .30) !important; }
+html.dark [class*="hover:bg-[#142B4A]/10"]:hover { background-color: rgb(65 105 180 / .30) !important; }
+html.dark [class*="bg-[#C6A45A]/"] { background-color: rgb(217 167 46 / .16) !important; }
+html.dark [class*="bg-purple-900"], html.dark [class*="bg-violet-900"] { background-color: #30264B !important; }
