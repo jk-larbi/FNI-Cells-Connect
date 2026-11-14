@@ -383,6 +383,8 @@ export interface SoulTargetMetrics {
   percentageAchieved: number;
   soulsFromEvangelism: number;
   soulsFromCells: number;
+  firstTimersFromCells: number;
+  pendingSouls: number;
   weeklyProgress: Array<{ week: string; souls: number }>;
   monthlyProgress: Array<{ month: string; souls: number }>;
   quarterlyProgress: Array<{ quarter: string; souls: number }>;
