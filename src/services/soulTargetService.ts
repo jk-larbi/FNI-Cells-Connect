@@ -101,7 +101,7 @@ export class SoulTargetService {
   static async calculateMetrics(): Promise<SoulTargetMetrics> {
     const [config, settings, evangelismReports, meetingReports, cells] = await Promise.all([
       this.getConfig(), SettingsService.getSettings(), ReportService.getEvangelismReports(),
-      ReportService.getCellMeetingReports(), CellService.getCells(),
+      ReportService.getCellMeetingReports(), CellService.getActiveCells(),
     ]);
     const year = config.year || new Date().getFullYear();
     const annualTarget = settings.annualSoulWinningTarget || config.annualTarget || 5000;
@@ -110,13 +110,16 @@ export class SoulTargetService {
       const date = new Date(value);
       return !Number.isNaN(date.getTime()) && date.getFullYear() === year;
     };
+    const activeCellIds = new Set(cells.map(cell => cell.id));
+    const currentCellEvang = evangelismReports.filter(report => activeCellIds.has(report.cellId));
+    const currentCellMeetings = meetingReports.filter(report => activeCellIds.has(report.cellId));
     const isApproved = (status: string) => status === 'Approved' || status === 'approved';
     const isPending = (status: string) => ['Newly Submitted', 'submitted', 'under_review'].includes(status);
     // Only approved field conversions count toward the annual soul-winning target.
-    const validEvang = evangelismReports.filter(r => isApproved(r.status) && isInTargetYear(r.date || r.submittedAt));
-    const pendingEvang = evangelismReports.filter(r => isPending(r.status) && isInTargetYear(r.date || r.submittedAt));
+    const validEvang = currentCellEvang.filter(r => isApproved(r.status) && isInTargetYear(r.date || r.submittedAt));
+    const pendingEvang = currentCellEvang.filter(r => isPending(r.status) && isInTargetYear(r.date || r.submittedAt));
     // Cell meeting newMembers means first-time visitors contacted, not conversions.
-    const validMeetings = meetingReports.filter(r => isApproved(r.status) && isInTargetYear(r.meetingDate || r.submittedAt));
+    const validMeetings = currentCellMeetings.filter(r => isApproved(r.status) && isInTargetYear(r.meetingDate || r.submittedAt));
     const firstTimersFromCells = validMeetings.reduce((sum, r) => sum + (Number(r.newMembers) || 0), 0);
     const pendingSouls = pendingEvang.reduce((sum, r) => sum + (Number(r.verifiedSoulsWon ?? r.conversions) || 0), 0);
 
