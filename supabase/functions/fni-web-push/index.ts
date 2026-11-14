@@ -21,6 +21,83 @@ const db = createClient(supabaseUrl, serviceKey, {
 });
 
 let pushServerPromise: Promise<{ server: webpush.ApplicationServer; publicKey: string }> | null = null;
+
+const fcmServiceAccountJson = Deno.env.get("FCM_SERVICE_ACCOUNT_JSON") || "";
+let fcmAccessTokenCache: { token: string; expiresAt: number } | null = null;
+const base64Url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))
+  .replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+const textBase64Url = (value: string) => base64Url(new TextEncoder().encode(value));
+function pemToBytes(pem: string): Uint8Array {
+  const clean = pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s/g, "");
+  const binary = atob(clean);
+  return Uint8Array.from(binary, char => char.charCodeAt(0));
+}
+async function getFcmAccessToken(): Promise<{ token: string; projectId: string }> {
+  if (!fcmServiceAccountJson) throw new Error("Firebase server credentials are not configured. Add FCM_SERVICE_ACCOUNT_JSON to Supabase Edge Function secrets.");
+  const account = JSON.parse(fcmServiceAccountJson);
+  if (!account.project_id || !account.client_email || !account.private_key) throw new Error("Firebase service account JSON is missing project_id, client_email or private_key.");
+  if (fcmAccessTokenCache && fcmAccessTokenCache.expiresAt > Date.now() + 60000) {
+    return { token: fcmAccessTokenCache.token, projectId: account.project_id };
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const header = textBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const claims = textBase64Url(JSON.stringify({
+    iss: account.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: account.token_uri || "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  }));
+  const unsigned = header + "." + claims;
+  const key = await crypto.subtle.importKey(
+    "pkcs8", pemToBytes(account.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned)));
+  const assertion = unsigned + "." + base64Url(signature);
+  const response = await fetch(account.token_uri || "https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  const tokenData = await response.json();
+  if (!response.ok || !tokenData.access_token) throw new Error(tokenData.error_description || tokenData.error || "Could not authenticate with Firebase Cloud Messaging.");
+  fcmAccessTokenCache = { token: tokenData.access_token, expiresAt: Date.now() + Number(tokenData.expires_in || 3600) * 1000 };
+  return { token: tokenData.access_token, projectId: account.project_id };
+}
+async function sendFcm(token: string, payload: { title: string; body: string; data?: Record<string, unknown> }) {
+  const credentials = await getFcmAccessToken();
+  const data = Object.fromEntries(Object.entries(payload.data || {}).map(([key, value]) => [
+    key, typeof value === "string" ? value : JSON.stringify(value ?? ""),
+  ]));
+  const response = await fetch(`https://fcm.googleapis.com/v1/projects/${credentials.projectId}/messages:send`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${credentials.token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: {
+        token,
+        notification: { title: payload.title.slice(0, 140), body: payload.body.slice(0, 500) },
+        data,
+        android: {
+          priority: "HIGH",
+          notification: { channel_id: "fni_updates", sound: "default" },
+        },
+      },
+    }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const code = String(result?.error?.details?.[0]?.errorCode || result?.error?.status || "");
+    const error: any = new Error(result?.error?.message || "Firebase push delivery failed.");
+    error.status = response.status;
+    error.fcmCode = code;
+    throw error;
+  }
+  return result;
+}
 async function getPushServer() {
   if (!vapidKeysJson) throw new Error("Push server keys are not configured. Add VAPID_KEYS_JSON to Supabase Edge Function secrets.");
   if (!pushServerPromise) {
@@ -51,10 +128,10 @@ async function authenticatedUser(req: Request) {
   return { user, profile, error: null };
 }
 
-async function deviceId(profileId: string, endpoint: string) {
+async function deviceId(profileId: string, endpoint: string, kind = "webpush") {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint));
   const hex = Array.from(new Uint8Array(hash)).map(x => x.toString(16).padStart(2, "0")).join("");
-  return `webpush_${profileId}_${hex.slice(0, 24)}`;
+  return `${kind}_${profileId}_${hex.slice(0, 24)}`;
 }
 
 async function getActiveTutorMapsSnapshot(): Promise<{ url: string | null; count: number }> {
@@ -107,80 +184,103 @@ Deno.serve(async req => {
   }
 
   if (action === "register") {
+    const nativeToken = String(body?.token || "");
+    const isFcm = body?.kind === "fcm" && nativeToken.length >= 40;
     const subscription = body?.subscription;
-    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-      return json({ error: "Invalid browser push subscription" }, 400);
+    if (!isFcm && (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth)) {
+      return json({ error: "A valid FCM token or browser push subscription is required" }, 400);
     }
     try {
-      await getPushServer();
-      const id = await deviceId(auth.profile.id, subscription.endpoint);
+      if (!isFcm) await getPushServer();
+      const identity = isFcm ? nativeToken : subscription.endpoint;
+      const kind = isFcm ? "fcm" : "webpush";
+      const id = await deviceId(auth.profile.id, identity, kind);
       const { error } = await db.from("device_tokens").upsert({
         id,
         user_id: auth.profile.id,
-        token: JSON.stringify(subscription),
+        token: isFcm ? nativeToken : JSON.stringify(subscription),
         role: auth.profile.role,
-        device: String(body.device || "Browser").slice(0, 500),
-        platform: String(body.platform || "Web").slice(0, 120),
-        legacy_data: { kind: "web_push", endpoint: subscription.endpoint },
+        device: String(body.device || (isFcm ? "Android" : "Browser")).slice(0, 500),
+        platform: String(body.platform || (isFcm ? "Android" : "Web")).slice(0, 120),
+        legacy_data: isFcm ? { kind: "fcm" } : { kind: "web_push", endpoint: subscription.endpoint },
         updated_at: new Date().toISOString(),
       }, { onConflict: "id" });
       if (error) throw error;
-      return json({ success: true, deviceId: id });
+      return json({ success: true, deviceId: id, kind });
     } catch (error: any) {
-      console.error("Push subscription registration failed:", error);
-      return json({ error: error?.message || "Could not save this device subscription" }, 500);
+      console.error("Push device registration failed:", error);
+      return json({ error: error?.message || "Could not save this device registration" }, 500);
     }
   }
 
   if (action === "unregister") {
+    const token = String(body?.token || "");
     const endpoint = String(body?.endpoint || "");
-    if (!endpoint) return json({ error: "Subscription endpoint required" }, 400);
+    if (!token && !endpoint) return json({ error: "Device token or subscription endpoint required" }, 400);
     const { data: rows, error } = await db.from("device_tokens")
-      .select("id,token").eq("user_id", auth.profile.id);
-    if (error) return json({ error: "Could not find this device subscription" }, 500);
+      .select("id,token,legacy_data").eq("user_id", auth.profile.id);
+    if (error) return json({ error: "Could not find this device registration" }, 500);
     const match = (rows || []).find((row: any) => {
+      if (token) return row.token === token && row.legacy_data?.kind === "fcm";
       try { return JSON.parse(row.token)?.endpoint === endpoint; } catch { return false; }
     });
     if (match) {
       const { error: deleteError } = await db.from("device_tokens").delete().eq("id", match.id);
-      if (deleteError) return json({ error: "Could not remove this device subscription" }, 500);
+      if (deleteError) return json({ error: "Could not remove this device registration" }, 500);
     }
     return json({ success: true });
   }
 
   if (action === "test_push") {
     const { data: devices, error } = await db.from("device_tokens")
-      .select("id,token").eq("user_id", auth.profile.id);
-    if (error) return json({ error: "Could not load this device's push subscription" }, 500);
-    if (!devices?.length) return json({ sent: 0, failed: 0, message: "Enable browser push on this device first." });
-    const { server } = await getPushServer();
-    const payload = JSON.stringify({
-      title: "FNI CELLS CONNECT Test Alert",
-      body: "Background browser push is working on this device.",
-      tag: `fni-test-${Date.now()}`,
-      data: { targetTab: "notifications" },
-      timestamp: new Date().toISOString(),
-    });
+      .select("id,token,legacy_data").eq("user_id", auth.profile.id);
+    if (error) return json({ error: "Could not load this device's push registration" }, 500);
+    if (!devices?.length) return json({ sent: 0, failed: 0, message: "Enable push notifications on this device first." });
+    const webDevices = devices.filter((device: any) => device.legacy_data?.kind !== "fcm");
+    const fcmDevices = devices.filter((device: any) => device.legacy_data?.kind === "fcm");
     let sent = 0;
     let failed = 0;
     const staleIds: string[] = [];
-    await Promise.all(devices.map(async (device: any) => {
-      let subscription: webpush.PushSubscription;
-      try { subscription = JSON.parse(device.token); } catch { return; }
-      if (!subscription?.endpoint || !subscription?.keys) return;
-      try {
-        await server.subscribe(subscription).pushTextMessage(payload, {
-          ttl: 300,
-          urgency: webpush.Urgency.High,
-        });
-        sent += 1;
-      } catch (error: any) {
-        const status = Number(error?.response?.status || 0);
-        if (status === 404 || status === 410) staleIds.push(device.id);
-        else console.error("Test web push delivery failed:", status, error?.message || error);
-        failed += 1;
-      }
-    }));
+    if (webDevices.length) {
+      const { server } = await getPushServer();
+      const payload = JSON.stringify({
+        title: "FNI CELLS CONNECT Test Alert",
+        body: "Background push notifications are working on this device.",
+        tag: `fni-test-${Date.now()}`,
+        data: { targetTab: "notifications" },
+        timestamp: new Date().toISOString(),
+      });
+      await Promise.all(webDevices.map(async (device: any) => {
+        let subscription: webpush.PushSubscription;
+        try { subscription = JSON.parse(device.token); } catch { return; }
+        if (!subscription?.endpoint || !subscription?.keys) return;
+        try {
+          await server.subscribe(subscription).pushTextMessage(payload, { ttl: 300, urgency: webpush.Urgency.High });
+          sent += 1;
+        } catch (error: any) {
+          const status = Number(error?.response?.status || 0);
+          if (status === 404 || status === 410) staleIds.push(device.id);
+          else console.error("Test web push delivery failed:", status, error?.message || error);
+          failed += 1;
+        }
+      }));
+    }
+    if (fcmDevices.length) {
+      await Promise.all(fcmDevices.map(async (device: any) => {
+        try {
+          await sendFcm(device.token, {
+            title: "FNI CELLS CONNECT Test Alert",
+            body: "Android push notifications are working on this device.",
+            data: { targetTab: "notifications" },
+          });
+          sent += 1;
+        } catch (error: any) {
+          console.error("Test FCM delivery failed:", error?.status, error?.message || error);
+          if (error?.fcmCode === "UNREGISTERED" || error?.status === 404) staleIds.push(device.id);
+          failed += 1;
+        }
+      }));
+    }
     if (staleIds.length) await db.from("device_tokens").delete().in("id", staleIds);
     return json({ sent, failed, staleRemoved: staleIds.length });
   }
@@ -214,7 +314,7 @@ Deno.serve(async req => {
     if (!recipientIds.length) return json({ sent: 0, failed: 0, message: "No other active recipients" });
 
     const { data: devices, error: deviceError } = await db.from("device_tokens")
-      .select("id,user_id,token").in("user_id", recipientIds);
+      .select("id,user_id,token,legacy_data").in("user_id", recipientIds);
     if (deviceError) return json({ error: "Could not load registered browser devices" }, 500);
 
     let deliveryMetadata = notification.metadata || {};
@@ -244,33 +344,51 @@ Deno.serve(async req => {
       }
     }
 
-    const { server } = await getPushServer();
-    const payload = JSON.stringify({
-      title: String(notification.title).slice(0, 140),
-      body: String(notification.message).slice(0, 500),
-      tag: String(notification.id).slice(0, 120),
-      data: deliveryMetadata,
-      timestamp: notification.created_at || new Date().toISOString(),
-    });
-
+    const webDevices = (devices || []).filter((device: any) => device.legacy_data?.kind !== "fcm");
+    const fcmDevices = (devices || []).filter((device: any) => device.legacy_data?.kind === "fcm");
     let sent = 0;
     let failed = 0;
     const staleIds: string[] = [];
-    await Promise.all((devices || []).map(async (device: any) => {
-      let subscription: webpush.PushSubscription;
-      try { subscription = JSON.parse(device.token); } catch { return; }
-      if (!subscription?.endpoint || !subscription?.keys) return;
-      try {
-        const subscriber = server.subscribe(subscription);
-        await subscriber.pushTextMessage(payload, { ttl: 2419200, urgency: webpush.Urgency.High });
-        sent += 1;
-      } catch (error: any) {
-        const status = Number(error?.response?.status || 0);
-        if (status === 404 || status === 410) staleIds.push(device.id);
-        else console.error("Web push delivery failed:", status, error?.message || error);
-        failed += 1;
-      }
-    }));
+    if (webDevices.length) {
+      const { server } = await getPushServer();
+      const payload = JSON.stringify({
+        title: String(notification.title).slice(0, 140),
+        body: String(notification.message).slice(0, 500),
+        tag: String(notification.id).slice(0, 120),
+        data: deliveryMetadata,
+        timestamp: notification.created_at || new Date().toISOString(),
+      });
+      await Promise.all(webDevices.map(async (device: any) => {
+        let subscription: webpush.PushSubscription;
+        try { subscription = JSON.parse(device.token); } catch { return; }
+        if (!subscription?.endpoint || !subscription?.keys) return;
+        try {
+          await server.subscribe(subscription).pushTextMessage(payload, { ttl: 2419200, urgency: webpush.Urgency.High });
+          sent += 1;
+        } catch (error: any) {
+          const status = Number(error?.response?.status || 0);
+          if (status === 404 || status === 410) staleIds.push(device.id);
+          else console.error("Web push delivery failed:", status, error?.message || error);
+          failed += 1;
+        }
+      }));
+    }
+    if (fcmDevices.length) {
+      await Promise.all(fcmDevices.map(async (device: any) => {
+        try {
+          await sendFcm(device.token, {
+            title: String(notification.title).slice(0, 140),
+            body: String(notification.message).slice(0, 500),
+            data: deliveryMetadata,
+          });
+          sent += 1;
+        } catch (error: any) {
+          console.error("FCM delivery failed:", error?.status, error?.message || error);
+          if (error?.fcmCode === "UNREGISTERED" || error?.status === 404) staleIds.push(device.id);
+          failed += 1;
+        }
+      }));
+    }
     if (staleIds.length) await db.from("device_tokens").delete().in("id", staleIds);
     return json({ sent, failed, staleRemoved: staleIds.length });
   }
