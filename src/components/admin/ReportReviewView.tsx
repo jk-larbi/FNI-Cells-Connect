@@ -145,13 +145,26 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         CellService.getCells(),
       ]);
 
-      setReports(queue);
+      // A report belongs in the active approval queue only while its cell
+      // registration still exists and has not been archived. Keep report rows
+      // in storage for historical records; this is only an approval-queue filter.
+      const registeredCellIds = new Set(
+        loadedCells.filter(cell => !cell.is_archived).map(cell => cell.id)
+      );
+      const activeQueue = queue.filter(report =>
+        Boolean(report.cellId) && registeredCellIds.has(report.cellId)
+      );
+
+      setReports(activeQueue);
       setCells(loadedCells);
       setSelectedIds(new Set());
+      setInspectingItem(current =>
+        current && !activeQueue.some(report => report.id === current.id) ? null : current
+      );
 
       // If initialReportId provided (e.g. from notification deep-link), open it immediately
       if (initialReportId) {
-        const found = queue.find(r => r.id === initialReportId);
+        const found = activeQueue.find(r => r.id === initialReportId);
         if (found) {
           setInspectingItem(found);
         }
@@ -172,7 +185,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   }, [initialReportId, reports]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
+    // Pick up cell removals made in another portal/device without requiring
+    // an administrator to manually refresh the approval queue.
+    const refreshInterval = window.setInterval(() => {
+      void loadData(true);
+    }, 30000);
+    return () => window.clearInterval(refreshInterval);
   }, [typeFilter]);
 
   // Lookup cell details (phone, venue, etc.)
