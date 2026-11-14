@@ -531,6 +531,7 @@ export interface CellPerformanceRecord {
 
 export type AdminNavTab =
   | 'dashboard'
+  | 'location-sharing'
   | 'cell-management'
   | 'cell-leaders'
   | 'report-review'
