@@ -81,10 +81,10 @@ The platform implements enterprise-grade authentication with distinct separation
   - Username: `admin`
   - Temporary Password: `admin123`
 - **Mandatory First-Login Password Change**:
-  - Immediately locks the screen with `ForcePasswordChangeModal`.
+  - Requires an administrator password change during secure first-time setup.
   - Administrator cannot skip, dismiss, or bypass this step.
   - Password strength validation: Minimum 8 characters, alphanumeric, cannot equal `admin123`.
-  - Disables the temporary `admin123` credentials permanently once configured.
+  - Retires any bootstrap credential after secure setup is complete.
   - Administrator can update their password later via **Account Settings**.
 - **Role Elevation Protection**: Ordinary cell leaders registering via OAuth cannot assign themselves administrative privileges.
 
@@ -256,7 +256,7 @@ The project is preconfigured for zero-friction deployment to Vercel:
 
 2. **Administrator Access & Setup**:
    - On the sign-in screen, select **Administrator Sign-In**.
-   - Enter initial setup credentials: Username `admin`, Password `admin123`.
+   - Use the administrator credentials provisioned securely for your deployment. Never publish or commit bootstrap passwords.
    - The system immediately requires you to create a secure personal administrator password.
    - Once updated, you access the full **Admin Panel**.
    - View registered cell leaders, monitor real-time submissions, filter cells, and review cell reports.
