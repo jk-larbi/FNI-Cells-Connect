@@ -28,6 +28,7 @@ import {
   FileAudio,
   Search,
   UserRound,
+  Palette,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -47,6 +48,15 @@ const STICKER_PACK = [
   { emoji: '👑', label: 'Kingdom' }, { emoji: '📖', label: 'Word of God' },
 ];
 const STICKER_PREFIX = '[[FNI_STICKER:';
+
+const CHAT_WALLPAPERS = [
+  { id: 'default', name: 'Classic', color: '#F5F7FA', image: 'none' },
+  { id: 'blue', name: 'Ocean', color: '#EAF2FB', image: 'radial-gradient(circle at 15% 20%, rgba(91,145,205,.16) 0 2px, transparent 3px), radial-gradient(circle at 80% 70%, rgba(91,145,205,.12) 0 2px, transparent 3px)' },
+  { id: 'lavender', name: 'Lavender', color: '#F1EEFA', image: 'radial-gradient(circle at 20% 25%, rgba(137,112,190,.16), transparent 34%), radial-gradient(circle at 80% 75%, rgba(137,112,190,.12), transparent 30%)' },
+  { id: 'sage', name: 'Sage', color: '#EDF4EF', image: 'radial-gradient(circle at 80% 20%, rgba(91,145,108,.15), transparent 32%), radial-gradient(circle at 15% 80%, rgba(91,145,108,.12), transparent 30%)' },
+  { id: 'sand', name: 'Warm sand', color: '#F7F0E5', image: 'radial-gradient(circle at 18% 18%, rgba(198,164,90,.18), transparent 34%), radial-gradient(circle at 82% 82%, rgba(198,164,90,.13), transparent 30%)' },
+  { id: 'night', name: 'Midnight', color: '#E8ECF3', image: 'radial-gradient(circle at 20% 20%, rgba(20,43,74,.15), transparent 34%), radial-gradient(circle at 80% 80%, rgba(20,43,74,.12), transparent 30%)' },
+];
 
 const QUICK_EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '❤️', '🔥', '🎉', '🙌', '👏', '✨', '💯'];
 
@@ -128,6 +138,28 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'private' | 'community'>(() => initialTab || 'community');
+  const [wallpapers, setWallpapers] = useState<Record<string, string>>({});
+  const [wallpaperMenu, setWallpaperMenu] = useState<'community' | 'private' | null>(null);
+  const wallpaperStorageKey = `fni-chat-wallpapers:${currentUser?.id || 'guest'}`;
+  const communityWallpaperKey = 'community';
+  const privateWallpaperKey = `private:${selectedTutorId || 'admin'}`;
+  const communityWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[communityWallpaperKey]) || CHAT_WALLPAPERS[0];
+  const privateWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[privateWallpaperKey]) || CHAT_WALLPAPERS[0];
+  const saveWallpaper = (key: string, id: string) => {
+    setWallpapers(previous => {
+      const next = { ...previous, [key]: id };
+      try { window.localStorage.setItem(wallpaperStorageKey, JSON.stringify(next)); } catch { /* Keep this choice for the current session. */ }
+      return next;
+    });
+    setWallpaperMenu(null);
+  };
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(wallpaperStorageKey);
+      setWallpapers(saved ? JSON.parse(saved) as Record<string, string> : {});
+    } catch { setWallpapers({}); }
+  }, [wallpaperStorageKey]);
 
   // Private Messaging State
   const [privateMessages, setPrivateMessages] = useState<PrivateMessage[]>([]);
@@ -721,7 +753,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       {activeTab === 'community' && (
         <div className="fni-chat-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
           {/* Forum Header */}
-          <div className="px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <div className="relative px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-1">
                 <Users className="w-4 h-4" /> Fellowship Exchange Forum
@@ -734,6 +766,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </p>
             </div>
 
+            <div className="relative flex items-center gap-2">
+              <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'community' ? null : 'community')} className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20" aria-label="Change community chat wallpaper"><Palette className="h-4 w-4" /><span className="hidden sm:inline">Wallpaper</span></button>
+              {wallpaperMenu === 'community' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">Community wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(communityWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${communityWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div></div>}
+            </div>
             {isAdmin && (
               <button
                 onClick={() => {
@@ -749,7 +785,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={{ backgroundColor: communityWallpaper.color, backgroundImage: communityWallpaper.image }}>
             {communityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1120,6 +1156,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </>
               )}
               <div className="relative">
+                <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'private' ? null : 'private')} aria-label="Change private chat wallpaper" className="p-2 rounded-xl border border-white/15 text-white hover:bg-white/10"><Palette className="w-4 h-4" /></button>
+                {wallpaperMenu === 'private' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">This conversation's wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(privateWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${privateWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div></div>}
+              </div>
+              <div className="relative">
                 <button type="button" onClick={() => setOpenChatMenu(value => !value)} aria-label="Personal chat options" aria-expanded={openChatMenu} className="p-2 rounded-xl border border-white/15 text-white hover:bg-white/10">
                   <MoreVertical className="w-4 h-4" />
                 </button>
@@ -1187,7 +1227,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={{ backgroundColor: privateWallpaper.color, backgroundImage: privateWallpaper.image }}>
             {privateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
