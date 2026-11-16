@@ -1010,7 +1010,7 @@ export class SupabaseService {
           errorMessage: error.message,
         });
         console.warn('Private message insert failed:', error.message);
-        return false;
+        throw new Error(error.message || 'Private message insert was rejected.');
       }
       SyncStateService.recordSuccessfulSync('private_messages', msg.id);
       return true;
@@ -1021,7 +1021,7 @@ export class SupabaseService {
         payload,
         errorMessage: err?.message || String(err),
       });
-      return false;
+      throw new Error(err?.message || 'Private message could not be saved.');
     }
   }
 
@@ -1064,10 +1064,19 @@ export class SupabaseService {
     if (!this.isAvailable()) return false;
     try {
       if (pinned) {
-        const { error } = await supabase!
+        const { data: existing, error: lookupError } = await supabase!
           .from('private_message_pins')
-          .upsert({ message_id: messageId, user_id: userId }, { onConflict: 'user_id,message_id' });
-        if (error) throw error;
+          .select('message_id')
+          .eq('message_id', messageId)
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!existing) {
+          const { error } = await supabase!
+            .from('private_message_pins')
+            .insert({ message_id: messageId, user_id: userId });
+          if (error) throw error;
+        }
       } else {
         const { error } = await supabase!
           .from('private_message_pins')
