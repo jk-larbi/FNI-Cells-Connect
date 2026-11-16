@@ -129,7 +129,7 @@ export class AnalyticsService {
     ]);
 
     const activeCells = await CellService.getActiveCells();
-    const activeIds = new Set(activeCells.map(cell => cell.id));
+    const activeIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     let fMeetings = meetings.filter(report => activeIds.has(report.cellId));
     let fEvang = evang.filter(report => activeIds.has(report.cellId));
     if (!isAdmin && userCellId) {
