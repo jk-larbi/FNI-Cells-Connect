@@ -202,6 +202,7 @@ function mapPrivateMessageFromDb(row: any): PrivateMessage {
     replyTo: row.reply_to,
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
     deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+    editedAt: row.edited_at || undefined,
   };
 }
 
@@ -220,6 +221,7 @@ function mapCommunityMessageFromDb(row: any): CommunityMessage {
     reactions: typeof row.reactions === 'object' && row.reactions !== null ? row.reactions : {},
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
     deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+    editedAt: row.edited_at || undefined,
   };
 }
 
