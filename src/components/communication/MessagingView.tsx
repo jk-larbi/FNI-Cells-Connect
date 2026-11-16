@@ -105,6 +105,11 @@ const STANDARD_EMOJI_CATEGORIES: Record<string, string[]> = {
 };
 
 
+const isSupportedChatMediaFile = (file: File) => {
+  if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) return true;
+  return /\\.(jpe?g|png|gif|webp|heic|heif|avif|mp4|mov|webm|mp3|m4a|aac|ogg|wav)$/i.test(file.name);
+};
+
 const SelectedChatFilePreview: React.FC<{ file: File; onRemove: () => void }> = ({ file, onRemove }) => {
   const [previewUrl, setPreviewUrl] = useState('');
   useEffect(() => {
@@ -1324,7 +1329,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           </button>
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
-                              {isAdmin && <button type="button" onClick={() => handleToggleCommunityPin(msg)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">{msg.isPinned ? 'Unpin message' : 'Pin message'}</button>}
+                              {(!msg.isPinned || isAdmin) && <button type="button" onClick={() => handleToggleCommunityPin(msg)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">{msg.isPinned ? 'Unpin message' : 'Pin for everyone'}</button>}
                               {isMine && <button type="button" onClick={() => handleEditMessage(msg.id, 'community', msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Edit message</button>}
                               <button type="button" onClick={() => handleHideCommunityMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
@@ -1541,8 +1546,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {communityFiles.length > 0 && <div className="flex flex-wrap gap-2 pb-1">{communityFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setCommunityFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
             {/* Compact Telegram-style single-row composer. */}
             <div className="fni-chat-composer-row flex min-w-0 items-center gap-1.5">
-              <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="community-chat-files" onChange={e => setCommunityFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
-              <button type="button" onClick={() => document.getElementById('community-chat-files')?.click()} className="fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-[18px] h-[18px]" /></button>
+              <label className="fni-composer-icon relative h-9 w-8 shrink-0 cursor-pointer rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio" title="Attach photos, videos or audio">
+                <Paperclip className="w-[18px] h-[18px]" />
+                <input type="file" accept="image/*,video/*,audio/*,.heic,.heif" multiple className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onChange={e => { const picked = Array.from(e.currentTarget.files || []).filter(isSupportedChatMediaFile); if (picked.length) setCommunityFiles(previous => [...previous, ...picked]); e.currentTarget.value = ''; }} />
+              </label>
               <button type="button" onClick={() => recordingTarget === 'community' ? stopVoiceNote() : startVoiceNote('community')} disabled={recordingTarget !== null && recordingTarget !== 'community'} className={`fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center ${recordingTarget === 'community' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'community' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'community' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'community' ? <Square className="h-4 w-4" /> : <Mic className="h-[18px] w-[18px]" />}</button>
               <div className="fni-composer-input flex min-w-0 flex-1 items-center gap-0.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-1.5 py-1 focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-colors ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette"><Smile className="h-[18px] w-[18px]" /></button>
@@ -1871,9 +1878,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {privateSticker && <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{privateSticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{privateSticker.label} sticker ready</span><button type="button" onClick={() => setPrivateSticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {privateSendError && <p role="alert" className="text-xs font-semibold text-rose-600">{privateSendError}</p>}
             {privateFiles.length > 0 && <div className="flex flex-wrap gap-2 pb-1">{privateFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
-            <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
             <div className="fni-chat-composer-row flex min-w-0 items-center gap-1.5">
-              <button type="button" onClick={() => document.getElementById('private-chat-files')?.click()} className="fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="h-[18px] w-[18px]" /></button>
+              <label className="fni-composer-icon relative h-9 w-8 shrink-0 cursor-pointer rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio" title="Attach photos, videos or audio">
+                <Paperclip className="h-[18px] w-[18px]" />
+                <input type="file" accept="image/*,video/*,audio/*,.heic,.heif" multiple className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onChange={e => { const picked = Array.from(e.currentTarget.files || []).filter(isSupportedChatMediaFile); if (picked.length) setPrivateFiles(previous => [...previous, ...picked]); e.currentTarget.value = ''; }} />
+              </label>
               <button type="button" onClick={() => recordingTarget === 'private' ? stopVoiceNote() : startVoiceNote('private')} disabled={recordingTarget !== null && recordingTarget !== 'private'} className={`fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center ${recordingTarget === 'private' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'private' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'private' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'private' ? <Square className="h-4 w-4" /> : <Mic className="h-[18px] w-[18px]" />}</button>
               <div className="fni-composer-input flex min-w-0 flex-1 items-center gap-0.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-1.5 py-1 focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
                 <button type="button" onClick={() => setShowPrivateEmoji(prev => !prev)} className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-colors ${showPrivateEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Insert emoji" aria-label="Open emoji palette"><Smile className="h-[18px] w-[18px]" /></button>
