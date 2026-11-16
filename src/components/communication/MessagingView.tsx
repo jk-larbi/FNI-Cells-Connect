@@ -1012,7 +1012,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <h2 className="font-black text-base sm:text-lg text-white">
                 Tutor Community & Fellowship Sharing
               </h2>
-              <p className="hidden sm:block text-xs text-slate-200 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-200 mt-0.5">
                 Open to registered tutors and FNI Admin. Tag verified members with <span className="text-[#C6A45A] font-bold">@Name</span>, send emojis & reply to messages.
               </p>
             </div>
