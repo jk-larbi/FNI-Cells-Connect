@@ -1705,3 +1705,166 @@ body {
     max-height: 70vh !important;
   }
 }
+
+
+/* Full-screen Telegram-inspired FNI Community conversation.
+   Existing Supabase messages, calls, wallpapers, clear-history and composer actions
+   remain wired to the same handlers; this layer changes presentation only. */
+.fni-messaging-view.fni-community-mode {
+  --fni-chat-bg: #08090f;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+  min-height: 520px;
+  max-height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.fni-community-mode .fni-community-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0 !important;
+  max-height: none !important;
+  border: 0;
+  border-radius: 0;
+  background: var(--fni-chat-bg);
+  box-shadow: none;
+}
+.fni-community-mode .fni-community-topbar {
+  min-height: 68px;
+  padding-top: max(.7rem, env(safe-area-inset-top));
+  background: rgb(14 15 23 / .94);
+  border-bottom: 1px solid rgb(255 255 255 / .08);
+  backdrop-filter: blur(18px);
+}
+.fni-community-mode .fni-community-topbar button {
+  color: #f4f4f8;
+  border-color: rgb(255 255 255 / .12);
+  background: rgb(255 255 255 / .07);
+}
+.fni-community-mode .fni-community-topbar button:hover {
+  background: rgb(255 255 255 / .14);
+}
+.fni-community-mode .fni-community-stream {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 1rem clamp(.65rem, 2.5vw, 1.5rem) 1.2rem !important;
+  background-color: #08090f !important;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%238b72b5' stroke-opacity='.19' stroke-width='1.1'%3E%3Cpath d='M20 24c8-9 17-6 18 2s-8 13-16 8-7-7-2-10zm6 1 4 3m-7 2 6 1M98 18c8 0 12 7 8 13l-8 7-8-7c-4-6 0-13 8-13zm-5 7 5 5 5-5M143 73c-9-7-17 1-13 9l9 8 10-8c5-8-1-16-6-9zm-7 4 7 6 6-6M35 116c0-8 13-8 13 0v13H35zm4-8v-5h5v5m-9 21 14-9M104 113l8-9 8 9-8 9zm8-9v18m-9-9h18M23 158c4-9 12-9 16 0m-8-10v19m-9-9h18M151 148c-8-8-16 0-8 8l8 7 8-7c8-8 0-16-8-8z'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 40%, rgb(38 30 61 / .22), transparent 65%) !important;
+  background-size: 180px 180px, auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / .18) transparent;
+}
+.fni-community-mode .fni-community-stream > * + * { margin-top: .7rem !important; }
+.fni-community-mode .fni-swipe-message {
+  max-width: min(84%, 42rem);
+  padding: .55rem .78rem !important;
+  border: 1px solid rgb(255 255 255 / .055) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / .2) !important;
+  gap: .25rem !important;
+}
+.fni-community-mode .fni-swipe-message.ml-auto {
+  color: #fff !important;
+  background: linear-gradient(135deg, #873ce0 0%, #5558ed 100%) !important;
+  border-color: rgb(255 255 255 / .12) !important;
+  border-top-right-radius: 5px !important;
+}
+.fni-community-mode .fni-swipe-message.mr-auto {
+  color: #f5f3fa !important;
+  background: #25232d !important;
+  border-color: rgb(255 255 255 / .06) !important;
+  border-top-left-radius: 5px !important;
+}
+.fni-community-mode .fni-swipe-message .text-\[\#142B4A\],
+.fni-community-mode .fni-swipe-message .text-\[\#667085\] { color: #d2ccdf !important; }
+.fni-community-mode .fni-swipe-message .bg-\[\#142B4A\] { background: #34303f !important; }
+.fni-community-mode .fni-swipe-message .bg-white { background: #34303f !important; }
+.fni-community-mode .fni-swipe-message .border-\[\#E3E8EF\] { border-color: rgb(255 255 255 / .1) !important; }
+.fni-community-mode .fni-swipe-message button[aria-label="Message options"] { color: rgb(255 255 255 / .7) !important; }
+.fni-community-mode .fni-swipe-message .text-xs,
+.fni-community-mode .fni-swipe-message .text-\[10px\],
+.fni-community-mode .fni-swipe-message .text-\[11px\] { color: rgb(255 255 255 / .62); }
+.fni-community-mode .fni-chat-composer {
+  flex: 0 0 auto;
+  padding: .55rem clamp(.55rem, 2vw, 1rem) max(.65rem, env(safe-area-inset-bottom)) !important;
+  background: rgb(12 13 19 / .98) !important;
+  border-top: 1px solid rgb(255 255 255 / .09) !important;
+  box-shadow: 0 -5px 20px rgb(0 0 0 / .22) !important;
+}
+.fni-community-mode .fni-chat-composer-row { gap: .4rem; }
+.fni-community-mode .fni-composer-icon {
+  width: 2.5rem !important;
+  min-width: 2.5rem !important;
+  height: 2.5rem !important;
+  color: #f2eff8 !important;
+  border: 1px solid rgb(255 255 255 / .12);
+  background: #20212a !important;
+}
+.fni-community-mode .fni-composer-input {
+  min-height: 2.8rem;
+  padding: .2rem .5rem !important;
+  border: 1px solid rgb(255 255 255 / .1) !important;
+  background: #20212a !important;
+  box-shadow: none !important;
+}
+.fni-community-mode .fni-composer-input:focus-within {
+  border-color: rgb(151 103 238 / .65) !important;
+  background: #252631 !important;
+  box-shadow: 0 0 0 2px rgb(139 92 246 / .12) !important;
+}
+.fni-community-mode .fni-composer-input textarea {
+  color: #f7f4fb !important;
+  caret-color: #c5a6ff;
+}
+.fni-community-mode .fni-composer-input textarea::placeholder { color: #9a96a5 !important; }
+.fni-community-mode .fni-composer-input button { color: #bcb5ca !important; }
+.fni-community-mode .fni-chat-composer-row > button[type="submit"] {
+  width: 2.65rem;
+  min-width: 2.65rem;
+  height: 2.65rem;
+  background: linear-gradient(135deg, #8b42e7, #5860ed) !important;
+}
+.fni-community-mode .fni-chat-composer select {
+  color: #c9c4d2 !important;
+  border-color: rgb(255 255 255 / .1) !important;
+  background: #20212a !important;
+}
+.fni-community-mode .fni-chat-composer .bg-amber-50\/80,
+.fni-community-mode .fni-chat-composer .bg-white { background: #20212a !important; color: #f4f0fa !important; }
+.fni-community-mode .fni-chat-composer .text-\[\#142B4A\],
+.fni-community-mode .fni-chat-composer .text-\[\#667085\] { color: #c8c1d2 !important; }
+.fni-community-mode .fni-chat-composer .border-\[\#E3E8EF\] { border-color: rgb(255 255 255 / .1) !important; }
+.fni-community-mode .fni-community-stream .text-\[\#667085\] { color: #aaa4b5 !important; }
+.fni-community-mode .fni-community-stream .text-\[\#182230\] { color: #f3eff8 !important; }
+.fni-community-mode .fni-community-stream .bg-white { background: #25232d !important; }
+.fni-community-mode .fni-community-stream .border-\[\#E3E8EF\] { border-color: rgb(255 255 255 / .1) !important; }
+.fni-community-mode .fni-community-stream .fni-swipe-message .bg-amber-50,
+.fni-community-mode .fni-community-stream .fni-swipe-message .bg-emerald-50,
+.fni-community-mode .fni-community-stream .fni-swipe-message .bg-purple-50 { color: #eee !important; }
+@media (max-width: 767px) {
+  .fni-messaging-view.fni-community-mode {
+    height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+    min-height: 0;
+    max-height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+  }
+  .fni-community-mode .fni-community-panel { border-radius: 0; }
+  .fni-community-mode .fni-community-topbar { min-height: 62px; padding-inline: .7rem; }
+  .fni-community-mode .fni-community-stream { padding: .7rem .55rem 1rem !important; }
+  .fni-community-mode .fni-swipe-message { max-width: 88%; padding: .48rem .68rem !important; }
+  .fni-community-mode .fni-chat-composer { padding: .45rem .45rem max(.55rem, env(safe-area-inset-bottom)) !important; }
+}
+@supports not (height: 100dvh) {
+  .fni-messaging-view.fni-community-mode { height: 100vh; max-height: 100vh; }
+}

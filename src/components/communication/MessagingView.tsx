@@ -1119,7 +1119,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   });
 
   return (
-    <div className="fni-messaging-view min-w-0 space-y-4 sm:space-y-6">
+    <div className={`fni-messaging-view min-w-0 ${activeTab === 'community' ? 'fni-community-mode' : 'space-y-4 sm:space-y-6'}`}>
+      {/* Keep the standard communications navigation for private messages.
+          Community opens directly into its dedicated full-screen chat experience. */}
+      {activeTab === 'private' && (
+        <>
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4">
         <div>
@@ -1148,48 +1152,40 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         <div className="flex w-full sm:w-auto items-center p-1 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
           <button
             onClick={() => setActiveTab('community')}
-            className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
-              activeTab === 'community'
-                ? 'bg-[#142B4A] text-white shadow-xs'
-                : 'text-[#667085] hover:text-[#142B4A]'
-            }`}
+            className="flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer text-[#667085] hover:text-[#142B4A]"
           >
             <Users className="w-4 h-4 text-[#C6A45A]" />
             <span>Community</span>
           </button>
           <button
             onClick={() => setActiveTab('private')}
-            className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
-              activeTab === 'private'
-                ? 'bg-[#142B4A] text-white shadow-xs'
-                : 'text-[#667085] hover:text-[#142B4A]'
-            }`}
+            className="flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer bg-[#142B4A] text-white shadow-xs"
           >
             <Lock className="w-4 h-4 text-[#C6A45A]" />
             <span>Private Chat</span>
           </button>
         </div>
       </div>
-
+        </>
+      )}
+      
       {/* TAB 1: TUTOR COMMUNITY FORUM (Open Access, Emojis, Tagging & Telegram/WhatsApp Replies) */}
       {activeTab === 'community' && (
-        <div className="fni-community-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col min-h-0">
+        <div className="fni-community-panel relative overflow-hidden flex flex-col min-h-0">
           {/* Forum Header */}
-          <div className="relative z-20 shrink-0 px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-md">
-            <div className="min-w-0">
-              <h2 className="flex items-center gap-2 font-black text-base sm:text-lg text-white">
-                <Users className="h-5 w-5 shrink-0 text-[#C6A45A]" />
-                FNI Community
-              </h2>
-              <p className="text-xs sm:text-sm font-semibold text-slate-100 mt-0.5">
-                Tutor Community & Fellowship
-              </p>
-              <p className="text-[10px] sm:text-xs text-slate-200 mt-1">
-                Open to registered tutors and FNI Admin. Tag verified members with <span className="text-[#C6A45A] font-bold">@Name</span>, send emojis & reply to messages.
-              </p>
+          <div className="fni-community-topbar relative z-20 shrink-0 px-3.5 py-3 sm:px-5 sm:py-4 text-white flex items-center justify-between gap-2 sm:gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#F1C96B]">
+                <Users className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate font-bold text-base sm:text-lg text-white">FNI Community</h2>
+                <p className="truncate text-xs text-white/65">Tutor Community & Fellowship</p>
+              </div>
             </div>
 
-            <div className="relative flex items-center gap-1.5">
+            <div className="relative flex shrink-0 items-center gap-1.5">
+              <button type="button" onClick={() => setActiveTab('private')} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="Open private chats" title="Private chats"><Lock className="h-4 w-4" /></button>
               <button type="button" onClick={() => startChatCall('voice', 'community')} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="Start community voice call" title="Voice call"><Phone className="h-4 w-4" /></button>
               <button type="button" onClick={() => startChatCall('video', 'community')} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="Start community video call" title="Video call"><Video className="h-4 w-4" /></button>
               <div className="relative"><button type="button" onClick={() => setOpenCommunityChatMenu(value => !value)} aria-label="Community chat options" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20"><MoreVertical className="h-4 w-4" /></button>{openCommunityChatMenu && <div className="absolute right-0 top-full z-50 mt-1 min-w-44 rounded-xl border border-[#E3E8EF] bg-white p-1.5 text-[#182230] shadow-xl"><button type="button" onClick={handleClearCommunityHistory} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-[#F5F7FA]">Clear community history</button></div>}</div>
