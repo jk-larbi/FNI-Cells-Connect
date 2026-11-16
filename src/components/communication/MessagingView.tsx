@@ -328,40 +328,23 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setMemberDirectory(directory);
       setAllMembers(eligibleMembers);
 
-      const adminConvs = await MessagingService.getAdminConversations();
       const tutorMap = new Map<string, { id: string; name: string; cellName: string }>();
 
-      cells.forEach(c => {
-        // Only expose real tutor Auth IDs as direct-message recipients.
-        const id = c.tutorUid || c.leader_id;
-        if (!id) return;
-        tutorMap.set(id, {
-          id,
-          name: c.leader_name || 'Cell Leader',
-          cellName: c.name,
-        });
-      });
-
-      (publicMembers || []).forEach(member => {
+      // Direct-message recipients must also be real, active registered tutors
+      // or the official FNI Admin account. Never derive recipients from cell
+      // leader names or stale conversation records.
+      eligibleMembers.forEach(member => {
         if (member.id === currentUser.id) return;
         tutorMap.set(member.id, {
           id: member.id,
-          name: member.full_name,
+          name: member.role === 'admin' || member.role === 'super_admin'
+            ? 'FNI Admin'
+            : member.full_name,
           cellName: member.cell_name || 'FNI Member',
         });
       });
 
-      adminConvs.forEach(conv => {
-        if (!tutorMap.has(conv.tutorUid) && conv.tutorUid !== 'admin') {
-          tutorMap.set(conv.tutorUid, {
-            id: conv.tutorUid,
-            name: conv.tutorName,
-            cellName: conv.cellName || 'Fellowship Cell',
-          });
-        }
-      });
-
-      const tList = Array.from(tutorMap.values()).filter(t => isAdmin || t.id !== currentUser.id);
+      const tList = Array.from(tutorMap.values());
       setTutorList(tList);
       if (isAdmin && tList.length > 0 && !selectedTutorId) {
         setSelectedTutorId(tList[0].id);
