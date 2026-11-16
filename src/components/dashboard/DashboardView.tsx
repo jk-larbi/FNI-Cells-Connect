@@ -105,9 +105,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [editMission, setEditMission] = useState('');
   const [editTarget, setEditTarget] = useState(5000);
 
-  const loadData = async () => {
+  const loadData = async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) setIsLoading(true);
       const [dashStats, systemSettings, queue, sMetrics, cPerf, activeCells] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
@@ -127,7 +127,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setEditMission(systemSettings.mission);
       setEditTarget(systemSettings.annualSoulWinningTarget);
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
 
@@ -138,11 +138,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const unsubSoul = SoulTargetService.subscribeToLiveSoulTracking(liveM => {
       setSoulMetrics(liveM);
       setSoulMetricsUpdatedAt(new Date());
-      setStats(prev => prev ? {
-        ...prev,
-        soulsWon: liveM.verifiedSoulsWon,
-      } : prev);
-      AnalyticsService.getCellPerformance().then(setCellPerformance);
+      void loadData(false);
     });
 
     return () => {
