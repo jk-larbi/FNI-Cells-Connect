@@ -107,7 +107,7 @@ const STANDARD_EMOJI_CATEGORIES: Record<string, string[]> = {
 
 const isSupportedChatMediaFile = (file: File) => {
   if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) return true;
-  return /\\.(jpe?g|png|gif|webp|heic|heif|avif|mp4|mov|webm|mp3|m4a|aac|ogg|wav)$/i.test(file.name);
+  return /\.(jpe?g|png|gif|webp|heic|heif|avif|mp4|mov|webm|mp3|m4a|aac|ogg|wav)$/i.test(file.name);
 };
 
 const SelectedChatFilePreview: React.FC<{ file: File; onRemove: () => void }> = ({ file, onRemove }) => {
