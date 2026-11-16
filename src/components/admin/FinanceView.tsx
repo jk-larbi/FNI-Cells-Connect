@@ -2,6 +2,7 @@ import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { FinanceService } from '../../services/financeService';
+import { SoulTargetService } from '../../services/soulTargetService';
 import { OfferingAggregation, OfferingRecord } from '../../types';
 import {
   DollarSign,
@@ -32,9 +33,9 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'ALL' | 'GHS' | 'GBP' | 'USD'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadFinanceData = async () => {
+  const loadFinanceData = async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) setIsLoading(true);
       const [agg, recs] = await Promise.all([
         FinanceService.getOfferingAggregation(currentUser.role),
         FinanceService.getOfferingRecords(currentUser.role),
@@ -44,12 +45,16 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
     } catch (err) {
       console.error('Failed to load finance data:', err);
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     loadFinanceData();
+    const unsubscribe = SoulTargetService.subscribeToLiveSoulTracking(() => {
+      void loadFinanceData(false);
+    });
+    return unsubscribe;
   }, [currentUser]);
 
   const handleExportCSV = async () => {
