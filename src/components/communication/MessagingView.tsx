@@ -29,6 +29,10 @@ import {
   Search,
   UserRound,
   Palette,
+  Mic,
+  Square,
+  Phone,
+  Video,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -234,6 +238,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [showCommunityStickers, setShowCommunityStickers] = useState(false);
   const [communitySticker, setCommunitySticker] = useState<{ emoji: string; label: string } | null>(null);
   const [communityEmojiCategory, setCommunityEmojiCategory] = useState<string>('Smileys & Faces');
+  const [recordingTarget, setRecordingTarget] = useState<'community' | 'private' | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
 
   // Registered members / tutors directory for @mention tagging
   const [memberDirectory, setMemberDirectory] = useState<{ id: string; name: string; cellName?: string }[]>([]);
@@ -564,6 +571,99 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     } else {
       setPrivateText(prev => `${prev}@${memberName} `);
       privateInputRef.current?.focus();
+    }
+  };
+
+  // Voice notes use the same protected attachment upload path as other chat media.
+  const startVoiceNote = async (target: 'community' | 'private') => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      window.alert('Voice recording is not supported in this browser or device.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = event => { if (event.data.size > 0) chunks.push(event.data); };
+      recorder.onstop = () => {
+        const mimeType = recorder.mimeType || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const voiceFile = new File([new Blob(chunks, { type: mimeType })], `FNI-voice-note-${Date.now()}.${extension}`, { type: mimeType });
+        if (voiceFile.size > 0) {
+          if (target === 'community') setCommunityFiles(previous => [...previous, voiceFile]);
+          else setPrivateFiles(previous => [...previous, voiceFile]);
+        }
+        stream.getTracks().forEach(track => track.stop());
+        recordingStreamRef.current = null;
+        mediaRecorderRef.current = null;
+        setRecordingTarget(null);
+      };
+      recordingStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      setRecordingTarget(target);
+      recorder.start();
+    } catch (error) {
+      console.error('Voice note recording could not start:', error);
+      window.alert('Microphone access was not granted. Please allow microphone access and try again.');
+    }
+  };
+
+  const stopVoiceNote = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  useEffect(() => () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
+    recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+  }, []);
+
+  // Jitsi rooms are created per call; the invitation is first posted to the selected chat.
+  const startChatCall = async (kind: 'voice' | 'video', target: 'community' | 'private') => {
+    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    if (target === 'private' && (!recipientId || recipientId === 'admin')) {
+      window.alert('Choose a registered member conversation before starting a call.');
+      return;
+    }
+    const callWindow = window.open('about:blank', '_blank');
+    const room = `FNI-Cells-${crypto.randomUUID()}`;
+    const callUrl = `https://meet.jit.si/${room}`;
+    const invite = `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`;
+    try {
+      if (target === 'community') {
+        await MessagingService.sendCommunityMessage({
+          senderUid: currentUser.id,
+          senderName: currentUser.full_name,
+          senderRole: currentUser.role,
+          cellName: currentUser.cell_name,
+          content: invite,
+          category: 'general',
+          mentions: [],
+          attachments: [],
+        });
+        await loadCommunity();
+      } else {
+        const recipientName = tutorList.find(t => t.id === recipientId)?.name || 'FNI Member';
+        await MessagingService.sendPrivateMessage({
+          senderUid: currentUser.id,
+          senderName: currentUser.full_name,
+          senderRole: currentUser.role,
+          recipientUid: recipientId,
+          recipientName,
+          cellId: currentUser.cell_id,
+          cellName: currentUser.cell_name,
+          content: invite,
+          attachments: [],
+        });
+        await loadPrivateMessages();
+      }
+      if (callWindow) callWindow.location.href = callUrl;
+      else window.location.href = callUrl;
+    } catch (error) {
+      callWindow?.close();
+      console.error('Could not create call invitation:', error);
+      window.alert('The call invitation could not be sent. Please try again.');
     }
   };
 
