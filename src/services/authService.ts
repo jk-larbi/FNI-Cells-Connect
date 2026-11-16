@@ -45,6 +45,20 @@ export class AuthService {
     }
   }
 
+  static async updateProfileRole(userId: string, role: Profile['role']): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Role updates require an active Supabase connection.' };
+    }
+    try {
+      const { error } = await supabase.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', userId);
+      if (error) throw error;
+      return { success: true };
+    } catch (error: any) {
+      console.error('Failed to update member role:', error);
+      return { success: false, error: error?.message || 'Could not update this member role.' };
+    }
+  }
+
   static getCurrentProfile(): Profile | null {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_PROFILE);
