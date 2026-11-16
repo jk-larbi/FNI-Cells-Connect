@@ -44,6 +44,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
     const next = { ...chatWallpapers, [key]: id };
     setChatWallpapers(next);
     try { localStorage.setItem(wallpaperStorageKey, JSON.stringify(next)); } catch {}
+    window.dispatchEvent(new CustomEvent('fni-chat-wallpaper-updated'));
     setWallpaperNotice(`${key === 'community' ? 'Community' : 'Private chat'} wallpaper saved on this device.`);
   };
 
@@ -66,6 +67,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
         setWallpaperNotice('This image is too large for device storage. Choose a smaller image.');
         return;
       }
+      window.dispatchEvent(new CustomEvent('fni-chat-wallpaper-updated'));
       setWallpaperNotice(`${key === 'community' ? 'Community' : 'Private chat'} wallpaper photo saved.`);
     };
     reader.readAsDataURL(file);
@@ -77,6 +79,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
     setChatWallpaperImages(next);
     try { localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {}
     saveChatWallpaper(key, 'default');
+    window.dispatchEvent(new CustomEvent('fni-chat-wallpaper-updated'));
   };
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteError, setDeleteError] = useState('');
