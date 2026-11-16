@@ -1,3 +1,4 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect } from 'react';
 import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
@@ -73,13 +74,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack }) => {
 
   const handleExportCsv = async () => {
     const csvData = await AnalyticsService.exportAnalyticsCsv();
-    const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvData);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `FNI_Ministry_Analytics_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    await exportCsvFile(`FNI_Ministry_Analytics_${Date.now()}.csv`, csvData);
   };
 
   const handlePrint = () => {
