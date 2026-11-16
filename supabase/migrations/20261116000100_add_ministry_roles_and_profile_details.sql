@@ -1,7 +1,27 @@
--- Add distinct ministry titles without granting administrator permissions.
-ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'pastor';
-ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'overseer';
-ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'leader';
+-- The live profiles.role column is text with a CHECK constraint. Keep compatibility
+-- with older installations that may still define the legacy user_role enum.
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public' AND t.typname = 'user_role'
+  ) THEN
+    EXECUTE 'ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS ''pastor''';
+    EXECUTE 'ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS ''overseer''';
+    EXECUTE 'ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS ''leader''';
+  END IF;
+END $;
+
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_role_check;
+
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_role_check
+  CHECK (role = ANY (ARRAY[
+    'tutor', 'cell_leader', 'admin', 'super_admin', 'national_admin',
+    'regional_leader', 'pastor', 'overseer', 'leader'
+  ]::text[]));
 
 -- Expand the privacy-safe member directory with public ministry context.
 DROP FUNCTION IF EXISTS public.get_member_directory();
