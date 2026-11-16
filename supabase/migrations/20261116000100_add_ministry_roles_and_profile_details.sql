@@ -1,17 +1,4 @@
--- The live profiles.role column is text with a CHECK constraint. Keep compatibility
--- with older installations that may still define the legacy user_role enum.
-DO $
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_type t
-    JOIN pg_namespace n ON n.oid = t.typnamespace
-    WHERE n.nspname = 'public' AND t.typname = 'user_role'
-  ) THEN
-    EXECUTE 'ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS ''pastor''';
-    EXECUTE 'ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS ''overseer''';
-    EXECUTE 'ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS ''leader''';
-  END IF;
-END $;
+-- The live profiles.role column is text with a CHECK constraint.
 
 ALTER TABLE public.profiles
   DROP CONSTRAINT IF EXISTS profiles_role_check;
