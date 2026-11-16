@@ -681,6 +681,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleHideCommunityMessage = async (messageId: string) => {
+    setOpenMessageMenu(null);
     if (!window.confirm('Delete this message from your account only? Everyone else will still see it.')) return;
     const saved = await MessagingService.hideCommunityMessageForUser(currentUser.id, messageId);
     if (!saved) { setCommunitySendError('This message could not be hidden. Please try again.'); return; }
@@ -689,8 +690,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleEditMessage = async (messageId: string, scope: 'private' | 'community', currentContent: string) => {
+    setOpenMessageMenu(null);
     const edited = window.prompt('Edit your message:', currentContent);
-    if (edited === null || edited.trim() === currentContent.trim()) { setOpenMessageMenu(null); return; }
+    if (edited === null || edited.trim() === currentContent.trim()) return;
     if (!edited.trim()) { window.alert('A message cannot be empty.'); return; }
     const saved = await MessagingService.editMessage(messageId, scope, edited);
     if (!saved) { window.alert('This message could not be edited. Only the original sender can edit their message.'); return; }
@@ -700,6 +702,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleDeleteMessageForEveryone = async (messageId: string, scope: 'private' | 'community') => {
+    setOpenMessageMenu(null);
     const confirmed = window.confirm('Delete this message and its attachments for everyone in this conversation?');
     if (!confirmed) return;
     const saved = await MessagingService.deleteMessageForEveryone(messageId, scope);
@@ -718,6 +721,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleHidePrivateMessage = async (messageId: string) => {
+    setOpenMessageMenu(null);
     const confirmed = window.confirm('Hide this message from your account only? The other participant will still see it.');
     if (!confirmed) return;
     const saved = await MessagingService.hidePrivateMessageForUser(currentUser.id, messageId);
@@ -1042,6 +1046,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Copy the complete message body without trimming line breaks.
   const copyMessage = async (content: string) => {
+    setOpenMessageMenu(null);
     try {
       await navigator.clipboard.writeText(content);
       setOpenMessageMenu(null);
@@ -1053,6 +1058,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Handle reaction on community message
   const handleReaction = async (messageId: string, emoji: string) => {
+    setOpenMessageMenu(null);
     try {
       await MessagingService.reactToCommunityMessage(messageId, emoji, currentUser.id, currentUser.full_name);
       await loadCommunity();
