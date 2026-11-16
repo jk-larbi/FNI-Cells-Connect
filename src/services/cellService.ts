@@ -49,7 +49,7 @@ export class CellService {
 
   static async getActiveCells(): Promise<Cell[]> {
     const cells = await this.getCells();
-    return cells.filter(cell => !cell.is_archived);
+    return cells.filter(cell => cell.is_active && !cell.is_archived);
   }
 
   static async getCellById(cellId: string): Promise<Cell | null> {
@@ -59,7 +59,7 @@ export class CellService {
 
     // 2. Cache
     const all = getStoredCells();
-    return all.find(c => c.id === cellId && !c.is_archived) || null;
+    return all.find(c => (c.id === cellId || c.firebase_id === cellId) && !c.is_archived) || null;
   }
 
   /**
@@ -72,7 +72,7 @@ export class CellService {
     cell_name?: string;
     full_name?: string;
   }): Promise<Cell> {
-    const allCells = await this.getCells();
+    const allCells = await this.getActiveCells();
 
     // 1. Try resolving by explicit cell_id
     if (user.cell_id) {
