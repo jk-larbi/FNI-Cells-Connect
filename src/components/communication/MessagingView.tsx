@@ -666,11 +666,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Otherwise a successful insert can be delivered to a profile that no longer exists.
   useEffect(() => {
     if (!isAdmin || tutorList.length === 0) return;
-    if (!tutorList.some(tutor => tutor.id === selectedTutorId)) {
+    if (!selectedTutorId) {
       setSelectedTutorId(tutorList[0].id);
+      return;
+    }
+    if (!tutorList.some(tutor => tutor.id === selectedTutorId)) {
+      // Never silently redirect a private message to a different tutor.
+      // Clear the stale selection and require an explicit choice.
+      setSelectedTutorId('');
       setPrivateMessages([]);
       setPrivateReplyTo(null);
-      setPrivateSendError(null);
+      setPrivateSendError('This tutor account is no longer active. Please select the tutor from the current list.');
     }
   }, [isAdmin, tutorList, selectedTutorId]);
 
@@ -1659,6 +1665,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     onChange={e => { setSelectedTutorId(e.target.value); setPrivateMessages([]); setPrivateReplyTo(null); setOpenChatMenu(false); }}
                     className="bg-[#142B4A] border border-[#E3E8EF]/30 text-white text-xs rounded-xl px-3 py-2 font-bold focus:outline-none max-w-[210px]"
                   >
+                    {isAdmin && <option value="" disabled className="text-slate-900 bg-white">Select an active tutor</option>}
                     {!isAdmin && <option value="admin" className="text-slate-900 bg-white">FNI Leadership</option>}
                     {tutorList.map(t => (
                       <option key={t.id} value={t.id} className="text-slate-900 bg-white">
