@@ -805,12 +805,9 @@ export class SupabaseService {
       mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', wav: 'audio/wav',
     };
     const providedMime = (file.type || '').toLowerCase();
-    const mimeType = providedMime.startsWith('image/') || providedMime.startsWith('video/') || providedMime.startsWith('audio/')
+    const mimeType = providedMime && providedMime !== 'application/octet-stream'
       ? providedMime
-      : extensionMime[extension] || '';
-    if (!(mimeType.startsWith('image/') || mimeType.startsWith('video/') || mimeType.startsWith('audio/'))) {
-      throw new Error('Choose a picture, video or audio file. If this is an iPhone photo, try choosing it from Photos again.');
-    }
+      : extensionMime[extension] || providedMime || 'application/octet-stream';
     if (file.size > 50 * 1024 * 1024) throw new Error('Each attachment must be 50 MB or smaller.');
     // Some iOS photo pickers return a File with an empty MIME type. Re-wrap it
     // with the extension-derived type so Supabase Storage accepts the upload.
