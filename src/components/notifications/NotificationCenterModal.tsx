@@ -41,6 +41,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     unreadCount,
     markAsRead,
     markAllAsRead,
+    clearAllNotifications,
     triggerBatchReminders,
     pushPermission,
     isPushSupported,
@@ -55,6 +56,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
   const [channelFilter, setChannelFilter] = useState<'all' | 'in_app' | 'push' | 'whatsapp' | 'email'>('all');
   const [isRequestingPush, setIsRequestingPush] = useState(false);
   const [pushStatusMessage, setPushStatusMessage] = useState<string | null>(null);
+  const [isClearingNotifications, setIsClearingNotifications] = useState(false);
 
   // Filtered notifications
   const filteredNotifs = notifications.filter(n => {
@@ -97,6 +99,16 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
     return true;
   });
+
+  const handleClearAllNotifications = async () => {
+    if (!notifications.length || isClearingNotifications) return;
+    if (!window.confirm('Clear all notifications from your account? This will not remove notifications from other members.')) return;
+    setIsClearingNotifications(true);
+    try {
+      const success = await clearAllNotifications();
+      if (!success) window.alert('Notifications could not be cleared. Please try again.');
+    } finally { setIsClearingNotifications(false); }
+  };
 
   const handleEnablePush = async () => {
     setIsRequestingPush(true);
@@ -237,6 +249,11 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           </div>
 
           <div className="flex items-center gap-2">
+            {notifications.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleClearAllNotifications} disabled={isClearingNotifications}>
+                {isClearingNotifications ? 'Clearing...' : 'Clear All'}
+              </Button>
+            )}
             {unreadCount > 0 && (
               <Button variant="ghost" size="sm" onClick={markAllAsRead}>
                 <CheckCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Mark All Read
