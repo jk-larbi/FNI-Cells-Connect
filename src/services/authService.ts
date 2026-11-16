@@ -50,8 +50,9 @@ export class AuthService {
       return { success: false, error: 'Role updates require an active Supabase connection.' };
     }
     try {
-      const { error } = await supabase.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', userId);
+      const { data, error } = await supabase.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', userId).select('id').maybeSingle();
       if (error) throw error;
+      if (!data) throw new Error('Member profile was not found or you do not have permission to update it.');
       return { success: true };
     } catch (error: any) {
       console.error('Failed to update member role:', error);
