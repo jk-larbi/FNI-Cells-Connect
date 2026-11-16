@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useNotifications } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
@@ -116,7 +117,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     try {
       const res = await requestPushPermission();
       if (res.success) {
-        setPushStatusMessage('Push notifications enabled and device token registered successfully!');
+        setPushStatusMessage('Push notifications enabled and this device is registered for background alerts.');
       } else {
         setPushStatusMessage(res.error || 'Failed to enable push notifications.');
       }
@@ -214,6 +215,11 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           {pushStatusMessage && (
             <p className="mt-2 text-[11px] text-[#203D63] bg-blue-50/70 p-2 rounded-lg border border-blue-100">
               {pushStatusMessage}
+            </p>
+          )}
+          {Capacitor.isNativePlatform() && (
+            <p className="mt-2 text-[11px] text-[#475569]">
+              Android push uses your phone's notification permission. Enable it once, then FNI can alert you when the app is in the background or closed. Use Test Push to verify delivery.
             </p>
           )}
 
