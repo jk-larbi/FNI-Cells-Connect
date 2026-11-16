@@ -310,6 +310,8 @@ export interface PrivateMessage {
   readAt?: string;
   replyTo?: MessageReply;
   attachments?: ChatAttachment[];
+  reactions?: { [emoji: string]: string[] };
+  isPinned?: boolean;
   deletedForEveryoneAt?: string;
   editedAt?: string;
 }
