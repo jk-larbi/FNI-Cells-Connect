@@ -18,6 +18,7 @@
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { SyncStateService } from './syncStateService';
+import { isTestProfile } from '../utils/profileVisibility';
 
 // Initialize SyncStateService client and online lifecycle listeners if Supabase is configured
 if (isSupabaseConfigured && supabase) {
@@ -72,6 +73,7 @@ function mapCellFromDb(row: any): Cell {
     status: row.status || 'Active',
     is_active: Boolean(row.is_active ?? true),
     is_archived: Boolean(row.is_archived ?? false),
+    firebase_id: row.firebase_id || undefined,
     created_at: row.created_at || new Date().toISOString(),
   };
 }
@@ -1254,6 +1256,19 @@ export class SupabaseService {
   }
 
   // --- System Settings ---
+  static subscribeToSystemSettings(callback: (settings: SystemSettings) => void): () => void {
+    if (!this.isAvailable()) return () => {};
+    const channel = supabase!
+      .channel(`system-settings-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings' }, () => {
+        void this.getSystemSettings().then(settings => {
+          if (settings) callback(settings);
+        });
+      })
+      .subscribe();
+    return () => { void supabase!.removeChannel(channel); };
+  }
+
   static async getSystemSettings(): Promise<SystemSettings | null> {
     if (!this.isAvailable()) return null;
     try {
@@ -1268,7 +1283,7 @@ export class SupabaseService {
         vision: data.vision || '',
         mission: data.mission || '',
         annualSoulWinningTarget: data.annual_soul_winning_target ?? 5000,
-        weeklyDeadline: 'Sunday at 6:00 PM Ghana Time (Africa/Accra, UTC+0)',
+        weeklyDeadline: data.weekly_deadline || 'Sunday at 6:00 PM Ghana Time (Africa/Accra, UTC+0)',
         updatedAt: data.updated_at || new Date().toISOString(),
         updatedBy: data.updated_by || 'Administrator',
       };
@@ -1281,7 +1296,6 @@ export class SupabaseService {
     if (!this.isAvailable()) return false;
     const payload = {
       id: 'global',
-      ministry_name: 'Forerunners Network International (FNI)',
       vision: settings.vision,
       mission: settings.mission,
       weekly_deadline: settings.weeklyDeadline,
@@ -1633,6 +1647,7 @@ export class SupabaseService {
         avatar_url: data.avatar_url || undefined,
         is_active: data.is_active ?? true,
         is_onboarded: data.is_onboarded ?? true,
+        is_test_account: data.is_test_account ?? false,
         must_change_password: Boolean(data.must_change_password),
         auth_provider: data.auth_provider || 'credentials',
         created_at: data.created_at,
@@ -1665,10 +1680,11 @@ export class SupabaseService {
         avatar_url: d.avatar_url || undefined,
         is_active: d.is_active ?? true,
         is_onboarded: d.is_onboarded ?? true,
+        is_test_account: d.is_test_account ?? false,
         must_change_password: Boolean(d.must_change_password),
         auth_provider: d.auth_provider || 'credentials',
         created_at: d.created_at,
-      }));
+      })).filter((profile: Profile) => !isTestProfile(profile));
     } catch {
       return null;
     }

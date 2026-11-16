@@ -1,6 +1,8 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { FinanceService } from '../../services/financeService';
+import { SoulTargetService } from '../../services/soulTargetService';
 import { OfferingAggregation, OfferingRecord } from '../../types';
 import {
   DollarSign,
@@ -31,9 +33,9 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'ALL' | 'GHS' | 'GBP' | 'USD'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadFinanceData = async () => {
+  const loadFinanceData = async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) setIsLoading(true);
       const [agg, recs] = await Promise.all([
         FinanceService.getOfferingAggregation(currentUser.role),
         FinanceService.getOfferingRecords(currentUser.role),
@@ -43,15 +45,19 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
     } catch (err) {
       console.error('Failed to load finance data:', err);
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     loadFinanceData();
+    const unsubscribe = SoulTargetService.subscribeToLiveSoulTracking(() => {
+      void loadFinanceData(false);
+    });
+    return unsubscribe;
   }, [currentUser]);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (records.length === 0) return;
     const headers = ['Record ID', 'Cell Name', 'Meeting Date', 'Tutor Name', 'Amount (GHS)', 'Logged At'];
     const rows = records.map(r => [
@@ -62,14 +68,8 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
       r.amount.toFixed(2),
       r.submittedAt,
     ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `FNI_Cell_Offerings_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\r\n');
+    await exportCsvFile(`FNI_Cell_Offerings_${new Date().toISOString().split('T')[0]}.csv`, csvContent);
   };
 
   if (!isAdmin && currentUser.role !== 'admin') {

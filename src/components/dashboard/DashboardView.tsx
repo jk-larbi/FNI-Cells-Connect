@@ -105,9 +105,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [editMission, setEditMission] = useState('');
   const [editTarget, setEditTarget] = useState(5000);
 
-  const loadData = async () => {
+  const loadData = async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) setIsLoading(true);
       const [dashStats, systemSettings, queue, sMetrics, cPerf, activeCells] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
@@ -127,7 +127,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setEditMission(systemSettings.mission);
       setEditTarget(systemSettings.annualSoulWinningTarget);
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
 
@@ -138,11 +138,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const unsubSoul = SoulTargetService.subscribeToLiveSoulTracking(liveM => {
       setSoulMetrics(liveM);
       setSoulMetricsUpdatedAt(new Date());
-      setStats(prev => prev ? {
-        ...prev,
-        soulsWon: liveM.verifiedSoulsWon,
-      } : prev);
-      AnalyticsService.getCellPerformance().then(setCellPerformance);
+      void loadData(false);
     });
 
     return () => {
@@ -152,18 +148,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    await SettingsService.updateSettings({
-      vision: editVision,
-      mission: editMission,
-      annualSoulWinningTarget: editTarget,
-    });
-    setSettings(prev => ({
-      ...prev,
-      vision: editVision,
-      mission: editMission,
-      annualSoulWinningTarget: editTarget,
-    }));
-    setIsEditingSettings(false);
+    try {
+      const updated = await SettingsService.updateSettings({
+        vision: editVision.trim(),
+        mission: editMission.trim(),
+        annualSoulWinningTarget: editTarget,
+      }, currentUser.full_name || 'FNI Administrator');
+      setSettings(updated);
+      setIsEditingSettings(false);
+      await loadData();
+    } catch (error: any) {
+      window.alert(error?.message || 'FNI ministry settings could not be saved. Please try again.');
+    }
   };
 
   if (isLoading || !stats) {

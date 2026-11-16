@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, BookOpen, Megaphone, Footprints, TrendingUp, UsersRound } from 'lucide-react';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { SoulTargetMetrics } from '../../types';
+import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 
 interface MinistryVisionViewProps {
   onProceed: () => void;
@@ -10,15 +11,25 @@ interface MinistryVisionViewProps {
 export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProceed }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState<SoulTargetMetrics | null>(null);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
   useEffect(() => {
+    let active = true;
     const timer = setTimeout(() => setIsLoaded(true), 80);
-    const unsub = SoulTargetService.subscribeToLiveSoulTracking(m => {
-      setMetrics(m);
+    SettingsService.getSettings()
+      .then(value => { if (active) setSettings(value); })
+      .catch(error => console.warn('Could not load FNI public ministry settings:', error));
+    const unsubSettings = SettingsService.subscribeToSettings(value => {
+      if (active) setSettings(value);
+    });
+    const unsubMetrics = SoulTargetService.subscribeToLiveSoulTracking(m => {
+      if (active) setMetrics(m);
     });
     return () => {
+      active = false;
       clearTimeout(timer);
-      unsub();
+      unsubSettings();
+      unsubMetrics();
     };
   }, []);
 
@@ -116,7 +127,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
               </span>
             </div>
             <p className="text-xs sm:text-sm md:text-base text-[#182230] font-serif italic leading-relaxed pl-1">
-              “To raise a global army of consecrated believers equipped with apostolic and prophetic depth, establishing the reign of Christ across all spheres of society.”
+              “{settings.vision}”
             </p>
           </div>
 
@@ -134,7 +145,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
               </span>
             </div>
             <p className="text-xs sm:text-sm md:text-base text-[#182230] font-serif italic leading-relaxed pl-1">
-              “Mobilizing territorial cell fellowships, rigorous discipleship training, dynamic evangelism outreaches, and systematic pastoral care to transform lives and communities.”
+              “{settings.mission}”
             </p>
           </div>
 
@@ -162,7 +173,7 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mt-2 mb-1">
               <div className="inline-flex items-center gap-2 text-2xl sm:text-3xl font-black tracking-tight text-white">
                 <UsersRound className="w-5 h-5 text-[#C6A45A]" strokeWidth={1.8} />
-                {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : '5,000 Souls'}
+                {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : `${settings.annualSoulWinningTarget.toLocaleString()} Souls`}
               </div>
               <div className="text-xs sm:text-sm font-bold text-[#C6A45A]">
                 {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Progress recorded'}

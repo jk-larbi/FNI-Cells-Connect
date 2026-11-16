@@ -54,6 +54,7 @@ export interface Profile {
   avatar_url?: string;
   is_active: boolean;
   is_onboarded: boolean;
+  is_test_account?: boolean;
   must_change_password?: boolean;
   auth_provider?: 'google' | 'apple' | 'email' | 'credentials';
   created_at: string;
@@ -75,6 +76,7 @@ export interface Region {
 export interface Cell {
   id: string;
   name: string;
+  firebase_id?: string;
   normalized_name?: string;
   location?: string;
   meeting_location?: string;

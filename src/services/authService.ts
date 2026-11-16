@@ -18,6 +18,7 @@ import { ReportService } from './reportService';
 import { CellService, normalizeCellName } from './cellService';
 import { SupabaseService } from './supabaseService';
 import { SyncStateService } from './syncStateService';
+import { isTestProfile } from '../utils/profileVisibility';
 
 const STORAGE_KEYS = {
   CURRENT_PROFILE: 'fni_current_profile_v6_strict',
@@ -30,7 +31,7 @@ export class AuthService {
   static getAllProfiles(): Profile[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.PROFILES_DIRECTORY);
-      if (stored) return JSON.parse(stored);
+      if (stored) return (JSON.parse(stored) as Profile[]).filter(profile => !isTestProfile(profile));
     } catch (e) {
       console.warn('Failed to parse stored profiles', e);
     }

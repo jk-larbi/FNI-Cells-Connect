@@ -1,8 +1,10 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect } from 'react';
 import { AnalyticsService } from '../../services/analyticsService';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { SettingsService } from '../../services/settingsService';
+import { SoulTargetService } from '../../services/soulTargetService';
 import { DashboardStats, SystemSettings, Cell, CellPerformanceRecord } from '../../types';
 import {
   BarChart3,
@@ -47,9 +49,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack }) => {
   const [timeDimension, setTimeDimension] = useState<'weekly' | 'monthly' | 'quarterly' | 'ytd'>('weekly');
   const [selectedMetric, setSelectedMetric] = useState<'attendance' | 'souls' | 'offerings' | 'compliance'>('souls');
 
-  const loadData = async () => {
+  const loadData = async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) setIsLoading(true);
       const [dashStats, sysSettings, cellList, trends, cStats] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
@@ -63,23 +65,21 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack }) => {
       setWeeklyTrends(trends);
       setCellStats(cStats);
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     loadData();
+    const unsubscribe = SoulTargetService.subscribeToLiveSoulTracking(() => {
+      void loadData(false);
+    });
+    return unsubscribe;
   }, []);
 
   const handleExportCsv = async () => {
     const csvData = await AnalyticsService.exportAnalyticsCsv();
-    const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvData);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `FNI_Ministry_Analytics_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    await exportCsvFile(`FNI_Ministry_Analytics_${Date.now()}.csv`, csvData);
   };
 
   const handlePrint = () => {

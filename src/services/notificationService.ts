@@ -2,6 +2,7 @@ import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { NotificationItem, NotificationType, NotificationChannel, UserRole } from '../types';
 import { PushNotificationService } from './pushNotificationService';
+import { CellService } from './cellService';
 const STORAGE_KEY = 'fni_notifications_store_v2';
 const SUBSCRIBERS = new Set<(notifs: NotificationItem[]) => void>();
 
@@ -44,7 +45,15 @@ export class NotificationService {
   ): NotificationItem[] {
     const isAdmin = role === 'admin' || role === 'super_admin' || role === 'national_admin';
 
+    const activeCellIds = CellService.getCachedActiveCellIds();
+    const activeCellNames = CellService.getCachedActiveCellNames();
+
     return notifications.filter(n => {
+      const cellId = n.metadata?.cellId || n.metadata?.cell_id;
+      const cellName = n.metadata?.cellName || n.metadata?.cell_name;
+      if (cellId && activeCellIds.size > 0 && !activeCellIds.has(String(cellId))) return false;
+      if (cellName && activeCellNames.size > 0 && !activeCellNames.has(String(cellName).trim().toLowerCase())) return false;
+
       // 1. Broadcast to all users
       if (n.user_id === 'all') return true;
 

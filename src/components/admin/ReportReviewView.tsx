@@ -1,8 +1,10 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect, useMemo } from 'react';
 import { UnifiedReportItem, ReportStatus, Cell, EvangelismContact } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { FollowUpService } from '../../services/followUpService';
+import { SoulTargetService } from '../../services/soulTargetService';
 import { useAuth } from '../../context/AuthContext';
 import { formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
@@ -149,7 +151,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       // registration still exists and has not been archived. Keep report rows
       // in storage for historical records; this is only an approval-queue filter.
       const registeredCellIds = new Set(
-        loadedCells.filter(cell => !cell.is_archived).map(cell => cell.id)
+        loadedCells.filter(cell => cell.is_active && !cell.is_archived).map(cell => cell.id)
       );
       const activeQueue = queue.filter(report =>
         Boolean(report.cellId) && registeredCellIds.has(report.cellId)
@@ -186,12 +188,11 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
   useEffect(() => {
     void loadData();
-    // Pick up cell removals made in another portal/device without requiring
-    // an administrator to manually refresh the approval queue.
-    const refreshInterval = window.setInterval(() => {
+    // Reports, cell changes and finance-triggered report updates refresh the queue across devices.
+    const unsubscribe = SoulTargetService.subscribeToLiveSoulTracking(() => {
       void loadData(true);
-    }, 30000);
-    return () => window.clearInterval(refreshInterval);
+    });
+    return unsubscribe;
   }, [typeFilter]);
 
   // Lookup cell details (phone, venue, etc.)
@@ -456,7 +457,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   };
 
   // Export Filtered Queue to CSV
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (filteredReports.length === 0) return;
 
     const headers = [
@@ -495,17 +496,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute(
-      'download',
-      `FNI_Report_Review_Queue_${new Date().toISOString().split('T')[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows].join('\r\n');
+    await exportCsvFile(`FNI_Report_Review_Queue_${new Date().toISOString().split('T')[0]}.csv`, csvContent);
   };
 
   // Reset all filters
