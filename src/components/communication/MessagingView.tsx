@@ -1541,6 +1541,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         </div>
                       )}
                       {msg.deletedForEveryoneAt ? <span className="italic opacity-70">This message was deleted</span> : renderFormattedMessage(msg.content)}
+                      {msg.editedAt && !msg.deletedForEveryoneAt && <span className={`ml-1 text-[10px] italic ${isMine ? 'text-white/60' : 'text-[#98A2B3]'}`}>edited</span>}
                       {!msg.deletedForEveryoneAt && (msg.attachments || []).map(attachment => <ChatAttachmentPreview key={attachment.path} attachment={attachment} />)}
 
                       {/* Floating Reply Button on Hover */}
