@@ -312,9 +312,6 @@ export interface PrivateMessage {
   attachments?: ChatAttachment[];
   deletedForEveryoneAt?: string;
   editedAt?: string;
-  isPinned?: boolean;
-  pinnedAt?: string;
-  pinnedBy?: string;
 }
 
 export interface CommunityMessage {
