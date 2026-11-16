@@ -824,10 +824,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const sticker = STICKER_PACK.find(item => item.emoji === stickerMatch[1]);
         return <span key={idx} role="img" aria-label={sticker?.label || 'FNI sticker'} title={sticker?.label || 'FNI sticker'} className="inline-flex items-center justify-center align-middle rounded-2xl bg-white/10 px-3 py-1.5 text-5xl leading-none my-1">{stickerMatch[1]}</span>;
       }
-      const parts = segment.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g);
-      return <React.Fragment key={idx}>{parts.map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
+      const urlParts = segment.split(/(https?:\/\/[^\s]+)/g);
+      return <React.Fragment key={idx}>{urlParts.map((urlPart, urlIdx) => urlPart.startsWith('http://') || urlPart.startsWith('https://') ? (
+        <a key={urlIdx} href={urlPart.replace(/[),.!?]+$/, '')} target="_blank" rel="noreferrer" className="font-semibold underline underline-offset-2 break-all text-inherit">{urlPart}</a>
+      ) : <React.Fragment key={urlIdx}>{urlPart.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g).map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
         <span key={partIdx} className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5" title="Tagged member">{part}</span>
-      ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>;
+      ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>)}</React.Fragment>;
     });
   };
 
