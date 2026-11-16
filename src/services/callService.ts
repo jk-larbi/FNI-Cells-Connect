@@ -7,6 +7,7 @@ export type FniCallSignalType = 'offer' | 'answer' | 'ice-candidate' | 'hangup' 
 export interface FniCallSignal {
   callId: string;
   fromProfileId: string;
+  kind?: FniCallKind;
   type: FniCallSignalType;
   payload?: RTCSessionDescriptionInit | RTCIceCandidateInit | null;
   sentAt: string;
@@ -23,8 +24,11 @@ export class CallService {
     recipientProfileId: string,
   ): RealtimeChannel {
     if (!supabase) throw new Error('FNI calling is unavailable because the secure connection is not configured.');
+    const [firstParticipant, secondParticipant] = [callerProfileId, recipientProfileId].sort();
+    // One stable direct-chat channel lets the other participant receive an incoming
+    // call while this conversation is open. The unique callId stays in each signal.
     return supabase.channel(
-      `fni-call:${callId}:${callerProfileId}:${recipientProfileId}`,
+      `fni-call:direct:${firstParticipant}:${secondParticipant}`,
       {
         config: {
           private: true,
