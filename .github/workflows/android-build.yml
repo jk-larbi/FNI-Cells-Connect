@@ -143,6 +143,7 @@ jobs:
               "android.permission.FOREGROUND_SERVICE",
               "android.permission.FOREGROUND_SERVICE_LOCATION",
               "android.permission.POST_NOTIFICATIONS",
+              "android.permission.RECORD_AUDIO",
           ]:
               if permission not in existing_permissions:
                   ET.SubElement(manifest_root, "uses-permission", {f"{{{android_ns}}}name": permission})
