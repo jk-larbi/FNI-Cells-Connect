@@ -52,6 +52,18 @@ export class CellService {
     return cells.filter(cell => cell.is_active && !cell.is_archived);
   }
 
+  static getCachedActiveCellIds(): Set<string> {
+    const active = getStoredCells().filter(cell => cell.is_active && !cell.is_archived);
+    return new Set(active.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
+  }
+
+  static getCachedActiveCellNames(): Set<string> {
+    return new Set(getStoredCells()
+      .filter(cell => cell.is_active && !cell.is_archived)
+      .map(cell => cell.name.trim().toLowerCase())
+      .filter(Boolean));
+  }
+
   static async getCellById(cellId: string): Promise<Cell | null> {
     // 1. Primary: Supabase
     const supaCell = await SupabaseService.getCellById(cellId);
