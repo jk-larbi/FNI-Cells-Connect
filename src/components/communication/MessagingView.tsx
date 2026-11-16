@@ -461,18 +461,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const previousPrivateConversationRef = useRef<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
-  // Telegram-style chat scrolling: each conversation owns its message viewport.
-  // Keep the reader's position when older messages are being viewed; follow new
-  // messages only when the reader was already near the latest message.
+  // Community chat follows the document's native page scroll; private chats retain their own viewport.
   useEffect(() => {
     if (activeTab === 'community') {
-      const stream = communityStreamRef.current;
-      if (!stream) return;
       const isFirstLoad = previousCommunityCountRef.current === null;
-      const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
+      const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180;
       if (isFirstLoad || nearBottom) {
         requestAnimationFrame(() => {
-          stream.scrollTop = stream.scrollHeight;
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: isFirstLoad ? 'auto' : 'smooth' });
           setShowCommunityJumpToLatest(false);
         });
       }
@@ -493,6 +489,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     previousPrivateCountRef.current = privateMessages.length;
     previousPrivateConversationRef.current = selectedTutorId;
   }, [activeTab, communityMessages.length, privateMessages.length, selectedTutorId]);
+  useEffect(() => {
+    if (activeTab !== 'community') return;
+    const updateLatestVisibility = () => {
+      const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180;
+      setShowCommunityJumpToLatest(!nearBottom);
+    };
+    window.addEventListener('scroll', updateLatestVisibility, { passive: true });
+    updateLatestVisibility();
+    return () => window.removeEventListener('scroll', updateLatestVisibility);
+  }, [activeTab]);
+
   const privateSendLock = useRef(false);
   const communitySendLock = useRef(false);
 
@@ -1044,10 +1051,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setShowCommunityEmoji(false);
       setShowMentionMenu(false);
       await loadCommunity();
-      requestAnimationFrame(() => {
-        const stream = communityStreamRef.current;
-        if (stream) stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
-      });
+      requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }));
     } catch (error) {
       console.error('Community message send failed:', error);
       setCommunitySendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
@@ -1227,7 +1231,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           })()}
 
           {/* Forum Messages Stream */}
-          <div ref={communityStreamRef} onScroll={() => { const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180; setShowCommunityJumpToLatest(!nearBottom); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}> onScroll={event => { const el = event.currentTarget; setShowCommunityJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
+          <div ref={communityStreamRef} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}> onScroll={event => { const el = event.currentTarget; setShowCommunityJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {visibleCommunityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1378,7 +1382,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               })
             )}
             <div ref={communityEndRef} />
-            {showCommunityJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => communityStreamRef.current?.scrollTo({ top: communityStreamRef.current.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
+            {showCommunityJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
           </div>
 
           {/* ACTIVE REPLY PREVIEW BANNER (WhatsApp / Telegram style) */}
