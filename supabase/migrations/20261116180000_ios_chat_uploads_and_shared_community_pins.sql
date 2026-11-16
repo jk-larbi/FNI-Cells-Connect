@@ -17,10 +17,37 @@ on conflict (id) do update
 set file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
+-- Restrict authenticated UPDATE to pin metadata, then permit active community members
+-- to update those three columns. Message content continues through the guarded RPC.
+revoke update on table public.community_messages from authenticated, anon;
+grant update (is_pinned, pinned_at, pinned_by) on table public.community_messages to authenticated;
+
+drop policy if exists community_messages_pin_update on public.community_messages;
+create policy community_messages_pin_update
+on public.community_messages
+for update
+to authenticated
+using (
+  exists (
+    select 1 from public.profiles p
+    where p.id = (select auth.uid())
+      and p.is_active = true
+      and p.role::text in ('tutor', 'admin', 'super_admin')
+  )
+)
+with check (
+  exists (
+    select 1 from public.profiles p
+    where p.id = (select auth.uid())
+      and p.is_active = true
+      and p.role::text in ('tutor', 'admin', 'super_admin')
+  )
+);
+
 create or replace function public.set_community_message_pin(p_message_id text, p_pinned boolean)
 returns void
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
