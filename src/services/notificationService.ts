@@ -495,7 +495,7 @@ export class NotificationService {
     // 2. Fetch from Supabase
     if (isSupabaseConfigured && supabase) {
       SupabaseService.getNotifications(userId)
-        .then(remoteItems => {
+        .then(async remoteItems => {
           // A successful empty response is authoritative: do not resurrect stale
           // messages or notifications from this browser's local cache.
           if (remoteItems !== null) {
