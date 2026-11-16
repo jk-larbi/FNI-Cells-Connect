@@ -168,6 +168,7 @@ export class MessagingService {
       if (supaMsgs === null) {
         throw new Error('The private conversation could not be loaded. Check your connection and try again.');
       }
+      setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
 
       // Chat history must not disappear when a member changes cell or a cell is
       // archived. A direct conversation is scoped by its two participant IDs,
