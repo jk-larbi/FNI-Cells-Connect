@@ -1330,8 +1330,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
                               {allMembers.find(member => member.id === msg.senderUid) && <button type="button" onClick={() => { openMemberProfile(msg.senderUid); setOpenMessageMenu(null); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">View profile</button>}
                           <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
-                              <button type="button" onClick={() => handleReaction(msg.id, "❤️")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React ❤️</button>
-                              <button type="button" onClick={() => handleReaction(msg.id, "🙏")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React 🙏</button>
+                              <div className="flex items-center justify-between gap-1 rounded-lg bg-[#F8FAFC] px-1.5 py-1" aria-label="Quick reactions">
+                                {["❤️", "🙏", "😂", "👍", "🔥", "👏"].map(emoji => (
+                                  <button key={emoji} type="button" onClick={() => { handleReaction(msg.id, emoji); setOpenMessageMenu(null); }} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg hover:bg-white hover:shadow-sm transition-colors" aria-label={`React ${emoji}`} title={`React ${emoji}`}>{emoji}</button>
+                                ))}
+                              </div>
                               <button type="button" onClick={() => { setCommunityReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); communityInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                             </div>
                           )}
@@ -1610,6 +1613,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </button>
                 {openChatMenu && (
                   <div className="absolute right-0 top-full z-40 mt-1 min-w-40 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                    <button type="button" onClick={() => { setOpenChatMenu(false); setWallpaperMenu(wallpaperMenu === 'private' ? null : 'private'); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Change wallpaper</button>
                     <button type="button" onClick={() => handlePrivateChatAction('clear')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Clear chat</button>
                     <button type="button" onClick={handleClearAllPrivateChats} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Clear all chats</button>
                     <button type="button" onClick={() => handlePrivateChatAction('delete')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete chat</button>
