@@ -167,11 +167,20 @@ export class MessagingService {
         .filter(Number.isFinite);
       const cutoff = cutoffs.length ? Math.max(...cutoffs) : 0;
       const belongsToConversation = (message: PrivateMessage) => {
+        if (isAdmin) {
+          // Tutors address the shared leadership inbox using the legacy
+          // recipient UID "admin"; administrators address tutors by their
+          // real profile ID. Include both directions in the admin's thread.
+          return (
+            (message.senderUid === tutorUid &&
+              (message.recipientUid === 'admin' || message.recipientUid === viewerUid)) ||
+            (message.senderUid === viewerUid && message.recipientUid === tutorUid)
+          );
+        }
         if (conversationId === 'admin') {
           return message.senderUid === tutorUid || message.recipientUid === tutorUid;
         }
-        // Every one-to-one chat is scoped to exactly these two participants,
-        // including when the signed-in participant is an administrator.
+        // Every one-to-one chat is scoped to exactly these two participants.
         return (message.senderUid === viewerUid && message.recipientUid === conversationId) ||
           (message.senderUid === conversationId && message.recipientUid === viewerUid);
       };

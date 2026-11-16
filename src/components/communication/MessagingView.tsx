@@ -192,8 +192,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [incomingCall, setIncomingCall] = useState<FniCallSignal | null>(null);
   const [activeCallKind, setActiveCallKind] = useState<FniCallKind>('voice');
   const [callError, setCallError] = useState<string | null>(null);
-  const [communityJitsiRoom, setCommunityJitsiRoom] = useState<string | null>(null);
-  const [communityJitsiKind, setCommunityJitsiKind] = useState<'voice' | 'video'>('video');
   const [localCallStream, setLocalCallStream] = useState<MediaStream | null>(null);
   const [remoteCallStream, setRemoteCallStream] = useState<MediaStream | null>(null);
   const callChannelRef = useRef<import('@supabase/supabase-js').RealtimeChannel | null>(null);
@@ -978,17 +976,27 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     recordingStreamRef.current?.getTracks().forEach(track => track.stop());
   }, []);
 
-  // Private one-to-one calls use WebRTC. Community calls run in an embedded Jitsi meeting.
+  // Private one-to-one calls use WebRTC. Public meet.jit.si requires the
+  // room creator to authenticate in a top-level browser page; an iframe cannot
+  // reliably complete that moderator sign-in flow.
   const startChatCall = async (kind: 'voice' | 'video', target: 'community' | 'private') => {
     if (target === 'community') {
       const room = `FNI-Cells-${crypto.randomUUID()}`;
       const callUrl = `https://meet.jit.si/${room}${kind === 'voice' ? '#config.startWithVideoMuted=true&config.startAudioOnly=true' : ''}`;
+      // Open a top-level browser context directly from the tap so mobile popup
+      // blockers do not prevent the administrator from authenticating as host.
+      const meetingWindow = window.open('about:blank', '_blank');
       try {
         await MessagingService.sendCommunityMessage({ senderUid: currentUser.id, senderName: currentUser.full_name, senderRole: currentUser.role, cellName: currentUser.cell_name, content: `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`, category: 'general', mentions: [], attachments: [] });
         await loadCommunity();
-        setCommunityJitsiKind(kind);
-        setCommunityJitsiRoom(room);
+        if (meetingWindow) {
+          meetingWindow.location.replace(callUrl);
+        } else {
+          // If the browser blocks a new tab, navigate the current top-level page.
+          window.location.assign(callUrl);
+        }
       } catch (error) {
+        meetingWindow?.close();
         console.error('Could not create community call invitation:', error);
         window.alert('The community call invitation could not be sent. Please try again.');
       }
@@ -1926,28 +1934,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         </div>
       )}
 
-      {communityJitsiRoom && (
-        <div className="fixed inset-0 z-[150] flex flex-col bg-[#080D18]" role="dialog" aria-modal="true" aria-label={communityJitsiKind === 'video' ? 'FNI community video meeting' : 'FNI community voice meeting'}>
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#101C2D] px-4 py-3 text-white">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold">FNI Community {communityJitsiKind === 'video' ? 'Video' : 'Voice'} Meeting</p>
-              <p className="text-[11px] text-white/55">You're staying inside FNI Cells Connect</p>
-            </div>
-            <button type="button" onClick={() => setCommunityJitsiRoom(null)} className="shrink-0 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-500">Leave meeting</button>
-          </div>
-          <div className="min-h-0 flex-1 bg-black">
-            <iframe
-              key={communityJitsiRoom}
-              title="FNI community meeting"
-              src={`https://meet.jit.si/${communityJitsiRoom}#config.prejoinPageEnabled=true&config.startWithVideoMuted=${communityJitsiKind === 'voice'}&config.startAudioOnly=${communityJitsiKind === 'voice'}&config.disableDeepLinking=true&interfaceConfig.SHOW_JITSI_WATERMARK=false`}
-              allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-write"
-              referrerPolicy="no-referrer"
-              className="h-full w-full border-0"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
+
 
       {(incomingCall || callUi !== 'idle') && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="FNI call">

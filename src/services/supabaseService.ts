@@ -957,7 +957,10 @@ export class SupabaseService {
     };
 
     try {
-      const { error } = await supabase!.from('private_messages').upsert(payload, { onConflict: 'id' });
+      // Use a plain INSERT rather than upsert. Upsert requests UPDATE rights
+      // on conflict and can be rejected by private-message RLS policies even
+      // for a brand-new message. Each message receives a unique generated ID.
+      const { error } = await supabase!.from('private_messages').insert(payload);
       if (error) {
         SyncStateService.recordFailedSync({
           table: 'private_messages',
@@ -965,6 +968,7 @@ export class SupabaseService {
           payload,
           errorMessage: error.message,
         });
+        console.warn('Private message insert failed:', error.message);
         return false;
       }
       SyncStateService.recordSuccessfulSync('private_messages', msg.id);
