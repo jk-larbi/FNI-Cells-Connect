@@ -58,21 +58,26 @@ export class ReportService {
     status?: ReportStatus;
   }): Promise<CellMeetingReport[]> {
     // 1. Primary: Try Supabase
-    const supaReports = await SupabaseService.getCellMeetingReports(filters);
+    const [supaReports, activeCells] = await Promise.all([
+      SupabaseService.getCellMeetingReports(filters),
+      CellService.getActiveCells(),
+    ]);
+    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const applyFilters = (items: CellMeetingReport[]) => items
+      .filter(report => activeCellIds.has(report.cellId))
+      .filter(report => !filters?.cellId || report.cellId === filters.cellId)
+      .filter(report => !filters?.tutorUid || report.tutorUid === filters.tutorUid)
+      .filter(report => !filters?.status || report.status === filters.status)
+      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+
     if (supaReports !== null) {
-      let filtered = supaReports;
-      if (filters?.status) filtered = filtered.filter(r => r.status === filters.status);
-      // Supabase is authoritative when connected, including an empty result.
-      // Replace stale browser cache so deleted test reports cannot reappear.
+      const filtered = applyFilters(supaReports);
+      // The backend remains authoritative, including an empty result and inactive-cell cleanup.
       setStored(STORAGE_KEYS.MEETING_REPORTS, filtered);
       return filtered;
     }
 
-    let reports = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
-    if (filters?.cellId) reports = reports.filter(r => r.cellId === filters.cellId);
-    if (filters?.tutorUid) reports = reports.filter(r => r.tutorUid === filters.tutorUid);
-    if (filters?.status) reports = reports.filter(r => r.status === filters.status);
-    return reports.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    return applyFilters(getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []));
   }
 
   static async submitCellMeetingReport(data: {
@@ -139,9 +144,11 @@ export class ReportService {
 
     // Save to Supabase
     try {
-      await SupabaseService.upsertCellMeetingReport(report);
+      const saved = await SupabaseService.upsertCellMeetingReport(report);
+      if (SupabaseService.isAvailable() && !saved) throw new Error('The meeting report could not be saved to the FNI database. Please retry before leaving this page.');
     } catch (err) {
       console.warn('Supabase meeting report sync notice:', err);
+      if (SupabaseService.isAvailable()) throw err;
     }
 
     const list = getStored<CellMeetingReport[]>(STORAGE_KEYS.MEETING_REPORTS, []);
@@ -223,21 +230,25 @@ export class ReportService {
     status?: ReportStatus;
   }): Promise<EvangelismReport[]> {
     // 1. Primary: Try Supabase
-    const supaReports = await SupabaseService.getEvangelismReports(filters);
+    const [supaReports, activeCells] = await Promise.all([
+      SupabaseService.getEvangelismReports(filters),
+      CellService.getActiveCells(),
+    ]);
+    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const applyFilters = (items: EvangelismReport[]) => items
+      .filter(report => activeCellIds.has(report.cellId))
+      .filter(report => !filters?.cellId || report.cellId === filters.cellId)
+      .filter(report => !filters?.tutorUid || report.tutorUid === filters.tutorUid)
+      .filter(report => !filters?.status || report.status === filters.status)
+      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+
     if (supaReports !== null) {
-      let filtered = supaReports;
-      if (filters?.status) filtered = filtered.filter(r => r.status === filters.status);
-      // Supabase is authoritative when connected, including an empty result.
-      // Replace stale browser cache so deleted test reports cannot reappear.
+      const filtered = applyFilters(supaReports);
       setStored(STORAGE_KEYS.EVANGELISM_REPORTS, filtered);
       return filtered;
     }
 
-    let reports = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
-    if (filters?.cellId) reports = reports.filter(r => r.cellId === filters.cellId);
-    if (filters?.tutorUid) reports = reports.filter(r => r.tutorUid === filters.tutorUid);
-    if (filters?.status) reports = reports.filter(r => r.status === filters.status);
-    return reports.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    return applyFilters(getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []));
   }
 
   static async submitEvangelismReport(data: {
@@ -295,9 +306,11 @@ export class ReportService {
 
     // Save to Supabase
     try {
-      await SupabaseService.upsertEvangelismReport(report);
+      const saved = await SupabaseService.upsertEvangelismReport(report);
+      if (SupabaseService.isAvailable() && !saved) throw new Error('The evangelism report could not be saved to the FNI database. Please retry before leaving this page.');
     } catch (err) {
       console.warn('Supabase evangelism report sync notice:', err);
+      if (SupabaseService.isAvailable()) throw err;
     }
 
     const list = getStored<EvangelismReport[]>(STORAGE_KEYS.EVANGELISM_REPORTS, []);
