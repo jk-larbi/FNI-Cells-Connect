@@ -1123,6 +1123,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       {/* Keep the standard communications navigation for private messages.
           Community opens directly into its dedicated full-screen chat experience. */}
       {activeTab === 'private' && (
+        <>
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4">
         <div>
@@ -1173,7 +1174,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </button>
         </div>
       </div>
-
+        </>
       )}
       
       {/* TAB 1: TUTOR COMMUNITY FORUM (Open Access, Emojis, Tagging & Telegram/WhatsApp Replies) */}
