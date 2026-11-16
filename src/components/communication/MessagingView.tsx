@@ -308,7 +308,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       );
       const directory = eligibleMembers.map(member => ({
         id: member.id,
-        name: member.full_name,
+        name: member.role === 'admin' || member.role === 'super_admin' ? 'FNI Admin' : member.full_name,
         cellName: member.cell_name,
       }));
 
@@ -320,7 +320,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       ) {
         directory.push({
           id: currentUser.id,
-          name: currentUser.full_name,
+          name: currentUser.role === 'admin' || currentUser.role === 'super_admin' ? 'FNI Admin' : currentUser.full_name,
           cellName: currentUser.cell_name,
         });
       }
@@ -796,7 +796,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 Tutor Community & Fellowship Sharing
               </h2>
               <p className="hidden sm:block text-xs text-slate-200 mt-0.5">
-                Open to all fellowship tutors. Mention leaders with <span className="text-[#C6A45A] font-bold">@Name</span>, send emojis & reply to messages.
+                Open to registered tutors and FNI Admin. Tag verified members with <span className="text-[#C6A45A] font-bold">@Name</span>, send emojis & reply to messages.
               </p>
             </div>
 
@@ -1493,11 +1493,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               {profileMember.avatar_url
                 ? <img src={profileMember.avatar_url} alt="" className="mx-auto h-20 w-20 rounded-full border-4 border-white/20 object-cover" />
                 : <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/20 bg-white/10"><UserRound className="h-9 w-9 text-[#E8D6A8]" /></div>}
-              <h2 id="member-profile-title" className="mt-3 text-lg font-bold">{profileMember.full_name}</h2>
+              <h2 id="member-profile-title" className="mt-3 text-lg font-bold">{profileMember.role === 'admin' || profileMember.role === 'super_admin' ? 'FNI Admin' : profileMember.full_name}</h2>
               <p className="mt-1 text-xs text-white/75">{profileMember.username ? `@${profileMember.username}` : 'FNI Member'}</p>
             </div>
             <div className="space-y-3 p-5">
-              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Ministry role</span><span className="text-sm font-bold capitalize text-[#142B4A]">{profileMember.role.replace(/_/g, ' ')}</span></div>
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Ministry role</span><span className="text-sm font-bold capitalize text-[#142B4A]">{profileMember.role === 'admin' || profileMember.role === 'super_admin' ? 'FNI Admin' : profileMember.role === 'tutor' ? 'Tutor' : profileMember.role.replace(/_/g, ' ')}</span></div>
               <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Cell</span><span className="text-sm font-semibold text-[#182230]">{profileMember.cell_name || 'Not assigned'}</span></div>
               <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Region</span><span className="text-sm font-semibold text-[#182230]">{profileMember.region_name || 'Not assigned'}</span></div>
               {profileMember.created_at && <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Member since</span><span className="text-sm font-semibold text-[#182230]">{new Date(profileMember.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span></div>}
