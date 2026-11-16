@@ -31,6 +31,7 @@ interface NotificationContextType {
   activeNavigationTarget: NotificationNavigationTarget | null;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  clearAllNotifications: () => Promise<boolean>;
   dispatchNotification: (
     title: string,
     message: string,
@@ -186,6 +187,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const markAsRead = async (id: string) => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
     await NotificationService.markAsRead(id);
+  };
+
+  const clearAllNotifications = async (): Promise<boolean> => {
+    if (!currentUser) return false;
+    const cleared = await NotificationService.clearAllForUser(currentUser.id, currentUser.role);
+    if (cleared) {
+      const key = `fni_notification_dismissals:${currentUser.id}`;
+      try {
+        const ids = new Set<string>(JSON.parse(localStorage.getItem(key) || '[]'));
+        setNotifications(previous => previous.filter(item => !ids.has(item.id)));
+      } catch { setNotifications([]); }
+    }
+    return cleared;
   };
 
   const markAllAsRead = async () => {
@@ -373,6 +387,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         activeNavigationTarget,
         markAsRead,
         markAllAsRead,
+        clearAllNotifications,
         dispatchNotification,
         sendCellReminder,
         triggerBatchReminders,

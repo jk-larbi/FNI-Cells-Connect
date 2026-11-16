@@ -25,6 +25,7 @@ import {
   CornerDownRight,
   Heart,
   MoreVertical,
+  Pin,
   Paperclip,
   FileAudio,
   Search,
@@ -460,18 +461,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const previousPrivateConversationRef = useRef<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
-  // Telegram-style chat scrolling: each conversation owns its message viewport.
-  // Keep the reader's position when older messages are being viewed; follow new
-  // messages only when the reader was already near the latest message.
+  // Community chat follows the document's native page scroll; private chats retain their own viewport.
   useEffect(() => {
     if (activeTab === 'community') {
-      const stream = communityStreamRef.current;
-      if (!stream) return;
       const isFirstLoad = previousCommunityCountRef.current === null;
-      const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
+      const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180;
       if (isFirstLoad || nearBottom) {
         requestAnimationFrame(() => {
-          stream.scrollTop = stream.scrollHeight;
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: isFirstLoad ? 'auto' : 'smooth' });
           setShowCommunityJumpToLatest(false);
         });
       }
@@ -492,6 +489,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     previousPrivateCountRef.current = privateMessages.length;
     previousPrivateConversationRef.current = selectedTutorId;
   }, [activeTab, communityMessages.length, privateMessages.length, selectedTutorId]);
+  useEffect(() => {
+    if (activeTab !== 'community') return;
+    const updateLatestVisibility = () => {
+      const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180;
+      setShowCommunityJumpToLatest(!nearBottom);
+    };
+    window.addEventListener('scroll', updateLatestVisibility, { passive: true });
+    updateLatestVisibility();
+    return () => window.removeEventListener('scroll', updateLatestVisibility);
+  }, [activeTab]);
+
   const privateSendLock = useRef(false);
   const communitySendLock = useRef(false);
 
@@ -675,6 +683,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setOpenChatMenu(false);
   };
 
+  const handleToggleCommunityPin = async (message: CommunityMessage) => {
+    setOpenMessageMenu(null);
+    const saved = await MessagingService.setCommunityMessagePin(message.id, !message.isPinned);
+    if (!saved) { setCommunitySendError('This message could not be pinned. Please try again.'); return; }
+    await loadCommunity();
+  };
+
   const handleClearCommunityHistory = async () => {
     setOpenCommunityChatMenu(false);
     if (!window.confirm('Clear the Community Hub history from your account only? Other members will still see all messages.')) return;
@@ -812,10 +827,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     const el = document.getElementById(`msg-${msgId}`);
     const stream = el?.closest('.fni-chat-stream') as HTMLElement | null;
     if (el && stream) {
-      const streamRect = stream.getBoundingClientRect();
       const messageRect = el.getBoundingClientRect();
-      const targetTop = stream.scrollTop + messageRect.top - streamRect.top - (stream.clientHeight - messageRect.height) / 2;
-      stream.scrollTo({ top: targetTop, behavior: 'smooth' });
+      if (stream.classList.contains('fni-community-stream')) {
+        window.scrollTo({ top: window.scrollY + messageRect.top - window.innerHeight / 2, behavior: 'smooth' });
+      } else {
+        const streamRect = stream.getBoundingClientRect();
+        const targetTop = stream.scrollTop + messageRect.top - streamRect.top - (stream.clientHeight - messageRect.height) / 2;
+        stream.scrollTo({ top: targetTop, behavior: 'smooth' });
+      }
       el.classList.add('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
       setTimeout(() => {
         el.classList.remove('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
@@ -1036,10 +1055,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setShowCommunityEmoji(false);
       setShowMentionMenu(false);
       await loadCommunity();
-      requestAnimationFrame(() => {
-        const stream = communityStreamRef.current;
-        if (stream) stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
-      });
+      requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }));
     } catch (error) {
       console.error('Community message send failed:', error);
       setCommunitySendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
@@ -1208,8 +1224,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             )}
           </div>
 
+          {/* Pinned community message */}
+          {visibleCommunityMessages.find(message => message.isPinned) && (() => {
+            const pinned = visibleCommunityMessages.find(message => message.isPinned)!;
+            return <div className="fni-community-pinned-strip flex items-center gap-2 px-3 py-2 text-white border-b border-white/10" role="status">
+              <Pin className="h-4 w-4 shrink-0 text-[#F1C96B]" />
+              <div className="min-w-0 flex-1"><div className="text-[10px] font-bold uppercase tracking-wide text-[#F1C96B]">Pinned message</div><button type="button" onClick={() => document.getElementById(`msg-${pinned.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="block w-full truncate text-left text-xs text-white/90">{pinned.senderName}: {pinned.content}</button></div>
+              {isAdmin && <button type="button" onClick={() => handleToggleCommunityPin(pinned)} className="shrink-0 rounded-lg p-1.5 text-white/70 hover:bg-white/10" aria-label="Unpin community message" title="Unpin message"><X className="h-4 w-4" /></button>}
+            </div>;
+          })()}
+
           {/* Forum Messages Stream */}
-          <div ref={communityStreamRef} onScroll={event => { const el = event.currentTarget; setShowCommunityJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
+          <div ref={communityStreamRef} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {visibleCommunityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1274,6 +1300,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           </button>
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                              {isAdmin && <button type="button" onClick={() => handleToggleCommunityPin(msg)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">{msg.isPinned ? 'Unpin message' : 'Pin message'}</button>}
                               {isMine && <button type="button" onClick={() => handleEditMessage(msg.id, 'community', msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Edit message</button>}
                               <button type="button" onClick={() => handleHideCommunityMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
@@ -1359,7 +1386,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               })
             )}
             <div ref={communityEndRef} />
-            {showCommunityJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => communityStreamRef.current?.scrollTo({ top: communityStreamRef.current.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
+            {showCommunityJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
           </div>
 
           {/* ACTIVE REPLY PREVIEW BANNER (WhatsApp / Telegram style) */}

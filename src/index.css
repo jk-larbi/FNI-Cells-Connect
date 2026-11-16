@@ -1866,3 +1866,12 @@ body {
 @supports not (height: 100dvh) {
   .fni-messaging-view.fni-community-mode { height: 100vh; max-height: 100vh; }
 }
+
+
+/* Community conversations use the document/phone scroll, never a nested message scroller. */
+.fni-messaging-view.fni-community-mode { height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; }
+.fni-messaging-view.fni-community-mode .fni-community-panel { display: flex; flex-direction: column; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; }
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream { flex: none !important; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; overflow-y: visible !important; overscroll-behavior: auto !important; -webkit-overflow-scrolling: auto; }
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer { position: sticky; bottom: calc(var(--fni-mobile-nav-height, 0px) + env(safe-area-inset-bottom)); z-index: 25; }
+.fni-community-pinned-strip { background: linear-gradient(90deg, #171522, #252033); }
+@media (max-width: 767px) { .fni-messaging-view.fni-community-mode { padding-bottom: 1rem; } .fni-messaging-view.fni-community-mode .fni-community-panel { border-radius: 0; } }
