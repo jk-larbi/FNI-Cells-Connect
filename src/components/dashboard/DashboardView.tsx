@@ -152,18 +152,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    await SettingsService.updateSettings({
-      vision: editVision,
-      mission: editMission,
-      annualSoulWinningTarget: editTarget,
-    });
-    setSettings(prev => ({
-      ...prev,
-      vision: editVision,
-      mission: editMission,
-      annualSoulWinningTarget: editTarget,
-    }));
-    setIsEditingSettings(false);
+    try {
+      const updated = await SettingsService.updateSettings({
+        vision: editVision.trim(),
+        mission: editMission.trim(),
+        annualSoulWinningTarget: editTarget,
+      }, currentUser.full_name || 'FNI Administrator');
+      setSettings(updated);
+      setIsEditingSettings(false);
+      await loadData();
+    } catch (error: any) {
+      window.alert(error?.message || 'FNI ministry settings could not be saved. Please try again.');
+    }
   };
 
   if (isLoading || !stats) {
