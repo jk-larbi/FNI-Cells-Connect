@@ -119,8 +119,8 @@ const SelectedChatFilePreview: React.FC<{ file: File; onRemove: () => void }> = 
   }, [file]);
   return (
     <div className="flex max-w-[180px] items-center gap-2 rounded-xl border border-[#DCE3EC] bg-white p-2">
-      {previewUrl && (file.type.startsWith('image/') || /\\.(jpe?g|png|gif|webp|heic|heif|avif)$/i.test(file.name)) ? <img src={previewUrl} alt={file.name} className="h-10 w-10 rounded-lg object-cover" /> :
-       previewUrl && (file.type.startsWith('video/') || /\\.(mp4|mov|webm)$/i.test(file.name)) ? <video src={previewUrl} muted className="h-10 w-10 rounded-lg object-cover" /> :
+      {previewUrl && (file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|avif)$/i.test(file.name)) ? <img src={previewUrl} alt={file.name} className="h-10 w-10 rounded-lg object-cover" /> :
+       previewUrl && (file.type.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(file.name)) ? <video src={previewUrl} muted className="h-10 w-10 rounded-lg object-cover" /> :
        <FileAudio className="h-6 w-6 shrink-0 text-[#229ED9]" />}
       <span className="min-w-0 truncate text-[11px] text-[#182230]">{file.name}</span>
       <button type="button" onClick={onRemove} aria-label="Remove attachment" className="shrink-0 rounded-full p-1 text-[#667085] hover:bg-rose-50 hover:text-rose-600"><X className="h-3.5 w-3.5" /></button>
