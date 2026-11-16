@@ -1964,3 +1964,31 @@ body {
     padding-bottom: max(.75rem, env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+/* The Messages route must not inherit the dashboard's viewport-filling flex
+   height. Let the full community history determine page height on phones. */
+.fni-app-shell.fni-messaging-route {
+  min-height: 0 !important;
+  height: auto !important;
+}
+.fni-app-shell.fni-messaging-route > .fni-app-body {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+.fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+@media (max-width: 767px) {
+  .fni-app-shell.fni-messaging-route {
+    min-height: 0 !important;
+  }
+  .fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+    padding-top: .5rem !important;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
