@@ -299,26 +299,25 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   useEffect(() => {
     async function init() {
-      // Load all cells and tutors to populate member directory and admin tutor selector
-      const cells = await CellService.getCells();
-      const directory: { id: string; name: string; cellName?: string }[] = [];
+      // @mentions come only from real, registered FNI profiles.
+      // Tutors and the official FNI Admin account are eligible; never synthesize
+      // people from cell leader names or placeholder leadership entries.
+      const publicMembers = await MessagingService.getMemberDirectory();
+      const eligibleMembers = (publicMembers || []).filter(member =>
+        member.role === 'tutor' || member.role === 'admin' || member.role === 'super_admin'
+      );
+      const directory = eligibleMembers.map(member => ({
+        id: member.id,
+        name: member.full_name,
+        cellName: member.cell_name,
+      }));
 
-      cells.forEach(c => {
-        if (c.leader_name) {
-          directory.push({
-            id: c.tutorUid || c.leader_name || c.id,
-            name: c.leader_name,
-            cellName: c.name,
-          });
-        }
-      });
-
-      // Add leadership team
-      directory.push({ id: 'admin-1', name: 'Pastor & Leadership', cellName: 'National Admin' });
-      directory.push({ id: 'admin-2', name: 'Overseer', cellName: 'FNI Secretariat' });
-
-      // Add current user if not in directory
-      if (currentUser?.full_name && !directory.some(d => d.name.toLowerCase() === currentUser.full_name.toLowerCase())) {
+      // Include the signed-in member only when their real profile is eligible.
+      if (
+        currentUser?.full_name &&
+        ['tutor', 'admin', 'super_admin'].includes(currentUser.role) &&
+        !directory.some(member => member.id === currentUser.id)
+      ) {
         directory.push({
           id: currentUser.id,
           name: currentUser.full_name,
@@ -327,10 +326,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       }
 
       setMemberDirectory(directory);
-
-      // This RPC returns only public profile fields and respects the active-member filter.
-      const publicMembers = await MessagingService.getMemberDirectory();
-      setAllMembers(publicMembers || []);
+      setAllMembers(eligibleMembers);
 
       const adminConvs = await MessagingService.getAdminConversations();
       const tutorMap = new Map<string, { id: string; name: string; cellName: string }>();
