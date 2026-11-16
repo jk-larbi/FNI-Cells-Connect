@@ -27,6 +27,10 @@ function setStored<T>(key: string, val: T): void {
 }
 
 export class MessagingService {
+  static async getMemberDirectory() {
+    return SupabaseService.getMemberDirectory();
+  }
+
   static async uploadChatAttachment(userUid: string, file: File): Promise<ChatAttachment> {
     return SupabaseService.uploadChatAttachment(userUid, file);
   }
@@ -123,11 +127,13 @@ export class MessagingService {
         .filter(Number.isFinite);
       const cutoff = cutoffs.length ? Math.max(...cutoffs) : 0;
       const belongsToConversation = (message: PrivateMessage) => {
-        if (isAdmin || conversationId === 'admin') {
+        if (conversationId === 'admin') {
           return message.senderUid === tutorUid || message.recipientUid === tutorUid;
         }
-        return (message.senderUid === tutorUid && message.recipientUid === conversationId) ||
-          (message.senderUid === conversationId && message.recipientUid === tutorUid);
+        // Every one-to-one chat is scoped to exactly these two participants,
+        // including when the signed-in participant is an administrator.
+        return (message.senderUid === viewerUid && message.recipientUid === conversationId) ||
+          (message.senderUid === conversationId && message.recipientUid === viewerUid);
       };
 
       return supaMsgs
