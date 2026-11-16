@@ -243,7 +243,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     CallService.listen(channel, signal => {
       if (disposed || signal.fromProfileId === currentUser.id) return;
       if (signal.type === 'offer') {
-        if (callUi !== 'idle' || incomingCall) return;
+        if (activeCallIdRef.current) return;
         activeCallIdRef.current = signal.callId;
         setActiveCallKind(signal.kind || 'voice');
         setIncomingCall(signal);
@@ -298,6 +298,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setCallUi('calling');
     } catch (error) {
       setCallError(error instanceof Error ? error.message : 'Could not accept the call. Check microphone and camera permissions.');
+      try { await sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'decline', sentAt: new Date().toISOString() }); } catch { /* Peer may already be offline. */ }
       await finishCall(false);
     }
   };
@@ -1802,7 +1803,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           <section className="w-full max-w-3xl overflow-hidden rounded-3xl border border-white/15 bg-[#101C2D] text-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
               <div><p className="text-sm font-bold">{incomingCall ? 'Incoming FNI call' : activeCallKind === 'video' ? 'FNI video call' : 'FNI voice call'}</p><p className="text-xs text-white/60">{callUi === 'connected' ? 'Connected' : incomingCall ? 'A member is calling you' : 'Connecting securely…'}</p></div>
-              <button type="button" onClick={() => void finishCall(true)} className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">End</button>
+              <button type="button" onClick={() => { if (incomingCall) { void sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'decline', sentAt: new Date().toISOString() }).catch(() => undefined); void finishCall(false); } else void finishCall(true); }} className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">End</button>
             </div>
             {incomingCall && callUi === 'ringing' ? (
               <div className="space-y-4 px-6 py-12 text-center">
