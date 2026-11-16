@@ -241,7 +241,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     let disposed = false;
     const channel = CallService.createChannel('direct', currentUser.id, selectedTutorId);
     CallService.listen(channel, signal => {
-      if (disposed || signal.fromProfileId === currentUser.id) return;
+      if (disposed || signal.fromProfileId !== selectedTutorId) return;
       if (signal.type === 'offer') {
         if (activeCallIdRef.current) return;
         activeCallIdRef.current = signal.callId;
