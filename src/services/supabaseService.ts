@@ -823,17 +823,21 @@ export class SupabaseService {
   static async getPrivateMessages(userUid: string): Promise<PrivateMessage[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      let query = supabase!
-        .from('private_messages')
-        .select('*');
-      // An empty UID is used only by the admin inbox. RLS restricts the
-      // unfiltered result to administrators; tutors still receive only their own rows.
-      if (userUid) {
-        query = query.or(`sender_uid.eq.${userUid},recipient_uid.eq.${userUid}`);
+      // Supabase applies a default row cap. Fetch in ordered pages so long-running
+      // conversations are not silently cut off after the first page.
+      const rows: any[] = [];
+      const pageSize = 500;
+      for (let from = 0; ; from += pageSize) {
+        let query = supabase!.from('private_messages').select('*');
+        // An empty UID is used only by the admin inbox. RLS restricts the
+        // unfiltered result to administrators; tutors still receive only their own rows.
+        if (userUid) query = query.or(`sender_uid.eq.${userUid},recipient_uid.eq.${userUid}`);
+        const { data, error } = await query.order('created_at', { ascending: true }).range(from, from + pageSize - 1);
+        if (error) return null;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
       }
-      const { data, error } = await query.order('created_at', { ascending: true });
-      if (error) return null;
-      return data ? data.map(mapPrivateMessageFromDb) : [];
+      return rows.map(mapPrivateMessageFromDb);
     } catch (err) {
       return null;
     }
@@ -962,22 +966,34 @@ export class SupabaseService {
   static async getCommunityMessages(): Promise<CommunityMessage[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      const { data, error } = await supabase!
-        .from('community_messages')
-        .select('*')
-        .order('created_at', { ascending: true })
-        .limit(100);
-      if (error) return null;
-      const messages = data ? data.map(mapCommunityMessageFromDb) : [];
-      if (!data || data.length === 0) return messages;
+      // Load the complete conversation in pages; a single .limit(100) meant
+      // older messages disappeared even though they still existed in the database.
+      const rows: any[] = [];
+      const pageSize = 500;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase!
+          .from('community_messages')
+          .select('*')
+          .order('created_at', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) return null;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+      }
+      const messages = rows.map(mapCommunityMessageFromDb);
+      if (rows.length === 0) return messages;
 
-      // Reactions live in their own table so any authenticated member can
-      // react without receiving permission to edit another member's post.
-      const { data: reactionRows, error: reactionError } = await supabase!
-        .from('community_message_reactions')
-        .select('message_id,user_id,user_name,emoji')
-        .in('message_id', data.map(row => row.id));
-      if (reactionError || !reactionRows) return messages;
+      // Fetch reactions in bounded batches to stay within PostgREST URL limits.
+      const reactionRows: any[] = [];
+      for (let offset = 0; offset < rows.length; offset += 500) {
+        const ids = rows.slice(offset, offset + 500).map(row => row.id);
+        const { data, error } = await supabase!
+          .from('community_message_reactions')
+          .select('message_id,user_id,user_name,emoji')
+          .in('message_id', ids);
+        if (error || !data) continue;
+        reactionRows.push(...data);
+      }
 
       const grouped = new Map<string, Record<string, string[]>>();
       reactionRows.forEach(row => {
