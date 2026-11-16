@@ -136,7 +136,7 @@ export class FinanceService {
 
     // Never expose financial records belonging to archived/deleted cells in the active portal.
     const activeCells = await CellService.getActiveCells();
-    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     all = all.filter(record => activeCellIds.has(record.cellId));
     setStoredOfferings(all);
 
