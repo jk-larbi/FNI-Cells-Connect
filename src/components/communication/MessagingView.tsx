@@ -158,12 +158,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(wallpaperStorageKey);
-      setWallpapers(saved ? JSON.parse(saved) as Record<string, string> : {});
-      const savedImages = window.localStorage.getItem(`${wallpaperStorageKey}:images`);
-      setWallpaperImages(savedImages ? JSON.parse(savedImages) as Record<string, string> : {});
-    } catch { setWallpapers({}); }
+    const loadWallpapers = () => {
+      try {
+        const saved = window.localStorage.getItem(wallpaperStorageKey);
+        setWallpapers(saved ? JSON.parse(saved) as Record<string, string> : {});
+        const savedImages = window.localStorage.getItem(`${wallpaperStorageKey}:images`);
+        setWallpaperImages(savedImages ? JSON.parse(savedImages) as Record<string, string> : {});
+      } catch { setWallpapers({}); setWallpaperImages({}); }
+    };
+    loadWallpapers();
+    window.addEventListener('fni-chat-wallpaper-updated', loadWallpapers);
+    return () => window.removeEventListener('fni-chat-wallpaper-updated', loadWallpapers);
   }, [wallpaperStorageKey]);
 
   // Private Messaging State
