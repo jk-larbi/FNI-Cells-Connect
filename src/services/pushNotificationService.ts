@@ -14,6 +14,24 @@ const STORAGE_KEYS = { PREFERENCES_PREFIX: 'fni_push_pref_', TOKEN_PREFIX: 'fni_
 const FUNCTION_NAME = 'fni-web-push';
 
 const isNativeAndroid = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+const isAppleMobileWeb = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+const isAppleHomeScreenApp = (): boolean =>
+  isAppleMobileWeb() &&
+  ((navigator as any).standalone === true ||
+    window.matchMedia?.('(display-mode: standalone)').matches === true);
+const supportsAppleWebPushVersion = (): boolean => {
+  if (!isAppleMobileWeb()) return true;
+  const match = (navigator.userAgent || '').match(/OS (\\d+)[_.](\\d+)/);
+  if (!match) return true;
+  const major = Number(match[1]);
+  const minor = Number(match[2]);
+  return major > 16 || (major === 16 && minor >= 4);
+};
 
 async function saveNativeToken(userId: string, token: string): Promise<void> {
   const { data, error } = await supabase.functions.invoke(FUNCTION_NAME, {
@@ -36,6 +54,7 @@ export class PushNotificationService {
   static isPushSupported(): boolean {
     if (typeof window === 'undefined') return false;
     if (isNativeAndroid()) return true;
+    if (isAppleMobileWeb() && (!isAppleHomeScreenApp() || !supportsAppleWebPushVersion())) return false;
     return 'Notification' in window &&
       'serviceWorker' in navigator &&
       'PushManager' in window &&
@@ -65,13 +84,11 @@ export class PushNotificationService {
   static getSupportMessage(): string | null {
     if (typeof window === 'undefined') return 'Push alerts are unavailable in this environment. In-app notifications remain available.';
     if (isNativeAndroid()) return null;
-    const userAgent = navigator.userAgent || '';
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
-    const isStandalone = (navigator as any).standalone === true ||
-      window.matchMedia?.('(display-mode: standalone)').matches === true;
-
-    if (isIOS && !isStandalone) {
-      return 'On iPhone or iPad, open FNI from an icon added to your Home Screen to enable background push alerts. Safari tabs do not receive web push on iOS. In-app alerts still work.';
+    if (isAppleMobileWeb() && !supportsAppleWebPushVersion()) {
+      return 'Apple web push requires iOS/iPadOS 16.4 or later. Update this device to use background notifications; in-app alerts remain available.';
+    }
+    if (isAppleMobileWeb() && !isAppleHomeScreenApp()) {
+      return 'On iPhone or iPad, add FNI Cells Connect to your Home Screen and open it from that icon. Apple web push works in the installed Home Screen app, not an ordinary Safari tab. In-app alerts still work.';
     }
     if (!window.isSecureContext) return 'Background push requires the secure HTTPS FNI website.';
     if (!('Notification' in window)) return 'This browser cannot show system notifications. In-app notifications remain available.';
@@ -125,9 +142,32 @@ export class PushNotificationService {
     }
     if (!this.isPushSupported() || Notification.permission !== 'granted') return false;
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      if (!subscription) return false;
+      const registration = await this.registerServiceWorker();
+      try { await registration.update(); } catch (updateError) {
+        console.warn('FNI service worker update check did not complete:', updateError);
+      }
+      await navigator.serviceWorker.ready;
+
+      // iOS can expire or discard a web-push subscription while preserving
+      // notification permission. Recreate it on the next authenticated app
+      // launch instead of leaving the device permanently marked inactive.
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        const { data: keyData, error: keyError } = await supabase.functions.invoke(FUNCTION_NAME, {
+          body: { action: 'get_public_key' },
+        });
+        if (keyError || !keyData?.publicKey) {
+          console.warn('Could not obtain the FNI web-push application key:', keyData?.error || keyError?.message);
+          return false;
+        }
+        const padding = '='.repeat((4 - (keyData.publicKey.length % 4)) % 4);
+        const raw = atob((keyData.publicKey + padding).replace(/-/g, '+').replace(/_/g, '/'));
+        const applicationServerKey = Uint8Array.from(raw, char => char.charCodeAt(0));
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: applicationServerKey as BufferSource,
+        });
+      }
       const { data, error } = await supabase.functions.invoke(FUNCTION_NAME, {
         body: {
           action: 'register',
@@ -240,6 +280,7 @@ export class PushNotificationService {
         return { success: false, error: `Notification permission was not granted (${permission}). Allow notifications in your browser settings.` };
       }
       const registration = await this.registerServiceWorker();
+      try { await registration.update(); } catch {}
       await navigator.serviceWorker.ready;
       const { data: keyData, error: keyError } = await supabase.functions.invoke(FUNCTION_NAME, {
         body: { action: 'get_public_key' },
