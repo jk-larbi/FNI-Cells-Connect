@@ -95,6 +95,7 @@ jobs:
         run: npm run build
         env:
           CAPACITOR_BUILD: 'true'
+          VITE_ANDROID_APP_VERSION: ${{ steps.version.outputs.version }}
           VITE_SUPABASE_URL: https://cjskjazsrrbfyjepwyxa.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_0nQJMgCvgruw3CXX9YpBIg_Jq2rAx-Q
 
