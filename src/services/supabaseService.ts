@@ -804,7 +804,10 @@ export class SupabaseService {
       mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
       mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', wav: 'audio/wav',
     };
-    const mimeType = file.type || extensionMime[extension] || '';
+    const providedMime = (file.type || '').toLowerCase();
+    const mimeType = providedMime.startsWith('image/') || providedMime.startsWith('video/') || providedMime.startsWith('audio/')
+      ? providedMime
+      : extensionMime[extension] || '';
     if (!(mimeType.startsWith('image/') || mimeType.startsWith('video/') || mimeType.startsWith('audio/'))) {
       throw new Error('Choose a picture, video or audio file. If this is an iPhone photo, try choosing it from Photos again.');
     }
