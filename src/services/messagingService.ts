@@ -125,7 +125,7 @@ export class MessagingService {
 
       setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
       const hidden = new Set(hiddenIds);
-      const allowedMemberIds = new Set((directory || []).map(member => member.id));
+      const allowedMemberIds = new Set((directory || AuthService.getAllProfiles().filter(profile => profile.is_active).map(profile => ({ id: profile.id }))).map(member => member.id));
       allowedMemberIds.add(viewerUid);
       if (directory?.some(member => member.id === tutorUid)) allowedMemberIds.add(tutorUid);
       const activeCellIds = new Set(activeCells.map(cell => cell.id));
@@ -354,8 +354,21 @@ export class MessagingService {
       console.warn('Notice querying Supabase community messages:', e);
     }
 
+    const [activeCells, directory] = await Promise.all([
+      CellService.getActiveCells(),
+      SupabaseService.getMemberDirectory(),
+    ]);
+    const allowedMemberIds = new Set((directory || AuthService.getAllProfiles().filter(profile => profile.is_active).map(profile => ({ id: profile.id }))).map(member => member.id));
+    const currentProfile = AuthService.getCurrentProfile();
+    if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
+    const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
     const all = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
-    return all.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    return all
+      .filter(message =>
+        allowedMemberIds.has(message.senderUid) &&
+        (!message.cellName?.trim() || activeCellNames.has(message.cellName.trim().toLowerCase()))
+      )
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
 
   // =========================================================================
