@@ -1375,3 +1375,45 @@ html.dark .fni-notification-center span {
   .fni-messaging-view .fni-chat-stream { padding: .75rem !important; }
   .fni-messaging-view .fni-chat-composer { padding: .55rem !important; }
 }
+
+
+/* Keep each chat in its own Telegram-style scroll viewport. The page itself
+   stays still while users move through long message histories. */
+.fni-messaging-view .fni-chat-panel {
+  height: min(78dvh, 760px);
+  min-height: min(420px, 78dvh);
+  max-height: 78dvh;
+}
+.fni-messaging-view .fni-chat-stream {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+@media (max-width: 639px) {
+  .fni-messaging-view .fni-chat-panel {
+    height: min(78dvh, 760px);
+    min-height: min(390px, 78dvh);
+    max-height: 78dvh;
+  }
+  .fni-messaging-view .fni-chat-stream {
+    padding: .65rem !important;
+  }
+  .fni-messaging-view .fni-chat-composer {
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: .35rem;
+  }
+  .fni-messaging-view .fni-chat-composer > button {
+    flex: 0 0 auto;
+  }
+  .fni-messaging-view .fni-chat-composer textarea {
+    min-width: 0;
+    width: 100%;
+  }
+}
