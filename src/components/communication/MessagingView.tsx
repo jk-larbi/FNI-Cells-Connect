@@ -131,6 +131,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [openChatMenu, setOpenChatMenu] = useState(false);
   const privateLongPressTimer = useRef<number | null>(null);
   const privateLongPressTriggered = useRef(false);
+  const communityLongPressTimer = useRef<number | null>(null);
+  const communityLongPressTriggered = useRef(false);
   const [privateEmojiCategory, setPrivateEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Community Messaging State
@@ -365,6 +367,36 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
     setPrivateMessages(previous => previous.filter(message => message.id !== messageId));
     setOpenMessageMenu(null);
+  };
+
+  const beginCommunityMessageTouch = (event: React.TouchEvent<HTMLDivElement>, messageId: string) => {
+    beginMessageSwipe(event);
+    communityLongPressTriggered.current = false;
+    if (communityLongPressTimer.current) window.clearTimeout(communityLongPressTimer.current);
+    communityLongPressTimer.current = window.setTimeout(() => {
+      communityLongPressTriggered.current = true;
+      touchStartX.current = null;
+      setOpenMessageMenu(`community:${messageId}`);
+    }, 550);
+  };
+
+  const finishCommunityMessageTouch = (event: React.TouchEvent<HTMLDivElement>, message: MessageReply) => {
+    if (communityLongPressTimer.current) {
+      window.clearTimeout(communityLongPressTimer.current);
+      communityLongPressTimer.current = null;
+    }
+    if (communityLongPressTriggered.current) {
+      communityLongPressTriggered.current = false;
+      return;
+    }
+    finishMessageSwipe(event, message, 'community');
+  };
+
+  const cancelCommunityMessageLongPress = () => {
+    if (communityLongPressTimer.current) {
+      window.clearTimeout(communityLongPressTimer.current);
+      communityLongPressTimer.current = null;
+    }
   };
 
   const beginPrivateMessageTouch = (event: React.TouchEvent<HTMLDivElement>, messageId: string) => {
@@ -704,8 +736,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     key={msg.id}
                     id={`msg-${msg.id}`}
                     className={isMine ? "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] ml-auto p-3 sm:p-3.5 rounded-2xl border border-[#142B4A] bg-[#142B4A] text-white shadow-2xs space-y-2 transition-all" : "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] mr-auto p-3 sm:p-3.5 rounded-2xl border border-[#E3E8EF] bg-white text-[#182230] shadow-2xs space-y-2 transition-all"}
-                    onTouchStart={beginMessageSwipe}
-                    onTouchEnd={event => finishMessageSwipe(event, { id: msg.id, senderName: msg.senderName, content: msg.content }, 'community')}
+                    onTouchStart={event => beginCommunityMessageTouch(event, msg.id)}
+                    onTouchMove={cancelCommunityMessageLongPress}
+                    onTouchEnd={event => finishCommunityMessageTouch(event, { id: msg.id, senderName: msg.senderName, content: msg.content })}
+                    onTouchCancel={cancelCommunityMessageLongPress}
                   >
                     {/* Header Row: Sender, Tag Badge & Time */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
