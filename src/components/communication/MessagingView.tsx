@@ -540,6 +540,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
+  // Copy the complete message body without trimming line breaks.
+  const copyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setOpenMessageMenu(null);
+    } catch (error) {
+      console.warn('Clipboard copy unavailable:', error);
+      window.prompt('Copy this message:', content);
+    }
+  };
+
   // Handle reaction on community message
   const handleReaction = async (messageId: string, emoji: string) => {
     try {
@@ -692,7 +703,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className={isMine ? "fni-swipe-message w-fit max-w-[92%] sm:max-w-[78%] ml-auto p-4 rounded-2xl border border-[#142B4A] bg-[#142B4A] text-white shadow-2xs space-y-2.5 transition-all" : "fni-swipe-message w-fit max-w-[92%] sm:max-w-[78%] mr-auto p-4 rounded-2xl border border-[#E3E8EF] bg-white text-[#182230] shadow-2xs space-y-2.5 transition-all"}
+                    className={isMine ? "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] ml-auto p-3 sm:p-3.5 rounded-2xl border border-[#142B4A] bg-[#142B4A] text-white shadow-2xs space-y-2 transition-all" : "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] mr-auto p-3 sm:p-3.5 rounded-2xl border border-[#E3E8EF] bg-white text-[#182230] shadow-2xs space-y-2 transition-all"}
                     onTouchStart={beginMessageSwipe}
                     onTouchEnd={event => finishMessageSwipe(event, { id: msg.id, senderName: msg.senderName, content: msg.content }, 'community')}
                   >
@@ -741,7 +752,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
-                              <button type="button" onClick={() => { setCommunityReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); communityInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
+                              <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>\n                              <button type="button" onClick={() => handleReaction(msg.id, "❤️")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React ❤️</button>\n                              <button type="button" onClick={() => handleReaction(msg.id, "🙏")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React 🙏</button>\n                              <button type="button" onClick={() => { setCommunityReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); communityInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                             </div>
                           )}
                         </div>
@@ -766,7 +777,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     )}
 
                     {/* Message Body with Highlighted Mentions */}
-                    <div className={isMine ? "text-xs sm:text-sm text-white leading-relaxed pl-11" : "text-xs sm:text-sm text-[#182230] leading-relaxed pl-11"}>
+                    <div className={isMine ? "text-xs sm:text-sm text-white leading-relaxed pl-11 whitespace-pre-wrap break-words [overflow-wrap:anywhere]" : "text-xs sm:text-sm text-[#182230] leading-relaxed pl-11 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"}>
                       {msg.deletedForEveryoneAt ? <span className="italic opacity-70">This message was deleted</span> : renderFormattedMessage(msg.content)}
                       {!msg.deletedForEveryoneAt && (msg.attachments || []).map(attachment => <ChatAttachmentPreview key={attachment.path} attachment={attachment} />)}
                     </div>
@@ -795,20 +806,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           );
                         })}
 
-                        {/* Quick Reaction Tray (1-tap reaction) */}
-                        <div className="flex items-center gap-1.5 bg-[#F5F7FA] px-2 py-1 rounded-xl border border-[#E3E8EF]">
-                          {['🙏', '❤️', '🔥', '👏', '🙌'].map(emoji => (
-                            <button
-                              key={emoji}
-                              onClick={() => handleReaction(msg.id, emoji)}
-                              className="hover:scale-125 transition-transform p-0.5 cursor-pointer flex items-center justify-center text-sm"
-                              title={`React with ${emoji}`}
-                            >
-                              <span>{emoji}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                     </div>
 
                       {/* Reply Button (Telegram/WhatsApp style) */}
                       <button
@@ -990,7 +988,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
                   <Smile className="w-5 h-5" />
                 </button>
-                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, Math.floor(window.innerHeight * 0.35)) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-[35vh] overflow-y-auto resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
                 <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white hover:text-[#142B4A] transition-colors cursor-pointer" title="Tag a member" aria-label="Tag a member">
                   <AtSign className="w-4 h-4" />
                 </button>
@@ -1110,7 +1108,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       onTouchEnd={event => finishPrivateMessageTouch(event, { id: msg.id, senderName: msg.senderName, content: msg.content })}
                       onTouchCancel={cancelPrivateMessageLongPress}
                       onContextMenu={event => { event.preventDefault(); setOpenMessageMenu("private:" + msg.id); }}
-                      className={`fni-swipe-message max-w-md p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed group relative select-text ${
+                      className={`fni-swipe-message max-w-[94%] sm:max-w-md p-3 sm:p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] group relative select-text ${
                         isMine
                           ? 'bg-[#142B4A] text-white rounded-tr-none shadow-2xs'
                           : 'bg-white text-[#182230] border border-[#E3E8EF] rounded-tl-none shadow-2xs'
@@ -1121,7 +1119,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       </button>
                       {openMessageMenu === ("private:" + msg.id) && (
                         <div className="absolute right-1 top-8 z-40 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
-                          <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
+                          <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>\n                          <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                           {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'private')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
                           <button type="button" onClick={() => handleHidePrivateMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
                         </div>
