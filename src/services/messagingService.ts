@@ -205,7 +205,7 @@ export class MessagingService {
       return visible.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     } catch (error) {
       console.warn('Private conversation load failed:', error);
-      return [];
+      throw error;
     }
   }
 
@@ -214,14 +214,13 @@ export class MessagingService {
     emoji: string,
     userId: string,
     userName: string
-  ): Promise<PrivateMessage | null> {
+  ): Promise<boolean> {
     if (!isSupabaseConfigured || !supabase) {
       throw new Error('Reactions are temporarily unavailable. Please reconnect and try again.');
     }
     const saved = await SupabaseService.togglePrivateMessageReaction(messageId, userId, userName, emoji);
     if (!saved) throw new Error('Your reaction could not be saved. Please try again.');
-    const messages = await SupabaseService.getPrivateMessages(userId, userId);
-    return messages?.find(message => message.id === messageId) || null;
+    return true;
   }
 
   static async setPrivateMessagePin(messageId: string, userId: string, pinned: boolean): Promise<boolean> {
