@@ -363,6 +363,18 @@ export class MessagingService {
     return msg;
   }
 
+  static async setCommunityMessagePin(messageId: string, pinned: boolean): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+    try {
+      const { error } = await supabase.rpc('set_community_message_pin', { p_message_id: messageId, p_pinned: pinned });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Community message pin update failed:', error);
+      return false;
+    }
+  }
+
   static async getCommunityMessages(viewerUid?: string): Promise<CommunityMessage[]> {
     try {
       const [supaMsgs, directory, activeCells] = await Promise.all([
