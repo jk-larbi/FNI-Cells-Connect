@@ -661,22 +661,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     init();
   }, [currentUser, isAdmin]);
 
-  // A profile can be deleted and recreated with a new ID. Do not keep an
-  // obsolete initialConversationId/selection as the administrator's recipient.
-  // Otherwise a successful insert can be delivered to a profile that no longer exists.
+  // Always keep the administrator's inbox attached to a currently active
+  // tutor. Old dashboard links can contain a profile ID from before an account
+  // was recreated; leaving that ID selected makes the entire private composer
+  // look broken because sends are correctly blocked for deleted recipients.
+  // The selected tutor's name is shown in the header/dropdown before sending.
   useEffect(() => {
     if (!isAdmin || tutorList.length === 0) return;
-    if (!selectedTutorId) {
-      setSelectedTutorId(tutorList[0].id);
-      return;
-    }
     if (!tutorList.some(tutor => tutor.id === selectedTutorId)) {
-      // Never silently redirect a private message to a different tutor.
-      // Keep the stale ID blocked until the administrator explicitly chooses
-      // one of the current active tutors from the selector.
+      const nextTutorId = tutorList[0].id;
+      setSelectedTutorId(nextTutorId);
       setPrivateMessages([]);
       setPrivateReplyTo(null);
-      setPrivateSendError('This tutor account is no longer active. Please select the tutor from the current list.');
+      setPrivateSendError(null);
+      setOpenChatMenu(false);
     }
   }, [isAdmin, tutorList, selectedTutorId]);
 
@@ -1088,7 +1086,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if ((!privateText.trim() && privateFiles.length === 0 && !privateSticker) || privateSendLock.current) return;
     const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
     if (isAdmin && !tutorList.some(tutor => tutor.id === recipientId)) {
-      setPrivateSendError('Please select an active tutor before sending. This conversation may point to an old account.');
+      setPrivateSendError(tutorList.length === 0
+        ? 'No active tutor accounts are available in the private-chat directory. Refresh the app or contact an administrator.'
+        : 'The selected tutor is no longer active. Choose a tutor from the list above before sending.');
       return;
     }
     privateSendLock.current = true;
