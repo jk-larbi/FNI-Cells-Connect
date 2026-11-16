@@ -1365,3 +1365,13 @@ html.dark .fni-notification-center p,
 html.dark .fni-notification-center span {
   text-shadow: none !important;
 }
+
+
+/* Compact, Telegram-inspired message rhythm and safe long-message wrapping. */
+.fni-messaging-view .fni-chat-stream { gap: .55rem; }
+.fni-messaging-view .fni-swipe-message { overflow-wrap: anywhere; word-break: normal; }
+.fni-messaging-view .fni-chat-composer textarea { max-height: 35vh; overflow-y: auto; line-height: 1.45; }
+@media (max-width: 639px) {
+  .fni-messaging-view .fni-chat-stream { padding: .75rem !important; }
+  .fni-messaging-view .fni-chat-composer { padding: .55rem !important; }
+}
