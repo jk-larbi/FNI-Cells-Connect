@@ -201,9 +201,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     ? { backgroundColor: '#E9EEF5', backgroundImage: `url(${wallpaperImages[privateWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { backgroundColor: privateWallpaper.color, backgroundImage: privateWallpaper.image };
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
-  const [allMembers, setAllMembers] = useState<Array<{ id: string; full_name: string; username?: string; role: string; cell_name?: string; avatar_url?: string }>>([]);
+  const [allMembers, setAllMembers] = useState<Array<{ id: string; full_name: string; username?: string; role: string; cell_name?: string; region_name?: string; avatar_url?: string; created_at?: string }>>([]);
   const [memberSearch, setMemberSearch] = useState('');
   const [profileMember, setProfileMember] = useState<(typeof allMembers)[number] | null>(null);
+  const openMemberProfile = (memberId: string) => {
+    const member = allMembers.find(item => item.id === memberId);
+    if (member) setProfileMember(member);
+  };
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
   const [privateSendError, setPrivateSendError] = useState<string | null>(null);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
@@ -846,14 +850,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     {/* Header Row: Sender, Tag Badge & Time */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-[#142B4A] text-[#C6A45A] font-black text-[10px] flex items-center justify-center shrink-0">
+                        <button type="button" onClick={() => openMemberProfile(msg.senderUid)} disabled={!allMembers.some(member => member.id === msg.senderUid)} aria-label={`View ${msg.senderName}'s profile`} className="w-7 h-7 rounded-full bg-[#142B4A] text-[#C6A45A] font-black text-[10px] flex items-center justify-center shrink-0 disabled:cursor-default">
                           {msg.senderName.slice(0, 2).toUpperCase()}
-                        </div>
+                        </button>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className={isMine ? "font-bold text-xs sm:text-sm text-white" : "font-bold text-xs sm:text-sm text-[#142B4A]"}>
+                            <button type="button" onClick={() => openMemberProfile(msg.senderUid)} disabled={!allMembers.some(member => member.id === msg.senderUid)} className={`font-bold text-xs sm:text-sm text-left ${isMine ? 'text-white' : 'text-[#142B4A]'} disabled:cursor-default`} title="View member profile">
                               {msg.senderName}
-                            </span>
+                            </button>
                             {msg.senderRole === 'admin' && (
                               <span className="px-2 py-0.5 rounded-full bg-[#C6A45A] text-[#142B4A] text-[10px] font-black uppercase">
                                 Leadership
@@ -885,7 +889,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
-                              {allMembers.find(member => member.id === msg.senderUid) && <button type="button" onClick={() => { setProfileMember(allMembers.find(member => member.id === msg.senderUid) || null); setOpenMessageMenu(null); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">View profile</button>}
+                              {allMembers.find(member => member.id === msg.senderUid) && <button type="button" onClick={() => { openMemberProfile(msg.senderUid); setOpenMessageMenu(null); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">View profile</button>}
                               <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
                               <button type="button" onClick={() => handleReaction(msg.id, "❤️")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React ❤️</button>
                               <button type="button" onClick={() => handleReaction(msg.id, "🙏")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React 🙏</button>
@@ -1152,7 +1156,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
               <div>
                 {selectedTutorId !== 'admin' && allMembers.some(member => member.id === selectedTutorId) ? (
-                  <button type="button" onClick={() => setProfileMember(allMembers.find(member => member.id === selectedTutorId) || null)} className="text-left rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#C6A45A]">
+                  <button type="button" onClick={() => openMemberProfile(selectedTutorId)} className="text-left rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#C6A45A]">
                     <h3 className="font-bold text-sm sm:text-base text-white">{allMembers.find(member => member.id === selectedTutorId)?.full_name || 'Private Conversation'}</h3>
                     <span className="text-[10px] text-[#E8D6A8]">View member profile</span>
                   </button>
@@ -1497,8 +1501,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <p className="mt-1 text-xs text-white/75">{profileMember.username ? `@${profileMember.username}` : 'FNI Member'}</p>
             </div>
             <div className="space-y-3 p-5">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Ministry role</span><span className="text-sm font-bold capitalize text-[#142B4A]">{profileMember.role.replace(/_/g, ' ')}</span></div>
               <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Cell</span><span className="text-sm font-semibold text-[#182230]">{profileMember.cell_name || 'Not assigned'}</span></div>
-              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Role</span><span className="text-sm font-semibold capitalize text-[#182230]">{profileMember.role.replace(/_/g, ' ')}</span></div>
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Region</span><span className="text-sm font-semibold text-[#182230]">{profileMember.region_name || 'Not assigned'}</span></div>
+              {profileMember.created_at && <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Member since</span><span className="text-sm font-semibold text-[#182230]">{new Date(profileMember.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span></div>}
               <Button type="button" variant="primary" size="md" className="w-full" onClick={() => { setSelectedTutorId(profileMember.id); setPrivateMessages([]); setPrivateReplyTo(null); setProfileMember(null); }}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Message member
               </Button>
