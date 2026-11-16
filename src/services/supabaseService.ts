@@ -201,6 +201,8 @@ function mapPrivateMessageFromDb(row: any): PrivateMessage {
     readAt: row.read_at,
     replyTo: row.reply_to,
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    reactions: {},
+    isPinned: false,
     deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
     editedAt: row.edited_at || undefined,
   };
@@ -838,25 +840,64 @@ export class SupabaseService {
   }
 
   // --- Private Messages ---
-  static async getPrivateMessages(userUid: string): Promise<PrivateMessage[] | null> {
+  static async getPrivateMessages(userUid: string, viewerUid?: string): Promise<PrivateMessage[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      // Supabase applies a default row cap. Fetch in ordered pages so long-running
-      // conversations are not silently cut off after the first page.
+      // Fetch every page so long-running private conversations are never truncated.
       const rows: any[] = [];
       const pageSize = 500;
       for (let from = 0; ; from += pageSize) {
         let query = supabase!.from('private_messages').select('*');
-        // An empty UID is used only by the admin inbox. RLS restricts the
-        // unfiltered result to administrators; tutors still receive only their own rows.
+        // Empty UID is reserved for the administrator inbox; database RLS
+        // limits that unfiltered query to active administrators.
         if (userUid) query = query.or(`sender_uid.eq.${userUid},recipient_uid.eq.${userUid}`);
         const { data, error } = await query.order('created_at', { ascending: true }).range(from, from + pageSize - 1);
-        if (error) return null;
+        if (error) throw error;
         rows.push(...(data || []));
         if (!data || data.length < pageSize) break;
       }
-      return rows.map(mapPrivateMessageFromDb);
+
+      const messages = rows.map(mapPrivateMessageFromDb);
+      if (!rows.length) return messages;
+      const messageIds = rows.map(row => row.id);
+      const reactionRows: any[] = [];
+      for (let offset = 0; offset < messageIds.length; offset += 500) {
+        const { data, error } = await supabase!
+          .from('private_message_reactions')
+          .select('message_id,user_id,user_name,emoji')
+          .in('message_id', messageIds.slice(offset, offset + 500));
+        if (error) throw error;
+        reactionRows.push(...(data || []));
+      }
+
+      const grouped = new Map<string, Record<string, string[]>>();
+      reactionRows.forEach(row => {
+        const reactions = grouped.get(row.message_id) || {};
+        reactions[row.emoji] = [...(reactions[row.emoji] || []), row.user_name];
+        grouped.set(row.message_id, reactions);
+      });
+
+      const pinOwner = viewerUid || userUid;
+      const pinnedIds = new Set<string>();
+      if (pinOwner) {
+        for (let offset = 0; offset < messageIds.length; offset += 500) {
+          const { data, error } = await supabase!
+            .from('private_message_pins')
+            .select('message_id')
+            .eq('user_id', pinOwner)
+            .in('message_id', messageIds.slice(offset, offset + 500));
+          if (error) throw error;
+          (data || []).forEach(row => pinnedIds.add(row.message_id));
+        }
+      }
+
+      return messages.map(message => ({
+        ...message,
+        reactions: grouped.get(message.id) || {},
+        isPinned: pinnedIds.has(message.id),
+      }));
     } catch (err) {
+      console.warn('Private messages could not be loaded:', err);
       return null;
     }
   }
@@ -980,6 +1021,64 @@ export class SupabaseService {
         payload,
         errorMessage: err?.message || String(err),
       });
+      return false;
+    }
+  }
+
+  static async togglePrivateMessageReaction(
+    messageId: string,
+    userId: string,
+    userName: string,
+    emoji: string
+  ): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { data: existing, error: lookupError } = await supabase!
+        .from('private_message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', userId)
+        .eq('emoji', emoji)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      if (existing) {
+        const { error } = await supabase!
+          .from('private_message_reactions')
+          .delete()
+          .eq('id', existing.id);
+        if (error) throw error;
+        return true;
+      }
+      const { error } = await supabase!
+        .from('private_message_reactions')
+        .insert({ message_id: messageId, user_id: userId, user_name: userName, emoji });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Private message reaction failed:', error);
+      return false;
+    }
+  }
+
+  static async setPrivateMessagePin(messageId: string, userId: string, pinned: boolean): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      if (pinned) {
+        const { error } = await supabase!
+          .from('private_message_pins')
+          .upsert({ message_id: messageId, user_id: userId }, { onConflict: 'user_id,message_id' });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase!
+          .from('private_message_pins')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('user_id', userId);
+        if (error) throw error;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Private message pin failed:', error);
       return false;
     }
   }
