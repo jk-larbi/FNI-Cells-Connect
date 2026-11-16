@@ -4,7 +4,8 @@ ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'overseer';
 ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'leader';
 
 -- Expand the privacy-safe member directory with public ministry context.
-CREATE OR REPLACE FUNCTION public.get_member_directory()
+DROP FUNCTION IF EXISTS public.get_member_directory();
+CREATE FUNCTION public.get_member_directory()
 RETURNS TABLE (
   id text,
   full_name text,
