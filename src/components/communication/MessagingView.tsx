@@ -339,8 +339,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     reader.readAsDataURL(file);
   };
   const communityWallpaperStyle = wallpaperImages[communityWallpaperKey]
-    ? { backgroundColor: '#E9EEF5', backgroundImage: `url(${wallpaperImages[communityWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    : { backgroundColor: communityWallpaper.color, backgroundImage: communityWallpaper.image };
+    ? { backgroundColor: '#08090f', backgroundImage: `url(${wallpaperImages[communityWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : communityWallpaper.id === 'default'
+      ? { backgroundColor: '#08090f', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%238b72b5' stroke-opacity='.19' stroke-width='1.1'%3E%3Cpath d='M20 24c8-9 17-6 18 2s-8 13-16 8-7-7-2-10zm6 1 4 3m-7 2 6 1M98 18c8 0 12 7 8 13l-8 7-8-7c-4-6 0-13 8-13zm-5 7 5 5 5-5M143 73c-9-7-17 1-13 9l9 8 10-8c5-8-1-16-6-9zm-7 4 7 6 6-6M35 116c0-8 13-8 13 0v13H35zm4-8v-5h5v5m-9 21 14-9M104 113l8-9 8 9-8 9zm8-9v18m-9-9h18M23 158c4-9 12-9 16 0m-8-10v19m-9-9h18M151 148c-8-8-16 0-8 8l8 7 8-7c8-8 0-16-8-8z'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '180px 180px', backgroundPosition: 'center' }
+      : { backgroundColor: communityWallpaper.color, backgroundImage: communityWallpaper.image };
   const privateWallpaperStyle = wallpaperImages[privateWallpaperKey]
     ? { backgroundColor: '#E9EEF5', backgroundImage: `url(${wallpaperImages[privateWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { backgroundColor: privateWallpaper.color, backgroundImage: privateWallpaper.image };
