@@ -1,5 +1,6 @@
 -- Secure one-to-one WebRTC signalling channels.
--- Topics use: fni-call:<call-uuid>:<caller-profile-id>:<callee-profile-id>
+-- Topics use: fni-call:direct:<sorted-profile-id-A>:<sorted-profile-id-B>.
+-- Each broadcast payload carries its own call UUID.
 -- The authenticated profile must be active, non-test, and one of the two participants.
 
 drop policy if exists "fni_call_participants_can_receive_signals" on realtime.messages;
