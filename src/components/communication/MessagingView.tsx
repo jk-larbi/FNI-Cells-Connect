@@ -1177,11 +1177,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           {/* Forum Header */}
           <div className="relative z-20 shrink-0 px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-md">
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-1">
-                <Users className="w-4 h-4" /> FNI Community
-              </div>
-              <h2 className="font-black text-base sm:text-lg text-white">
-                Fellowship Exchange Forum
+              <h2 className="flex items-center gap-2 font-black text-base sm:text-lg text-white">
+                <Users className="h-5 w-5 shrink-0 text-[#C6A45A]" />
+                FNI Community
               </h2>
               <p className="text-xs sm:text-sm font-semibold text-slate-100 mt-0.5">
                 Tutor Community & Fellowship
