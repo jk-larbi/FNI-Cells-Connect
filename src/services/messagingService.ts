@@ -309,20 +309,31 @@ export class MessagingService {
     const all = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
     const readAt = new Date().toISOString();
     const readIds: string[] = [];
+    const isLeadershipRole = (role: UserRole) => ['admin', 'super_admin', 'national_admin'].includes(role);
     const belongsToConversation = (message: PrivateMessage) => {
-      if (isAdmin || conversationId === 'admin') {
-        return message.senderUid === tutorUid || message.recipientUid === tutorUid;
+      if (isAdmin) {
+        return (
+          (message.senderUid === tutorUid &&
+            (message.recipientUid === 'admin' || message.recipientUid === readerUid)) ||
+          (message.senderUid === readerUid && message.recipientUid === tutorUid)
+        );
+      }
+      if (conversationId === 'admin') {
+        return (
+          (message.senderUid === tutorUid && message.recipientUid === 'admin') ||
+          (message.recipientUid === tutorUid && isLeadershipRole(message.senderRole))
+        );
       }
       return (message.senderUid === tutorUid && message.recipientUid === conversationId) ||
         (message.senderUid === conversationId && message.recipientUid === tutorUid);
     };
 
-    const updated = all.map(m => {
-      if (belongsToConversation(m) && m.senderUid !== readerUid && !m.isRead) {
-        readIds.push(m.id);
-        return { ...m, isRead: true, readAt };
+    const updated = all.map(message => {
+      if (belongsToConversation(message) && message.senderUid !== readerUid && !message.isRead) {
+        readIds.push(message.id);
+        return { ...message, isRead: true, readAt };
       }
-      return m;
+      return message;
     });
 
     if (readIds.length > 0) {
