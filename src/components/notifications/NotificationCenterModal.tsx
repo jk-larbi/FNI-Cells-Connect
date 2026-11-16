@@ -197,7 +197,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   className="px-3 py-1.5 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63] transition-colors shadow-xs text-[11px] flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <BellRing className="w-3.5 h-3.5 text-gold-400" />
-                  <span>{isRequestingPush ? 'Requesting...' : 'Enable Push'}</span>
+                  <span>{isRequestingPush ? 'Restoring...' : pushPermission === 'granted' ? 'Restore Push' : 'Enable Push'}</span>
                 </button>
               ) : (
                 <button
