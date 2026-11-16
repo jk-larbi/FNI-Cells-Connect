@@ -677,7 +677,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
     const callWindow = window.open('about:blank', '_blank');
     const room = `FNI-Cells-${crypto.randomUUID()}`;
-    const callUrl = `https://meet.jit.si/${room}`;
+    const callUrl = `https://meet.jit.si/${room}${kind === 'voice' ? '#config.startWithVideoMuted=true&config.startAudioOnly=true' : ''}`;
     const invite = `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`;
     try {
       if (target === 'community') {
