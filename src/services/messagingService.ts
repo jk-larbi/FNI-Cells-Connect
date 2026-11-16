@@ -400,7 +400,7 @@ export class MessagingService {
           const cutoff = preferenceResult.data?.cleared_at ? new Date(preferenceResult.data.cleared_at).getTime() : 0;
           const hiddenIds = new Set((hiddenResult.data || []).map(row => row.message_id));
           visibleMessages = visibleMessages.filter(message =>
-            new Date(message.createdAt).getTime() > cutoff && !hiddenIds.has(message.id)
+            message.isPinned || (new Date(message.createdAt).getTime() > cutoff && !hiddenIds.has(message.id))
           );
         }
         setStored(STORAGE_KEYS.COMMUNITY, visibleMessages);

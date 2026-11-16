@@ -797,13 +797,29 @@ export class SupabaseService {
 
   static async uploadChatAttachment(userUid: string, file: File): Promise<{ name: string; path: string; mimeType: string; size: number }> {
     if (!this.isAvailable()) throw new Error('Media uploads are unavailable while offline.');
-    if (!(file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))) throw new Error('Only pictures, videos and audio files are supported.');
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    const extensionMime: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+      webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', avif: 'image/avif',
+      mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
+      mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', wav: 'audio/wav',
+    };
+    const providedMime = (file.type || '').toLowerCase();
+    const mimeType = providedMime.startsWith('image/') || providedMime.startsWith('video/') || providedMime.startsWith('audio/')
+      ? providedMime
+      : extensionMime[extension] || '';
+    if (!(mimeType.startsWith('image/') || mimeType.startsWith('video/') || mimeType.startsWith('audio/'))) {
+      throw new Error('Choose a picture, video or audio file. If this is an iPhone photo, try choosing it from Photos again.');
+    }
     if (file.size > 50 * 1024 * 1024) throw new Error('Each attachment must be 50 MB or smaller.');
+    // Some iOS photo pickers return a File with an empty MIME type. Re-wrap it
+    // with the extension-derived type so Supabase Storage accepts the upload.
+    const uploadFile = file.type === mimeType ? file : new File([file], file.name, { type: mimeType, lastModified: file.lastModified });
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
     const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
-    const { error } = await supabase!.storage.from('fni-chat-media').upload(path, file, { contentType: file.type, upsert: false });
+    const { error } = await supabase!.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: false });
     if (error) throw new Error(error.message || 'Could not upload attachment.');
-    return { name: file.name, path, mimeType: file.type, size: file.size };
+    return { name: file.name, path, mimeType, size: file.size };
   }
 
   static async getChatAttachmentUrl(path: string): Promise<string | null> {
@@ -1033,11 +1049,12 @@ export class SupabaseService {
     };
 
     try {
-      const { error } = await supabase!.from('community_messages').upsert(payload, { onConflict: 'id' });
+      const { error } = await supabase!.from('community_messages').insert(payload);
       if (error) {
         SyncStateService.recordFailedSync({
           table: 'community_messages',
           id: msg.id,
+          action: 'INSERT',
           payload,
           errorMessage: error.message,
         });
