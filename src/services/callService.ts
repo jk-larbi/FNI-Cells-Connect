@@ -49,7 +49,7 @@ export class CallService {
       if (
         typeof signal.callId !== 'string' ||
         typeof signal.fromProfileId !== 'string' ||
-        typeof signal.type !== 'string'
+        !['offer', 'answer', 'ice-candidate', 'hangup', 'decline'].includes(signal.type)
       ) return;
       onSignal(signal);
     });
