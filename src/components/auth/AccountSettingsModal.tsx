@@ -136,9 +136,9 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
       title="Account Settings"
       size="lg"
     >
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         {/* Sub-tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-100 pb-2 text-xs font-bold">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-100 pb-3 text-xs font-bold sm:flex sm:flex-wrap">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
