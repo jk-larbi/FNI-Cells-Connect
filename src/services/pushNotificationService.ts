@@ -26,7 +26,7 @@ const isAppleHomeScreenApp = (): boolean =>
     window.matchMedia?.('(display-mode: standalone)').matches === true);
 const supportsAppleWebPushVersion = (): boolean => {
   if (!isAppleMobileWeb()) return true;
-  const match = (navigator.userAgent || '').match(/OS (\\d+)[_.](\\d+)/);
+  const match = (navigator.userAgent || '').match(/OS (\d+)[_.](\d+)/);
   if (!match) return true;
   const major = Number(match[1]);
   const minor = Number(match[2]);
