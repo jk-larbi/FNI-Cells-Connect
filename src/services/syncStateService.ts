@@ -287,9 +287,16 @@ export class SyncStateService {
           if (item.action === 'DELETE') {
             const { error } = await client.from(item.table).delete().eq('id', item.id);
             opError = error;
-          } else if (item.action === 'INSERT') {
+          } else if (item.action === 'INSERT' || item.table === 'community_messages') {
             const { error } = await client.from(item.table).insert(item.payload);
-            opError = error;
+            if (error?.code === '23505' && item.table === 'community_messages') {
+              // A prior attempt may have reached Postgres before the client lost
+              // its response. Treat an existing ID as an already-delivered post.
+              const { data, error: lookupError } = await client.from(item.table).select('id').eq('id', item.id).maybeSingle();
+              opError = lookupError || (data?.id === item.id ? null : error);
+            } else {
+              opError = error;
+            }
           } else {
             // Default: UPSERT with optimal onConflict resolution
             let onConflict = 'id';
