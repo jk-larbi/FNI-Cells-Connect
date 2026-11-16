@@ -1,3 +1,4 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect, useMemo } from 'react';
 import { UnifiedReportItem, ReportStatus, Cell, EvangelismContact } from '../../types';
 import { ReportService } from '../../services/reportService';
@@ -456,7 +457,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   };
 
   // Export Filtered Queue to CSV
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (filteredReports.length === 0) return;
 
     const headers = [
@@ -495,17 +496,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute(
-      'download',
-      `FNI_Report_Review_Queue_${new Date().toISOString().split('T')[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows].join('\r\n');
+    await exportCsvFile(`FNI_Report_Review_Queue_${new Date().toISOString().split('T')[0]}.csv`, csvContent);
   };
 
   // Reset all filters
