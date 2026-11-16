@@ -36,7 +36,7 @@ export class FollowUpService {
     }
 
     const activeCells = await CellService.getActiveCells();
-    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     const applyFilters = (contacts: EvangelismContact[]) => contacts
       .filter(contact => activeCellIds.has(contact.cellId))
       .filter(contact => !targetCellId || contact.cellId === targetCellId)
