@@ -128,7 +128,7 @@ export class MessagingService {
       const allowedMemberIds = new Set((directory || AuthService.getAllProfiles().filter(profile => profile.is_active).map(profile => ({ id: profile.id }))).map(member => member.id));
       allowedMemberIds.add(viewerUid);
       if (directory?.some(member => member.id === tutorUid)) allowedMemberIds.add(tutorUid);
-      const activeCellIds = new Set(activeCells.map(cell => cell.id));
+      const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
       const cutoffs = [preference.clearedAt, preference.deletedAt]
         .filter((value): value is string => Boolean(value))
         .map(value => new Date(value).getTime())
@@ -193,7 +193,7 @@ export class MessagingService {
     const allowedMemberIds = new Set((directory || AuthService.getAllProfiles().filter(profile => profile.is_active).map(profile => ({ id: profile.id }))).map(member => member.id));
     const currentProfile = AuthService.getCurrentProfile();
     if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
-    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     all = all.filter(msg => {
       const senderAllowed = allowedMemberIds.has(msg.senderUid);
       const recipientAllowed = msg.recipientUid === 'admin' || allowedMemberIds.has(msg.recipientUid);
