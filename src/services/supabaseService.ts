@@ -957,14 +957,22 @@ export class SupabaseService {
     };
 
     try {
-      const { error } = await supabase!.from('private_messages').upsert(payload, { onConflict: 'id' });
-      if (error) {
+      // The database RPC verifies the signed-in sender and active recipient,
+      // derives the sender's role/name from profiles, and performs the insert
+      // with a narrowly scoped SECURITY DEFINER function. This avoids client
+      // upsert/RLS mismatches between tutor and administrator sessions.
+      const { data, error } = await supabase!.rpc('fni_send_private_message', {
+        p_message: payload,
+      });
+      if (error || data !== true) {
+        const message = error?.message || 'The server did not accept the message.';
         SyncStateService.recordFailedSync({
           table: 'private_messages',
           id: msg.id,
           payload,
-          errorMessage: error.message,
+          errorMessage: message,
         });
+        console.warn('Private message RPC rejected the message:', message);
         return false;
       }
       SyncStateService.recordSuccessfulSync('private_messages', msg.id);
