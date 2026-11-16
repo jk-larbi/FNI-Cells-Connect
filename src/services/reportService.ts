@@ -62,7 +62,7 @@ export class ReportService {
       SupabaseService.getCellMeetingReports(filters),
       CellService.getActiveCells(),
     ]);
-    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     const applyFilters = (items: CellMeetingReport[]) => items
       .filter(report => activeCellIds.has(report.cellId))
       .filter(report => !filters?.cellId || report.cellId === filters.cellId)
