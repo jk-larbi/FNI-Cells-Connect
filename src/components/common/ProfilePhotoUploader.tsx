@@ -131,9 +131,11 @@ export const ProfilePhotoUploader: React.FC<ProfilePhotoUploaderProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           onChange={handleFileChange}
-          className="hidden"
+          // Keep the input visually hidden but focusable/label-activatable.
+          // display:none can prevent the native photo picker from opening in iOS WebViews.
+          className="sr-only"
           disabled={isProcessing}
         />
 
