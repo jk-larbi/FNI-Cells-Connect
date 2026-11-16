@@ -1395,15 +1395,21 @@ export class SupabaseService {
   static async getNotifications(recipientTarget: string): Promise<NotificationItem[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      const { data, error } = await supabase!
-        .from('notifications')
-        .select('*')
-        // RLS is the recipient filter. This also supports the admin inbox
-        // and the shared tutor-community notification stream.
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) return null;
-      return data ? data.map(mapNotificationFromDb) : [];
+      // RLS is the recipient filter. Page the complete inbox so Clear All
+      // and the notification centre never silently leave older records behind.
+      const rows: any[] = [];
+      const pageSize = 500;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase!
+          .from('notifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) return null;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+      }
+      return rows.map(mapNotificationFromDb);
     } catch (err) {
       return null;
     }
