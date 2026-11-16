@@ -1461,3 +1461,25 @@ html.dark .fni-notification-center span {
     width: 2.25rem; min-width: 2.25rem; height: 2.25rem;
   }
 }
+
+
+/* Community Hub participates in the app's document scroll; only private chats
+   retain a dedicated Telegram-style message viewport. */
+.fni-messaging-view .fni-community-panel {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.fni-messaging-view .fni-community-stream {
+  display: block;
+  flex: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overscroll-behavior: auto;
+}
+.fni-messaging-view .fni-community-stream > * + * {
+  margin-top: .55rem !important;
+}
