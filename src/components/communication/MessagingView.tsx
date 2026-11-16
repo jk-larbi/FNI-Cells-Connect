@@ -29,6 +29,10 @@ import {
   Search,
   UserRound,
   Palette,
+  Mic,
+  Square,
+  Phone,
+  Video,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -234,6 +238,45 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [showCommunityStickers, setShowCommunityStickers] = useState(false);
   const [communitySticker, setCommunitySticker] = useState<{ emoji: string; label: string } | null>(null);
   const [communityEmojiCategory, setCommunityEmojiCategory] = useState<string>('Smileys & Faces');
+  const customStickerStorageKey = `fni-custom-stickers:${currentUser?.id || 'guest'}`;
+  const [customStickers, setCustomStickers] = useState<Array<{ id: string; name: string; dataUrl: string; mimeType: string }>>([]);
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(customStickerStorageKey);
+      setCustomStickers(saved ? JSON.parse(saved) : []);
+    } catch { setCustomStickers([]); }
+  }, [customStickerStorageKey]);
+
+  const saveCustomSticker = (file: File) => {
+    if (!file.type.startsWith('image/')) { window.alert('Choose an image to create a sticker.'); return; }
+    if (file.size > 1500 * 1024) { window.alert('Sticker images must be 1.5 MB or smaller.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) return;
+      setCustomStickers(previous => {
+        if (previous.length >= 24) { window.alert('You can save up to 24 personal stickers.'); return previous; }
+        const next = [...previous, { id: `sticker-${Date.now()}`, name: file.name.replace(/\.[^.]+$/, '').slice(0, 32) || 'My sticker', dataUrl, mimeType: file.type }];
+        try { window.localStorage.setItem(customStickerStorageKey, JSON.stringify(next)); }
+        catch { window.alert('This sticker could not be saved on this device. Try a smaller image.'); return previous; }
+        return next;
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const attachCustomSticker = async (sticker: { id: string; name: string; dataUrl: string; mimeType: string }, target: 'community' | 'private') => {
+    try {
+      const blob = await (await fetch(sticker.dataUrl)).blob();
+      const file = new File([blob], `${sticker.name.replace(/[^a-z0-9-_]/gi, '-') || 'FNI-sticker'}.png`, { type: sticker.mimeType || 'image/png' });
+      if (target === 'community') { setCommunityFiles(previous => [...previous, file]); setShowCommunityStickers(false); }
+      else { setPrivateFiles(previous => [...previous, file]); setShowPrivateStickers(false); }
+    } catch { window.alert('This saved sticker could not be opened. Please add it again.'); }
+  };
+
+  const [recordingTarget, setRecordingTarget] = useState<'community' | 'private' | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
 
   // Registered members / tutors directory for @mention tagging
   const [memberDirectory, setMemberDirectory] = useState<{ id: string; name: string; cellName?: string }[]>([]);
@@ -567,6 +610,99 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
+  // Voice notes use the same protected attachment upload path as other chat media.
+  const startVoiceNote = async (target: 'community' | 'private') => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      window.alert('Voice recording is not supported in this browser or device.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = event => { if (event.data.size > 0) chunks.push(event.data); };
+      recorder.onstop = () => {
+        const mimeType = recorder.mimeType || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const voiceFile = new File([new Blob(chunks, { type: mimeType })], `FNI-voice-note-${Date.now()}.${extension}`, { type: mimeType });
+        if (voiceFile.size > 0) {
+          if (target === 'community') setCommunityFiles(previous => [...previous, voiceFile]);
+          else setPrivateFiles(previous => [...previous, voiceFile]);
+        }
+        stream.getTracks().forEach(track => track.stop());
+        recordingStreamRef.current = null;
+        mediaRecorderRef.current = null;
+        setRecordingTarget(null);
+      };
+      recordingStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      setRecordingTarget(target);
+      recorder.start();
+    } catch (error) {
+      console.error('Voice note recording could not start:', error);
+      window.alert('Microphone access was not granted. Please allow microphone access and try again.');
+    }
+  };
+
+  const stopVoiceNote = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  useEffect(() => () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
+    recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+  }, []);
+
+  // Jitsi rooms are created per call; the invitation is first posted to the selected chat.
+  const startChatCall = async (kind: 'voice' | 'video', target: 'community' | 'private') => {
+    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    if (target === 'private' && (!recipientId || recipientId === 'admin')) {
+      window.alert('Choose a registered member conversation before starting a call.');
+      return;
+    }
+    const callWindow = window.open('about:blank', '_blank');
+    const room = `FNI-Cells-${crypto.randomUUID()}`;
+    const callUrl = `https://meet.jit.si/${room}`;
+    const invite = `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`;
+    try {
+      if (target === 'community') {
+        await MessagingService.sendCommunityMessage({
+          senderUid: currentUser.id,
+          senderName: currentUser.full_name,
+          senderRole: currentUser.role,
+          cellName: currentUser.cell_name,
+          content: invite,
+          category: 'general',
+          mentions: [],
+          attachments: [],
+        });
+        await loadCommunity();
+      } else {
+        const recipientName = tutorList.find(t => t.id === recipientId)?.name || 'FNI Member';
+        await MessagingService.sendPrivateMessage({
+          senderUid: currentUser.id,
+          senderName: currentUser.full_name,
+          senderRole: currentUser.role,
+          recipientUid: recipientId,
+          recipientName,
+          cellId: currentUser.cell_id,
+          cellName: currentUser.cell_name,
+          content: invite,
+          attachments: [],
+        });
+        await loadPrivateMessages();
+      }
+      if (callWindow) callWindow.location.href = callUrl;
+      else window.location.href = callUrl;
+    } catch (error) {
+      callWindow?.close();
+      console.error('Could not create call invitation:', error);
+      window.alert('The call invitation could not be sent. Please try again.');
+    }
+  };
+
   // Send Private Message
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -688,10 +824,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const sticker = STICKER_PACK.find(item => item.emoji === stickerMatch[1]);
         return <span key={idx} role="img" aria-label={sticker?.label || 'FNI sticker'} title={sticker?.label || 'FNI sticker'} className="inline-flex items-center justify-center align-middle rounded-2xl bg-white/10 px-3 py-1.5 text-5xl leading-none my-1">{stickerMatch[1]}</span>;
       }
-      const parts = segment.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g);
-      return <React.Fragment key={idx}>{parts.map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
+      const urlParts = segment.split(/(https?:\/\/[^\s]+)/g);
+      return <React.Fragment key={idx}>{urlParts.map((urlPart, urlIdx) => urlPart.startsWith('http://') || urlPart.startsWith('https://') ? (
+        <a key={urlIdx} href={urlPart.replace(/[),.!?]+$/, '')} target="_blank" rel="noreferrer" className="font-semibold underline underline-offset-2 break-all text-inherit">{urlPart}</a>
+      ) : <React.Fragment key={urlIdx}>{urlPart.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g).map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
         <span key={partIdx} className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5" title="Tagged member">{part}</span>
-      ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>;
+      ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>)}</React.Fragment>;
     });
   };
 
@@ -783,7 +921,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </p>
             </div>
 
-            <div className="relative flex items-center gap-2">
+            <div className="relative flex items-center gap-1.5">
+              <button type="button" onClick={() => startChatCall('voice', 'community')} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="Start community voice call" title="Voice call"><Phone className="h-4 w-4" /></button>
+              <button type="button" onClick={() => startChatCall('video', 'community')} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="Start community video call" title="Video call"><Video className="h-4 w-4" /></button>
               <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'community' ? null : 'community')} className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20" aria-label="Change community chat wallpaper"><Palette className="h-4 w-4" /><span className="hidden sm:inline">Wallpaper</span></button>
               {wallpaperMenu === 'community' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">Community wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(communityWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${communityWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2.5 text-xs font-semibold text-[#142B4A] hover:bg-[#F5F7FA]">Upload your own photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) setCustomWallpaper(communityWallpaperKey, file); event.currentTarget.value = ''; }} /></label>{wallpaperImages[communityWallpaperKey] && <button type="button" onClick={() => { setWallpaperImages(previous => { const next = { ...previous }; delete next[communityWallpaperKey]; try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {} return next; }); saveWallpaper(communityWallpaperKey, 'default'); }} className="mt-2 w-full text-left text-xs text-rose-600">Remove custom photo</button>}</div>}
             </div>
@@ -1057,7 +1197,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Forum Compose Bar */}
           <form onSubmit={handleSendCommunity} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
-            {showCommunityStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowCommunityStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setCommunitySticker(sticker); setShowCommunityStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div></div>}
+            {showCommunityStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowCommunityStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setCommunitySticker(sticker); setShowCommunityStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2 text-xs font-semibold text-[#142B4A]">Create sticker from photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) saveCustomSticker(file); event.currentTarget.value = ''; }} /></label>{customStickers.length > 0 && <div className="mt-3 border-t border-[#E3E8EF] pt-3"><p className="mb-2 text-[11px] font-bold text-[#667085]">My stickers · tap to attach</p><div className="grid grid-cols-4 gap-2">{customStickers.map(sticker => <button key={sticker.id} type="button" onClick={() => attachCustomSticker(sticker, 'community')} className="rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-1.5"><img src={sticker.dataUrl} alt={sticker.name} className="mx-auto h-12 w-12 rounded-lg object-contain" /><span className="mt-1 block truncate text-[9px] text-[#667085]">{sticker.name}</span></button>)}</div></div>}</div>}
             {communitySticker && <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{communitySticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{communitySticker.label} sticker ready</span><button type="button" onClick={() => setCommunitySticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {communitySendError && (
               <p role="alert" className="text-xs font-semibold text-rose-600">{communitySendError}</p>
@@ -1106,6 +1246,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               {communityFiles.length > 0 && <div className="flex flex-wrap gap-2 pb-1">{communityFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setCommunityFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
               <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="community-chat-files" onChange={e => setCommunityFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
               <button type="button" onClick={() => document.getElementById('community-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
+              <button type="button" onClick={() => recordingTarget === 'community' ? stopVoiceNote() : startVoiceNote('community')} className={`h-10 w-10 rounded-full flex items-center justify-center ${recordingTarget === 'community' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'community' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'community' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'community' ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>
               <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
                   <Smile className="w-5 h-5" />
@@ -1153,6 +1294,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              {selectedTutorId !== 'admin' && selectedTutorId && <><button type="button" onClick={() => startChatCall('voice', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Start private voice call" title="Voice call"><Phone className="h-4 w-4" /></button><button type="button" onClick={() => startChatCall('video', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Start private video call" title="Video call"><Video className="h-4 w-4" /></button></>}
               {(isAdmin ? tutorList.length > 0 : true) && (
                 <>
                   <span className="text-xs text-slate-200 font-medium">{isAdmin ? 'Select Tutor:' : 'Chat with:'}</span>
@@ -1429,7 +1571,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Private Input Box */}
           <form onSubmit={handleSendPrivate} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2 min-w-0 flex-wrap">
-            {showPrivateStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowPrivateStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setPrivateSticker(sticker); setShowPrivateStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div></div>}
+            {showPrivateStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowPrivateStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setPrivateSticker(sticker); setShowPrivateStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2 text-xs font-semibold text-[#142B4A]">Create sticker from photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) saveCustomSticker(file); event.currentTarget.value = ''; }} /></label>{customStickers.length > 0 && <div className="mt-3 border-t border-[#E3E8EF] pt-3"><p className="mb-2 text-[11px] font-bold text-[#667085]">My stickers · tap to attach</p><div className="grid grid-cols-4 gap-2">{customStickers.map(sticker => <button key={sticker.id} type="button" onClick={() => attachCustomSticker(sticker, 'private')} className="rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-1.5"><img src={sticker.dataUrl} alt={sticker.name} className="mx-auto h-12 w-12 rounded-lg object-contain" /><span className="mt-1 block truncate text-[9px] text-[#667085]">{sticker.name}</span></button>)}</div></div>}</div>}
             {privateSticker && <div className="basis-full flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{privateSticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{privateSticker.label} sticker ready</span><button type="button" onClick={() => setPrivateSticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {privateSendError && (
               <p role="alert" className="basis-full text-xs font-semibold text-rose-600">{privateSendError}</p>
@@ -1451,6 +1593,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {privateFiles.length > 0 && <div className="basis-full flex flex-wrap gap-2 pb-1">{privateFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
             <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
               <button type="button" onClick={() => document.getElementById('private-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
+              <button type="button" onClick={() => recordingTarget === 'private' ? stopVoiceNote() : startVoiceNote('private')} className={`h-10 w-10 rounded-full flex items-center justify-center ${recordingTarget === 'private' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'private' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'private' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'private' ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>
               <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
               <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={selectedTutorId === "admin" ? "Message FNI Leadership" : "Write a private message…"} className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
             </div>
