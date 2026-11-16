@@ -168,7 +168,7 @@ export const AppLayout: React.FC = () => {
   ) ? 'my-dashboard' : currentTab;
 
   return (
-    <div className="fni-app-shell min-h-screen bg-white flex flex-col text-[#182230]">
+    <div className={`fni-app-shell min-h-screen bg-white flex flex-col text-[#182230] ${effectiveTab === 'messages' ? 'fni-messaging-route' : ''}`}>
       <div className="fni-app-body flex flex-1 min-h-0">
         {/* Navigation Sidebar */}
         <Sidebar
@@ -193,7 +193,7 @@ export const AppLayout: React.FC = () => {
           />
 
           <LatestAndroidUpdate />
-          <main className="fni-app-main flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
+          <main className={`fni-app-main flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 ${effectiveTab === 'messages' ? 'fni-messaging-route-main' : ''}`}>
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>

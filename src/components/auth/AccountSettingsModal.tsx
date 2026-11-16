@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { Lock,
+  Palette,
   Eye,
   EyeOff, User, Phone, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 
@@ -14,7 +15,73 @@ interface AccountSettingsModalProps {
 
 export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onClose }) => {
   const { currentUser, changePassword, updateAvatar, deleteOwnAccount } = useAuth();
-  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'delete'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'appearance' | 'delete'>('profile');
+  const wallpaperStorageKey = `fni-chat-wallpapers:${currentUser?.id || 'guest'}`;
+  const [chatWallpapers, setChatWallpapers] = useState<Record<string, string>>({});
+  const [chatWallpaperImages, setChatWallpaperImages] = useState<Record<string, string>>({});
+  const [wallpaperNotice, setWallpaperNotice] = useState('');
+  const chatWallpaperOptions = [
+    { id: 'default', name: 'Classic', color: '#F5F7FA', image: 'none' },
+    { id: 'blue', name: 'Ocean', color: '#EAF2FB', image: 'radial-gradient(circle at 15% 20%, rgba(91,145,205,.16) 0 2px, transparent 3px), radial-gradient(circle at 80% 70%, rgba(91,145,205,.12) 0 2px, transparent 3px)' },
+    { id: 'lavender', name: 'Lavender', color: '#F1EEFA', image: 'radial-gradient(circle at 20% 25%, rgba(137,112,190,.16), transparent 34%), radial-gradient(circle at 80% 75%, rgba(137,112,190,.12), transparent 30%)' },
+    { id: 'sage', name: 'Sage', color: '#EDF4EF', image: 'radial-gradient(circle at 80% 20%, rgba(91,145,108,.15), transparent 32%), radial-gradient(circle at 15% 80%, rgba(91,145,108,.12), transparent 30%)' },
+    { id: 'sand', name: 'Warm sand', color: '#F7F0E5', image: 'radial-gradient(circle at 18% 18%, rgba(198,164,90,.18), transparent 34%), radial-gradient(circle at 82% 82%, rgba(198,164,90,.13), transparent 30%)' },
+    { id: 'night', name: 'Midnight', color: '#E8ECF3', image: 'radial-gradient(circle at 20% 20%, rgba(20,43,74,.15), transparent 34%), radial-gradient(circle at 80% 80%, rgba(20,43,74,.12), transparent 30%)' },
+  ];
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(wallpaperStorageKey);
+      const images = localStorage.getItem(`${wallpaperStorageKey}:images`);
+      setChatWallpapers(saved ? JSON.parse(saved) : {});
+      setChatWallpaperImages(images ? JSON.parse(images) : {});
+    } catch {
+      setChatWallpapers({});
+      setChatWallpaperImages({});
+    }
+  }, [wallpaperStorageKey]);
+
+  const saveChatWallpaper = (key: 'community' | 'private', id: string) => {
+    const next = { ...chatWallpapers, [key]: id };
+    setChatWallpapers(next);
+    try { localStorage.setItem(wallpaperStorageKey, JSON.stringify(next)); } catch {}
+    window.dispatchEvent(new CustomEvent('fni-chat-wallpaper-updated'));
+    setWallpaperNotice(`${key === 'community' ? 'Community' : 'Private chat'} wallpaper saved on this device.`);
+  };
+
+  const uploadChatWallpaper = (key: 'community' | 'private', file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setWallpaperNotice('Choose an image file for your wallpaper.');
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setWallpaperNotice('Choose an image smaller than 3 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') return;
+      const next = { ...chatWallpaperImages, [key]: reader.result };
+      setChatWallpaperImages(next);
+      try { localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {
+        setWallpaperNotice('This image is too large for device storage. Choose a smaller image.');
+        return;
+      }
+      window.dispatchEvent(new CustomEvent('fni-chat-wallpaper-updated'));
+      setWallpaperNotice(`${key === 'community' ? 'Community' : 'Private chat'} wallpaper photo saved.`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeChatWallpaperPhoto = (key: 'community' | 'private') => {
+    const next = { ...chatWallpaperImages };
+    delete next[key];
+    setChatWallpaperImages(next);
+    try { localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {}
+    saveChatWallpaper(key, 'default');
+    window.dispatchEvent(new CustomEvent('fni-chat-wallpaper-updated'));
+  };
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -71,7 +138,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
     >
       <div className="space-y-4">
         {/* Sub-tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-bold">
+        <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-100 pb-2 text-xs font-bold">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
@@ -89,6 +156,15 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
             }`}
           >
             Security & Password
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('appearance')}
+            className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
+              activeTab === 'appearance' ? 'bg-navy-900 text-white' : 'text-slate-500 hover:text-navy-900'
+            }`}
+          >
+            <Palette className="h-3.5 w-3.5" /> Chat Appearance
           </button>
           <button type="button" onClick={() => setActiveTab('delete')} className={activeTab === 'delete' ? 'px-3 py-1.5 rounded-lg bg-rose-600 text-white' : 'px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50'}>Delete Account</button>
         </div>
@@ -245,6 +321,45 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
               Update Password
             </Button>
           </form>
+        )}
+
+        {activeTab === 'appearance' && (
+          <div className="space-y-5 text-xs">
+            <div>
+              <h3 className="mb-1 text-sm font-bold text-navy-950">Chat wallpapers</h3>
+              <p className="text-slate-500">Choose the background used in FNI Community and your private conversations. These choices are saved on this device.</p>
+            </div>
+            {(['community', 'private'] as const).map(key => (
+              <section key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                <div className="mb-3 font-bold text-navy-900">{key === 'community' ? 'FNI Community' : 'Private chats'}</div>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  {chatWallpaperOptions.map(option => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => saveChatWallpaper(key, option.id)}
+                      className={`rounded-xl border p-1.5 text-[10px] font-semibold ${(chatWallpapers[key] || 'default') === option.id ? 'border-gold-500 ring-2 ring-gold-200' : 'border-slate-200'}`}
+                    >
+                      <span className="mb-1 block h-12 rounded-lg border border-black/5" style={{ backgroundColor: option.color, backgroundImage: option.image }} />
+                      {option.name}
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2.5 font-semibold text-navy-900 hover:bg-slate-50">
+                  Upload your own photo
+                  <input type="file" accept="image/*" className="hidden" onChange={event => { uploadChatWallpaper(key, event.currentTarget.files?.[0]); event.currentTarget.value = ''; }} />
+                </label>
+                {chatWallpaperImages[key] && (
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-emerald-700">Custom photo selected</span>
+                    <button type="button" onClick={() => removeChatWallpaperPhoto(key)} className="font-semibold text-rose-600">Remove photo</button>
+                  </div>
+                )}
+              </section>
+            ))}
+            {wallpaperNotice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-emerald-800">{wallpaperNotice}</p>}
+            <p className="text-[11px] text-slate-400">Wallpaper settings are device-specific. Set them again on another phone or browser if needed.</p>
+          </div>
         )}
 
         {activeTab === 'delete' && (

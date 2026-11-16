@@ -1875,3 +1875,120 @@ body {
 .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer { position: sticky; bottom: calc(var(--fni-mobile-nav-height, 0px) + env(safe-area-inset-bottom)); z-index: 25; }
 .fni-community-pinned-strip { background: linear-gradient(90deg, #171522, #252033); }
 @media (max-width: 767px) { .fni-messaging-view.fni-community-mode { padding-bottom: 1rem; } .fni-messaging-view.fni-community-mode .fni-community-panel { border-radius: 0; } }
+
+
+/* FNI Community mobile correction: the document is the only vertical
+   scroll surface. Do not constrain the message history to a chat viewport. */
+.fni-messaging-view.fni-community-mode {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-panel {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-topbar {
+  position: relative !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: .65rem !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: .8rem .75rem !important;
+  padding-top: .8rem !important;
+  overflow: visible !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-stream,
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream {
+  display: flow-root !important;
+  position: relative !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-y: visible !important;
+  overflow-x: clip !important;
+  overscroll-behavior: auto !important;
+  -webkit-overflow-scrolling: auto !important;
+  scrollbar-width: none !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer {
+  position: relative !important;
+  inset: auto !important;
+  flex: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  z-index: 2 !important;
+}
+.fni-messaging-view.fni-community-mode .fni-chat-panel,
+.fni-messaging-view.fni-community-mode .fni-chat-stream {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+@media (max-width: 767px) {
+  .fni-messaging-view.fni-community-mode .fni-community-topbar {
+    align-items: flex-start !important;
+    padding: .7rem .65rem !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-topbar > :first-child {
+    flex: 1 1 100% !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-topbar > :nth-child(2) {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-topbar > :nth-child(2) > button[aria-label="Change community chat wallpaper"] {
+    display: none !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-swipe-message {
+    max-width: min(92%, 42rem) !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-chat-composer {
+    padding-bottom: max(.75rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+
+/* The Messages route must not inherit the dashboard's viewport-filling flex
+   height. Let the full community history determine page height on phones. */
+.fni-app-shell.fni-messaging-route {
+  min-height: 0 !important;
+  height: auto !important;
+}
+.fni-app-shell.fni-messaging-route > .fni-app-body {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+.fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+@media (max-width: 767px) {
+  .fni-app-shell.fni-messaging-route {
+    min-height: 0 !important;
+  }
+  .fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+    padding-top: .5rem !important;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
