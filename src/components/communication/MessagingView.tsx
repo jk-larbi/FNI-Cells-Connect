@@ -141,10 +141,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [wallpapers, setWallpapers] = useState<Record<string, string>>({});
   const [wallpaperMenu, setWallpaperMenu] = useState<'community' | 'private' | null>(null);
   const wallpaperStorageKey = `fni-chat-wallpapers:${currentUser?.id || 'guest'}`;
-  const communityWallpaperKey = 'community';
-  const privateWallpaperKey = `private:${selectedTutorId || 'admin'}`;
-  const communityWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[communityWallpaperKey]) || CHAT_WALLPAPERS[0];
-  const privateWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[privateWallpaperKey]) || CHAT_WALLPAPERS[0];
   const saveWallpaper = (key: string, id: string) => {
     setWallpapers(previous => {
       const next = { ...previous, [key]: id };
@@ -166,6 +162,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateText, setPrivateText] = useState('');
   const [privateFiles, setPrivateFiles] = useState<File[]>([]);
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || (isAdmin ? '' : 'admin'));
+  const communityWallpaperKey = 'community';
+  const privateWallpaperKey = `private:${selectedTutorId || 'admin'}`;
+  const communityWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[communityWallpaperKey]) || CHAT_WALLPAPERS[0];
+  const privateWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[privateWallpaperKey]) || CHAT_WALLPAPERS[0];
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
   const [allMembers, setAllMembers] = useState<Array<{ id: string; full_name: string; username?: string; role: string; cell_name?: string; avatar_url?: string }>>([]);
   const [memberSearch, setMemberSearch] = useState('');
