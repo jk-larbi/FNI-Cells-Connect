@@ -3,6 +3,7 @@ import { Region, Cell, ReportingPeriod, Profile, UserRole, CellReport } from '..
 import { INITIAL_PROFILES } from '../../services/mockData';
 import { ReportService } from '../../services/reportService';
 import { AuthService } from '../../services/authService';
+import { SupabaseService } from '../../services/supabaseService';
 import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
@@ -31,7 +32,7 @@ export const AdminManagementView: React.FC = () => {
   const { currentUser, deleteUserAccount } = useAuth();
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods'>('users');
-  const [users, setUsers] = useState<Profile[]>(() => AuthService.getAllProfiles());
+  const [users, setUsers] = useState<Profile[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
@@ -100,15 +101,16 @@ export const AdminManagementView: React.FC = () => {
 
   useEffect(() => {
     async function loadData() {
-      const [r, c, p] = await Promise.all([
+      const [r, c, p, remoteUsers] = await Promise.all([
         ReportService.getRegions(),
         ReportService.getCells(),
         ReportService.getPeriods(),
+        SupabaseService.getProfiles(),
       ]);
       setRegions(r);
       setCells(c.filter(cell => !cell.is_archived));
       setPeriods(p);
-      setUsers(AuthService.getAllProfiles());
+      setUsers(remoteUsers || AuthService.getAllProfiles());
       if (r.length > 0) {
         setNewCell(prev => ({ ...prev, region_id: r[0].id }));
       }
