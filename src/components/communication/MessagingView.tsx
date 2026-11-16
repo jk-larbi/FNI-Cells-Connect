@@ -837,7 +837,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className={isMine ? "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] ml-auto p-3 sm:p-3.5 rounded-2xl border border-[#142B4A] bg-[#142B4A] text-white shadow-2xs space-y-2 transition-all" : "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] mr-auto p-3 sm:p-3.5 rounded-2xl border border-[#E3E8EF] bg-white text-[#182230] shadow-2xs space-y-2 transition-all"}
+                    className={isMine ? "fni-swipe-message w-fit max-w-[88%] sm:max-w-[70%] ml-auto p-2.5 rounded-[18px] rounded-tr-sm border border-[#142B4A] bg-[#142B4A] text-white shadow-sm space-y-1 transition-all" : "fni-swipe-message w-fit max-w-[88%] sm:max-w-[70%] mr-auto p-2.5 rounded-[18px] rounded-tl-sm border border-[#E3E8EF] bg-white text-[#182230] shadow-sm space-y-1 transition-all"}
                     onTouchStart={event => beginCommunityMessageTouch(event, msg.id)}
                     onTouchMove={cancelCommunityMessageLongPress}
                     onTouchEnd={event => finishCommunityMessageTouch(event, { id: msg.id, senderName: msg.senderName, content: msg.content })}
@@ -845,8 +845,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   >
                     {/* Header Row: Sender, Tag Badge & Time */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-black text-xs flex items-center justify-center shrink-0">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-[#142B4A] text-[#C6A45A] font-black text-[10px] flex items-center justify-center shrink-0">
                           {msg.senderName.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
@@ -860,14 +860,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               </span>
                             )}
                           </div>
-                          <div className={isMine ? "text-xs text-white/70" : "text-xs text-[#667085]"}>
-                            {msg.cellName || 'FNI Ministry'}
-                          </div>
+                          <div 
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ${
                           msg.category === 'announcement'
                             ? 'bg-amber-100 text-amber-800'
                             : msg.category === 'prayer_request'
@@ -903,7 +901,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     {msg.replyTo && (
                       <div
                         onClick={() => scrollToMessage(msg.replyTo!.id)}
-                        className="p-2.5 rounded-xl bg-[#142B4A]/5 border-l-4 border-[#C6A45A] text-xs cursor-pointer hover:bg-[#142B4A]/10 transition-colors ml-11"
+                        className="p-2 rounded-lg bg-[#142B4A]/5 border-l-2 border-[#C6A45A] text-xs cursor-pointer hover:bg-[#142B4A]/10 transition-colors"
                         title="Click to view original message"
                       >
                         <div className={isMine ? "flex items-center gap-1.5 font-bold text-white" : "flex items-center gap-1.5 font-bold text-[#142B4A]"}>
@@ -917,13 +915,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     )}
 
                     {/* Message Body with Highlighted Mentions */}
-                    <div className={isMine ? "text-xs sm:text-sm text-white leading-relaxed pl-11 whitespace-pre-wrap break-words [overflow-wrap:anywhere]" : "text-xs sm:text-sm text-[#182230] leading-relaxed pl-11 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"}>
+                    <div className={isMine ? "text-[13px] sm:text-sm text-white leading-[1.4] whitespace-pre-wrap break-words [overflow-wrap:anywhere]" : "text-[13px] sm:text-sm text-[#182230] leading-[1.4] whitespace-pre-wrap break-words [overflow-wrap:anywhere]"}>
                       {msg.deletedForEveryoneAt ? <span className="italic opacity-70">This message was deleted</span> : renderFormattedMessage(msg.content)}
                       {!msg.deletedForEveryoneAt && (msg.attachments || []).map(attachment => <ChatAttachmentPreview key={attachment.path} attachment={attachment} />)}
                     </div>
 
                     {/* Footer Actions: Emoji Reactions & Reply Button */}
-                    <div className="flex items-center justify-between pt-2 border-t border-[#E3E8EF]/60 pl-11 flex-wrap gap-2">
+                    <div className="flex items-center justify-between pt-0.5 flex-wrap gap-1.5">
                       {/* Active Reaction Pills */}
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {Object.entries(reactions).map(([emoji, reactors]) => {
@@ -958,7 +956,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           });
                           communityInputRef.current?.focus();
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-[#F5F7FA] hover:bg-[#142B4A] hover:text-white text-[#142B4A] text-xs font-bold transition-all border border-[#E3E8EF] flex items-center gap-1.5 cursor-pointer ml-auto"
+                        className="px-2 py-1 rounded-lg bg-transparent hover:bg-[#142B4A]/10 text-[#142B4A] text-[11px] font-semibold transition-all flex items-center gap-1 cursor-pointer ml-auto"
                       >
                         <Reply className="w-3.5 h-3.5" />
                         <span>Reply</span>
