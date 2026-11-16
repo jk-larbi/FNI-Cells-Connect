@@ -230,7 +230,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
 
             <p className="text-[11px] text-slate-400">
               For security compliance, name and role modifications must be authorized by national administration.
-            </p>
+            </p>\n            <button type="button" onClick={() => setActiveTab("delete")} className="w-full rounded-xl border border-rose-200 bg-rose-50 p-3 text-left transition-colors hover:bg-rose-100">\n              <span className="block text-sm font-bold text-rose-700">Delete account</span>\n              <span className="mt-1 block text-xs leading-relaxed text-rose-700/80">Permanently remove your FNI account and personal profile.</span>\n            </button>
           </div>
         )}
 
