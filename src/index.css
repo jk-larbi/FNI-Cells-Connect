@@ -1417,3 +1417,47 @@ html.dark .fni-notification-center span {
     width: 100%;
   }
 }
+
+
+/* Compact chat composer: keep the action controls on one line on phones. */
+.fni-messaging-view .fni-chat-composer-row {
+  width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+.fni-messaging-view .fni-composer-icon {
+  width: 2rem;
+  min-width: 2rem;
+}
+.fni-messaging-view .fni-composer-input {
+  min-width: 0;
+  overflow: hidden;
+}
+.fni-messaging-view .fni-composer-input textarea {
+  min-width: 0 !important;
+  width: 0 !important;
+  flex: 1 1 0%;
+  max-height: 35vh;
+  min-height: 1.5rem;
+  line-height: 1.4;
+  font-size: 16px !important;
+  overflow-y: auto;
+}
+.fni-messaging-view .fni-composer-input button {
+  min-width: 2rem;
+  min-height: 2rem;
+}
+.fni-messaging-view .fni-chat-composer-row > button[type="submit"] {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+}
+@media (max-width: 380px) {
+  .fni-messaging-view .fni-chat-composer-row { gap: .15rem; }
+  .fni-messaging-view .fni-composer-icon { width: 1.8rem; min-width: 1.8rem; }
+  .fni-messaging-view .fni-composer-input { padding-left: .15rem; padding-right: .15rem; }
+  .fni-messaging-view .fni-composer-input button { width: 1.75rem; min-width: 1.75rem; }
+  .fni-messaging-view .fni-chat-composer-row > button[type="submit"] {
+    width: 2.25rem; min-width: 2.25rem; height: 2.25rem;
+  }
+}
