@@ -26,6 +26,8 @@ import {
   MoreVertical,
   Paperclip,
   FileAudio,
+  Search,
+  UserRound,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -123,6 +125,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateFiles, setPrivateFiles] = useState<File[]>([]);
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || (isAdmin ? '' : 'admin'));
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
+  const [allMembers, setAllMembers] = useState<Array<{ id: string; full_name: string; username?: string; role: string; cell_name?: string; avatar_url?: string }>>([]);
+  const [memberSearch, setMemberSearch] = useState('');
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
   const [privateSendError, setPrivateSendError] = useState<string | null>(null);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
@@ -239,6 +243,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       setMemberDirectory(directory);
 
+      // This RPC returns only public profile fields and respects the active-member filter.
+      const publicMembers = await MessagingService.getMemberDirectory();
+      setAllMembers(publicMembers || []);
+
       const adminConvs = await MessagingService.getAdminConversations();
       const tutorMap = new Map<string, { id: string; name: string; cellName: string }>();
 
@@ -250,6 +258,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           id,
           name: c.leader_name || 'Cell Leader',
           cellName: c.name,
+        });
+      });
+
+      (publicMembers || []).forEach(member => {
+        if (member.id === currentUser.id) return;
+        tutorMap.set(member.id, {
+          id: member.id,
+          name: member.full_name,
+          cellName: member.cell_name || 'FNI Member',
         });
       });
 
@@ -1049,14 +1066,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
               <div>
                 <h3 className="font-bold text-sm sm:text-base text-white">
-                  {isAdmin
-                    ? 'Confidential Pastoral Oversight Line'
-                    : selectedTutorId === 'admin' ? 'Confidential Leadership Line' : 'Private Tutor Conversation'}
+                  {selectedTutorId === 'admin'
+                    ? 'Confidential Leadership Line'
+                    : allMembers.find(member => member.id === selectedTutorId)?.full_name || tutorList.find(tutor => tutor.id === selectedTutorId)?.name || 'Private Conversation'}
                 </h3>
                 <p className="text-xs text-slate-200 mt-0.5">
-                  {isAdmin
-                    ? 'Select a tutor to inspect their private communication channel'
-                    : selectedTutorId === 'admin' ? 'Private, direct communication with ministry leadership.' : 'A private conversation between you and this tutor. Not shared in the community forum.'}
+                  {selectedTutorId === 'admin'
+                    ? 'Private, direct communication with ministry leadership.'
+                    : [allMembers.find(member => member.id === selectedTutorId)?.cell_name, 'Private one-to-one conversation'].filter(Boolean).join(' · ')}
                 </p>
               </div>
             </div>
@@ -1091,6 +1108,59 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Search registered members and start a one-to-one conversation. */}
+          <div className="relative z-20 border-b border-[#E3E8EF] bg-white px-3 py-3 sm:px-4">
+            <div className="flex items-center gap-2 rounded-xl border border-[#DCE3EC] bg-[#F8FAFC] px-3 py-2 focus-within:border-[#9AAFC8] focus-within:ring-2 focus-within:ring-[#142B4A]/10">
+              <Search className="h-4 w-4 shrink-0 text-[#667085]" />
+              <input
+                value={memberSearch}
+                onChange={event => setMemberSearch(event.target.value)}
+                placeholder="Search members by name, username or cell…"
+                aria-label="Search FNI members"
+                className="min-w-0 flex-1 bg-transparent text-sm text-[#182230] outline-none placeholder:text-[#98A2B3]"
+              />
+              {memberSearch && <button type="button" onClick={() => setMemberSearch('')} className="rounded-full p-1 text-[#667085] hover:bg-[#E9EEF5]" aria-label="Clear member search"><X className="h-4 w-4" /></button>}
+            </div>
+            {memberSearch.trim() && (
+              <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-[#E3E8EF] bg-white shadow-lg">
+                {allMembers.filter(member => {
+                  const query = memberSearch.trim().toLowerCase();
+                  return member.full_name.toLowerCase().includes(query) ||
+                    (member.username || '').toLowerCase().includes(query) ||
+                    (member.cell_name || '').toLowerCase().includes(query);
+                }).slice(0, 12).map(member => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTutorId(member.id);
+                      setPrivateMessages([]);
+                      setPrivateReplyTo(null);
+                      setMemberSearch('');
+                      setOpenChatMenu(false);
+                    }}
+                    className={`flex w-full items-center gap-3 border-b border-[#F0F2F5] px-3 py-2.5 text-left last:border-b-0 hover:bg-[#F5F7FA] ${selectedTutorId === member.id ? 'bg-[#EEF3F8]' : ''}`}
+                  >
+                    {member.avatar_url
+                      ? <img src={member.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                      : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF0F7] text-[#142B4A]"><UserRound className="h-4 w-4" /></span>}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-[#182230]">{member.full_name}</span>
+                      <span className="block truncate text-xs text-[#667085]">{[member.username ? `@${member.username}` : '', member.cell_name || 'FNI Member'].filter(Boolean).join(' · ')}</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#142B4A]">Message</span>
+                  </button>
+                ))}
+                {allMembers.filter(member => {
+                  const query = memberSearch.trim().toLowerCase();
+                  return member.full_name.toLowerCase().includes(query) ||
+                    (member.username || '').toLowerCase().includes(query) ||
+                    (member.cell_name || '').toLowerCase().includes(query);
+                }).length === 0 && <p className="px-3 py-4 text-center text-xs text-[#667085]">No active members found.</p>}
+              </div>
+            )}
           </div>
 
           {/* Messages Stream */}
