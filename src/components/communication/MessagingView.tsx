@@ -309,7 +309,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const privateInputRef = useRef<HTMLTextAreaElement>(null);
   const communityEndRef = useRef<HTMLDivElement>(null);
   const privateEndRef = useRef<HTMLDivElement>(null);
-  const communityStreamRef = useRef<HTMLDivElement>(null);
   const privateStreamRef = useRef<HTMLDivElement>(null);
   const previousCommunityCountRef = useRef<number | null>(null);
   const previousPrivateCountRef = useRef<number | null>(null);
