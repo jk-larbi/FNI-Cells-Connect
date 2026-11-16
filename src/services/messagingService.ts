@@ -92,6 +92,20 @@ export class MessagingService {
     replyTo?: MessageReply;
     attachments?: ChatAttachment[];
   }): Promise<PrivateMessage> {
+    if (data.recipientUid === 'admin' && data.senderRole !== 'tutor') {
+      throw new Error('Only tutors can send to the shared FNI Leadership inbox.');
+    }
+    if (data.recipientUid !== 'admin') {
+      const directory = await SupabaseService.getMemberDirectory();
+      const recipient = directory?.find(member => member.id === data.recipientUid);
+      const allowedRoles = data.senderRole === 'admin' || data.senderRole === 'super_admin' || data.senderRole === 'national_admin'
+        ? ['tutor']
+        : ['tutor', 'admin', 'super_admin', 'national_admin'];
+      if (!recipient || !allowedRoles.includes(recipient.role)) {
+        throw new Error('This member account is no longer active. Refresh the member list and select an active member.');
+      }
+    }
+
     const id = `pmsg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const nowIso = new Date().toISOString();
 
@@ -145,32 +159,28 @@ export class MessagingService {
 
   static async getPrivateConversation(tutorUid: string, viewerUid: string, conversationId: string, isAdmin = false): Promise<PrivateMessage[]> {
     try {
-      const [supaMsgs, preference, hiddenIds, allChatsPreference, directory, activeCells] = await Promise.all([
-        SupabaseService.getPrivateMessages(tutorUid),
+      const [supaMsgs, preference, hiddenIds, allChatsPreference] = await Promise.all([
+        SupabaseService.getPrivateMessages(isAdmin ? '' : tutorUid, viewerUid),
         SupabaseService.getPrivateChatPreference(viewerUid, conversationId),
         SupabaseService.getHiddenPrivateMessageIds(viewerUid),
         SupabaseService.getPrivateChatPreference(viewerUid, '*'),
-        SupabaseService.getMemberDirectory(),
-        CellService.getActiveCells(),
       ]);
-      if (supaMsgs === null || preference === null || hiddenIds === null) return [];
+      if (supaMsgs === null) {
+        throw new Error('The private conversation could not be loaded. Check your connection and try again.');
+      }
 
-      setStored(STORAGE_KEYS.PRIVATE, supaMsgs);
-      const hidden = new Set(hiddenIds);
-      const allowedMemberIds = new Set((directory || AuthService.getAllProfiles().filter(profile => profile.is_active).map(profile => ({ id: profile.id }))).map(member => member.id));
-      allowedMemberIds.add(viewerUid);
-      if (directory?.some(member => member.id === tutorUid)) allowedMemberIds.add(tutorUid);
-      const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
-      const cutoffs = [preference.clearedAt, preference.deletedAt, allChatsPreference?.clearedAt]
+      // Chat history must not disappear when a member changes cell or a cell is
+      // archived. A direct conversation is scoped by its two participant IDs,
+      // while RLS remains the authoritative privacy boundary.
+      const hidden = new Set(hiddenIds || []);
+      const cutoffs = [preference?.clearedAt, preference?.deletedAt, allChatsPreference?.clearedAt]
         .filter((value): value is string => Boolean(value))
         .map(value => new Date(value).getTime())
         .filter(Number.isFinite);
       const cutoff = cutoffs.length ? Math.max(...cutoffs) : 0;
+      const isLeadershipRole = (role: UserRole) => ['admin', 'super_admin', 'national_admin'].includes(role);
       const belongsToConversation = (message: PrivateMessage) => {
         if (isAdmin) {
-          // Tutors address the shared leadership inbox using the legacy
-          // recipient UID "admin"; administrators address tutors by their
-          // real profile ID. Include both directions in the admin's thread.
           return (
             (message.senderUid === tutorUid &&
               (message.recipientUid === 'admin' || message.recipientUid === viewerUid)) ||
@@ -178,20 +188,44 @@ export class MessagingService {
           );
         }
         if (conversationId === 'admin') {
-          return message.senderUid === tutorUid || message.recipientUid === tutorUid;
+          return (
+            (message.senderUid === viewerUid && message.recipientUid === 'admin') ||
+            (message.recipientUid === viewerUid && isLeadershipRole(message.senderRole))
+          );
         }
-        // Every one-to-one chat is scoped to exactly these two participants.
         return (message.senderUid === viewerUid && message.recipientUid === conversationId) ||
           (message.senderUid === conversationId && message.recipientUid === viewerUid);
       };
 
-      return supaMsgs
-        .filter(m => belongsToConversation(m) && !hidden.has(m.id) && allowedMemberIds.has(m.senderUid) && (m.recipientUid === 'admin' || allowedMemberIds.has(m.recipientUid)) && (!m.cellId || activeCellIds.has(m.cellId)) && new Date(m.createdAt).getTime() > cutoff)
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    } catch (e) {
-      console.warn('Notice querying Supabase private conversation:', e);
+      const visible = supaMsgs.filter(message =>
+        belongsToConversation(message) &&
+        !hidden.has(message.id) &&
+        new Date(message.createdAt).getTime() > cutoff
+      );
+      return visible.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } catch (error) {
+      console.warn('Private conversation load failed:', error);
       return [];
     }
+  }
+
+  static async reactToPrivateMessage(
+    messageId: string,
+    emoji: string,
+    userId: string,
+    userName: string
+  ): Promise<PrivateMessage | null> {
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Reactions are temporarily unavailable. Please reconnect and try again.');
+    }
+    const saved = await SupabaseService.togglePrivateMessageReaction(messageId, userId, userName, emoji);
+    if (!saved) throw new Error('Your reaction could not be saved. Please try again.');
+    const messages = await SupabaseService.getPrivateMessages(userId, userId);
+    return messages?.find(message => message.id === messageId) || null;
+  }
+
+  static async setPrivateMessagePin(messageId: string, userId: string, pinned: boolean): Promise<boolean> {
+    return SupabaseService.setPrivateMessagePin(messageId, userId, pinned);
   }
 
   static async clearPrivateConversation(viewerUid: string, conversationId: string): Promise<boolean> {
@@ -218,7 +252,7 @@ export class MessagingService {
 
     try {
       // Refresh messages from Supabase if possible
-      const supaMsgs = await SupabaseService.getPrivateMessages('');
+      const supaMsgs = await SupabaseService.getPrivateMessages('', AuthService.getCurrentProfile()?.id || '');
       if (supaMsgs !== null) {
         all = supaMsgs;
         setStored(STORAGE_KEYS.PRIVATE, all);
