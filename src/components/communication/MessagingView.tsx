@@ -309,31 +309,35 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const privateInputRef = useRef<HTMLTextAreaElement>(null);
   const communityEndRef = useRef<HTMLDivElement>(null);
   const privateEndRef = useRef<HTMLDivElement>(null);
-  const communityStreamRef = useRef<HTMLDivElement>(null);
   const privateStreamRef = useRef<HTMLDivElement>(null);
   const previousCommunityCountRef = useRef<number | null>(null);
   const previousPrivateCountRef = useRef<number | null>(null);
   const previousPrivateConversationRef = useRef<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
-  // Keep the newest messages in view like Telegram, but never yank someone
-  // back to the bottom when they are reading older messages.
+  // Private chats keep their own message viewport. Community Hub uses the
+  // app's normal document scrolling, so new posts follow the page scroll.
   useEffect(() => {
-    const stream = activeTab === 'community' ? communityStreamRef.current : privateStreamRef.current;
+    if (activeTab === 'community') {
+      const previousCount = previousCommunityCountRef.current;
+      const isFirstLoad = previousCount === null;
+      const pageNearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180;
+      if (isFirstLoad || pageNearBottom) {
+        requestAnimationFrame(() => communityEndRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' }));
+      }
+      previousCommunityCountRef.current = communityMessages.length;
+      return;
+    }
+    const stream = privateStreamRef.current;
     if (!stream) return;
-    const isCommunity = activeTab === 'community';
-    const previousCount = isCommunity ? previousCommunityCountRef.current : previousPrivateCountRef.current;
-    const conversationChanged = !isCommunity && previousPrivateConversationRef.current !== selectedTutorId;
-    const isFirstLoad = previousCount === null || conversationChanged;
+    const conversationChanged = previousPrivateConversationRef.current !== selectedTutorId;
+    const isFirstLoad = previousPrivateCountRef.current === null || conversationChanged;
     const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
     if (isFirstLoad || nearBottom) {
       requestAnimationFrame(() => { stream.scrollTop = stream.scrollHeight; });
     }
-    if (isCommunity) previousCommunityCountRef.current = communityMessages.length;
-    else {
-      previousPrivateCountRef.current = privateMessages.length;
-      previousPrivateConversationRef.current = selectedTutorId;
-    }
+    previousPrivateCountRef.current = privateMessages.length;
+    previousPrivateConversationRef.current = selectedTutorId;
   }, [activeTab, communityMessages.length, privateMessages.length, selectedTutorId]);
   const privateSendLock = useRef(false);
   const communitySendLock = useRef(false);
@@ -552,8 +556,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setPrivateSendError('The message could not be deleted for everyone. Please try again.');
       return;
     }
-    if (scope === 'private') await loadPrivateMessages();
-    else await loadCommunity();
+    if (scope === 'private') {
+      setPrivateMessages(previous => previous.filter(message => message.id !== messageId));
+      await loadPrivateMessages();
+    } else {
+      setCommunityMessages(previous => previous.filter(message => message.id !== messageId));
+      await loadCommunity();
+    }
     setOpenMessageMenu(null);
   };
 
@@ -927,6 +936,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     await loadInviteCodes();
   };
 
+  // Telegram-style deletion: tombstones stay in the database for audit/sync,
+  // but deleted-for-everyone messages never render in either conversation.
+  const visibleCommunityMessages = communityMessages.filter(message => !message.deletedForEveryoneAt);
+  const visiblePrivateMessages = privateMessages.filter(message => !message.deletedForEveryoneAt);
+
   // Filter mention directory
   const filteredMentions = memberDirectory.filter(m => {
     if (!mentionQuery) return true;
@@ -988,7 +1002,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       {/* TAB 1: TUTOR COMMUNITY FORUM (Open Access, Emojis, Tagging & Telegram/WhatsApp Replies) */}
       {activeTab === 'community' && (
-        <div className="fni-chat-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
+        <div className="fni-community-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs flex flex-col">
           {/* Forum Header */}
           <div className="relative px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div>
@@ -998,7 +1012,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <h2 className="font-black text-base sm:text-lg text-white">
                 Tutor Community & Fellowship Sharing
               </h2>
-              <p className="hidden sm:block text-xs text-slate-200 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-200 mt-0.5">
                 Open to registered tutors and FNI Admin. Tag verified members with <span className="text-[#C6A45A] font-bold">@Name</span>, send emojis & reply to messages.
               </p>
             </div>
@@ -1025,8 +1039,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div ref={communityStreamRef} className="fni-chat-stream flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
-            {communityMessages.length === 0 ? (
+          <div className="fni-community-stream w-full px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
+            {visibleCommunityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
                 <p className="text-sm font-bold text-[#182230]">The community board is fresh</p>
@@ -1035,7 +1049,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </p>
               </div>
             ) : (
-              communityMessages.map(msg => {
+              visibleCommunityMessages.map(msg => {
                 const isMine = msg.senderUid === currentUser.id;
                 const reactions = msg.reactions || {};
 
@@ -1288,64 +1302,30 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {communitySendError && (
               <p role="alert" className="text-xs font-semibold text-rose-600">{communitySendError}</p>
             )}
-            {/* Category Selector + Quick Emojis Row */}
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-bold text-[#667085]">Category:</span>
-                {(['general', 'announcement', 'prayer_request', 'testimony'] as const).map(cat => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setCommunityCategory(cat)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      communityCategory === cat
-                        ? 'bg-[#142B4A] text-white shadow-2xs'
-                        : 'bg-[#F5F7FA] text-[#667085] hover:bg-[#E3E8EF]'
-                    }`}
-                  >
-                    {cat === 'general' ? 'General' : cat === 'announcement' ? 'Announcement' : cat === 'prayer_request' ? 'Prayer' : 'Testimony'}
-                  </button>
-                ))}
-              </div>
-
-              {/* Quick Emojis Bar */}
-              <div className="hidden sm:flex items-center gap-1.5 bg-[#F5F7FA] px-2.5 py-1 rounded-xl border border-[#E3E8EF]">
-                {QUICK_EMOJIS.map(emoji => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => {
-                      setCommunityText(prev => prev + emoji);
-                      communityInputRef.current?.focus();
-                    }}
-                    className="hover:scale-125 transition-transform p-0.5 cursor-pointer flex items-center justify-center text-base"
-                    title={`Insert ${emoji}`}
-                  >
-                    <span>{emoji}</span>
-                  </button>
-                ))}
-              </div>
+            {/* Message category stays compact and separate from the typing controls. */}
+            <div className="flex items-center justify-end">
+              <label className="sr-only" htmlFor="community-message-category">Message category</label>
+              <select id="community-message-category" value={communityCategory} onChange={event => setCommunityCategory(event.target.value as typeof communityCategory)} className="max-w-36 rounded-lg border border-[#E3E8EF] bg-[#F8FAFC] px-2 py-1.5 text-[11px] font-semibold text-[#667085] outline-none focus:border-[#9AAFC8]">
+                <option value="general">General</option>
+                <option value="announcement">Announcement</option>
+                <option value="prayer_request">Prayer request</option>
+                <option value="testimony">Testimony</option>
+              </select>
             </div>
 
-            {/* Input Row */}
-            <div className="flex items-center gap-2 min-w-0">
-              {communityFiles.length > 0 && <div className="flex flex-wrap gap-2 pb-1">{communityFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setCommunityFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
+            {communityFiles.length > 0 && <div className="flex flex-wrap gap-2 pb-1">{communityFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setCommunityFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
+            {/* Compact Telegram-style single-row composer. */}
+            <div className="fni-chat-composer-row flex min-w-0 items-center gap-1.5">
               <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="community-chat-files" onChange={e => setCommunityFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
-              <button type="button" onClick={() => document.getElementById('community-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
-              <button type="button" onClick={() => recordingTarget === 'community' ? stopVoiceNote() : startVoiceNote('community')} disabled={recordingTarget !== null && recordingTarget !== 'community'} className={`h-10 w-10 rounded-full flex items-center justify-center ${recordingTarget === 'community' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'community' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'community' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'community' ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
-                <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
-                  <Smile className="w-5 h-5" />
-                </button>
-                <button type="button" onClick={() => { setShowCommunityStickers(v => !v); setShowCommunityEmoji(false); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white" aria-label="Open FNI stickers" title="Stickers"><span className="text-lg">✨</span></button>
-                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, Math.floor(window.innerHeight * 0.35)) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-[35vh] overflow-y-auto resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
-                <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white hover:text-[#142B4A] transition-colors cursor-pointer" title="Tag a member" aria-label="Tag a member">
-                  <AtSign className="w-4 h-4" />
-                </button>
+              <button type="button" onClick={() => document.getElementById('community-chat-files')?.click()} className="fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-[18px] h-[18px]" /></button>
+              <button type="button" onClick={() => recordingTarget === 'community' ? stopVoiceNote() : startVoiceNote('community')} disabled={recordingTarget !== null && recordingTarget !== 'community'} className={`fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center ${recordingTarget === 'community' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'community' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'community' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'community' ? <Square className="h-4 w-4" /> : <Mic className="h-[18px] w-[18px]" />}</button>
+              <div className="fni-composer-input flex min-w-0 flex-1 items-center gap-0.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-1.5 py-1 focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
+                <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-colors ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette"><Smile className="h-[18px] w-[18px]" /></button>
+                <button type="button" onClick={() => { setShowCommunityStickers(v => !v); setShowCommunityEmoji(false); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white" aria-label="Open FNI stickers" title="Stickers"><span className="text-base">✨</span></button>
+                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, Math.floor(window.innerHeight * 0.35)) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="min-w-0 w-0 flex-1 max-h-[35vh] overflow-y-auto resize-none border-0 bg-transparent px-1 py-2 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white hover:text-[#142B4A]" title="Tag a member" aria-label="Tag a member"><AtSign className="h-4 w-4" /></button>
               </div>
-              <Button type="submit" variant="primary" size="md" isLoading={isSendingCommunity} className="h-11 w-11 min-w-[44px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message">
-                <Send className="w-4 h-4 text-[#C6A45A]" />
-              </Button>
+              <Button type="submit" variant="primary" size="md" isLoading={isSendingCommunity} className="h-10 w-10 min-w-[40px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message"><Send className="w-4 h-4 text-[#C6A45A]" /></Button>
             </div>
           </form>
         </div>
@@ -1472,7 +1452,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Messages Stream */}
           <div ref={privateStreamRef} className="fni-chat-stream flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
-            {privateMessages.length === 0 ? (
+            {visiblePrivateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
                 <p className="text-sm font-bold text-[#182230]">No private messages yet</p>
@@ -1481,7 +1461,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </p>
               </div>
             ) : (
-              privateMessages.map(msg => {
+              visiblePrivateMessages.map(msg => {
                 const isMine = msg.senderUid === currentUser.id;
                 return (
                   <div
@@ -1659,43 +1639,23 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Private Input Box */}
-          <form onSubmit={handleSendPrivate} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2 min-w-0 flex-wrap">
+          <form onSubmit={handleSendPrivate} className="fni-chat-composer relative p-2.5 sm:p-3 bg-white border-t border-[#E3E8EF] flex flex-col gap-2 min-w-0">
             {showPrivateStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowPrivateStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setPrivateSticker(sticker); setShowPrivateStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2 text-xs font-semibold text-[#142B4A]">Create sticker from photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) saveCustomSticker(file); event.currentTarget.value = ''; }} /></label>{customStickers.length > 0 && <div className="mt-3 border-t border-[#E3E8EF] pt-3"><p className="mb-2 text-[11px] font-bold text-[#667085]">My stickers · tap to attach</p><div className="grid grid-cols-4 gap-2">{customStickers.map(sticker => <button key={sticker.id} type="button" onClick={() => attachCustomSticker(sticker, 'private')} className="rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-1.5"><img src={sticker.dataUrl} alt={sticker.name} className="mx-auto h-12 w-12 rounded-lg object-contain" /><span className="mt-1 block truncate text-[9px] text-[#667085]">{sticker.name}</span></button>)}</div></div>}</div>}
-            {privateSticker && <div className="basis-full flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{privateSticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{privateSticker.label} sticker ready</span><button type="button" onClick={() => setPrivateSticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
-            {privateSendError && (
-              <p role="alert" className="basis-full text-xs font-semibold text-rose-600">{privateSendError}</p>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowPrivateEmoji(prev => !prev)}
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors border shrink-0 cursor-pointer ${
-                showPrivateEmoji
-                  ? 'bg-[#142B4A] text-[#C6A45A] border-[#142B4A]'
-                  : 'bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#667085] border-[#E3E8EF]'
-              }`}
-              title="Insert Emoji"
-            >
-              <Smile className="w-5 h-5" />
-            </button>
-            <button type="button" onClick={() => { setShowPrivateStickers(v => !v); setShowPrivateEmoji(false); }} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Open FNI stickers" title="Stickers"><span className="text-xl">✨</span></button>
-
-            {privateFiles.length > 0 && <div className="basis-full flex flex-wrap gap-2 pb-1">{privateFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
+            {privateSticker && <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{privateSticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{privateSticker.label} sticker ready</span><button type="button" onClick={() => setPrivateSticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
+            {privateSendError && <p role="alert" className="text-xs font-semibold text-rose-600">{privateSendError}</p>}
+            {privateFiles.length > 0 && <div className="flex flex-wrap gap-2 pb-1">{privateFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
             <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
-              <button type="button" onClick={() => document.getElementById('private-chat-files')?.click()} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="w-5 h-5" /></button>
-              <button type="button" onClick={() => recordingTarget === 'private' ? stopVoiceNote() : startVoiceNote('private')} disabled={recordingTarget !== null && recordingTarget !== 'private'} className={`h-10 w-10 rounded-full flex items-center justify-center ${recordingTarget === 'private' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'private' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'private' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'private' ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-2 py-1 shadow-inner focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
-              <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={selectedTutorId === "admin" ? "Message FNI Leadership" : "Write a private message…"} className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+            <div className="fni-chat-composer-row flex min-w-0 items-center gap-1.5">
+              <button type="button" onClick={() => document.getElementById('private-chat-files')?.click()} className="fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Attach photos, videos or audio"><Paperclip className="h-[18px] w-[18px]" /></button>
+              <button type="button" onClick={() => recordingTarget === 'private' ? stopVoiceNote() : startVoiceNote('private')} disabled={recordingTarget !== null && recordingTarget !== 'private'} className={`fni-composer-icon h-9 w-8 shrink-0 rounded-full flex items-center justify-center ${recordingTarget === 'private' ? 'bg-rose-50 text-rose-600' : 'text-[#667085] hover:bg-[#F5F7FA]'}`} aria-label={recordingTarget === 'private' ? 'Stop voice note recording' : 'Record voice note'} title={recordingTarget === 'private' ? 'Stop recording' : 'Record voice note'}>{recordingTarget === 'private' ? <Square className="h-4 w-4" /> : <Mic className="h-[18px] w-[18px]" />}</button>
+              <div className="fni-composer-input flex min-w-0 flex-1 items-center gap-0.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-1.5 py-1 focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
+                <button type="button" onClick={() => setShowPrivateEmoji(prev => !prev)} className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-colors ${showPrivateEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Insert emoji" aria-label="Open emoji palette"><Smile className="h-[18px] w-[18px]" /></button>
+                <button type="button" onClick={() => { setShowPrivateStickers(v => !v); setShowPrivateEmoji(false); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white" aria-label="Open FNI stickers" title="Stickers"><span className="text-base">✨</span></button>
+                <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={selectedTutorId === "admin" ? "Message FNI Leadership" : "Write a private message…"} className="min-w-0 w-0 flex-1 max-h-28 resize-none border-0 bg-transparent px-1 py-2 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <button type="button" onClick={() => { setPrivateText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); privateInputRef.current?.focus(); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white hover:text-[#142B4A]" title="Tag a member" aria-label="Tag a member"><AtSign className="h-4 w-4" /></button>
+              </div>
+              <Button type="submit" variant="primary" size="md" isLoading={isSendingPrivate} className="h-10 w-10 min-w-[40px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message"><Send className="w-4 h-4 text-[#C6A45A]" /></Button>
             </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              isLoading={isSendingPrivate}
-              className="h-11 w-11 min-w-[44px] !p-0 rounded-full shrink-0 flex items-center justify-center"
-            >
-              <Send className="w-4 h-4 text-[#C6A45A]" />
-            </Button>
           </form>
         </div>
       )}
