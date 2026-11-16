@@ -87,7 +87,7 @@ export const MyAccountView: React.FC<MyAccountViewProps> = ({ onBack }) => {
             <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
             <span>Back to Previous</span>
           </button>
-        )}
+
         <h1 className="text-xl sm:text-2xl font-black text-[#142B4A] tracking-tight">
           My Account & Security
         </h1>
@@ -243,7 +243,6 @@ export const MyAccountView: React.FC<MyAccountViewProps> = ({ onBack }) => {
           </form>
         </div>
 
-      {!isAdmin && (
         <section className="bg-white rounded-2xl border border-rose-200 p-4 sm:p-5 shadow-sm space-y-3">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
