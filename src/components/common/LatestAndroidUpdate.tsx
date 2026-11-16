@@ -31,6 +31,17 @@ export const LatestAndroidUpdate: React.FC = () => {
         if (!active) return;
         const apk = data.assets?.find(asset => asset.name === 'FNI-Cells-Connect-Android.apk');
         if (!apk) return;
+        const installedVersion = String((import.meta as any).env?.VITE_ANDROID_APP_VERSION || '0.0.0').replace(/^v/, '');
+        const compareVersions = (left: string, right: string) => {
+          const a = left.split('.').map(part => Number(part) || 0);
+          const b = right.split('.').map(part => Number(part) || 0);
+          for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+            const difference = (a[index] || 0) - (b[index] || 0);
+            if (difference !== 0) return difference;
+          }
+          return 0;
+        };
+        if (compareVersions(data.tag_name.replace(/^v/, ''), installedVersion) <= 0) return;
         setRelease({ ...data, assets: [apk] });
         setDismissed(window.localStorage.getItem(DISMISSED_KEY) === data.tag_name);
       })
