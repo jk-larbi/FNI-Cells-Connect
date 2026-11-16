@@ -203,9 +203,6 @@ function mapPrivateMessageFromDb(row: any): PrivateMessage {
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
     deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
     editedAt: row.edited_at || undefined,
-    isPinned: Boolean(row.is_pinned),
-    pinnedAt: row.pinned_at || undefined,
-    pinnedBy: row.pinned_by || undefined,
   };
 }
 
