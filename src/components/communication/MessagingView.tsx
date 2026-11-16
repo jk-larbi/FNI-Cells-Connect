@@ -758,6 +758,27 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setOpenChatMenu(false);
   };
 
+  const handlePrivateReaction = async (messageId: string, emoji: string) => {
+    setOpenMessageMenu(null);
+    try {
+      await MessagingService.reactToPrivateMessage(messageId, emoji, currentUser.id, currentUser.full_name);
+      await loadPrivateMessages();
+    } catch (error) {
+      console.warn('Private reaction failed:', error);
+      setPrivateSendError('Your reaction could not be saved. Please try again.');
+    }
+  };
+
+  const handleTogglePrivatePin = async (message: PrivateMessage) => {
+    setOpenMessageMenu(null);
+    const saved = await MessagingService.setPrivateMessagePin(message.id, currentUser.id, !message.isPinned);
+    if (!saved) {
+      setPrivateSendError('This message could not be pinned. Please try again.');
+      return;
+    }
+    await loadPrivateMessages();
+  };
+
   const handleToggleCommunityPin = async (message: CommunityMessage) => {
     setOpenMessageMenu(null);
     const saved = await MessagingService.setCommunityMessagePin(message.id, !message.isPinned);
@@ -1750,6 +1771,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Messages Stream */}
           <div ref={privateStreamRef} onScroll={event => { const el = event.currentTarget; setShowPrivateJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-chat-stream relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
+            {visiblePrivateMessages.find(message => message.isPinned) && (
+              <button
+                type="button"
+                onClick={() => scrollToMessage(visiblePrivateMessages.find(message => message.isPinned)!.id)}
+                className="sticky top-0 z-20 flex w-full items-center gap-2 rounded-xl border border-[#C6A45A]/50 bg-white/95 px-3 py-2 text-left text-xs font-semibold text-[#142B4A] shadow-sm backdrop-blur"
+              >
+                <Pin className="h-3.5 w-3.5 shrink-0 text-[#C6A45A]" />
+                <span className="min-w-0 flex-1 truncate">{visiblePrivateMessages.find(message => message.isPinned)!.content || 'Pinned attachment'}</span>
+                <span className="shrink-0 text-[10px] text-[#667085]">Pinned by you</span>
+              </button>
+            )}
             {visiblePrivateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1811,7 +1843,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       </button>
                       {openMessageMenu === ("private:" + msg.id) && (
                         <div className="fni-message-menu-popover absolute right-1 top-11 z-40 min-w-36 rounded-2xl border border-[#E3E8EF] bg-white p-1.5 shadow-2xl">
+                          <button type="button" onClick={() => handleTogglePrivatePin(msg)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">{msg.isPinned ? 'Unpin for me' : 'Pin for me'}</button>
                           {isMine && <button type="button" onClick={() => handleEditMessage(msg.id, 'private', msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Edit message</button>}
+                          <div className="grid grid-cols-6 gap-1 px-1 py-1">
+                            {QUICK_EMOJIS.map(emoji => (
+                              <button key={emoji} type="button" onClick={() => handlePrivateReaction(msg.id, emoji)} className="rounded-lg p-1.5 text-base hover:bg-amber-50" aria-label={`React with ${emoji}`}>{emoji}</button>
+                            ))}
+                          </div>
                           <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
                           <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                           {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'private')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
@@ -1842,7 +1880,27 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       </button>
                     </div>
 
+                    {(Object.entries(msg.reactions || {}) as Array<[string, string[]]>).some(([, reactors]) => reactors?.length > 0) && (
+                      <div className={`mt-1 flex max-w-[88%] flex-wrap gap-1.5 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                        {Object.entries(msg.reactions || {}).map(([emoji, reactors]) => {
+                          if (!reactors || reactors.length === 0) return null;
+                          const hasReacted = reactors.includes(currentUser.full_name);
+                          return (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => handlePrivateReaction(msg.id, emoji)}
+                              title={reactors.join(', ')}
+                              className={`flex items-center gap-1 rounded-xl border px-2 py-1 text-xs font-semibold transition-colors ${hasReacted ? 'border-[#C6A45A] bg-amber-50 text-[#142B4A]' : 'border-[#E3E8EF] bg-white text-[#667085] hover:bg-[#F5F7FA]'}`}
+                            >
+                              <span>{emoji}</span><span>{reactors.length}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5 mt-1 px-1 text-xs text-[#667085]">
+                      {msg.isPinned && <span className="inline-flex items-center gap-1 text-[#9A7425]"><Pin className="h-3 w-3" />Pinned</span>}
                       <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       {isMine && (
                         msg.isRead ? (
