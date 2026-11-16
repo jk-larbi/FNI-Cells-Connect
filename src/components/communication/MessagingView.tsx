@@ -139,6 +139,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const { currentUser, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'private' | 'community'>(() => initialTab || 'community');
   const [wallpapers, setWallpapers] = useState<Record<string, string>>({});
+  const [wallpaperImages, setWallpaperImages] = useState<Record<string, string>>({});
   const [wallpaperMenu, setWallpaperMenu] = useState<'community' | 'private' | null>(null);
   const wallpaperStorageKey = `fni-chat-wallpapers:${currentUser?.id || 'guest'}`;
   const saveWallpaper = (key: string, id: string) => {
@@ -154,6 +155,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     try {
       const saved = window.localStorage.getItem(wallpaperStorageKey);
       setWallpapers(saved ? JSON.parse(saved) as Record<string, string> : {});
+      const savedImages = window.localStorage.getItem(`${wallpaperStorageKey}:images`);
+      setWallpaperImages(savedImages ? JSON.parse(savedImages) as Record<string, string> : {});
     } catch { setWallpapers({}); }
   }, [wallpaperStorageKey]);
 
@@ -166,6 +169,37 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const privateWallpaperKey = `private:${selectedTutorId || 'admin'}`;
   const communityWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[communityWallpaperKey]) || CHAT_WALLPAPERS[0];
   const privateWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[privateWallpaperKey]) || CHAT_WALLPAPERS[0];
+  const setCustomWallpaper = (key: string, file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 3 * 1024 * 1024) {
+      window.alert('Please choose an image smaller than 3 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) return;
+      setWallpaperImages(previous => {
+        const next = { ...previous, [key]: dataUrl };
+        try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); }
+        catch { window.alert('This image could not be saved in this browser. Try a smaller image.'); }
+        return next;
+      });
+      setWallpapers(previous => {
+        const next = { ...previous, [key]: 'custom' };
+        try { window.localStorage.setItem(wallpaperStorageKey, JSON.stringify(next)); } catch { /* Session choice remains active. */ }
+        return next;
+      });
+      setWallpaperMenu(null);
+    };
+    reader.readAsDataURL(file);
+  };
+  const communityWallpaperStyle = wallpaperImages[communityWallpaperKey]
+    ? { backgroundColor: '#E9EEF5', backgroundImage: `url(${wallpaperImages[communityWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { backgroundColor: communityWallpaper.color, backgroundImage: communityWallpaper.image };
+  const privateWallpaperStyle = wallpaperImages[privateWallpaperKey]
+    ? { backgroundColor: '#E9EEF5', backgroundImage: `url(${wallpaperImages[privateWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { backgroundColor: privateWallpaper.color, backgroundImage: privateWallpaper.image };
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
   const [allMembers, setAllMembers] = useState<Array<{ id: string; full_name: string; username?: string; role: string; cell_name?: string; avatar_url?: string }>>([]);
   const [memberSearch, setMemberSearch] = useState('');
@@ -768,7 +802,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
             <div className="relative flex items-center gap-2">
               <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'community' ? null : 'community')} className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20" aria-label="Change community chat wallpaper"><Palette className="h-4 w-4" /><span className="hidden sm:inline">Wallpaper</span></button>
-              {wallpaperMenu === 'community' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">Community wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(communityWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${communityWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div></div>}
+              {wallpaperMenu === 'community' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">Community wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(communityWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${communityWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2.5 text-xs font-semibold text-[#142B4A] hover:bg-[#F5F7FA]">Upload your own photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) setCustomWallpaper(communityWallpaperKey, file); event.currentTarget.value = ''; }} /></label>{wallpaperImages[communityWallpaperKey] && <button type="button" onClick={() => { setWallpaperImages(previous => { const next = { ...previous }; delete next[communityWallpaperKey]; try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {} return next; }); saveWallpaper(communityWallpaperKey, 'default'); }} className="mt-2 w-full text-left text-xs text-rose-600">Remove custom photo</button>}</div>}
             </div>
             {isAdmin && (
               <button
@@ -785,7 +819,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={{ backgroundColor: communityWallpaper.color, backgroundImage: communityWallpaper.image }}>
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {communityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -854,6 +888,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
+                              {allMembers.find(member => member.id === msg.senderUid) && <button type="button" onClick={() => { setProfileMember(allMembers.find(member => member.id === msg.senderUid) || null); setOpenMessageMenu(null); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">View profile</button>}
                               <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
                               <button type="button" onClick={() => handleReaction(msg.id, "❤️")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React ❤️</button>
                               <button type="button" onClick={() => handleReaction(msg.id, "🙏")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React 🙏</button>
@@ -1157,7 +1192,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               )}
               <div className="relative">
                 <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'private' ? null : 'private')} aria-label="Change private chat wallpaper" className="p-2 rounded-xl border border-white/15 text-white hover:bg-white/10"><Palette className="w-4 h-4" /></button>
-                {wallpaperMenu === 'private' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">This conversation's wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(privateWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${privateWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div></div>}
+                {wallpaperMenu === 'private' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">This conversation's wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(privateWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${privateWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2.5 text-xs font-semibold text-[#142B4A] hover:bg-[#F5F7FA]">Upload your own photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) setCustomWallpaper(privateWallpaperKey, file); event.currentTarget.value = ''; }} /></label>{wallpaperImages[privateWallpaperKey] && <button type="button" onClick={() => { setWallpaperImages(previous => { const next = { ...previous }; delete next[privateWallpaperKey]; try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {} return next; }); saveWallpaper(privateWallpaperKey, 'default'); }} className="mt-2 w-full text-left text-xs text-rose-600">Remove custom photo</button>}</div>}
               </div>
               <div className="relative">
                 <button type="button" onClick={() => setOpenChatMenu(value => !value)} aria-label="Personal chat options" aria-expanded={openChatMenu} className="p-2 rounded-xl border border-white/15 text-white hover:bg-white/10">
@@ -1227,7 +1262,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={{ backgroundColor: privateWallpaper.color, backgroundImage: privateWallpaper.image }}>
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
             {privateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
