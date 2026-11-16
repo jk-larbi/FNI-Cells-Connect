@@ -38,6 +38,16 @@ export interface MessagingViewProps {
 }
 
 // Standard general quick emojis (WhatsApp / Telegram / social media style)
+const STICKER_PACK = [
+  { emoji: '🙏', label: 'Praying for you' }, { emoji: '❤️', label: 'Love' },
+  { emoji: '🙌', label: 'Praise' }, { emoji: '🔥', label: 'On fire' },
+  { emoji: '✨', label: 'Shining' }, { emoji: '💪', label: 'Stay strong' },
+  { emoji: '🕊️', label: 'Peace' }, { emoji: '🎉', label: 'Celebrate' },
+  { emoji: '👏', label: 'Well done' }, { emoji: '🌱', label: 'Growing' },
+  { emoji: '👑', label: 'Kingdom' }, { emoji: '📖', label: 'Word of God' },
+];
+const STICKER_PREFIX = '[[FNI_STICKER:';
+
 const QUICK_EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '❤️', '🔥', '🎉', '🙌', '👏', '✨', '💯'];
 
 // Standard general emoji categories (just like WhatsApp, Telegram & modern keyboards)
@@ -132,6 +142,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateSendError, setPrivateSendError] = useState<string | null>(null);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
   const [showPrivateEmoji, setShowPrivateEmoji] = useState(false);
+  const [showPrivateStickers, setShowPrivateStickers] = useState(false);
+  const [privateSticker, setPrivateSticker] = useState<{ emoji: string; label: string } | null>(null);
   const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
   const [openChatMenu, setOpenChatMenu] = useState(false);
   const privateLongPressTimer = useRef<number | null>(null);
@@ -149,6 +161,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [communitySendError, setCommunitySendError] = useState<string | null>(null);
   const [communityReplyTo, setCommunityReplyTo] = useState<MessageReply | null>(null);
   const [showCommunityEmoji, setShowCommunityEmoji] = useState(false);
+  const [showCommunityStickers, setShowCommunityStickers] = useState(false);
+  const [communitySticker, setCommunitySticker] = useState<{ emoji: string; label: string } | null>(null);
   const [communityEmojiCategory, setCommunityEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Registered members / tutors directory for @mention tagging
@@ -507,7 +521,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Private Message
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!privateText.trim() && privateFiles.length === 0) || privateSendLock.current) return;
+    if ((!privateText.trim() && privateFiles.length === 0 && !privateSticker) || privateSendLock.current) return;
     privateSendLock.current = true;
 
     const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
@@ -527,11 +541,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         recipientName,
         cellId: currentUser.cell_id,
         cellName: currentUser.cell_name,
-        content: privateText.trim(),
+        content: [privateText.trim(), privateSticker ? `${STICKER_PREFIX}${privateSticker.emoji}]]` : ''].filter(Boolean).join('\n'),
         replyTo: privateReplyTo || undefined,
         attachments: uploadedAttachments,
       });
       setPrivateText('');
+      setPrivateSticker(null);
+      setShowPrivateStickers(false);
       setPrivateFiles([]);
       if (privateInputRef.current) privateInputRef.current.style.height = '40px';
       setPrivateReplyTo(null);
@@ -550,7 +566,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Community Message
   const handleSendCommunity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!communityText.trim() && communityFiles.length === 0) || communitySendLock.current) return;
+    if ((!communityText.trim() && communityFiles.length === 0 && !communitySticker) || communitySendLock.current) return;
     communitySendLock.current = true;
 
     // Detect mentioned names
@@ -567,13 +583,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         senderName: currentUser.full_name,
         senderRole: currentUser.role,
         cellName: currentUser.cell_name,
-        content: communityText.trim(),
+        content: [communityText.trim(), communitySticker ? `${STICKER_PREFIX}${communitySticker.emoji}]]` : ''].filter(Boolean).join('\n'),
         category: communityCategory,
         replyTo: communityReplyTo || undefined,
         mentions: mentionsFound,
         attachments: uploadedAttachments,
       });
       setCommunityText('');
+      setCommunitySticker(null);
+      setShowCommunityStickers(false);
       setCommunityFiles([]);
       if (communityInputRef.current) communityInputRef.current.style.height = '40px';
       setCommunityReplyTo(null);
@@ -612,23 +630,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
-  // Format message text with highlighted @mentions and authentic standard iPhone emojis
+  // Render text and sticker tokens stored in the existing message body.
   const renderFormattedMessage = (content: string) => {
-    // Regex matches @Name patterns
-    const parts = content.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith('@') && part.length > 1) {
-        return (
-          <span
-            key={idx}
-            className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5 cursor-pointer hover:bg-[#142B4A]/20 transition-colors"
-            title="Tagged member"
-          >
-            {part}
-          </span>
-        );
+    const segments = content.split(/(\[\[FNI_STICKER:[^\]]+\]\])/g);
+    return segments.map((segment, idx) => {
+      const stickerMatch = segment.match(/^\[\[FNI_STICKER:(.+)\]\]$/);
+      if (stickerMatch) {
+        const sticker = STICKER_PACK.find(item => item.emoji === stickerMatch[1]);
+        return <span key={idx} role="img" aria-label={sticker?.label || 'FNI sticker'} title={sticker?.label || 'FNI sticker'} className="inline-flex items-center justify-center align-middle rounded-2xl bg-white/10 px-3 py-1.5 text-5xl leading-none my-1">{stickerMatch[1]}</span>;
       }
-      return <React.Fragment key={idx}>{part}</React.Fragment>;
+      const parts = segment.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g);
+      return <React.Fragment key={idx}>{parts.map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
+        <span key={partIdx} className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5" title="Tagged member">{part}</span>
+      ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>;
     });
   };
 
@@ -991,7 +1005,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Forum Compose Bar */}
-          <form onSubmit={handleSendCommunity} className="fni-chat-composer p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
+          <form onSubmit={handleSendCommunity} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
+            {showCommunityStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowCommunityStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setCommunitySticker(sticker); setShowCommunityStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div></div>}
+            {communitySticker && <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{communitySticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{communitySticker.label} sticker ready</span><button type="button" onClick={() => setCommunitySticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {communitySendError && (
               <p role="alert" className="text-xs font-semibold text-rose-600">{communitySendError}</p>
             )}
@@ -1356,7 +1372,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Private Input Box */}
-          <form onSubmit={handleSendPrivate} className="fni-chat-composer p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2 min-w-0 flex-wrap">
+          <form onSubmit={handleSendPrivate} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2 min-w-0 flex-wrap">
+            {showPrivateStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowPrivateStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setPrivateSticker(sticker); setShowPrivateStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div></div>}
+            {privateSticker && <div className="basis-full flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{privateSticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{privateSticker.label} sticker ready</span><button type="button" onClick={() => setPrivateSticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {privateSendError && (
               <p role="alert" className="basis-full text-xs font-semibold text-rose-600">{privateSendError}</p>
             )}
@@ -1372,6 +1390,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             >
               <Smile className="w-5 h-5" />
             </button>
+            <button type="button" onClick={() => { setShowPrivateStickers(v => !v); setShowPrivateEmoji(false); }} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Open FNI stickers" title="Stickers"><span className="text-xl">✨</span></button>
+            <button type="button" onClick={() => { setShowCommunityStickers(v => !v); setShowCommunityEmoji(false); }} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Open FNI stickers" title="Stickers"><span className="text-xl">✨</span></button>
 
             {privateFiles.length > 0 && <div className="basis-full flex flex-wrap gap-2 pb-1">{privateFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
             <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
