@@ -42,6 +42,7 @@ import { TeachingMaterialsView } from '../materials/TeachingMaterialsView';
 import { MessagingView } from '../communication/MessagingView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
+import { LatestAndroidUpdate } from '../common/LatestAndroidUpdate';
 
 interface MobileNavItem {
   id: AppNavTab;
@@ -191,6 +192,7 @@ export const AppLayout: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
+          <LatestAndroidUpdate />
           <main className="flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
