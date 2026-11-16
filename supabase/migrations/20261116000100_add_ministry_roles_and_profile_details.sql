@@ -41,7 +41,7 @@ AS $$
   WHERE auth.uid() IS NOT NULL
     AND p.is_active IS TRUE
     AND COALESCE(p.is_onboarded, true) IS TRUE
-    AND p.id <> auth.uid()
+    AND p.id <> auth.uid()::text
   ORDER BY lower(p.full_name);
 $$;
 
