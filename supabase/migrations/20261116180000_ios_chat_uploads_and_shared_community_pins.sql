@@ -30,7 +30,7 @@ to authenticated
 using (
   exists (
     select 1 from public.profiles p
-    where p.id = (select auth.uid())
+    where p.id = (select auth.uid())::text
       and p.is_active = true
       and p.role::text in ('tutor', 'admin', 'super_admin')
   )
@@ -55,7 +55,7 @@ declare
 begin
   select role::text into v_role
   from public.profiles
-  where id = auth.uid() and is_active = true;
+  where id = auth.uid()::text and is_active = true;
 
   if auth.uid() is null or v_role not in ('tutor', 'admin', 'super_admin') then
     raise exception 'Only active FNI community members can pin messages';
