@@ -1051,6 +1051,7 @@ export class SupabaseService {
         SyncStateService.recordFailedSync({
           table: 'community_messages',
           id: msg.id,
+          action: 'INSERT',
           payload,
           errorMessage: error.message,
         });
