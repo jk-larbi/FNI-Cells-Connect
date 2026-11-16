@@ -249,20 +249,32 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   const saveCustomSticker = (file: File) => {
     if (!file.type.startsWith('image/')) { window.alert('Choose an image to create a sticker.'); return; }
-    if (file.size > 1500 * 1024) { window.alert('Sticker images must be 1.5 MB or smaller.'); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
-      if (!dataUrl) return;
+    if (file.size > 1500 * 1024) { window.alert('Choose an image smaller than 1.5 MB.'); return; }
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, 256 / Math.max(image.naturalWidth, image.naturalHeight));
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext('2d');
+      if (!context) { URL.revokeObjectURL(objectUrl); window.alert('This image could not be prepared as a sticker.'); return; }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/webp', 0.78);
+      URL.revokeObjectURL(objectUrl);
+      const mimeType = dataUrl.slice(5, dataUrl.indexOf(';')) || 'image/png';
+      const estimatedBytes = Math.ceil((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+      if (estimatedBytes > 80 * 1024) { window.alert('This image is too detailed for a sticker. Try a simpler or smaller image.'); return; }
       setCustomStickers(previous => {
-        if (previous.length >= 24) { window.alert('You can save up to 24 personal stickers.'); return previous; }
-        const next = [...previous, { id: `sticker-${Date.now()}`, name: file.name.replace(/\.[^.]+$/, '').slice(0, 32) || 'My sticker', dataUrl, mimeType: file.type }];
+        if (previous.length >= 12) { window.alert('You can save up to 12 personal stickers on this device.'); return previous; }
+        const next = [...previous, { id: `sticker-${Date.now()}`, name: file.name.replace(/\.[^.]+$/, '').slice(0, 32) || 'My sticker', dataUrl, mimeType }];
         try { window.localStorage.setItem(customStickerStorageKey, JSON.stringify(next)); }
-        catch { window.alert('This sticker could not be saved on this device. Try a smaller image.'); return previous; }
+        catch { window.alert('Your device storage is full. Remove a chat wallpaper or sticker and try again.'); return previous; }
         return next;
       });
     };
-    reader.readAsDataURL(file);
+    image.onerror = () => { URL.revokeObjectURL(objectUrl); window.alert('This image could not be opened.'); };
+    image.src = objectUrl;
   };
 
   const attachCustomSticker = async (sticker: { id: string; name: string; dataUrl: string; mimeType: string }, target: 'community' | 'private') => {
