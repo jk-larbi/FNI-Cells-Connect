@@ -719,9 +719,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     const tutorId = isAdmin ? selectedTutorId : currentUser.id;
     const conversationId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
     if (!tutorId || !conversationId) { setPrivateMessages([]); return; }
-    const msgs = await MessagingService.getPrivateConversation(tutorId, currentUser.id, conversationId, isAdmin);
-    setPrivateMessages(msgs);
-    await MessagingService.markPrivateMessagesRead(tutorId, currentUser.id, conversationId, isAdmin);
+    try {
+      const msgs = await MessagingService.getPrivateConversation(tutorId, currentUser.id, conversationId, isAdmin);
+      setPrivateMessages(msgs);
+      await MessagingService.markPrivateMessagesRead(tutorId, currentUser.id, conversationId, isAdmin);
+      setPrivateSendError(null);
+    } catch (error) {
+      console.error('Private conversation could not refresh:', error);
+      setPrivateSendError(error instanceof Error ? error.message : 'Private messages could not be loaded. Check your connection and try again.');
+    }
   };
 
   const handlePrivateChatAction = async (action: 'clear' | 'delete') => {
