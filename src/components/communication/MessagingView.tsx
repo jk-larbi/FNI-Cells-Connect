@@ -1646,7 +1646,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
               <Button type="submit" variant="primary" size="md" isLoading={isSendingPrivate} className="h-10 w-10 min-w-[40px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message"><Send className="w-4 h-4 text-[#C6A45A]" /></Button>
             </div>
-          </form>   </form>
+          </form>
         </div>
       )}
 
