@@ -125,7 +125,7 @@ export class NotificationService {
     // In-app notifications remain available if push is not configured or a device has not opted in.
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase.functions.invoke('fni-web-push', {
+        const { data: delivery, error } = await supabase.functions.invoke('fni-web-push', {
           body: {
             action: 'send_notification',
             notification: {
@@ -139,7 +139,17 @@ export class NotificationService {
             },
           },
         });
-        if (error) console.warn('FNI browser push delivery notice:', error.message);
+        if (error) {
+          console.warn('FNI push delivery failed; the in-app notification is retained:', error.message);
+        } else if (Number(delivery?.sent || 0) === 0) {
+          console.info('FNI notification saved, but no push reached a registered device:', {
+            recipient: newNotif.user_id,
+            failed: Number(delivery?.failed || 0),
+            reason: delivery?.message || 'The recipient may need to enable notifications on this device.',
+          });
+        } else if (Number(delivery?.failed || 0) > 0) {
+          console.warn('FNI push reached some devices but not all:', delivery);
+        }
       } catch (pushError) {
         console.warn('FNI browser push is unavailable; in-app notification is retained:', pushError);
       }
