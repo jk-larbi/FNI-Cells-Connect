@@ -454,8 +454,18 @@ export class NotificationService {
         visible = this.filterForUser(remote, userId, role);
         const rows = visible.map(item => ({ user_id: userId, notification_id: item.id }));
         if (rows.length) {
-          const { error } = await supabase.from('notification_dismissals').upsert(rows, { onConflict: 'user_id,notification_id' });
-          if (error) throw error;
+          const { data: existingRows, error: readError } = await supabase
+            .from('notification_dismissals')
+            .select('notification_id')
+            .eq('user_id', userId)
+            .in('notification_id', rows.map(row => row.notification_id));
+          if (readError) throw readError;
+          const existingIds = new Set((existingRows || []).map((row: any) => row.notification_id));
+          const newRows = rows.filter(row => !existingIds.has(row.notification_id));
+          if (newRows.length) {
+            const { error } = await supabase.from('notification_dismissals').insert(newRows);
+            if (error) throw error;
+          }
         }
       } catch (error) {
         console.warn('Unable to clear notification history:', error);
