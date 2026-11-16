@@ -2376,8 +2376,6 @@ html.dark :is(
   .bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-zinc-50, .bg-zinc-100,
   .bg-zinc-200, .bg-neutral-50, .bg-neutral-100, .bg-neutral-200,
   .bg-stone-50, .bg-stone-100, .bg-stone-200,
-  .hover\\:bg-gray-50:hover, .hover\\:bg-gray-100:hover,
-  .hover\\:bg-zinc-50:hover, .hover\\:bg-neutral-50:hover
 ) {
   background-color: #172437 !important;
   border-color: #30445d !important;
