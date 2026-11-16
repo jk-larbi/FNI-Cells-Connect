@@ -308,7 +308,32 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const privateInputRef = useRef<HTMLTextAreaElement>(null);
   const communityEndRef = useRef<HTMLDivElement>(null);
   const privateEndRef = useRef<HTMLDivElement>(null);
+  const communityStreamRef = useRef<HTMLDivElement>(null);
+  const privateStreamRef = useRef<HTMLDivElement>(null);
+  const previousCommunityCountRef = useRef<number | null>(null);
+  const previousPrivateCountRef = useRef<number | null>(null);
+  const previousPrivateConversationRef = useRef<string | null>(null);
   const touchStartX = useRef<number | null>(null);
+
+  // Keep the newest messages in view like Telegram, but never yank someone
+  // back to the bottom when they are reading older messages.
+  useEffect(() => {
+    const stream = activeTab === 'community' ? communityStreamRef.current : privateStreamRef.current;
+    if (!stream) return;
+    const isCommunity = activeTab === 'community';
+    const previousCount = isCommunity ? previousCommunityCountRef.current : previousPrivateCountRef.current;
+    const conversationChanged = !isCommunity && previousPrivateConversationRef.current !== selectedTutorId;
+    const isFirstLoad = previousCount === null || conversationChanged;
+    const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
+    if (isFirstLoad || nearBottom) {
+      requestAnimationFrame(() => { stream.scrollTop = stream.scrollHeight; });
+    }
+    if (isCommunity) previousCommunityCountRef.current = communityMessages.length;
+    else {
+      previousPrivateCountRef.current = privateMessages.length;
+      previousPrivateConversationRef.current = selectedTutorId;
+    }
+  }, [activeTab, communityMessages.length, privateMessages.length, selectedTutorId]);
   const privateSendLock = useRef(false);
   const communitySendLock = useRef(false);
 
@@ -828,7 +853,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
-  // Render text and sticker tokens stored in the existing message body.
+  // Render sticker tokens, clickable website links and member mentions.
   const renderFormattedMessage = (content: string) => {
     const segments = content.split(/(\[\[FNI_STICKER:[^\]]+\]\])/g);
     return segments.map((segment, idx) => {
@@ -837,12 +862,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const sticker = STICKER_PACK.find(item => item.emoji === stickerMatch[1]);
         return <span key={idx} role="img" aria-label={sticker?.label || 'FNI sticker'} title={sticker?.label || 'FNI sticker'} className="inline-flex items-center justify-center align-middle rounded-2xl bg-white/10 px-3 py-1.5 text-5xl leading-none my-1">{stickerMatch[1]}</span>;
       }
-      const urlParts = segment.split(/(https?:\/\/[^\s]+)/g);
-      return <React.Fragment key={idx}>{urlParts.map((urlPart, urlIdx) => urlPart.startsWith('http://') || urlPart.startsWith('https://') ? (
-        <a key={urlIdx} href={urlPart.replace(/[),.!?]+$/, '')} target="_blank" rel="noreferrer" className="font-semibold underline underline-offset-2 break-all text-inherit">{urlPart}</a>
-      ) : <React.Fragment key={urlIdx}>{urlPart.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g).map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
-        <span key={partIdx} className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5" title="Tagged member">{part}</span>
-      ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>)}</React.Fragment>;
+      const urlParts = segment.split(/((?:https?:\/\/|www\.)[^\s]+)/gi);
+      return <React.Fragment key={idx}>{urlParts.map((urlPart, urlIdx) => {
+        if (/^(https?:\/\/|www\.)/i.test(urlPart)) {
+          const cleanUrl = urlPart.replace(/[),.!?;:]+$/, '');
+          const trailing = urlPart.slice(cleanUrl.length);
+          const href = /^www\./i.test(cleanUrl) ? `https://${cleanUrl}` : cleanUrl;
+          return <React.Fragment key={urlIdx}><a href={href} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2 decoration-current break-all cursor-pointer">{cleanUrl}</a>{trailing}</React.Fragment>;
+        }
+        return <React.Fragment key={urlIdx}>{urlPart.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g).map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
+          <span key={partIdx} className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5" title="Tagged member">{part}</span>
+        ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>;
+      })}</React.Fragment>;
     });
   };
 
@@ -955,7 +986,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
+          <div ref={communityStreamRef} className="fni-chat-stream flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {communityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1397,7 +1428,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
+          <div ref={privateStreamRef} className="fni-chat-stream flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
             {privateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
