@@ -5,6 +5,13 @@ import { PushNotificationService } from './pushNotificationService';
 import { CellService } from './cellService';
 const STORAGE_KEY = 'fni_notifications_store_v2';
 const SUBSCRIBERS = new Set<(notifs: NotificationItem[]) => void>();
+const dismissedKey = (userId: string) => `fni_notification_dismissals:${userId}`;
+function getLocalDismissedIds(userId: string): Set<string> {
+  try { return new Set<string>(JSON.parse(localStorage.getItem(dismissedKey(userId)) || '[]')); } catch { return new Set(); }
+}
+function saveLocalDismissedIds(userId: string, ids: Set<string>) {
+  try { localStorage.setItem(dismissedKey(userId), JSON.stringify([...ids])); } catch {}
+}
 
 function notifySubscribersLocally(items: NotificationItem[]) {
   SUBSCRIBERS.forEach(cb => {
@@ -436,6 +443,43 @@ export class NotificationService {
     }
   }
 
+  /** Dismiss all notifications visible to one signed-in user without deleting shared broadcasts. */
+  static async clearAllForUser(userId: string, role: string): Promise<boolean> {
+    const current = getStoredNotifications();
+    let visible = this.filterForUser(current, userId, role);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const remote = await SupabaseService.getNotifications(userId);
+        if (remote === null) return false;
+        visible = this.filterForUser(remote, userId, role);
+        const rows = visible.map(item => ({ user_id: userId, notification_id: item.id }));
+        if (rows.length) {
+          const { error } = await supabase.from('notification_dismissals').upsert(rows, { onConflict: 'user_id,notification_id' });
+          if (error) throw error;
+        }
+      } catch (error) {
+        console.warn('Unable to clear notification history:', error);
+        return false;
+      }
+    }
+    const dismissed = getLocalDismissedIds(userId);
+    visible.forEach(item => dismissed.add(item.id));
+    saveLocalDismissedIds(userId, dismissed);
+    const filtered = current.filter(item => !dismissed.has(item.id));
+    setStoredNotifications(filtered);
+    return true;
+  }
+
+  private static async loadDismissedIds(userId: string): Promise<Set<string>> {
+    const ids = getLocalDismissedIds(userId);
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('notification_dismissals').select('notification_id').eq('user_id', userId);
+      if (!error && data) data.forEach((row: any) => ids.add(row.notification_id));
+      saveLocalDismissedIds(userId, ids);
+    }
+    return ids;
+  }
+
   /**
    * Real-time subscription to notifications for a specific user and role
    */
@@ -445,7 +489,8 @@ export class NotificationService {
     callback: (notifs: NotificationItem[]) => void
   ): () => void {
     // 1. Initial emission from local storage
-    callback(this.filterForUser(getStoredNotifications(), userId, role));
+    const emitVisible = (items: NotificationItem[], dismissed = getLocalDismissedIds(userId)) => callback(this.filterForUser(items, userId, role).filter(item => !dismissed.has(item.id)));
+    emitVisible(getStoredNotifications());
 
     // 2. Fetch from Supabase
     if (isSupabaseConfigured && supabase) {
@@ -458,7 +503,8 @@ export class NotificationService {
               (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
             setStoredNotifications(authoritative);
-            callback(this.filterForUser(authoritative, userId, role));
+            const dismissed = await this.loadDismissedIds(userId);
+            emitVisible(authoritative, dismissed);
           }
         })
         .catch(err => {
@@ -468,7 +514,7 @@ export class NotificationService {
 
     // 3. Register local broadcast subscriber
     const localCallback = (all: NotificationItem[]) => {
-      callback(this.filterForUser(all, userId, role));
+      emitVisible(all);
     };
     SUBSCRIBERS.add(localCallback);
 
@@ -477,7 +523,7 @@ export class NotificationService {
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          callback(this.filterForUser(parsed, userId, role));
+          emitVisible(parsed);
         } catch {}
       }
     };
@@ -514,7 +560,7 @@ export class NotificationService {
                   (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                 );
                 setStoredNotifications(updated);
-                callback(this.filterForUser(updated, userId, role));
+                emitVisible(updated);
               }
             }
           )
