@@ -171,6 +171,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateFiles, setPrivateFiles] = useState<File[]>([]);
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || (isAdmin ? '' : 'admin'));
   const [callUi, setCallUi] = useState<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
+  const [callChannelReady, setCallChannelReady] = useState(false);
   const [incomingCall, setIncomingCall] = useState<FniCallSignal | null>(null);
   const [activeCallKind, setActiveCallKind] = useState<FniCallKind>('voice');
   const [callError, setCallError] = useState<string | null>(null);
@@ -236,9 +237,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   useEffect(() => {
     if (activeTab !== 'private' || !currentUser?.id || !selectedTutorId || selectedTutorId === 'admin' || selectedTutorId === currentUser.id) {
       callChannelRef.current = null;
+      setCallChannelReady(false);
       return;
     }
     let disposed = false;
+    setCallChannelReady(false);
     const channel = CallService.createChannel('direct', currentUser.id, selectedTutorId);
     CallService.listen(channel, signal => {
       if (disposed || signal.fromProfileId !== selectedTutorId) return;
@@ -262,12 +265,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       }
     });
     callChannelRef.current = channel;
-    void CallService.connect(channel).catch(error => {
+    void CallService.connect(channel).then(() => {
+      if (!disposed) setCallChannelReady(true);
+    }).catch(error => {
       if (!disposed) setCallError(error instanceof Error ? error.message : 'Secure calling is unavailable.');
     });
     return () => {
       disposed = true;
       if (callChannelRef.current === channel) callChannelRef.current = null;
+      setCallChannelReady(false);
       void CallService.disconnect(channel);
     };
   }, [activeTab, currentUser?.id, selectedTutorId]);
@@ -894,7 +900,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
 
     const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
-    if (!recipientId || recipientId === 'admin' || !callChannelRef.current) {
+    if (!recipientId || recipientId === 'admin' || !callChannelRef.current || !callChannelReady) {
       window.alert('Open a registered member’s private conversation and wait for the secure call connection before calling.');
       return;
     }
@@ -1498,7 +1504,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {selectedTutorId !== 'admin' && selectedTutorId && <><button type="button" onClick={() => startChatCall('voice', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Start private voice call" title="Voice call"><Phone className="h-4 w-4" /></button><button type="button" onClick={() => startChatCall('video', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Start private video call" title="Video call"><Video className="h-4 w-4" /></button></>}
+              {selectedTutorId !== 'admin' && selectedTutorId && <><button type="button" disabled={!callChannelReady} onClick={() => startChatCall('voice', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10 disabled:cursor-wait disabled:opacity-40" aria-label="Start private voice call" title={callChannelReady ? "Voice call" : "Connecting secure calling…"}><Phone className="h-4 w-4" /></button><button type="button" disabled={!callChannelReady} onClick={() => startChatCall('video', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10 disabled:cursor-wait disabled:opacity-40" aria-label="Start private video call" title={callChannelReady ? "Video call" : "Connecting secure calling…"}><Video className="h-4 w-4" /></button></>}
               {(isAdmin ? tutorList.length > 0 : true) && (
                 <>
                   <span className="text-xs text-slate-200 font-medium">{isAdmin ? 'Select Tutor:' : 'Chat with:'}</span>
