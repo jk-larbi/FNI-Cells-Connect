@@ -5,6 +5,11 @@ const config: CapacitorConfig = {
   appName: 'FNI Cells Connect',
   webDir: 'dist',
   bundledWebRuntime: false,
+  plugins: {
+    PushNotifications: {
+      presentationOptions: ['alert', 'badge', 'sound'],
+    },
+  },
   android: {
     useLegacyBridge: true,
     backgroundColor: '#173B8F',
