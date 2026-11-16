@@ -1283,7 +1283,7 @@ export class SupabaseService {
         vision: data.vision || '',
         mission: data.mission || '',
         annualSoulWinningTarget: data.annual_soul_winning_target ?? 5000,
-        weeklyDeadline: 'Sunday at 6:00 PM Ghana Time (Africa/Accra, UTC+0)',
+        weeklyDeadline: data.weekly_deadline || 'Sunday at 6:00 PM Ghana Time (Africa/Accra, UTC+0)',
         updatedAt: data.updated_at || new Date().toISOString(),
         updatedBy: data.updated_by || 'Administrator',
       };
