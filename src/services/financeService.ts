@@ -61,13 +61,8 @@ export class FinanceService {
       status: data.status,
     };
 
-    // Primary write to Supabase
-    try {
-      await SupabaseService.upsertOfferingRecord(record);
-    } catch (err) {
-      console.warn('Supabase offering sync notice:', err);
-    }
-
+    // The database trigger on cell_meeting_reports owns the authoritative finance write.
+    // Tutors intentionally cannot write directly to the admin-only offerings table.
     const localList = getStoredOfferings();
     const existingIndex = localList.findIndex(o => o.reportId === data.reportId);
     if (existingIndex >= 0) {
@@ -98,9 +93,10 @@ export class FinanceService {
     // 2. Query live Supabase offering records
     try {
       const supaRecords = await SupabaseService.getOfferingRecords();
-      if (supaRecords && supaRecords.length > 0) {
+      if (supaRecords !== null) {
+        map.clear();
         supaRecords.forEach(r => map.set(r.reportId, r));
-        setStoredOfferings(Array.from(map.values()));
+        setStoredOfferings(supaRecords);
       }
     } catch (e) {
       console.warn('Notice loading Supabase offerings:', e);
@@ -142,6 +138,7 @@ export class FinanceService {
     const activeCells = await CellService.getActiveCells();
     const activeCellIds = new Set(activeCells.map(cell => cell.id));
     all = all.filter(record => activeCellIds.has(record.cellId));
+    setStoredOfferings(all);
 
     // If caller is tutor, scope to their cell
     if (!isAuthorized && cellId) {
