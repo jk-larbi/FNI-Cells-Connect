@@ -479,6 +479,30 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const previousPrivateConversationRef = useRef<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
+  // Keep the chat frame inside the actually visible phone viewport when the
+  // software keyboard opens (not underneath it). This is important in iOS
+  // WKWebView and Android WebView, where 100dvh may remain the layout viewport.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const root = document.documentElement;
+    const updateVisibleViewport = () => {
+      root.style.setProperty('--fni-visible-viewport-height', `${Math.round(viewport.height)}px`);
+      root.style.setProperty('--fni-visual-viewport-offset-top', `${Math.round(viewport.offsetTop)}px`);
+    };
+    updateVisibleViewport();
+    viewport.addEventListener('resize', updateVisibleViewport);
+    viewport.addEventListener('scroll', updateVisibleViewport);
+    window.addEventListener('orientationchange', updateVisibleViewport);
+    return () => {
+      viewport.removeEventListener('resize', updateVisibleViewport);
+      viewport.removeEventListener('scroll', updateVisibleViewport);
+      window.removeEventListener('orientationchange', updateVisibleViewport);
+      root.style.removeProperty('--fni-visible-viewport-height');
+      root.style.removeProperty('--fni-visual-viewport-offset-top');
+    };
+  }, []);
+
   // Desktop uses the app's own community message viewport; phones use native page scrolling.
   useEffect(() => {
     if (activeTab === 'community') {
@@ -1560,7 +1584,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <div className="fni-composer-input flex min-w-0 flex-1 items-center gap-0.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-1.5 py-1 focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-colors ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette"><Smile className="h-[18px] w-[18px]" /></button>
                 <button type="button" onClick={() => { setShowCommunityStickers(v => !v); setShowCommunityEmoji(false); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white" aria-label="Open FNI stickers" title="Stickers"><span className="text-base">✨</span></button>
-                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, Math.floor(window.innerHeight * 0.35)) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="min-w-0 w-0 flex-1 max-h-[35vh] overflow-y-auto resize-none border-0 bg-transparent px-1 py-2 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, Math.floor(window.innerHeight * 0.35)) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="min-w-0 w-0 flex-1 max-h-[35vh] overflow-y-auto resize-none border-0 bg-transparent px-1 py-2 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
                 <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white hover:text-[#142B4A]" title="Tag a member" aria-label="Tag a member"><AtSign className="h-4 w-4" /></button>
               </div>
               <Button type="submit" variant="primary" size="md" isLoading={isSendingCommunity} className="h-10 w-10 min-w-[40px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message"><Send className="w-4 h-4 text-[#C6A45A]" /></Button>
@@ -1893,7 +1917,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <div className="fni-composer-input flex min-w-0 flex-1 items-center gap-0.5 rounded-full border border-[#DCE3EC] bg-[#F5F7FA] px-1.5 py-1 focus-within:border-[#9AAFC8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#142B4A]/10">
                 <button type="button" onClick={() => setShowPrivateEmoji(prev => !prev)} className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-colors ${showPrivateEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Insert emoji" aria-label="Open emoji palette"><Smile className="h-[18px] w-[18px]" /></button>
                 <button type="button" onClick={() => { setShowPrivateStickers(v => !v); setShowPrivateEmoji(false); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white" aria-label="Open FNI stickers" title="Stickers"><span className="text-base">✨</span></button>
-                <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={selectedTutorId === "admin" ? "Message FNI Leadership" : "Write a private message…"} className="min-w-0 w-0 flex-1 max-h-28 resize-none border-0 bg-transparent px-1 py-2 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <textarea ref={privateInputRef} rows={1} value={privateText} onChange={e => setPrivateText(e.target.value)} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={selectedTutorId === "admin" ? "Message FNI Leadership" : "Write a private message…"} className="min-w-0 w-0 flex-1 max-h-28 resize-none border-0 bg-transparent px-1 py-2 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
                 <button type="button" onClick={() => { setPrivateText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); privateInputRef.current?.focus(); }} className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[#667085] hover:bg-white hover:text-[#142B4A]" title="Tag a member" aria-label="Tag a member"><AtSign className="h-4 w-4" /></button>
               </div>
               <Button type="submit" variant="primary" size="md" isLoading={isSendingPrivate} className="h-10 w-10 min-w-[40px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message"><Send className="w-4 h-4 text-[#C6A45A]" /></Button>

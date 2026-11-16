@@ -131,8 +131,7 @@ export const ProfilePhotoUploader: React.FC<ProfilePhotoUploaderProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          capture="user"
+          accept="image/*"
           onChange={handleFileChange}
           className="hidden"
           disabled={isProcessing}
@@ -170,7 +169,7 @@ export const ProfilePhotoUploader: React.FC<ProfilePhotoUploaderProps> = ({
           </div>
 
           <p className="text-[11px] text-[#667085]">
-            Supports JPG, PNG, WEBP. Square cropped automatically for optimal display across reports and leaders list.
+            Choose any picture from your phone gallery or files. The image is square-cropped for reports and the leaders list.
           </p>
         </div>
       </div>

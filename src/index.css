@@ -2329,3 +2329,23 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .fni-message-menu-trigger, .fni-message-menu-popover, .fni-message-menu-popover button { animation: none; transition: none; }
 }
+
+
+/* Resize the phone chat frame to the visible viewport while the native
+   keyboard is open, keeping the message history and composer accessible. */
+@media (max-width: 767px) {
+  .fni-app-shell.fni-messaging-route {
+    height: var(--fni-visible-viewport-height, 100dvh) !important;
+    max-height: var(--fni-visible-viewport-height, 100dvh) !important;
+    transform: translateY(var(--fni-visual-viewport-offset-top, 0px));
+    will-change: height, transform;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body {
+    min-height: 0 !important;
+    height: 0 !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel,
+  .fni-messaging-view.fni-community-mode {
+    min-height: 0 !important;
+  }
+}
