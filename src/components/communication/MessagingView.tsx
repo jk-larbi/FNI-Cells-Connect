@@ -25,6 +25,7 @@ import {
   CornerDownRight,
   Heart,
   MoreVertical,
+  Pin,
   Paperclip,
   FileAudio,
   Search,
@@ -675,6 +676,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setOpenChatMenu(false);
   };
 
+  const handleToggleCommunityPin = async (message: CommunityMessage) => {
+    setOpenMessageMenu(null);
+    const saved = await MessagingService.setCommunityMessagePin(message.id, !message.isPinned);
+    if (!saved) { setCommunitySendError('This message could not be pinned. Please try again.'); return; }
+    await loadCommunity();
+  };
+
   const handleClearCommunityHistory = async () => {
     setOpenCommunityChatMenu(false);
     if (!window.confirm('Clear the Community Hub history from your account only? Other members will still see all messages.')) return;
@@ -1208,8 +1216,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             )}
           </div>
 
+          {/* Pinned community message */}
+          {visibleCommunityMessages.find(message => message.isPinned) && (() => {
+            const pinned = visibleCommunityMessages.find(message => message.isPinned)!;
+            return <div className="fni-community-pinned-strip flex items-center gap-2 px-3 py-2 text-white border-b border-white/10" role="status">
+              <Pin className="h-4 w-4 shrink-0 text-[#F1C96B]" />
+              <div className="min-w-0 flex-1"><div className="text-[10px] font-bold uppercase tracking-wide text-[#F1C96B]">Pinned message</div><button type="button" onClick={() => document.getElementById(`msg-${pinned.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="block w-full truncate text-left text-xs text-white/90">{pinned.senderName}: {pinned.content}</button></div>
+              {isAdmin && <button type="button" onClick={() => handleToggleCommunityPin(pinned)} className="shrink-0 rounded-lg p-1.5 text-white/70 hover:bg-white/10" aria-label="Unpin community message" title="Unpin message"><X className="h-4 w-4" /></button>}
+            </div>;
+          })()}
+
           {/* Forum Messages Stream */}
-          <div ref={communityStreamRef} onScroll={event => { const el = event.currentTarget; setShowCommunityJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
+          <div ref={communityStreamRef} onScroll={() => { const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180; setShowCommunityJumpToLatest(!nearBottom); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}> onScroll={event => { const el = event.currentTarget; setShowCommunityJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {visibleCommunityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1274,6 +1292,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           </button>
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                              {isAdmin && <button type="button" onClick={() => handleToggleCommunityPin(msg)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">{msg.isPinned ? 'Unpin message' : 'Pin message'}</button>}
                               {isMine && <button type="button" onClick={() => handleEditMessage(msg.id, 'community', msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Edit message</button>}
                               <button type="button" onClick={() => handleHideCommunityMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
