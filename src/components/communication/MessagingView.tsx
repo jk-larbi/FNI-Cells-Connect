@@ -1152,22 +1152,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         <div className="flex w-full sm:w-auto items-center p-1 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
           <button
             onClick={() => setActiveTab('community')}
-            className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
-              activeTab === 'community'
-                ? 'bg-[#142B4A] text-white shadow-xs'
-                : 'text-[#667085] hover:text-[#142B4A]'
-            }`}
+            className="flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer text-[#667085] hover:text-[#142B4A]"
           >
             <Users className="w-4 h-4 text-[#C6A45A]" />
             <span>Community</span>
           </button>
           <button
             onClick={() => setActiveTab('private')}
-            className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
-              activeTab === 'private'
-                ? 'bg-[#142B4A] text-white shadow-xs'
-                : 'text-[#667085] hover:text-[#142B4A]'
-            }`}
+            className="flex-1 sm:flex-none justify-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer bg-[#142B4A] text-white shadow-xs"
           >
             <Lock className="w-4 h-4 text-[#C6A45A]" />
             <span>Private Chat</span>
