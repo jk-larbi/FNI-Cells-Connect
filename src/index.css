@@ -1535,3 +1535,72 @@ body {
     bottom: calc(3.65rem + env(safe-area-inset-bottom));
   }
 }
+
+
+/* Unified Telegram-style chat viewport for Community and Private conversations.
+   The page scrolls normally outside chats; inside a chat, only the history moves. */
+.fni-messaging-view .fni-community-panel {
+  display: flex;
+  flex-direction: column;
+  height: min(78dvh, 760px) !important;
+  min-height: min(390px, 78dvh) !important;
+  max-height: 78dvh !important;
+  overflow: hidden !important;
+}
+.fni-messaging-view .fni-community-panel > .fni-community-stream {
+  display: block;
+  flex: 1 1 auto !important;
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scroll-padding-block: .75rem;
+}
+.fni-messaging-view .fni-community-panel > .fni-chat-composer {
+  position: relative !important;
+  inset: auto !important;
+  flex: 0 0 auto;
+  z-index: 25;
+  padding-bottom: max(.65rem, env(safe-area-inset-bottom));
+  background: var(--fni-page, #fff);
+  box-shadow: 0 -8px 20px rgb(20 43 74 / .07);
+}
+.fni-messaging-view .fni-community-panel > :first-child {
+  position: relative !important;
+  top: auto !important;
+  flex: 0 0 auto;
+}
+.fni-messaging-view .fni-chat-panel {
+  min-height: min(390px, 78dvh);
+}
+.fni-messaging-view .fni-chat-panel > :first-child,
+.fni-messaging-view .fni-chat-panel > :nth-child(2),
+.fni-messaging-view .fni-chat-panel > .fni-chat-composer {
+  flex-shrink: 0;
+}
+.fni-messaging-view .fni-chat-panel > .fni-chat-stream {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overscroll-behavior-y: contain;
+  scroll-padding-block: .75rem;
+}
+@media (max-width: 639px) {
+  .fni-messaging-view .fni-community-panel,
+  .fni-messaging-view .fni-chat-panel {
+    height: min(76dvh, 760px) !important;
+    min-height: min(360px, 76dvh) !important;
+    max-height: 76dvh !important;
+    border-radius: 1rem;
+  }
+  .fni-messaging-view .fni-community-panel > .fni-community-stream,
+  .fni-messaging-view .fni-chat-panel > .fni-chat-stream {
+    padding: .65rem !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
