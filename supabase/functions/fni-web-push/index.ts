@@ -204,9 +204,16 @@ Deno.serve(async req => {
         platform: String(body.platform || (isFcm ? "Android" : "Web")).slice(0, 120),
         legacy_data: isFcm ? { kind: "fcm" } : { kind: "web_push", endpoint: subscription.endpoint },
         updated_at: new Date().toISOString(),
-      }, { onConflict: "id" });
+      // Device tokens are globally unique. If a shared phone signs into a
+      // different FNI account, move the existing token to the current profile.
+      }, { onConflict: "token" });
       if (error) throw error;
-      return json({ success: true, deviceId: id, kind });
+      return json({
+        success: true,
+        deviceId: id,
+        kind,
+        fcmServerConfigured: Boolean(fcmServiceAccountJson),
+      });
     } catch (error: any) {
       console.error("Push device registration failed:", error);
       return json({ error: error?.message || "Could not save this device registration" }, 500);
@@ -238,6 +245,13 @@ Deno.serve(async req => {
     if (!devices?.length) return json({ sent: 0, failed: 0, message: "Enable push notifications on this device first." });
     const webDevices = devices.filter((device: any) => device.legacy_data?.kind !== "fcm");
     const fcmDevices = devices.filter((device: any) => device.legacy_data?.kind === "fcm");
+    if (fcmDevices.length && !fcmServiceAccountJson) {
+      return json({
+        sent: 0,
+        failed: fcmDevices.length,
+        error: "Android push delivery is not configured on the server. Add the FCM_SERVICE_ACCOUNT_JSON Supabase Edge Function secret.",
+      });
+    }
     let sent = 0;
     let failed = 0;
     const staleIds: string[] = [];
