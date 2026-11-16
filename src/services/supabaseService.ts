@@ -1046,7 +1046,7 @@ export class SupabaseService {
     };
 
     try {
-      const { error } = await supabase!.from('community_messages').upsert(payload, { onConflict: 'id' });
+      const { error } = await supabase!.from('community_messages').insert(payload);
       if (error) {
         SyncStateService.recordFailedSync({
           table: 'community_messages',
