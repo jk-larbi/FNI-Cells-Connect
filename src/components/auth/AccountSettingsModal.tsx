@@ -4,6 +4,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { Lock,
+  Palette,
   Eye,
   EyeOff, User, Phone, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 
