@@ -672,8 +672,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
     if (!tutorList.some(tutor => tutor.id === selectedTutorId)) {
       // Never silently redirect a private message to a different tutor.
-      // Clear the stale selection and require an explicit choice.
-      setSelectedTutorId('');
+      // Keep the stale ID blocked until the administrator explicitly chooses
+      // one of the current active tutors from the selector.
       setPrivateMessages([]);
       setPrivateReplyTo(null);
       setPrivateSendError('This tutor account is no longer active. Please select the tutor from the current list.');
@@ -1661,8 +1661,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <>
                   <span className="text-xs text-slate-200 font-medium">{isAdmin ? 'Select Tutor:' : 'Chat with:'}</span>
                   <select
-                    value={isAdmin ? selectedTutorId : (selectedTutorId || 'admin')}
-                    onChange={e => { setSelectedTutorId(e.target.value); setPrivateMessages([]); setPrivateReplyTo(null); setOpenChatMenu(false); }}
+                    value={isAdmin ? (tutorList.some(tutor => tutor.id === selectedTutorId) ? selectedTutorId : '') : (selectedTutorId || 'admin')}
+                    onChange={e => { setSelectedTutorId(e.target.value); setPrivateMessages([]); setPrivateReplyTo(null); setPrivateSendError(null); setOpenChatMenu(false); }}
                     className="bg-[#142B4A] border border-[#E3E8EF]/30 text-white text-xs rounded-xl px-3 py-2 font-bold focus:outline-none max-w-[210px]"
                   >
                     {isAdmin && <option value="" disabled className="text-slate-900 bg-white">Select an active tutor</option>}
