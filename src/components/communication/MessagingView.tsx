@@ -1004,15 +1004,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       {activeTab === 'community' && (
         <div className="fni-community-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs flex flex-col">
           {/* Forum Header */}
-          <div className="relative px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-            <div>
+          <div className="sticky top-14 sm:top-16 z-20 relative px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-md">
+            <div className="min-w-0">
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-1">
-                <Users className="w-4 h-4" /> Fellowship Exchange Forum
+                <Users className="w-4 h-4" /> FNI Community
               </div>
               <h2 className="font-black text-base sm:text-lg text-white">
-                Tutor Community & Fellowship Sharing
+                Fellowship Exchange Forum
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-200 mt-0.5">
+              <p className="text-xs sm:text-sm font-semibold text-slate-100 mt-0.5">
+                Tutor Community & Fellowship
+              </p>
+              <p className="text-[10px] sm:text-xs text-slate-200 mt-1">
                 Open to registered tutors and FNI Admin. Tag verified members with <span className="text-[#C6A45A] font-bold">@Name</span>, send emojis & reply to messages.
               </p>
             </div>
