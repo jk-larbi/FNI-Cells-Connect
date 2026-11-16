@@ -26,6 +26,9 @@ import {
   MoreVertical,
   Paperclip,
   FileAudio,
+  Search,
+  UserRound,
+  Palette,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -36,6 +39,25 @@ export interface MessagingViewProps {
 }
 
 // Standard general quick emojis (WhatsApp / Telegram / social media style)
+const STICKER_PACK = [
+  { emoji: '🙏', label: 'Praying for you' }, { emoji: '❤️', label: 'Love' },
+  { emoji: '🙌', label: 'Praise' }, { emoji: '🔥', label: 'On fire' },
+  { emoji: '✨', label: 'Shining' }, { emoji: '💪', label: 'Stay strong' },
+  { emoji: '🕊️', label: 'Peace' }, { emoji: '🎉', label: 'Celebrate' },
+  { emoji: '👏', label: 'Well done' }, { emoji: '🌱', label: 'Growing' },
+  { emoji: '👑', label: 'Kingdom' }, { emoji: '📖', label: 'Word of God' },
+];
+const STICKER_PREFIX = '[[FNI_STICKER:';
+
+const CHAT_WALLPAPERS = [
+  { id: 'default', name: 'Classic', color: '#F5F7FA', image: 'none' },
+  { id: 'blue', name: 'Ocean', color: '#EAF2FB', image: 'radial-gradient(circle at 15% 20%, rgba(91,145,205,.16) 0 2px, transparent 3px), radial-gradient(circle at 80% 70%, rgba(91,145,205,.12) 0 2px, transparent 3px)' },
+  { id: 'lavender', name: 'Lavender', color: '#F1EEFA', image: 'radial-gradient(circle at 20% 25%, rgba(137,112,190,.16), transparent 34%), radial-gradient(circle at 80% 75%, rgba(137,112,190,.12), transparent 30%)' },
+  { id: 'sage', name: 'Sage', color: '#EDF4EF', image: 'radial-gradient(circle at 80% 20%, rgba(91,145,108,.15), transparent 32%), radial-gradient(circle at 15% 80%, rgba(91,145,108,.12), transparent 30%)' },
+  { id: 'sand', name: 'Warm sand', color: '#F7F0E5', image: 'radial-gradient(circle at 18% 18%, rgba(198,164,90,.18), transparent 34%), radial-gradient(circle at 82% 82%, rgba(198,164,90,.13), transparent 30%)' },
+  { id: 'night', name: 'Midnight', color: '#E8ECF3', image: 'radial-gradient(circle at 20% 20%, rgba(20,43,74,.15), transparent 34%), radial-gradient(circle at 80% 80%, rgba(20,43,74,.12), transparent 30%)' },
+];
+
 const QUICK_EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '❤️', '🔥', '🎉', '🙌', '👏', '✨', '💯'];
 
 // Standard general emoji categories (just like WhatsApp, Telegram & modern keyboards)
@@ -116,21 +138,84 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'private' | 'community'>(() => initialTab || 'community');
+  const [wallpapers, setWallpapers] = useState<Record<string, string>>({});
+  const [wallpaperImages, setWallpaperImages] = useState<Record<string, string>>({});
+  const [wallpaperMenu, setWallpaperMenu] = useState<'community' | 'private' | null>(null);
+  const wallpaperStorageKey = `fni-chat-wallpapers:${currentUser?.id || 'guest'}`;
+  const saveWallpaper = (key: string, id: string) => {
+    setWallpapers(previous => {
+      const next = { ...previous, [key]: id };
+      try { window.localStorage.setItem(wallpaperStorageKey, JSON.stringify(next)); } catch { /* Keep this choice for the current session. */ }
+      return next;
+    });
+    setWallpaperMenu(null);
+  };
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(wallpaperStorageKey);
+      setWallpapers(saved ? JSON.parse(saved) as Record<string, string> : {});
+      const savedImages = window.localStorage.getItem(`${wallpaperStorageKey}:images`);
+      setWallpaperImages(savedImages ? JSON.parse(savedImages) as Record<string, string> : {});
+    } catch { setWallpapers({}); }
+  }, [wallpaperStorageKey]);
 
   // Private Messaging State
   const [privateMessages, setPrivateMessages] = useState<PrivateMessage[]>([]);
   const [privateText, setPrivateText] = useState('');
   const [privateFiles, setPrivateFiles] = useState<File[]>([]);
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || (isAdmin ? '' : 'admin'));
+  const communityWallpaperKey = 'community';
+  const privateWallpaperKey = `private:${selectedTutorId || 'admin'}`;
+  const communityWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[communityWallpaperKey]) || CHAT_WALLPAPERS[0];
+  const privateWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[privateWallpaperKey]) || CHAT_WALLPAPERS[0];
+  const setCustomWallpaper = (key: string, file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 3 * 1024 * 1024) {
+      window.alert('Please choose an image smaller than 3 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) return;
+      setWallpaperImages(previous => {
+        const next = { ...previous, [key]: dataUrl };
+        try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); }
+        catch { window.alert('This image could not be saved in this browser. Try a smaller image.'); }
+        return next;
+      });
+      setWallpapers(previous => {
+        const next = { ...previous, [key]: 'custom' };
+        try { window.localStorage.setItem(wallpaperStorageKey, JSON.stringify(next)); } catch { /* Session choice remains active. */ }
+        return next;
+      });
+      setWallpaperMenu(null);
+    };
+    reader.readAsDataURL(file);
+  };
+  const communityWallpaperStyle = wallpaperImages[communityWallpaperKey]
+    ? { backgroundColor: '#E9EEF5', backgroundImage: `url(${wallpaperImages[communityWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { backgroundColor: communityWallpaper.color, backgroundImage: communityWallpaper.image };
+  const privateWallpaperStyle = wallpaperImages[privateWallpaperKey]
+    ? { backgroundColor: '#E9EEF5', backgroundImage: `url(${wallpaperImages[privateWallpaperKey]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { backgroundColor: privateWallpaper.color, backgroundImage: privateWallpaper.image };
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
+  const [allMembers, setAllMembers] = useState<Array<{ id: string; full_name: string; username?: string; role: string; cell_name?: string; avatar_url?: string }>>([]);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [profileMember, setProfileMember] = useState<(typeof allMembers)[number] | null>(null);
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
   const [privateSendError, setPrivateSendError] = useState<string | null>(null);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
   const [showPrivateEmoji, setShowPrivateEmoji] = useState(false);
+  const [showPrivateStickers, setShowPrivateStickers] = useState(false);
+  const [privateSticker, setPrivateSticker] = useState<{ emoji: string; label: string } | null>(null);
   const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
   const [openChatMenu, setOpenChatMenu] = useState(false);
   const privateLongPressTimer = useRef<number | null>(null);
   const privateLongPressTriggered = useRef(false);
+  const communityLongPressTimer = useRef<number | null>(null);
+  const communityLongPressTriggered = useRef(false);
   const [privateEmojiCategory, setPrivateEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Community Messaging State
@@ -142,6 +227,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [communitySendError, setCommunitySendError] = useState<string | null>(null);
   const [communityReplyTo, setCommunityReplyTo] = useState<MessageReply | null>(null);
   const [showCommunityEmoji, setShowCommunityEmoji] = useState(false);
+  const [showCommunityStickers, setShowCommunityStickers] = useState(false);
+  const [communitySticker, setCommunitySticker] = useState<{ emoji: string; label: string } | null>(null);
   const [communityEmojiCategory, setCommunityEmojiCategory] = useState<string>('Smileys & Faces');
 
   // Registered members / tutors directory for @mention tagging
@@ -237,6 +324,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       setMemberDirectory(directory);
 
+      // This RPC returns only public profile fields and respects the active-member filter.
+      const publicMembers = await MessagingService.getMemberDirectory();
+      setAllMembers(publicMembers || []);
+
       const adminConvs = await MessagingService.getAdminConversations();
       const tutorMap = new Map<string, { id: string; name: string; cellName: string }>();
 
@@ -248,6 +339,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           id,
           name: c.leader_name || 'Cell Leader',
           cellName: c.name,
+        });
+      });
+
+      (publicMembers || []).forEach(member => {
+        if (member.id === currentUser.id) return;
+        tutorMap.set(member.id, {
+          id: member.id,
+          name: member.full_name,
+          cellName: member.cell_name || 'FNI Member',
         });
       });
 
@@ -367,6 +467,36 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setOpenMessageMenu(null);
   };
 
+  const beginCommunityMessageTouch = (event: React.TouchEvent<HTMLDivElement>, messageId: string) => {
+    beginMessageSwipe(event);
+    communityLongPressTriggered.current = false;
+    if (communityLongPressTimer.current) window.clearTimeout(communityLongPressTimer.current);
+    communityLongPressTimer.current = window.setTimeout(() => {
+      communityLongPressTriggered.current = true;
+      touchStartX.current = null;
+      setOpenMessageMenu(`community:${messageId}`);
+    }, 550);
+  };
+
+  const finishCommunityMessageTouch = (event: React.TouchEvent<HTMLDivElement>, message: MessageReply) => {
+    if (communityLongPressTimer.current) {
+      window.clearTimeout(communityLongPressTimer.current);
+      communityLongPressTimer.current = null;
+    }
+    if (communityLongPressTriggered.current) {
+      communityLongPressTriggered.current = false;
+      return;
+    }
+    finishMessageSwipe(event, message, 'community');
+  };
+
+  const cancelCommunityMessageLongPress = () => {
+    if (communityLongPressTimer.current) {
+      window.clearTimeout(communityLongPressTimer.current);
+      communityLongPressTimer.current = null;
+    }
+  };
+
   const beginPrivateMessageTouch = (event: React.TouchEvent<HTMLDivElement>, messageId: string) => {
     beginMessageSwipe(event);
     privateLongPressTriggered.current = false;
@@ -457,7 +587,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Private Message
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!privateText.trim() && privateFiles.length === 0) || privateSendLock.current) return;
+    if ((!privateText.trim() && privateFiles.length === 0 && !privateSticker) || privateSendLock.current) return;
     privateSendLock.current = true;
 
     const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
@@ -477,11 +607,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         recipientName,
         cellId: currentUser.cell_id,
         cellName: currentUser.cell_name,
-        content: privateText.trim(),
+        content: [privateText.trim(), privateSticker ? `${STICKER_PREFIX}${privateSticker.emoji}]]` : ''].filter(Boolean).join('\n'),
         replyTo: privateReplyTo || undefined,
         attachments: uploadedAttachments,
       });
       setPrivateText('');
+      setPrivateSticker(null);
+      setShowPrivateStickers(false);
       setPrivateFiles([]);
       if (privateInputRef.current) privateInputRef.current.style.height = '40px';
       setPrivateReplyTo(null);
@@ -500,7 +632,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Send Community Message
   const handleSendCommunity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!communityText.trim() && communityFiles.length === 0) || communitySendLock.current) return;
+    if ((!communityText.trim() && communityFiles.length === 0 && !communitySticker) || communitySendLock.current) return;
     communitySendLock.current = true;
 
     // Detect mentioned names
@@ -517,13 +649,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         senderName: currentUser.full_name,
         senderRole: currentUser.role,
         cellName: currentUser.cell_name,
-        content: communityText.trim(),
+        content: [communityText.trim(), communitySticker ? `${STICKER_PREFIX}${communitySticker.emoji}]]` : ''].filter(Boolean).join('\n'),
         category: communityCategory,
         replyTo: communityReplyTo || undefined,
         mentions: mentionsFound,
         attachments: uploadedAttachments,
       });
       setCommunityText('');
+      setCommunitySticker(null);
+      setShowCommunityStickers(false);
       setCommunityFiles([]);
       if (communityInputRef.current) communityInputRef.current.style.height = '40px';
       setCommunityReplyTo(null);
@@ -540,6 +674,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
+  // Copy the complete message body without trimming line breaks.
+  const copyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setOpenMessageMenu(null);
+    } catch (error) {
+      console.warn('Clipboard copy unavailable:', error);
+      window.prompt('Copy this message:', content);
+    }
+  };
+
   // Handle reaction on community message
   const handleReaction = async (messageId: string, emoji: string) => {
     try {
@@ -551,23 +696,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
-  // Format message text with highlighted @mentions and authentic standard iPhone emojis
+  // Render text and sticker tokens stored in the existing message body.
   const renderFormattedMessage = (content: string) => {
-    // Regex matches @Name patterns
-    const parts = content.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith('@') && part.length > 1) {
-        return (
-          <span
-            key={idx}
-            className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5 cursor-pointer hover:bg-[#142B4A]/20 transition-colors"
-            title="Tagged member"
-          >
-            {part}
-          </span>
-        );
+    const segments = content.split(/(\[\[FNI_STICKER:[^\]]+\]\])/g);
+    return segments.map((segment, idx) => {
+      const stickerMatch = segment.match(/^\[\[FNI_STICKER:(.+)\]\]$/);
+      if (stickerMatch) {
+        const sticker = STICKER_PACK.find(item => item.emoji === stickerMatch[1]);
+        return <span key={idx} role="img" aria-label={sticker?.label || 'FNI sticker'} title={sticker?.label || 'FNI sticker'} className="inline-flex items-center justify-center align-middle rounded-2xl bg-white/10 px-3 py-1.5 text-5xl leading-none my-1">{stickerMatch[1]}</span>;
       }
-      return <React.Fragment key={idx}>{part}</React.Fragment>;
+      const parts = segment.split(/(@[A-Za-z0-9_\-\s]+?(?=\s|[.,!?]|$))/g);
+      return <React.Fragment key={idx}>{parts.map((part, partIdx) => part.startsWith('@') && part.length > 1 ? (
+        <span key={partIdx} className="inline-block px-1.5 py-0.5 rounded-md bg-[#142B4A]/10 text-[#142B4A] font-bold text-xs mx-0.5" title="Tagged member">{part}</span>
+      ) : <React.Fragment key={partIdx}>{part}</React.Fragment>)}</React.Fragment>;
     });
   };
 
@@ -646,7 +787,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       {activeTab === 'community' && (
         <div className="fni-chat-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col">
           {/* Forum Header */}
-          <div className="px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <div className="relative px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-1">
                 <Users className="w-4 h-4" /> Fellowship Exchange Forum
@@ -659,6 +800,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </p>
             </div>
 
+            <div className="relative flex items-center gap-2">
+              <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'community' ? null : 'community')} className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20" aria-label="Change community chat wallpaper"><Palette className="h-4 w-4" /><span className="hidden sm:inline">Wallpaper</span></button>
+              {wallpaperMenu === 'community' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">Community wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(communityWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${communityWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2.5 text-xs font-semibold text-[#142B4A] hover:bg-[#F5F7FA]">Upload your own photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) setCustomWallpaper(communityWallpaperKey, file); event.currentTarget.value = ''; }} /></label>{wallpaperImages[communityWallpaperKey] && <button type="button" onClick={() => { setWallpaperImages(previous => { const next = { ...previous }; delete next[communityWallpaperKey]; try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {} return next; }); saveWallpaper(communityWallpaperKey, 'default'); }} className="mt-2 w-full text-left text-xs text-rose-600">Remove custom photo</button>}</div>}
+            </div>
             {isAdmin && (
               <button
                 onClick={() => {
@@ -674,7 +819,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {communityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -692,9 +837,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className={isMine ? "fni-swipe-message w-fit max-w-[92%] sm:max-w-[78%] ml-auto p-4 rounded-2xl border border-[#142B4A] bg-[#142B4A] text-white shadow-2xs space-y-2.5 transition-all" : "fni-swipe-message w-fit max-w-[92%] sm:max-w-[78%] mr-auto p-4 rounded-2xl border border-[#E3E8EF] bg-white text-[#182230] shadow-2xs space-y-2.5 transition-all"}
-                    onTouchStart={beginMessageSwipe}
-                    onTouchEnd={event => finishMessageSwipe(event, { id: msg.id, senderName: msg.senderName, content: msg.content }, 'community')}
+                    className={isMine ? "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] ml-auto p-3 sm:p-3.5 rounded-2xl border border-[#142B4A] bg-[#142B4A] text-white shadow-2xs space-y-2 transition-all" : "fni-swipe-message w-fit max-w-[94%] sm:max-w-[78%] mr-auto p-3 sm:p-3.5 rounded-2xl border border-[#E3E8EF] bg-white text-[#182230] shadow-2xs space-y-2 transition-all"}
+                    onTouchStart={event => beginCommunityMessageTouch(event, msg.id)}
+                    onTouchMove={cancelCommunityMessageLongPress}
+                    onTouchEnd={event => finishCommunityMessageTouch(event, { id: msg.id, senderName: msg.senderName, content: msg.content })}
+                    onTouchCancel={cancelCommunityMessageLongPress}
                   >
                     {/* Header Row: Sender, Tag Badge & Time */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -741,6 +888,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
+                              {allMembers.find(member => member.id === msg.senderUid) && <button type="button" onClick={() => { setProfileMember(allMembers.find(member => member.id === msg.senderUid) || null); setOpenMessageMenu(null); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">View profile</button>}
+                              <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
+                              <button type="button" onClick={() => handleReaction(msg.id, "❤️")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React ❤️</button>
+                              <button type="button" onClick={() => handleReaction(msg.id, "🙏")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React 🙏</button>
                               <button type="button" onClick={() => { setCommunityReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); communityInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                             </div>
                           )}
@@ -766,7 +917,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     )}
 
                     {/* Message Body with Highlighted Mentions */}
-                    <div className={isMine ? "text-xs sm:text-sm text-white leading-relaxed pl-11" : "text-xs sm:text-sm text-[#182230] leading-relaxed pl-11"}>
+                    <div className={isMine ? "text-xs sm:text-sm text-white leading-relaxed pl-11 whitespace-pre-wrap break-words [overflow-wrap:anywhere]" : "text-xs sm:text-sm text-[#182230] leading-relaxed pl-11 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"}>
                       {msg.deletedForEveryoneAt ? <span className="italic opacity-70">This message was deleted</span> : renderFormattedMessage(msg.content)}
                       {!msg.deletedForEveryoneAt && (msg.attachments || []).map(attachment => <ChatAttachmentPreview key={attachment.path} attachment={attachment} />)}
                     </div>
@@ -795,20 +946,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           );
                         })}
 
-                        {/* Quick Reaction Tray (1-tap reaction) */}
-                        <div className="flex items-center gap-1.5 bg-[#F5F7FA] px-2 py-1 rounded-xl border border-[#E3E8EF]">
-                          {['🙏', '❤️', '🔥', '👏', '🙌'].map(emoji => (
-                            <button
-                              key={emoji}
-                              onClick={() => handleReaction(msg.id, emoji)}
-                              className="hover:scale-125 transition-transform p-0.5 cursor-pointer flex items-center justify-center text-sm"
-                              title={`React with ${emoji}`}
-                            >
-                              <span>{emoji}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                     </div>
 
                       {/* Reply Button (Telegram/WhatsApp style) */}
                       <button
@@ -938,7 +1076,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Forum Compose Bar */}
-          <form onSubmit={handleSendCommunity} className="fni-chat-composer p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
+          <form onSubmit={handleSendCommunity} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
+            {showCommunityStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowCommunityStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setCommunitySticker(sticker); setShowCommunityStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div></div>}
+            {communitySticker && <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{communitySticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{communitySticker.label} sticker ready</span><button type="button" onClick={() => setCommunitySticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {communitySendError && (
               <p role="alert" className="text-xs font-semibold text-rose-600">{communitySendError}</p>
             )}
@@ -990,7 +1130,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <button type="button" onClick={() => setShowCommunityEmoji(prev => !prev)} className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${showCommunityEmoji ? 'bg-[#142B4A] text-[#C6A45A]' : 'text-[#667085] hover:bg-white'}`} title="Open emoji palette" aria-label="Open emoji palette">
                   <Smile className="w-5 h-5" />
                 </button>
-                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 112) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-28 resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
+                <button type="button" onClick={() => { setShowCommunityStickers(v => !v); setShowCommunityEmoji(false); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white" aria-label="Open FNI stickers" title="Stickers"><span className="text-lg">✨</span></button>
+                <textarea ref={communityInputRef} rows={1} value={communityText} onChange={handleCommunityInputChange} onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, Math.floor(window.innerHeight * 0.35)) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder="Message the community" className="flex-1 min-w-0 w-0 max-h-[35vh] overflow-y-auto resize-none border-0 bg-transparent px-1 py-2.5 text-sm text-[#182230] outline-none ring-0 focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0" />
                 <button type="button" onClick={() => { setCommunityText(prev => prev + '@'); setMentionQuery(''); setShowMentionMenu(true); communityInputRef.current?.focus(); }} className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[#667085] hover:bg-white hover:text-[#142B4A] transition-colors cursor-pointer" title="Tag a member" aria-label="Tag a member">
                   <AtSign className="w-4 h-4" />
                 </button>
@@ -1013,15 +1154,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <Lock className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm sm:text-base text-white">
-                  {isAdmin
-                    ? 'Confidential Pastoral Oversight Line'
-                    : selectedTutorId === 'admin' ? 'Confidential Leadership Line' : 'Private Tutor Conversation'}
-                </h3>
+                {selectedTutorId !== 'admin' && allMembers.some(member => member.id === selectedTutorId) ? (
+                  <button type="button" onClick={() => setProfileMember(allMembers.find(member => member.id === selectedTutorId) || null)} className="text-left rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#C6A45A]">
+                    <h3 className="font-bold text-sm sm:text-base text-white">{allMembers.find(member => member.id === selectedTutorId)?.full_name || 'Private Conversation'}</h3>
+                    <span className="text-[10px] text-[#E8D6A8]">View member profile</span>
+                  </button>
+                ) : (
+                  <h3 className="font-bold text-sm sm:text-base text-white">
+                    {selectedTutorId === 'admin' ? 'Confidential Leadership Line' : tutorList.find(tutor => tutor.id === selectedTutorId)?.name || 'Private Conversation'}
+                  </h3>
+                )}
                 <p className="text-xs text-slate-200 mt-0.5">
-                  {isAdmin
-                    ? 'Select a tutor to inspect their private communication channel'
-                    : selectedTutorId === 'admin' ? 'Private, direct communication with ministry leadership.' : 'A private conversation between you and this tutor. Not shared in the community forum.'}
+                  {selectedTutorId === 'admin'
+                    ? 'Private, direct communication with ministry leadership.'
+                    : [allMembers.find(member => member.id === selectedTutorId)?.cell_name, 'Private one-to-one conversation'].filter(Boolean).join(' · ')}
                 </p>
               </div>
             </div>
@@ -1045,6 +1191,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </>
               )}
               <div className="relative">
+                <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'private' ? null : 'private')} aria-label="Change private chat wallpaper" className="p-2 rounded-xl border border-white/15 text-white hover:bg-white/10"><Palette className="w-4 h-4" /></button>
+                {wallpaperMenu === 'private' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">This conversation's wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(privateWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${privateWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2.5 text-xs font-semibold text-[#142B4A] hover:bg-[#F5F7FA]">Upload your own photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) setCustomWallpaper(privateWallpaperKey, file); event.currentTarget.value = ''; }} /></label>{wallpaperImages[privateWallpaperKey] && <button type="button" onClick={() => { setWallpaperImages(previous => { const next = { ...previous }; delete next[privateWallpaperKey]; try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {} return next; }); saveWallpaper(privateWallpaperKey, 'default'); }} className="mt-2 w-full text-left text-xs text-rose-600">Remove custom photo</button>}</div>}
+              </div>
+              <div className="relative">
                 <button type="button" onClick={() => setOpenChatMenu(value => !value)} aria-label="Personal chat options" aria-expanded={openChatMenu} className="p-2 rounded-xl border border-white/15 text-white hover:bg-white/10">
                   <MoreVertical className="w-4 h-4" />
                 </button>
@@ -1058,8 +1208,61 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
           </div>
 
+          {/* Search registered members and start a one-to-one conversation. */}
+          <div className="relative z-20 border-b border-[#E3E8EF] bg-white px-3 py-3 sm:px-4">
+            <div className="flex items-center gap-2 rounded-xl border border-[#DCE3EC] bg-[#F8FAFC] px-3 py-2 focus-within:border-[#9AAFC8] focus-within:ring-2 focus-within:ring-[#142B4A]/10">
+              <Search className="h-4 w-4 shrink-0 text-[#667085]" />
+              <input
+                value={memberSearch}
+                onChange={event => setMemberSearch(event.target.value)}
+                placeholder="Search members by name, username or cell…"
+                aria-label="Search FNI members"
+                className="min-w-0 flex-1 bg-transparent text-sm text-[#182230] outline-none placeholder:text-[#98A2B3]"
+              />
+              {memberSearch && <button type="button" onClick={() => setMemberSearch('')} className="rounded-full p-1 text-[#667085] hover:bg-[#E9EEF5]" aria-label="Clear member search"><X className="h-4 w-4" /></button>}
+            </div>
+            {memberSearch.trim() && (
+              <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-[#E3E8EF] bg-white shadow-lg">
+                {allMembers.filter(member => {
+                  const query = memberSearch.trim().toLowerCase();
+                  return member.full_name.toLowerCase().includes(query) ||
+                    (member.username || '').toLowerCase().includes(query) ||
+                    (member.cell_name || '').toLowerCase().includes(query);
+                }).slice(0, 12).map(member => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTutorId(member.id);
+                      setPrivateMessages([]);
+                      setPrivateReplyTo(null);
+                      setMemberSearch('');
+                      setOpenChatMenu(false);
+                    }}
+                    className={`flex w-full items-center gap-3 border-b border-[#F0F2F5] px-3 py-2.5 text-left last:border-b-0 hover:bg-[#F5F7FA] ${selectedTutorId === member.id ? 'bg-[#EEF3F8]' : ''}`}
+                  >
+                    {member.avatar_url
+                      ? <img src={member.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                      : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF0F7] text-[#142B4A]"><UserRound className="h-4 w-4" /></span>}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-[#182230]">{member.full_name}</span>
+                      <span className="block truncate text-xs text-[#667085]">{[member.username ? `@${member.username}` : '', member.cell_name || 'FNI Member'].filter(Boolean).join(' · ')}</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#142B4A]">Message</span>
+                  </button>
+                ))}
+                {allMembers.filter(member => {
+                  const query = memberSearch.trim().toLowerCase();
+                  return member.full_name.toLowerCase().includes(query) ||
+                    (member.username || '').toLowerCase().includes(query) ||
+                    (member.cell_name || '').toLowerCase().includes(query);
+                }).length === 0 && <p className="px-3 py-4 text-center text-xs text-[#667085]">No active members found.</p>}
+              </div>
+            )}
+          </div>
+
           {/* Messages Stream */}
-          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4 bg-[#F5F7FA]">
+          <div className="fni-chat-stream px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
             {privateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1110,7 +1313,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       onTouchEnd={event => finishPrivateMessageTouch(event, { id: msg.id, senderName: msg.senderName, content: msg.content })}
                       onTouchCancel={cancelPrivateMessageLongPress}
                       onContextMenu={event => { event.preventDefault(); setOpenMessageMenu("private:" + msg.id); }}
-                      className={`fni-swipe-message max-w-md p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed group relative select-text ${
+                      className={`fni-swipe-message max-w-[94%] sm:max-w-md p-3 sm:p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] group relative select-text ${
                         isMine
                           ? 'bg-[#142B4A] text-white rounded-tr-none shadow-2xs'
                           : 'bg-white text-[#182230] border border-[#E3E8EF] rounded-tl-none shadow-2xs'
@@ -1121,6 +1324,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       </button>
                       {openMessageMenu === ("private:" + msg.id) && (
                         <div className="absolute right-1 top-8 z-40 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                          <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
                           <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                           {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'private')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
                           <button type="button" onClick={() => handleHidePrivateMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
@@ -1244,7 +1448,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Private Input Box */}
-          <form onSubmit={handleSendPrivate} className="fni-chat-composer p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2 min-w-0 flex-wrap">
+          <form onSubmit={handleSendPrivate} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] flex items-center gap-2 min-w-0 flex-wrap">
+            {showPrivateStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowPrivateStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setPrivateSticker(sticker); setShowPrivateStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div></div>}
+            {privateSticker && <div className="basis-full flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{privateSticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{privateSticker.label} sticker ready</span><button type="button" onClick={() => setPrivateSticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {privateSendError && (
               <p role="alert" className="basis-full text-xs font-semibold text-rose-600">{privateSendError}</p>
             )}
@@ -1260,6 +1466,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             >
               <Smile className="w-5 h-5" />
             </button>
+            <button type="button" onClick={() => { setShowPrivateStickers(v => !v); setShowPrivateEmoji(false); }} className="h-10 w-10 rounded-full flex items-center justify-center text-[#667085] hover:bg-[#F5F7FA]" aria-label="Open FNI stickers" title="Stickers"><span className="text-xl">✨</span></button>
 
             {privateFiles.length > 0 && <div className="basis-full flex flex-wrap gap-2 pb-1">{privateFiles.map((file,index) => <SelectedChatFilePreview key={file.name + index} file={file} onRemove={() => setPrivateFiles(files => files.filter((_,i) => i !== index))} />)}</div>}
             <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" id="private-chat-files" onChange={e => setPrivateFiles(previous => [...previous, ...Array.from(e.target.files || []).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))])} />
@@ -1278,6 +1485,28 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Send className="w-4 h-4 text-[#C6A45A]" />
             </Button>
           </form>
+        </div>
+      )}
+
+      {profileMember && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="member-profile-title" onClick={() => setProfileMember(null)}>
+          <section className="w-full max-w-sm overflow-hidden rounded-2xl border border-[#E3E8EF] bg-white shadow-2xl" onClick={event => event.stopPropagation()}>
+            <div className="relative bg-gradient-to-r from-[#142B4A] to-[#203D63] px-5 pb-6 pt-5 text-center text-white">
+              <button type="button" onClick={() => setProfileMember(null)} className="absolute right-3 top-3 rounded-full p-2 text-white/80 hover:bg-white/10" aria-label="Close member profile"><X className="h-4 w-4" /></button>
+              {profileMember.avatar_url
+                ? <img src={profileMember.avatar_url} alt="" className="mx-auto h-20 w-20 rounded-full border-4 border-white/20 object-cover" />
+                : <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/20 bg-white/10"><UserRound className="h-9 w-9 text-[#E8D6A8]" /></div>}
+              <h2 id="member-profile-title" className="mt-3 text-lg font-bold">{profileMember.full_name}</h2>
+              <p className="mt-1 text-xs text-white/75">{profileMember.username ? `@${profileMember.username}` : 'FNI Member'}</p>
+            </div>
+            <div className="space-y-3 p-5">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Cell</span><span className="text-sm font-semibold text-[#182230]">{profileMember.cell_name || 'Not assigned'}</span></div>
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Role</span><span className="text-sm font-semibold capitalize text-[#182230]">{profileMember.role.replace(/_/g, ' ')}</span></div>
+              <Button type="button" variant="primary" size="md" className="w-full" onClick={() => { setSelectedTutorId(profileMember.id); setPrivateMessages([]); setPrivateReplyTo(null); setProfileMember(null); }}>
+                <MessageSquare className="mr-2 h-4 w-4" /> Message member
+              </Button>
+            </div>
+          </section>
         </div>
       )}
 

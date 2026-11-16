@@ -1674,6 +1674,36 @@ export class SupabaseService {
     }
   }
 
+  // Return only approved public directory fields; never expose email or phone numbers.
+  static async getMemberDirectory(): Promise<Array<{
+    id: string;
+    full_name: string;
+    username?: string;
+    role: string;
+    cell_name?: string;
+    avatar_url?: string;
+  }> | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!.rpc('get_member_directory');
+      if (error || !data) {
+        console.warn('Supabase getMemberDirectory error:', error?.message);
+        return null;
+      }
+      return data.map((row: any) => ({
+        id: row.id,
+        full_name: row.full_name || 'FNI Member',
+        username: row.username || undefined,
+        role: row.role || 'tutor',
+        cell_name: row.cell_name || undefined,
+        avatar_url: row.avatar_url || undefined,
+      }));
+    } catch (error) {
+      console.warn('Supabase getMemberDirectory exception:', error);
+      return null;
+    }
+  }
+
   // --- Regions ---
   static async getRegions(): Promise<Region[] | null> {
     if (!this.isAvailable()) return null;
