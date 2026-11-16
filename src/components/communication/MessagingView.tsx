@@ -635,6 +635,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       // leader names or stale conversation records.
       eligibleMembers.forEach(member => {
         if (member.id === currentUser.id) return;
+        // The administrator's private inbox is specifically a tutor inbox.
+        // Never leave another admin or an old/deleted profile as a send target.
+        if (isAdmin && member.role !== 'tutor') return;
         tutorMap.set(member.id, {
           id: member.id,
           name: member.role === 'admin' || member.role === 'super_admin'
@@ -657,6 +660,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
     init();
   }, [currentUser, isAdmin]);
+
+  // A profile can be deleted and recreated with a new ID. Do not keep an
+  // obsolete initialConversationId/selection as the administrator's recipient.
+  // Otherwise a successful insert can be delivered to a profile that no longer exists.
+  useEffect(() => {
+    if (!isAdmin || tutorList.length === 0) return;
+    if (!tutorList.some(tutor => tutor.id === selectedTutorId)) {
+      setSelectedTutorId(tutorList[0].id);
+      setPrivateMessages([]);
+      setPrivateReplyTo(null);
+      setPrivateSendError(null);
+    }
+  }, [isAdmin, tutorList, selectedTutorId]);
 
   // Realtime subscription + auto-sync for messaging (Zero manual refresh required)
   useEffect(() => {
@@ -1037,9 +1053,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!privateText.trim() && privateFiles.length === 0 && !privateSticker) || privateSendLock.current) return;
+    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    if (isAdmin && !tutorList.some(tutor => tutor.id === recipientId)) {
+      setPrivateSendError('Please select an active tutor before sending. This conversation may point to an old account.');
+      return;
+    }
     privateSendLock.current = true;
 
-    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
     const recipientName = isAdmin
       ? tutorList.find(t => t.id === selectedTutorId)?.name || 'Tutor'
       : recipientId === 'admin' ? 'Administrator / Leadership' : tutorList.find(t => t.id === recipientId)?.name || 'FNI Tutor';
