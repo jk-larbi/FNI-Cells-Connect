@@ -640,6 +640,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handlePrivateChatAction = async (action: 'clear' | 'delete') => {
+    setOpenChatMenu(false);
     const confirmed = window.confirm(
       action === 'clear'
         ? 'Clear this personal chat from your account? The other participant will keep their messages.'
@@ -663,6 +664,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleClearAllPrivateChats = async () => {
+    setOpenChatMenu(false);
     if (!window.confirm('Clear every private conversation from your account only? Other members will keep their messages.')) return;
     const saved = await MessagingService.clearAllPrivateChats(currentUser.id);
     if (!saved) { setPrivateSendError('Your private chats could not be cleared. Please try again.'); return; }
@@ -672,6 +674,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleClearCommunityHistory = async () => {
+    setOpenCommunityChatMenu(false);
     if (!window.confirm('Clear the Community Hub history from your account only? Other members will still see all messages.')) return;
     const saved = await MessagingService.clearCommunityHistory(currentUser.id);
     if (!saved) { setCommunitySendError('Community history could not be cleared. Please try again.'); return; }
