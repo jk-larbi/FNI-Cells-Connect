@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { MessagingService } from '../../services/messagingService';
 import { supabase } from '../../lib/supabase';
 import { CellService } from '../../services/cellService';
+import { CallService, FniCallKind, FniCallSignal } from '../../services/callService';
 import { PrivateMessage, CommunityMessage, InvitationCode, MessageReply, ChatAttachment } from '../../types';
 import {
   MessageSquare,
@@ -169,6 +170,138 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateText, setPrivateText] = useState('');
   const [privateFiles, setPrivateFiles] = useState<File[]>([]);
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || (isAdmin ? '' : 'admin'));
+  const [callUi, setCallUi] = useState<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
+  const [incomingCall, setIncomingCall] = useState<FniCallSignal | null>(null);
+  const [activeCallKind, setActiveCallKind] = useState<FniCallKind>('voice');
+  const [callError, setCallError] = useState<string | null>(null);
+  const [localCallStream, setLocalCallStream] = useState<MediaStream | null>(null);
+  const [remoteCallStream, setRemoteCallStream] = useState<MediaStream | null>(null);
+  const callChannelRef = useRef<import('@supabase/supabase-js').RealtimeChannel | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const localCallStreamRef = useRef<MediaStream | null>(null);
+  const queuedIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const localCallVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteCallVideoRef = useRef<HTMLVideoElement>(null);
+
+  const sendCallSignal = async (signal: FniCallSignal) => {
+    const channel = callChannelRef.current;
+    if (!channel) throw new Error('The secure call connection is not ready. Keep this private chat open and try again.');
+    await CallService.send(channel, signal);
+  };
+
+  const finishCall = async (notifyPeer = true) => {
+    const peer = peerConnectionRef.current;
+    if (notifyPeer && peer) {
+      try {
+        await sendCallSignal({ callId: activeCallIdRef.current || '', fromProfileId: currentUser?.id || '', type: 'hangup', sentAt: new Date().toISOString() });
+      } catch (error) { console.warn('Call end signal could not be sent:', error); }
+    }
+    peer?.close();
+    peerConnectionRef.current = null;
+    localCallStreamRef.current?.getTracks().forEach(track => track.stop());
+    localCallStreamRef.current = null;
+    setLocalCallStream(null);
+    setRemoteCallStream(null);
+    setIncomingCall(null);
+    setCallUi('idle');
+    setCallError(null);
+    activeCallIdRef.current = null;
+    queuedIceCandidatesRef.current = [];
+  };
+  const activeCallIdRef = useRef<string | null>(null);
+
+  const createPeerConnection = (callId: string, kind: FniCallKind) => {
+    const peer = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
+    });
+    peerConnectionRef.current = peer;
+    peer.onicecandidate = event => {
+      if (event.candidate) {
+        void sendCallSignal({ callId, fromProfileId: currentUser?.id || '', type: 'ice-candidate', payload: event.candidate.toJSON(), sentAt: new Date().toISOString() }).catch(error => console.warn('ICE signal failed:', error));
+      }
+    };
+    peer.ontrack = event => {
+      const stream = event.streams[0];
+      if (stream) setRemoteCallStream(stream);
+    };
+    peer.onconnectionstatechange = () => {
+      if (peer.connectionState === 'connected') setCallUi('connected');
+      if (peer.connectionState === 'failed' || peer.connectionState === 'disconnected') {
+        setCallError('The connection was interrupted. Check your network and try again.');
+      }
+    };
+    return peer;
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'private' || !currentUser?.id || !selectedTutorId || selectedTutorId === 'admin' || selectedTutorId === currentUser.id) {
+      callChannelRef.current = null;
+      return;
+    }
+    let disposed = false;
+    const channel = CallService.createChannel('direct', currentUser.id, selectedTutorId);
+    CallService.listen(channel, signal => {
+      if (disposed || signal.fromProfileId === currentUser.id) return;
+      if (signal.type === 'offer') {
+        if (callUi !== 'idle' || incomingCall) return;
+        activeCallIdRef.current = signal.callId;
+        setActiveCallKind(signal.kind || 'voice');
+        setIncomingCall(signal);
+        setCallUi('ringing');
+      } else if (signal.type === 'answer' && peerConnectionRef.current && signal.callId === activeCallIdRef.current && signal.payload) {
+        void peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signal.payload as RTCSessionDescriptionInit)).then(async () => {
+          for (const candidate of queuedIceCandidatesRef.current) await peerConnectionRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
+          queuedIceCandidatesRef.current = [];
+        }).catch(error => setCallError(error instanceof Error ? error.message : 'Could not connect the call.'));
+      } else if (signal.type === 'ice-candidate' && signal.callId === activeCallIdRef.current && signal.payload) {
+        const candidate = signal.payload as RTCIceCandidateInit;
+        if (peerConnectionRef.current?.remoteDescription) void peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => console.warn('ICE candidate rejected:', error));
+        else queuedIceCandidatesRef.current.push(candidate);
+      } else if ((signal.type === 'hangup' || signal.type === 'decline') && signal.callId === activeCallIdRef.current) {
+        void finishCall(false);
+      }
+    });
+    callChannelRef.current = channel;
+    void CallService.connect(channel).catch(error => {
+      if (!disposed) setCallError(error instanceof Error ? error.message : 'Secure calling is unavailable.');
+    });
+    return () => {
+      disposed = true;
+      if (callChannelRef.current === channel) callChannelRef.current = null;
+      void CallService.disconnect(channel);
+    };
+  }, [activeTab, currentUser?.id, selectedTutorId]);
+
+  useEffect(() => {
+    if (localCallVideoRef.current && localCallStream) localCallVideoRef.current.srcObject = localCallStream;
+  }, [localCallStream, callUi]);
+  useEffect(() => {
+    if (remoteCallVideoRef.current && remoteCallStream) remoteCallVideoRef.current.srcObject = remoteCallStream;
+  }, [remoteCallStream, callUi]);
+
+  const acceptIncomingCall = async () => {
+    if (!incomingCall || !currentUser?.id) return;
+    try {
+      const kind = incomingCall.kind || 'voice';
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: kind === 'video' });
+      localCallStreamRef.current = stream;
+      setLocalCallStream(stream);
+      const peer = createPeerConnection(incomingCall.callId, kind);
+      stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      await peer.setRemoteDescription(new RTCSessionDescription(incomingCall.payload as RTCSessionDescriptionInit));
+      for (const candidate of queuedIceCandidatesRef.current) await peer.addIceCandidate(new RTCIceCandidate(candidate));
+      queuedIceCandidatesRef.current = [];
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
+      await sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'answer', payload: answer, sentAt: new Date().toISOString() });
+      setIncomingCall(null);
+      setCallUi('calling');
+    } catch (error) {
+      setCallError(error instanceof Error ? error.message : 'Could not accept the call. Check microphone and camera permissions.');
+      await finishCall(false);
+    }
+  };
+
   const communityWallpaperKey = 'community';
   const privateWallpaperKey = `private:${selectedTutorId || 'admin'}`;
   const communityWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[communityWallpaperKey]) || CHAT_WALLPAPERS[0];
@@ -740,51 +873,52 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     recordingStreamRef.current?.getTracks().forEach(track => track.stop());
   }, []);
 
-  // Jitsi rooms are created per call; the invitation is first posted to the selected chat.
+  // Private one-to-one calls use WebRTC directly. Community room calls remain Jitsi links.
   const startChatCall = async (kind: 'voice' | 'video', target: 'community' | 'private') => {
-    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
-    if (target === 'private' && (!recipientId || recipientId === 'admin')) {
-      window.alert('Choose a registered member conversation before starting a call.');
+    if (target === 'community') {
+      const callWindow = window.open('about:blank', '_blank');
+      const room = `FNI-Cells-${crypto.randomUUID()}`;
+      const callUrl = `https://meet.jit.si/${room}${kind === 'voice' ? '#config.startWithVideoMuted=true&config.startAudioOnly=true' : ''}`;
+      try {
+        await MessagingService.sendCommunityMessage({ senderUid: currentUser.id, senderName: currentUser.full_name, senderRole: currentUser.role, cellName: currentUser.cell_name, content: `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`, category: 'general', mentions: [], attachments: [] });
+        await loadCommunity();
+        if (callWindow) callWindow.location.href = callUrl;
+        else window.location.href = callUrl;
+      } catch (error) {
+        callWindow?.close();
+        console.error('Could not create community call invitation:', error);
+        window.alert('The community call invitation could not be sent. Please try again.');
+      }
       return;
     }
-    const callWindow = window.open('about:blank', '_blank');
-    const room = `FNI-Cells-${crypto.randomUUID()}`;
-    const callUrl = `https://meet.jit.si/${room}${kind === 'voice' ? '#config.startWithVideoMuted=true&config.startAudioOnly=true' : ''}`;
-    const invite = `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`;
+
+    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    if (!recipientId || recipientId === 'admin' || !callChannelRef.current) {
+      window.alert('Open a registered member’s private conversation and wait for the secure call connection before calling.');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof RTCPeerConnection === 'undefined') {
+      window.alert('Live calling is not supported by this browser or device. Open FNI Cells Connect over HTTPS or use the installed Android app.');
+      return;
+    }
     try {
-      if (target === 'community') {
-        await MessagingService.sendCommunityMessage({
-          senderUid: currentUser.id,
-          senderName: currentUser.full_name,
-          senderRole: currentUser.role,
-          cellName: currentUser.cell_name,
-          content: invite,
-          category: 'general',
-          mentions: [],
-          attachments: [],
-        });
-        await loadCommunity();
-      } else {
-        const recipientName = tutorList.find(t => t.id === recipientId)?.name || 'FNI Member';
-        await MessagingService.sendPrivateMessage({
-          senderUid: currentUser.id,
-          senderName: currentUser.full_name,
-          senderRole: currentUser.role,
-          recipientUid: recipientId,
-          recipientName,
-          cellId: currentUser.cell_id,
-          cellName: currentUser.cell_name,
-          content: invite,
-          attachments: [],
-        });
-        await loadPrivateMessages();
-      }
-      if (callWindow) callWindow.location.href = callUrl;
-      else window.location.href = callUrl;
+      setCallError(null);
+      const callId = CallService.createSessionId();
+      activeCallIdRef.current = callId;
+      setActiveCallKind(kind);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: kind === 'video' });
+      localCallStreamRef.current = stream;
+      setLocalCallStream(stream);
+      const peer = createPeerConnection(callId, kind);
+      stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      await sendCallSignal({ callId, fromProfileId: currentUser.id, type: 'offer', kind, payload: offer, sentAt: new Date().toISOString() });
+      setCallUi('calling');
     } catch (error) {
-      callWindow?.close();
-      console.error('Could not create call invitation:', error);
-      window.alert('The call invitation could not be sent. Please try again.');
+      console.error('Could not start FNI call:', error);
+      setCallError(error instanceof Error ? error.message : 'Could not start the call. Check your microphone and camera permissions.');
+      await finishCall(false);
     }
   };
 
@@ -1660,6 +1794,32 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Button type="submit" variant="primary" size="md" isLoading={isSendingPrivate} className="h-10 w-10 min-w-[40px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message"><Send className="w-4 h-4 text-[#C6A45A]" /></Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {(incomingCall || callUi !== 'idle') && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="FNI call">
+          <section className="w-full max-w-3xl overflow-hidden rounded-3xl border border-white/15 bg-[#101C2D] text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
+              <div><p className="text-sm font-bold">{incomingCall ? 'Incoming FNI call' : activeCallKind === 'video' ? 'FNI video call' : 'FNI voice call'}</p><p className="text-xs text-white/60">{callUi === 'connected' ? 'Connected' : incomingCall ? 'A member is calling you' : 'Connecting securely…'}</p></div>
+              <button type="button" onClick={() => void finishCall(true)} className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">End</button>
+            </div>
+            {incomingCall && callUi === 'ringing' ? (
+              <div className="space-y-4 px-6 py-12 text-center">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#C6A45A]/20 text-3xl text-[#E8D6A8]">{incomingCall.kind === 'video' ? '▣' : '☎'}</div>
+                <div><h3 className="text-xl font-bold">{allMembers.find(member => member.id === incomingCall.fromProfileId)?.full_name || 'FNI Member'}</h3><p className="mt-1 text-sm text-white/60">{incomingCall.kind === 'video' ? 'Video call' : 'Voice call'}</p></div>
+                <div className="flex justify-center gap-3"><button type="button" onClick={() => { void sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'decline', sentAt: new Date().toISOString() }).catch(() => undefined); void finishCall(false); }} className="rounded-full bg-rose-600 px-6 py-3 text-sm font-bold">Decline</button><button type="button" onClick={() => void acceptIncomingCall()} className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold">Accept</button></div>
+              </div>
+            ) : (
+              <div className="relative min-h-[280px] bg-black sm:min-h-[440px]">
+                {remoteCallStream ? <video ref={remoteCallVideoRef} autoPlay playsInline className="h-full min-h-[280px] w-full object-contain sm:min-h-[440px]" /> : <div className="flex min-h-[280px] items-center justify-center text-center text-sm text-white/65 sm:min-h-[440px]">{callError || 'Waiting for the other person to connect…'}</div>}
+                {activeCallKind === 'video' && localCallStream && <video ref={localCallVideoRef} autoPlay muted playsInline className="absolute bottom-4 right-4 h-24 w-32 rounded-xl border border-white/30 bg-black object-cover sm:h-36 sm:w-48" />}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2"><button type="button" onClick={() => void finishCall(true)} className="rounded-full bg-rose-600 px-7 py-3 text-sm font-bold shadow-lg">End call</button></div>
+              </div>
+            )}
+            {callError && <p className="border-t border-white/10 px-4 py-3 text-xs text-rose-300">{callError}</p>}
+            <p className="px-4 py-3 text-center text-[10px] text-white/45">Direct peer-to-peer calling. Connection depends on both devices, network compatibility and permissions.</p>
+          </section>
         </div>
       )}
 
