@@ -88,8 +88,12 @@ jobs:
 
       - name: Install dependencies and Capacitor
         run: |
+          # Regenerate the lockfile for the newly declared native push plugin,
+          # then use a clean install. The push plugin must be a real app dependency
+          # so Capacitor can discover and register it during native project sync.
+          npm install --package-lock-only --ignore-scripts
           npm ci
-          npm install --no-save --package-lock=false @capacitor/core@^8 @capacitor/android@^8 @capacitor/cli@^8 @capacitor-community/background-geolocation@1.3.1 @capacitor/local-notifications@^8 @capacitor/push-notifications@^8 @capacitor/filesystem@^8 @capacitor/share@^8
+          npm install --no-save --package-lock=false @capacitor/core@^8 @capacitor/android@^8 @capacitor/cli@^8 @capacitor-community/background-geolocation@1.3.1 @capacitor/local-notifications@^8 @capacitor/filesystem@^8 @capacitor/share@^8
 
       - name: Build web app for Android
         run: npm run build
@@ -118,6 +122,18 @@ jobs:
             exit 1
           fi
           npx cap sync android
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          plugins_file = Path("android/app/src/main/assets/capacitor.plugins.json")
+          if not plugins_file.exists():
+              raise SystemExit("Capacitor plugin registry was not generated.")
+          plugins = json.loads(plugins_file.read_text())
+          names = {plugin.get("pkg") for plugin in plugins}
+          if "@capacitor/push-notifications" not in names:
+              raise SystemExit("Native Android push plugin is missing from the generated APK registry.")
+          print("Native Android push-notifications plugin is registered.")
+          PY
 
       - name: Apply FNI app name and official launcher icon
         run: |
