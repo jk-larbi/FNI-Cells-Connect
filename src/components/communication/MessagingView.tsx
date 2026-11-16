@@ -827,10 +827,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     const el = document.getElementById(`msg-${msgId}`);
     const stream = el?.closest('.fni-chat-stream') as HTMLElement | null;
     if (el && stream) {
-      const streamRect = stream.getBoundingClientRect();
       const messageRect = el.getBoundingClientRect();
-      const targetTop = stream.scrollTop + messageRect.top - streamRect.top - (stream.clientHeight - messageRect.height) / 2;
-      stream.scrollTo({ top: targetTop, behavior: 'smooth' });
+      if (stream.classList.contains('fni-community-stream')) {
+        window.scrollTo({ top: window.scrollY + messageRect.top - window.innerHeight / 2, behavior: 'smooth' });
+      } else {
+        const streamRect = stream.getBoundingClientRect();
+        const targetTop = stream.scrollTop + messageRect.top - streamRect.top - (stream.clientHeight - messageRect.height) / 2;
+        stream.scrollTo({ top: targetTop, behavior: 'smooth' });
+      }
       el.classList.add('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
       setTimeout(() => {
         el.classList.remove('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
