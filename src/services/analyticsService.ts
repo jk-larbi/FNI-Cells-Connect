@@ -73,7 +73,9 @@ export class AnalyticsService {
     const missingCellsCount = scopedCells.filter(c => c.is_active && !submittedCellIds.has(c.id)).length;
 
     // Evangelism numbers
-    const soulsWon = scopedEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+    const soulsWon = scopedEvang
+      .filter(report => report.status === 'Approved' || report.status === 'approved')
+      .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
     const peopleReached = scopedEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
     const contactsCaptured = scopedContacts.length;
     const interestedInMinistry = scopedEvang.reduce((sum, e) => sum + (Number(e.interestedInMinistry) || 0), 0);
@@ -138,9 +140,18 @@ export class AnalyticsService {
     const periods = await ReportService.getPeriods();
 
     return periods.map(p => {
-      const attendance = fMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
-      const peopleReached = fEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
-      const soulsWon = fEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+      const inPeriod = (value?: string) => {
+        if (!value) return false;
+        const day = value.slice(0, 10);
+        return day >= p.start_date && day <= p.end_date;
+      };
+      const periodMeetings = fMeetings.filter(report => inPeriod(report.meetingDate || report.submittedAt));
+      const periodEvang = fEvang.filter(report => inPeriod(report.date || report.submittedAt));
+      const attendance = periodMeetings.reduce((sum, report) => sum + (Number(report.attendance) || 0), 0);
+      const peopleReached = periodEvang.reduce((sum, report) => sum + (Number(report.peopleSpokenTo) || 0), 0);
+      const soulsWon = periodEvang
+        .filter(report => report.status === 'Approved' || report.status === 'approved')
+        .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
 
       return {
         week: p.name.replace('2026 - ', ''),
@@ -177,10 +188,12 @@ export class AnalyticsService {
       // Attendance
       const totalAttendance = cellMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
 
-      // Souls won: outreach conversions + cell meeting new converts/members
-      const soulsFromEvang = cellEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
-      const soulsFromCell = cellMeetings.reduce((sum, m) => sum + (Number(m.newMembers) || 0), 0);
-      const soulsWon = soulsFromEvang + soulsFromCell;
+      // Verified conversions match the annual soul target definition.
+      // New cell members/first-timers are tracked separately and are not counted as conversions.
+      const soulsFromEvang = cellEvang
+        .filter(report => report.status === 'Approved' || report.status === 'approved')
+        .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
+      const soulsWon = soulsFromEvang;
 
       // People reached through evangelism
       const peopleReached = cellEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
@@ -294,7 +307,9 @@ export class AnalyticsService {
 
       const totalAttendance = cellMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
       const peopleReached = cellEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
-      const soulsWon = cellEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+      const soulsWon = cellEvang
+        .filter(report => report.status === 'Approved' || report.status === 'approved')
+        .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
       const completedFollowUps = cellContacts.filter(c => c.followUpStatus === 'Joined Ministry' || c.followUpStatus === 'Completed').length;
 
       rows.push([
