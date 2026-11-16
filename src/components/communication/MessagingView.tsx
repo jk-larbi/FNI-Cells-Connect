@@ -860,6 +860,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               </span>
                             )}
                           </div>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
