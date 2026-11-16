@@ -556,8 +556,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setPrivateSendError('The message could not be deleted for everyone. Please try again.');
       return;
     }
-    if (scope === 'private') await loadPrivateMessages();
-    else await loadCommunity();
+    if (scope === 'private') {
+      setPrivateMessages(previous => previous.filter(message => message.id !== messageId));
+      await loadPrivateMessages();
+    } else {
+      setCommunityMessages(previous => previous.filter(message => message.id !== messageId));
+      await loadCommunity();
+    }
     setOpenMessageMenu(null);
   };
 
@@ -931,6 +936,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     await loadInviteCodes();
   };
 
+  // Telegram-style deletion: tombstones stay in the database for audit/sync,
+  // but deleted-for-everyone messages never render in either conversation.
+  const visibleCommunityMessages = communityMessages.filter(message => !message.deletedForEveryoneAt);
+  const visiblePrivateMessages = privateMessages.filter(message => !message.deletedForEveryoneAt);
+
   // Filter mention directory
   const filteredMentions = memberDirectory.filter(m => {
     if (!mentionQuery) return true;
@@ -1030,7 +1040,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Forum Messages Stream */}
           <div className="fni-community-stream w-full px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
-            {communityMessages.length === 0 ? (
+            {visibleCommunityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
                 <p className="text-sm font-bold text-[#182230]">The community board is fresh</p>
@@ -1039,7 +1049,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </p>
               </div>
             ) : (
-              communityMessages.map(msg => {
+              visibleCommunityMessages.map(msg => {
                 const isMine = msg.senderUid === currentUser.id;
                 const reactions = msg.reactions || {};
 
@@ -1442,7 +1452,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Messages Stream */}
           <div ref={privateStreamRef} className="fni-chat-stream flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
-            {privateMessages.length === 0 ? (
+            {visiblePrivateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
                 <p className="text-sm font-bold text-[#182230]">No private messages yet</p>
@@ -1451,7 +1461,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </p>
               </div>
             ) : (
-              privateMessages.map(msg => {
+              visiblePrivateMessages.map(msg => {
                 const isMine = msg.senderUid === currentUser.id;
                 return (
                   <div
