@@ -2349,3 +2349,77 @@ body {
     min-height: 0 !important;
   }
 }
+
+
+/* Final dark-theme contrast pass: cover secondary components that use
+   Tailwind gray/zinc/neutral utilities or hard-coded light surfaces. */
+html.dark :is(
+  .text-black, .text-slate-950, .text-gray-950, .text-zinc-950, .text-neutral-950,
+  .text-slate-900, .text-gray-900, .text-zinc-900, .text-neutral-900,
+  .text-slate-800, .text-gray-800, .text-zinc-800, .text-neutral-800
+) { color: #f1f5f9 !important; }
+
+html.dark :is(
+  .text-slate-700, .text-gray-700, .text-zinc-700, .text-neutral-700,
+  .text-slate-600, .text-gray-600, .text-zinc-600, .text-neutral-600,
+  .text-slate-500, .text-gray-500, .text-zinc-500, .text-neutral-500,
+  .text-slate-400, .text-gray-400, .text-zinc-400, .text-neutral-400
+) { color: #b7c5d6 !important; }
+
+/* Light custom hex text is the most common source of invisible labels in
+   older admin/tutor screens. Preserve established brand/status accents. */
+html.dark [class*="text-[#"]:not([class*="text-[#C6A45A]"]):not([class*="text-[#D4AF37]"]):not([class*="text-[#229ED9]"]):not([class*="text-[#16A34A]"]):not([class*="text-[#DC2626]"]):not([class*="text-[#F59E0B]"]):not([class*="text-[#EAB308]"]) {
+  color: #dbe5f1 !important;
+}
+
+html.dark :is(
+  .bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-zinc-50, .bg-zinc-100,
+  .bg-zinc-200, .bg-neutral-50, .bg-neutral-100, .bg-neutral-200,
+  .bg-stone-50, .bg-stone-100, .bg-stone-200,
+  .hover\\:bg-gray-50:hover, .hover\\:bg-gray-100:hover,
+  .hover\\:bg-zinc-50:hover, .hover\\:bg-neutral-50:hover
+) {
+  background-color: #172437 !important;
+  border-color: #30445d !important;
+}
+
+html.dark :is(
+  .border-gray-100, .border-gray-200, .border-gray-300,
+  .border-zinc-100, .border-zinc-200, .border-zinc-300,
+  .border-neutral-100, .border-neutral-200, .border-neutral-300,
+  .border-stone-100, .border-stone-200
+) { border-color: #30445d !important; }
+
+html.dark :is(
+  [role="dialog"], [role="listbox"], [role="menu"], [role="option"],
+  .dropdown-menu, .popover, .modal-content, .tooltip
+) {
+  color: #e6edf5;
+  border-color: #30445d;
+}
+
+html.dark :is(
+  [role="dialog"], [role="listbox"], [role="menu"],
+  .dropdown-menu, .popover, .modal-content
+) { background-color: #111c2d; }
+
+html.dark :is(th, thead, tfoot) {
+  color: #dbe5f1;
+  border-color: #30445d;
+}
+
+html.dark :is(hr, .divide-y > :not([hidden]) ~ :not([hidden])) {
+  border-color: #30445d !important;
+}
+
+html.dark option {
+  color: #e6edf5;
+  background: #152233;
+}
+
+html.dark :is(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  color: #8192a8 !important;
+  opacity: .72;
+}
+
+html.dark ::placeholder { color: #8fa1b8 !important; opacity: 1; }
