@@ -311,6 +311,7 @@ export interface PrivateMessage {
   replyTo?: MessageReply;
   attachments?: ChatAttachment[];
   deletedForEveryoneAt?: string;
+  editedAt?: string;
 }
 
 export interface CommunityMessage {
@@ -327,6 +328,7 @@ export interface CommunityMessage {
   reactions?: { [emoji: string]: string[] };
   attachments?: ChatAttachment[];
   deletedForEveryoneAt?: string;
+  editedAt?: string;
 }
 
 export interface InvitationCode {
