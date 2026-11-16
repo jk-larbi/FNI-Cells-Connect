@@ -24,7 +24,7 @@ export class AnalyticsService {
     ]);
 
     // Only data linked to a currently registered, non-archived cell is active.
-    const activeCellIds = new Set(allCells.map(cell => cell.id));
+    const activeCellIds = new Set(allCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     let scopedCells = allCells;
     let scopedMeetings = meetingReports.filter(report => activeCellIds.has(report.cellId));
     let scopedEvang = evangelismReports.filter(report => activeCellIds.has(report.cellId));
