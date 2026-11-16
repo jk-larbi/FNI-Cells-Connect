@@ -134,15 +134,15 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
       isOpen={isOpen}
       onClose={onClose}
       title="Account Settings"
-      size="md"
+      size="lg"
     >
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         {/* Sub-tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-100 pb-2 text-xs font-bold">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-100 pb-3 text-xs font-bold sm:flex sm:flex-wrap">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`px-3 py-1.5 rounded-lg transition-colors ${
+            className={`min-h-10 px-3 py-2 rounded-xl text-center transition-colors ${
               activeTab === 'profile' ? 'bg-navy-900 text-white' : 'text-slate-500 hover:text-navy-900'
             }`}
           >
@@ -160,13 +160,13 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
           <button
             type="button"
             onClick={() => setActiveTab('appearance')}
-            className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
+            className={`inline-flex min-h-10 items-center justify-center gap-1.5 px-3 py-2 rounded-xl transition-colors ${
               activeTab === 'appearance' ? 'bg-navy-900 text-white' : 'text-slate-500 hover:text-navy-900'
             }`}
           >
             <Palette className="h-3.5 w-3.5" /> Chat Appearance
           </button>
-          <button type="button" onClick={() => setActiveTab('delete')} className={activeTab === 'delete' ? 'px-3 py-1.5 rounded-lg bg-rose-600 text-white' : 'px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50'}>Delete Account</button>
+          <button type="button" onClick={() => setActiveTab('delete')} className={activeTab === 'delete' ? 'min-h-10 px-3 py-2 rounded-xl bg-rose-600 text-white' : 'min-h-10 px-3 py-2 rounded-xl text-rose-600 border border-rose-100 hover:bg-rose-50'}>Delete Account</button>
         </div>
 
         {activeTab === 'profile' && (
@@ -231,6 +231,10 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
             <p className="text-[11px] text-slate-400">
               For security compliance, name and role modifications must be authorized by national administration.
             </p>
+            <button type="button" onClick={() => setActiveTab("delete")} className="w-full rounded-xl border border-rose-200 bg-rose-50 p-3 text-left transition-colors hover:bg-rose-100">
+              <span className="block text-sm font-bold text-rose-700">Delete account</span>
+              <span className="mt-1 block text-xs leading-relaxed text-rose-700/80">Permanently remove your FNI account and personal profile.</span>
+            </button>
           </div>
         )}
 
@@ -367,9 +371,9 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-rose-800"><div className="font-bold text-sm mb-1">Permanently delete this account</div>This removes your sign-in account and FNI profile, including personal account details. You will be signed out immediately. This action cannot be undone.</div>
             <p className="text-slate-600">You can register again later using the same username and other credentials once deletion has completed.</p>
             <label className="block font-semibold text-slate-700">Type DELETE to confirm</label>
-            <input value={deleteConfirmation} onChange={e => setDeleteConfirmation(e.target.value)} placeholder="DELETE" className="w-full rounded-xl border border-slate-200 p-2.5" />
+            <input value={deleteConfirmation} onChange={e => setDeleteConfirmation(e.target.value)} placeholder="Type DELETE" autoComplete="off" autoCapitalize="characters" className="w-full min-h-12 rounded-xl border border-slate-200 p-3 text-base" />
             {deleteError && <div role="alert" className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-rose-700">{deleteError}</div>}
-            <Button type="button" variant="danger" size="md" isLoading={isDeleting} disabled={deleteConfirmation !== 'DELETE' || isDeleting} onClick={handleDeleteAccount} className="w-full rounded-xl">Permanently Delete My Account</Button>
+            <Button type="button" variant="danger" size="md" isLoading={isDeleting} disabled={deleteConfirmation !== 'DELETE' || isDeleting} onClick={handleDeleteAccount} className="w-full min-h-12 rounded-xl">Permanently Delete My Account</Button>
           </div>
         )}
       </div>
