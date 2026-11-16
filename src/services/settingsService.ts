@@ -13,16 +13,24 @@ export const DEFAULT_SETTINGS: SystemSettings = {
 };
 
 export class SettingsService {
+  static subscribeToSettings(callback: (settings: SystemSettings) => void): () => void {
+    return SupabaseService.subscribeToSystemSettings(callback);
+  }
+
   static async getSettings(): Promise<SystemSettings> {
-    // 1. Primary: Try Supabase
-    try {
-      const supaSettings = await SupabaseService.getSystemSettings();
-      if (supaSettings) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(supaSettings));
-        return supaSettings;
+    // Supabase is authoritative when configured, including an empty settings table.
+    if (SupabaseService.isAvailable()) {
+      try {
+        const supaSettings = await SupabaseService.getSystemSettings();
+        if (supaSettings) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(supaSettings));
+          return supaSettings;
+        }
+        return DEFAULT_SETTINGS;
+      } catch (e) {
+        console.warn('Notice loading Supabase system settings:', e);
+        throw e;
       }
-    } catch (e) {
-      console.warn('Notice loading Supabase system settings:', e);
     }
 
     try {
