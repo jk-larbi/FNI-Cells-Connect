@@ -1483,3 +1483,55 @@ html.dark .fni-notification-center span {
 .fni-messaging-view .fni-community-stream > * + * {
   margin-top: .55rem !important;
 }
+
+
+/* Global app scrolling: keep the document as the primary vertical scroll
+   surface on phones and desktops. Avoid nested flex containers clipping
+   long pages or making the Communications Hub unreachable. */
+html, body, #root {
+  height: auto;
+  min-height: 100%;
+}
+body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#root, .fni-app-shell {
+  min-height: 100dvh;
+  height: auto;
+}
+.fni-app-body {
+  min-height: 0;
+  align-items: stretch;
+}
+.fni-app-main {
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+  overscroll-behavior-y: auto;
+}
+@media (max-width: 767px) {
+  .fni-app-shell, .fni-app-body, .fni-app-main {
+    height: auto;
+    min-height: 0;
+    overflow-y: visible;
+  }
+  .fni-app-shell { min-height: 100dvh; }
+}
+
+/* Keep the community message composer reachable while reading a long
+   conversation. It sits above the fixed mobile navigation and remains in
+   normal document flow when the user reaches the end of the thread. */
+.fni-messaging-view .fni-community-panel > .fni-chat-composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 25;
+  padding-bottom: max(.65rem, env(safe-area-inset-bottom));
+  background: var(--fni-page, #fff);
+  box-shadow: 0 -8px 20px rgb(20 43 74 / .07);
+}
+@media (max-width: 767px) {
+  .fni-messaging-view .fni-community-panel > .fni-chat-composer {
+    bottom: calc(3.65rem + env(safe-area-inset-bottom));
+  }
+}

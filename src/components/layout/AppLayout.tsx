@@ -168,8 +168,8 @@ export const AppLayout: React.FC = () => {
   ) ? 'my-dashboard' : currentTab;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col text-[#182230]">
-      <div className="flex flex-1">
+    <div className="fni-app-shell min-h-screen bg-white flex flex-col text-[#182230]">
+      <div className="fni-app-body flex flex-1 min-h-0">
         {/* Navigation Sidebar */}
         <Sidebar
           currentTab={effectiveTab}
@@ -193,7 +193,7 @@ export const AppLayout: React.FC = () => {
           />
 
           <LatestAndroidUpdate />
-          <main className="flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
+          <main className="fni-app-main flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
