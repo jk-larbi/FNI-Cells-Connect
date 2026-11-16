@@ -222,6 +222,18 @@ export class SoulTargetService {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'soul_target_configs' }, () => {
             this.notifySubscribers();
           })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'cells' }, () => {
+            this.notifySubscribers();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'offerings' }, () => {
+            this.notifySubscribers();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'evangelism_contacts' }, () => {
+            this.notifySubscribers();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_ups' }, () => {
+            this.notifySubscribers();
+          })
           .subscribe();
       } catch (e) {
         console.warn('Supabase Realtime soul tracking setup notice:', e);
