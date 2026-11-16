@@ -136,13 +136,19 @@ export class FinanceService {
 
     // Never expose financial records belonging to archived/deleted cells in the active portal.
     const activeCells = await CellService.getActiveCells();
-    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     all = all.filter(record => activeCellIds.has(record.cellId));
     setStoredOfferings(all);
 
-    // If caller is tutor, scope to their cell
+    // If caller is a tutor, scope by either canonical or legacy cell identifier.
     if (!isAuthorized && cellId) {
-      all = all.filter(o => o.cellId === cellId);
+      const requestedCell = activeCells.find(cell =>
+        cell.id === cellId || cell.firebase_id === cellId || cell.tutorUid === cellId
+      );
+      const requestedCellIds = new Set(requestedCell
+        ? [requestedCell.id, requestedCell.firebase_id].filter((id): id is string => Boolean(id))
+        : [cellId]);
+      all = all.filter(record => requestedCellIds.has(record.cellId));
     }
 
     return all;

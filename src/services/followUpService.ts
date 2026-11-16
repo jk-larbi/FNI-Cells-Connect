@@ -36,16 +36,22 @@ export class FollowUpService {
     }
 
     const activeCells = await CellService.getActiveCells();
-    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
+    const requestedCell = activeCells.find(cell =>
+      cell.id === targetCellId || cell.firebase_id === targetCellId || cell.tutorUid === targetTutorUid
+    );
+    const requestedCellIds = requestedCell
+      ? new Set([requestedCell.id, requestedCell.firebase_id].filter((id): id is string => Boolean(id)))
+      : targetCellId ? new Set([targetCellId]) : null;
     const applyFilters = (contacts: EvangelismContact[]) => contacts
       .filter(contact => activeCellIds.has(contact.cellId))
-      .filter(contact => !targetCellId || contact.cellId === targetCellId)
+      .filter(contact => !requestedCellIds || requestedCellIds.has(contact.cellId))
       .filter(contact => !targetTutorUid || contact.tutorUid === targetTutorUid)
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
     // Supabase is authoritative even when it returns no contacts; do not resurrect deleted-cell cache.
     try {
-      const supaContacts = await SupabaseService.getEvangelismContacts({ cellId: targetCellId, tutorUid: targetTutorUid });
+      const supaContacts = await SupabaseService.getEvangelismContacts({ tutorUid: targetTutorUid });
       if (supaContacts !== null) {
         const visible = applyFilters(supaContacts);
         saveStoredContacts(visible);

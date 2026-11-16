@@ -59,13 +59,13 @@ export class ReportService {
   }): Promise<CellMeetingReport[]> {
     // 1. Primary: Try Supabase
     const [supaReports, activeCells] = await Promise.all([
-      SupabaseService.getCellMeetingReports(filters),
+      SupabaseService.getCellMeetingReports(filters ? { ...filters, cellId: undefined } : undefined),
       CellService.getActiveCells(),
     ]);
-    const activeCellIds = new Set(activeCells.map(cell => cell.id));
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     const applyFilters = (items: CellMeetingReport[]) => items
       .filter(report => activeCellIds.has(report.cellId))
-      .filter(report => !filters?.cellId || report.cellId === filters.cellId)
+      .filter(report => !filters?.cellId || activeCells.some(cell => (cell.id === filters.cellId || cell.firebase_id === filters.cellId) && [cell.id, cell.firebase_id].includes(report.cellId)))
       .filter(report => !filters?.tutorUid || report.tutorUid === filters.tutorUid)
       .filter(report => !filters?.status || report.status === filters.status)
       .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
@@ -231,7 +231,7 @@ export class ReportService {
   }): Promise<EvangelismReport[]> {
     // 1. Primary: Try Supabase
     const [supaReports, activeCells] = await Promise.all([
-      SupabaseService.getEvangelismReports(filters),
+      SupabaseService.getEvangelismReports(filters ? { ...filters, cellId: undefined } : undefined),
       CellService.getActiveCells(),
     ]);
     const activeCellIds = new Set(activeCells.map(cell => cell.id));

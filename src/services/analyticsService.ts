@@ -24,17 +24,22 @@ export class AnalyticsService {
     ]);
 
     // Only data linked to a currently registered, non-archived cell is active.
-    const activeCellIds = new Set(allCells.map(cell => cell.id));
+    const activeCellIds = new Set(allCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     let scopedCells = allCells;
     let scopedMeetings = meetingReports.filter(report => activeCellIds.has(report.cellId));
     let scopedEvang = evangelismReports.filter(report => activeCellIds.has(report.cellId));
     let scopedContacts = contacts.filter(contact => activeCellIds.has(contact.cellId));
 
     if (!isAdmin && userCellId) {
-      scopedCells = allCells.filter(c => c.id === userCellId);
-      scopedMeetings = meetingReports.filter(m => m.cellId === userCellId);
-      scopedEvang = evangelismReports.filter(e => e.cellId === userCellId);
-      scopedContacts = contacts.filter(c => c.cellId === userCellId);
+      scopedCells = allCells.filter(cell =>
+        cell.id === userCellId || cell.firebase_id === userCellId || cell.tutorUid === userCellId
+      );
+      const memberCellKeys = new Set(scopedCells.flatMap(cell =>
+        [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))
+      ));
+      scopedMeetings = meetingReports.filter(report => memberCellKeys.has(report.cellId));
+      scopedEvang = evangelismReports.filter(report => memberCellKeys.has(report.cellId));
+      scopedContacts = contacts.filter(contact => memberCellKeys.has(contact.cellId));
     }
 
     const totalCells = scopedCells.length;
@@ -129,12 +134,18 @@ export class AnalyticsService {
     ]);
 
     const activeCells = await CellService.getActiveCells();
-    const activeIds = new Set(activeCells.map(cell => cell.id));
+    const activeIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     let fMeetings = meetings.filter(report => activeIds.has(report.cellId));
     let fEvang = evang.filter(report => activeIds.has(report.cellId));
     if (!isAdmin && userCellId) {
-      fMeetings = meetings.filter(m => m.cellId === userCellId);
-      fEvang = evang.filter(e => e.cellId === userCellId);
+      const memberCell = activeCells.find(cell =>
+        cell.id === userCellId || cell.firebase_id === userCellId || cell.tutorUid === userCellId
+      );
+      const memberCellKeys = new Set(memberCell
+        ? [memberCell.id, memberCell.firebase_id].filter((id): id is string => Boolean(id))
+        : [userCellId]);
+      fMeetings = meetings.filter(report => memberCellKeys.has(report.cellId));
+      fEvang = evang.filter(report => memberCellKeys.has(report.cellId));
     }
 
     const periods = await ReportService.getPeriods();
@@ -175,12 +186,13 @@ export class AnalyticsService {
     ]);
 
     return cells.map(cell => {
-      const cellMeetings = meetings.filter(m => m.cellId === cell.id);
-      const cellEvang = evang.filter(e => e.cellId === cell.id);
+      const cellKeys = new Set([cell.id, cell.firebase_id].filter((id): id is string => Boolean(id)));
+      const cellMeetings = meetings.filter(report => cellKeys.has(report.cellId));
+      const cellEvang = evang.filter(report => cellKeys.has(report.cellId));
 
       // Identify assigned tutor / leader
       const tutorProfile = allProfiles.find(
-        p => p.cell_id === cell.id || p.id === cell.tutorUid || p.full_name.toLowerCase() === (cell.leader_name || '').toLowerCase()
+        p => p.cell_id === cell.id || p.cell_id === cell.firebase_id || p.id === cell.tutorUid || p.full_name.toLowerCase() === (cell.leader_name || '').toLowerCase()
       );
       const leaderName = cell.leader_name || tutorProfile?.full_name || 'Assigned Tutor';
       const leaderPhone = cell.leader_phone || tutorProfile?.phone_number || '';

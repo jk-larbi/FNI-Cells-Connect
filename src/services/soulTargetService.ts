@@ -110,7 +110,7 @@ export class SoulTargetService {
       const date = new Date(value);
       return !Number.isNaN(date.getTime()) && date.getFullYear() === year;
     };
-    const activeCellIds = new Set(cells.map(cell => cell.id));
+    const activeCellIds = new Set(cells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     const currentCellEvang = evangelismReports.filter(report => activeCellIds.has(report.cellId));
     const currentCellMeetings = meetingReports.filter(report => activeCellIds.has(report.cellId));
     const isApproved = (status: string) => status === 'Approved' || status === 'approved';
@@ -128,8 +128,13 @@ export class SoulTargetService {
     const monthlyMap = new Map<string, number>();
     const quarterlyMap = new Map<string, number>();
     const cellMap = new Map<string, { cellName: string; souls: number; fromEvangelism: number }>();
+    const cellIdByAlias = new Map<string, string>();
     const teamMap = new Map<string, { souls: number; outings: number }>();
-    cells.forEach(cell => cellMap.set(cell.id, { cellName: cell.name, souls: 0, fromEvangelism: 0 }));
+    cells.forEach(cell => {
+      cellMap.set(cell.id, { cellName: cell.name, souls: 0, fromEvangelism: 0 });
+      cellIdByAlias.set(cell.id, cell.id);
+      if (cell.firebase_id) cellIdByAlias.set(cell.firebase_id, cell.id);
+    });
 
     for (const report of validEvang) {
       const souls = Math.max(0, Number(report.verifiedSoulsWon ?? report.conversions) || 0);
@@ -141,8 +146,9 @@ export class SoulTargetService {
       weeklyMap.set(week, (weeklyMap.get(week) || 0) + souls);
       monthlyMap.set(month, (monthlyMap.get(month) || 0) + souls);
       quarterlyMap.set(quarter, (quarterlyMap.get(quarter) || 0) + souls);
-      const cell = cellMap.get(report.cellId) || { cellName: report.cellName || 'Unassigned Cell', souls: 0, fromEvangelism: 0 };
-      cellMap.set(report.cellId, { cellName: report.cellName || cell.cellName, souls: cell.souls + souls, fromEvangelism: cell.fromEvangelism + souls });
+      const canonicalCellId = cellIdByAlias.get(report.cellId) || report.cellId;
+      const cell = cellMap.get(canonicalCellId) || { cellName: report.cellName || 'Unassigned Cell', souls: 0, fromEvangelism: 0 };
+      cellMap.set(canonicalCellId, { cellName: report.cellName || cell.cellName, souls: cell.souls + souls, fromEvangelism: cell.fromEvangelism + souls });
       const leader = report.tutorName || 'Field Team';
       const team = teamMap.get(leader) || { souls: 0, outings: 0 };
       teamMap.set(leader, { souls: team.souls + souls, outings: team.outings + 1 });
