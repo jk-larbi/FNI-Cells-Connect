@@ -45,6 +45,37 @@ export class MessagingService {
     return SupabaseService.deleteMessageForEveryone(messageId, scope);
   }
 
+  static async editMessage(messageId: string, scope: 'private' | 'community', content: string): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured || !content.trim()) return false;
+    const { data, error } = await supabase.rpc('fni_edit_chat_message', {
+      p_message_id: messageId, p_scope: scope, p_content: content.trim(),
+    });
+    if (error) { console.warn('Message edit failed:', error.message); return false; }
+    return data === true;
+  }
+
+  static async clearAllPrivateChats(viewerUid: string): Promise<boolean> {
+    return SupabaseService.savePrivateChatPreference(viewerUid, '*', { clearedAt: new Date().toISOString(), deletedAt: null });
+  }
+
+  static async clearCommunityHistory(viewerUid: string): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+    const { error } = await supabase.from('community_chat_preferences').upsert(
+      { user_id: viewerUid, cleared_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+    if (error) { console.warn('Community history clear failed:', error.message); return false; }
+    return true;
+  }
+
+  static async hideCommunityMessageForUser(viewerUid: string, messageId: string): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+    const { error } = await supabase.from('community_message_hidden_for_user')
+      .upsert({ user_id: viewerUid, message_id: messageId }, { onConflict: 'user_id,message_id' });
+    if (error) { console.warn('Community message hide failed:', error.message); return false; }
+    return true;
+  }
+
   // =========================================================================
   // 1. PRIVATE TUTOR-ADMIN MESSAGING
   // =========================================================================
@@ -114,10 +145,11 @@ export class MessagingService {
 
   static async getPrivateConversation(tutorUid: string, viewerUid: string, conversationId: string, isAdmin = false): Promise<PrivateMessage[]> {
     try {
-      const [supaMsgs, preference, hiddenIds, directory, activeCells] = await Promise.all([
+      const [supaMsgs, preference, hiddenIds, allChatsPreference, directory, activeCells] = await Promise.all([
         SupabaseService.getPrivateMessages(tutorUid),
         SupabaseService.getPrivateChatPreference(viewerUid, conversationId),
         SupabaseService.getHiddenPrivateMessageIds(viewerUid),
+        SupabaseService.getPrivateChatPreference(viewerUid, '*'),
         SupabaseService.getMemberDirectory(),
         CellService.getActiveCells(),
       ]);
@@ -129,7 +161,7 @@ export class MessagingService {
       allowedMemberIds.add(viewerUid);
       if (directory?.some(member => member.id === tutorUid)) allowedMemberIds.add(tutorUid);
       const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
-      const cutoffs = [preference.clearedAt, preference.deletedAt]
+      const cutoffs = [preference.clearedAt, preference.deletedAt, allChatsPreference?.clearedAt]
         .filter((value): value is string => Boolean(value))
         .map(value => new Date(value).getTime())
         .filter(Number.isFinite);
@@ -331,7 +363,7 @@ export class MessagingService {
     return msg;
   }
 
-  static async getCommunityMessages(): Promise<CommunityMessage[]> {
+  static async getCommunityMessages(viewerUid?: string): Promise<CommunityMessage[]> {
     try {
       const [supaMsgs, directory, activeCells] = await Promise.all([
         SupabaseService.getCommunityMessages(),
@@ -343,16 +375,32 @@ export class MessagingService {
         const currentProfile = AuthService.getCurrentProfile();
         if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
         const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
-        const visibleMessages = supaMsgs.filter(message =>
+        let visibleMessages = supaMsgs.filter(message =>
           allowedMemberIds.has(message.senderUid) &&
           (!message.cellName?.trim() || activeCellNames.has(message.cellName.trim().toLowerCase()))
         );
+        if (viewerUid && supabase) {
+          const [preferenceResult, hiddenResult] = await Promise.all([
+            supabase.from('community_chat_preferences').select('cleared_at').eq('user_id', viewerUid).maybeSingle(),
+            supabase.from('community_message_hidden_for_user').select('message_id').eq('user_id', viewerUid),
+          ]);
+          if (preferenceResult.error || hiddenResult.error) return [];
+          const cutoff = preferenceResult.data?.cleared_at ? new Date(preferenceResult.data.cleared_at).getTime() : 0;
+          const hiddenIds = new Set((hiddenResult.data || []).map(row => row.message_id));
+          visibleMessages = visibleMessages.filter(message =>
+            new Date(message.createdAt).getTime() > cutoff && !hiddenIds.has(message.id)
+          );
+        }
         setStored(STORAGE_KEYS.COMMUNITY, visibleMessages);
         return visibleMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       }
     } catch (e) {
       console.warn('Notice querying Supabase community messages:', e);
     }
+
+    // Never fall back to a shared local cache when personal visibility controls
+    // could not be loaded; fail closed so cleared/hidden messages stay hidden.
+    if (viewerUid) return [];
 
     const [activeCells, directory] = await Promise.all([
       CellService.getActiveCells(),

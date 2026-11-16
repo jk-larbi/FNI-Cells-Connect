@@ -220,6 +220,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateSticker, setPrivateSticker] = useState<{ emoji: string; label: string } | null>(null);
   const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
   const [openChatMenu, setOpenChatMenu] = useState(false);
+  const [openCommunityChatMenu, setOpenCommunityChatMenu] = useState(false);
   const privateLongPressTimer = useRef<number | null>(null);
   const privateLongPressTriggered = useRef(false);
   const communityLongPressTimer = useRef<number | null>(null);
@@ -506,6 +507,43 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setPrivateSendError(null);
   };
 
+  const handleClearAllPrivateChats = async () => {
+    if (!window.confirm('Clear every private conversation from your account only? Other members will keep their messages.')) return;
+    const saved = await MessagingService.clearAllPrivateChats(currentUser.id);
+    if (!saved) { setPrivateSendError('Your private chats could not be cleared. Please try again.'); return; }
+    setPrivateMessages([]);
+    setPrivateReplyTo(null);
+    setOpenChatMenu(false);
+  };
+
+  const handleClearCommunityHistory = async () => {
+    if (!window.confirm('Clear the Community Hub history from your account only? Other members will still see all messages.')) return;
+    const saved = await MessagingService.clearCommunityHistory(currentUser.id);
+    if (!saved) { setCommunitySendError('Community history could not be cleared. Please try again.'); return; }
+    setCommunityMessages([]);
+    setCommunityReplyTo(null);
+    setOpenCommunityChatMenu(false);
+  };
+
+  const handleHideCommunityMessage = async (messageId: string) => {
+    if (!window.confirm('Delete this message from your account only? Everyone else will still see it.')) return;
+    const saved = await MessagingService.hideCommunityMessageForUser(currentUser.id, messageId);
+    if (!saved) { setCommunitySendError('This message could not be hidden. Please try again.'); return; }
+    setCommunityMessages(previous => previous.filter(message => message.id !== messageId));
+    setOpenMessageMenu(null);
+  };
+
+  const handleEditMessage = async (messageId: string, scope: 'private' | 'community', currentContent: string) => {
+    const edited = window.prompt('Edit your message:', currentContent);
+    if (edited === null || edited.trim() === currentContent.trim()) { setOpenMessageMenu(null); return; }
+    if (!edited.trim()) { window.alert('A message cannot be empty.'); return; }
+    const saved = await MessagingService.editMessage(messageId, scope, edited);
+    if (!saved) { window.alert('This message could not be edited. Only the original sender can edit their message.'); return; }
+    if (scope === 'private') await loadPrivateMessages();
+    else await loadCommunity();
+    setOpenMessageMenu(null);
+  };
+
   const handleDeleteMessageForEveryone = async (messageId: string, scope: 'private' | 'community') => {
     const confirmed = window.confirm('Delete this message and its attachments for everyone in this conversation?');
     if (!confirmed) return;
@@ -591,7 +629,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const loadCommunity = async () => {
-    const msgs = await MessagingService.getCommunityMessages();
+    const msgs = await MessagingService.getCommunityMessages(currentUser.id);
     setCommunityMessages(msgs);
   };
 
@@ -968,6 +1006,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             <div className="relative flex items-center gap-1.5">
               <button type="button" onClick={() => startChatCall('voice', 'community')} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="Start community voice call" title="Voice call"><Phone className="h-4 w-4" /></button>
               <button type="button" onClick={() => startChatCall('video', 'community')} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="Start community video call" title="Video call"><Video className="h-4 w-4" /></button>
+              <div className="relative"><button type="button" onClick={() => setOpenCommunityChatMenu(value => !value)} aria-label="Community chat options" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white hover:bg-white/20"><MoreVertical className="h-4 w-4" /></button>{openCommunityChatMenu && <div className="absolute right-0 top-full z-50 mt-1 min-w-44 rounded-xl border border-[#E3E8EF] bg-white p-1.5 text-[#182230] shadow-xl"><button type="button" onClick={handleClearCommunityHistory} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-[#F5F7FA]">Clear community history</button></div>}</div>
               <button type="button" onClick={() => setWallpaperMenu(wallpaperMenu === 'community' ? null : 'community')} className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20" aria-label="Change community chat wallpaper"><Palette className="h-4 w-4" /><span className="hidden sm:inline">Wallpaper</span></button>
               {wallpaperMenu === 'community' && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#E3E8EF] bg-white p-3 text-[#182230] shadow-2xl"><div className="mb-2 text-xs font-bold text-[#142B4A]">Community wallpaper</div><div className="grid grid-cols-3 gap-2">{CHAT_WALLPAPERS.map(item => <button key={item.id} type="button" onClick={() => saveWallpaper(communityWallpaperKey, item.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${communityWallpaper.id === item.id ? 'border-[#C6A45A] ring-1 ring-[#C6A45A]' : 'border-[#E3E8EF]'}`}><span className="mb-1 block h-9 rounded-lg" style={{ backgroundColor: item.color, backgroundImage: item.image }} />{item.name}</button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2.5 text-xs font-semibold text-[#142B4A] hover:bg-[#F5F7FA]">Upload your own photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) setCustomWallpaper(communityWallpaperKey, file); event.currentTarget.value = ''; }} /></label>{wallpaperImages[communityWallpaperKey] && <button type="button" onClick={() => { setWallpaperImages(previous => { const next = { ...previous }; delete next[communityWallpaperKey]; try { window.localStorage.setItem(`${wallpaperStorageKey}:images`, JSON.stringify(next)); } catch {} return next; }); saveWallpaper(communityWallpaperKey, 'default'); }} className="mt-2 w-full text-left text-xs text-rose-600">Remove custom photo</button>}</div>}
             </div>
@@ -1043,7 +1082,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {(msg.category || 'general').replace('_', ' ')}
                         </span>
                         <span className={isMine ? "text-xs text-white/70" : "text-xs text-[#667085]"}>
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{msg.editedAt && <span className="ml-1 italic">edited</span>}
                         </span>
                         <div className="relative">
                           <button type="button" onClick={() => setOpenMessageMenu(openMessageMenu === ("community:" + msg.id) ? null : ("community:" + msg.id))} className={isMine ? "p-1 rounded-lg text-white/80 hover:bg-white/10" : "p-1 rounded-lg text-[#667085] hover:bg-[#F5F7FA]"} aria-label="Message options">
@@ -1051,9 +1090,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           </button>
                           {openMessageMenu === ("community:" + msg.id) && (
                             <div className="absolute right-0 top-full z-40 mt-1 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                              {isMine && <button type="button" onClick={() => handleEditMessage(msg.id, 'community', msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Edit message</button>}
+                              <button type="button" onClick={() => handleHideCommunityMessage(msg.id)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for me</button>
                               {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'community')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
                               {allMembers.find(member => member.id === msg.senderUid) && <button type="button" onClick={() => { openMemberProfile(msg.senderUid); setOpenMessageMenu(null); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">View profile</button>}
-                              <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
+                          <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
                               <button type="button" onClick={() => handleReaction(msg.id, "❤️")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React ❤️</button>
                               <button type="button" onClick={() => handleReaction(msg.id, "🙏")} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">React 🙏</button>
                               <button type="button" onClick={() => { setCommunityReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); communityInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
@@ -1083,6 +1124,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     {/* Message Body with Highlighted Mentions */}
                     <div className={isMine ? "text-[13px] sm:text-sm text-white leading-[1.4] whitespace-pre-wrap break-words [overflow-wrap:anywhere]" : "text-[13px] sm:text-sm text-[#182230] leading-[1.4] whitespace-pre-wrap break-words [overflow-wrap:anywhere]"}>
                       {msg.deletedForEveryoneAt ? <span className="italic opacity-70">This message was deleted</span> : renderFormattedMessage(msg.content)}
+                      {msg.editedAt && !msg.deletedForEveryoneAt && <span className={`ml-1 text-[10px] italic ${isMine ? 'text-white/60' : 'text-[#98A2B3]'}`}>edited</span>}
                       {!msg.deletedForEveryoneAt && (msg.attachments || []).map(attachment => <ChatAttachmentPreview key={attachment.path} attachment={attachment} />)}
                     </div>
 
@@ -1367,6 +1409,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 {openChatMenu && (
                   <div className="absolute right-0 top-full z-40 mt-1 min-w-40 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
                     <button type="button" onClick={() => handlePrivateChatAction('clear')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Clear chat</button>
+                    <button type="button" onClick={handleClearAllPrivateChats} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Clear all chats</button>
                     <button type="button" onClick={() => handlePrivateChatAction('delete')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete chat</button>
                   </div>
                 )}
@@ -1490,6 +1533,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       </button>
                       {openMessageMenu === ("private:" + msg.id) && (
                         <div className="absolute right-1 top-8 z-40 min-w-28 rounded-xl border border-[#E3E8EF] bg-white p-1.5 shadow-xl">
+                          {isMine && <button type="button" onClick={() => handleEditMessage(msg.id, 'private', msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Edit message</button>}
                           <button type="button" onClick={() => copyMessage(msg.content)} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Copy message</button>
                           <button type="button" onClick={() => { setPrivateReplyTo({ id: msg.id, senderName: msg.senderName, content: msg.content }); setOpenMessageMenu(null); privateInputRef.current?.focus(); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#182230] hover:bg-[#F5F7FA]">Reply</button>
                           {(isMine || isAdmin) && <button type="button" onClick={() => handleDeleteMessageForEveryone(msg.id, 'private')} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete for everyone</button>}
@@ -1497,6 +1541,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         </div>
                       )}
                       {msg.deletedForEveryoneAt ? <span className="italic opacity-70">This message was deleted</span> : renderFormattedMessage(msg.content)}
+                      {msg.editedAt && !msg.deletedForEveryoneAt && <span className={`ml-1 text-[10px] italic ${isMine ? 'text-white/60' : 'text-[#98A2B3]'}`}>edited</span>}
                       {!msg.deletedForEveryoneAt && (msg.attachments || []).map(attachment => <ChatAttachmentPreview key={attachment.path} attachment={attachment} />)}
 
                       {/* Floating Reply Button on Hover */}
