@@ -38,7 +38,7 @@ using (
 with check (
   exists (
     select 1 from public.profiles p
-    where p.id = (select auth.uid())
+    where p.id = (select auth.uid())::text
       and p.is_active = true
       and p.role::text in ('tutor', 'admin', 'super_admin')
   )
