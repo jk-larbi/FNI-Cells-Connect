@@ -127,6 +127,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [tutorList, setTutorList] = useState<{ id: string; name: string; cellName: string }[]>([]);
   const [allMembers, setAllMembers] = useState<Array<{ id: string; full_name: string; username?: string; role: string; cell_name?: string; avatar_url?: string }>>([]);
   const [memberSearch, setMemberSearch] = useState('');
+  const [profileMember, setProfileMember] = useState<(typeof allMembers)[number] | null>(null);
   const [isSendingPrivate, setIsSendingPrivate] = useState(false);
   const [privateSendError, setPrivateSendError] = useState<string | null>(null);
   const [privateReplyTo, setPrivateReplyTo] = useState<MessageReply | null>(null);
@@ -1065,11 +1066,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <Lock className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm sm:text-base text-white">
-                  {selectedTutorId === 'admin'
-                    ? 'Confidential Leadership Line'
-                    : allMembers.find(member => member.id === selectedTutorId)?.full_name || tutorList.find(tutor => tutor.id === selectedTutorId)?.name || 'Private Conversation'}
-                </h3>
+                {selectedTutorId !== 'admin' && allMembers.some(member => member.id === selectedTutorId) ? (
+                  <button type="button" onClick={() => setProfileMember(allMembers.find(member => member.id === selectedTutorId) || null)} className="text-left rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#C6A45A]">
+                    <h3 className="font-bold text-sm sm:text-base text-white">{allMembers.find(member => member.id === selectedTutorId)?.full_name || 'Private Conversation'}</h3>
+                    <span className="text-[10px] text-[#E8D6A8]">View member profile</span>
+                  </button>
+                ) : (
+                  <h3 className="font-bold text-sm sm:text-base text-white">
+                    {selectedTutorId === 'admin' ? 'Confidential Leadership Line' : tutorList.find(tutor => tutor.id === selectedTutorId)?.name || 'Private Conversation'}
+                  </h3>
+                )}
                 <p className="text-xs text-slate-200 mt-0.5">
                   {selectedTutorId === 'admin'
                     ? 'Private, direct communication with ministry leadership.'
@@ -1384,6 +1390,28 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Send className="w-4 h-4 text-[#C6A45A]" />
             </Button>
           </form>
+        </div>
+      )}
+
+      {profileMember && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="member-profile-title" onClick={() => setProfileMember(null)}>
+          <section className="w-full max-w-sm overflow-hidden rounded-2xl border border-[#E3E8EF] bg-white shadow-2xl" onClick={event => event.stopPropagation()}>
+            <div className="relative bg-gradient-to-r from-[#142B4A] to-[#203D63] px-5 pb-6 pt-5 text-center text-white">
+              <button type="button" onClick={() => setProfileMember(null)} className="absolute right-3 top-3 rounded-full p-2 text-white/80 hover:bg-white/10" aria-label="Close member profile"><X className="h-4 w-4" /></button>
+              {profileMember.avatar_url
+                ? <img src={profileMember.avatar_url} alt="" className="mx-auto h-20 w-20 rounded-full border-4 border-white/20 object-cover" />
+                : <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/20 bg-white/10"><UserRound className="h-9 w-9 text-[#E8D6A8]" /></div>}
+              <h2 id="member-profile-title" className="mt-3 text-lg font-bold">{profileMember.full_name}</h2>
+              <p className="mt-1 text-xs text-white/75">{profileMember.username ? `@${profileMember.username}` : 'FNI Member'}</p>
+            </div>
+            <div className="space-y-3 p-5">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Cell</span><span className="text-sm font-semibold text-[#182230]">{profileMember.cell_name || 'Not assigned'}</span></div>
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F5F7FA] px-3 py-3"><span className="text-xs text-[#667085]">Role</span><span className="text-sm font-semibold capitalize text-[#182230]">{profileMember.role.replace(/_/g, ' ')}</span></div>
+              <Button type="button" variant="primary" size="md" className="w-full" onClick={() => { setSelectedTutorId(profileMember.id); setPrivateMessages([]); setPrivateReplyTo(null); setProfileMember(null); }}>
+                <MessageSquare className="mr-2 h-4 w-4" /> Message member
+              </Button>
+            </div>
+          </section>
         </div>
       )}
 
