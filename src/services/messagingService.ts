@@ -190,7 +190,7 @@ export class MessagingService {
       SupabaseService.getMemberDirectory(),
       CellService.getActiveCells(),
     ]);
-    const allowedMemberIds = new Set((directory || []).map(member => member.id));
+    const allowedMemberIds = new Set((directory || AuthService.getAllProfiles().filter(profile => profile.is_active).map(profile => ({ id: profile.id }))).map(member => member.id));
     const currentProfile = AuthService.getCurrentProfile();
     if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
     const activeCellIds = new Set(activeCells.map(cell => cell.id));
