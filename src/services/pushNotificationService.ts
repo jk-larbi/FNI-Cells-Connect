@@ -348,7 +348,7 @@ export class PushNotificationService {
         body: { action: 'test_push' },
       });
       if (error || !data) return { success: false, error: data?.error || error?.message || 'Could not send a test push notification.' };
-      if (Number(data.sent || 0) < 1) return { success: false, error: data.message || 'No active push registration was found for this device.' };
+      if (Number(data.sent || 0) < 1) return { success: false, error: data.error || data.message || 'No active push registration was found for this device.' };
       return { success: true, sent: Number(data.sent) };
     } catch (error: any) {
       return { success: false, error: error?.message || 'Test push failed.' };

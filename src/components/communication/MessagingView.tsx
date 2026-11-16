@@ -635,6 +635,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       // leader names or stale conversation records.
       eligibleMembers.forEach(member => {
         if (member.id === currentUser.id) return;
+        // The administrator's private inbox is specifically a tutor inbox.
+        // Never leave another admin or an old/deleted profile as a send target.
+        if (isAdmin && member.role !== 'tutor') return;
         tutorMap.set(member.id, {
           id: member.id,
           name: member.role === 'admin' || member.role === 'super_admin'
@@ -657,6 +660,25 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
     init();
   }, [currentUser, isAdmin]);
+
+  // A profile can be deleted and recreated with a new ID. Do not keep an
+  // obsolete initialConversationId/selection as the administrator's recipient.
+  // Otherwise a successful insert can be delivered to a profile that no longer exists.
+  useEffect(() => {
+    if (!isAdmin || tutorList.length === 0) return;
+    if (!selectedTutorId) {
+      setSelectedTutorId(tutorList[0].id);
+      return;
+    }
+    if (!tutorList.some(tutor => tutor.id === selectedTutorId)) {
+      // Never silently redirect a private message to a different tutor.
+      // Keep the stale ID blocked until the administrator explicitly chooses
+      // one of the current active tutors from the selector.
+      setPrivateMessages([]);
+      setPrivateReplyTo(null);
+      setPrivateSendError('This tutor account is no longer active. Please select the tutor from the current list.');
+    }
+  }, [isAdmin, tutorList, selectedTutorId]);
 
   // Realtime subscription + auto-sync for messaging (Zero manual refresh required)
   useEffect(() => {
@@ -1037,9 +1059,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const handleSendPrivate = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!privateText.trim() && privateFiles.length === 0 && !privateSticker) || privateSendLock.current) return;
+    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    if (isAdmin && !tutorList.some(tutor => tutor.id === recipientId)) {
+      setPrivateSendError('Please select an active tutor before sending. This conversation may point to an old account.');
+      return;
+    }
     privateSendLock.current = true;
 
-    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
     const recipientName = isAdmin
       ? tutorList.find(t => t.id === selectedTutorId)?.name || 'Tutor'
       : recipientId === 'admin' ? 'Administrator / Leadership' : tutorList.find(t => t.id === recipientId)?.name || 'FNI Tutor';
@@ -1635,10 +1661,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <>
                   <span className="text-xs text-slate-200 font-medium">{isAdmin ? 'Select Tutor:' : 'Chat with:'}</span>
                   <select
-                    value={isAdmin ? selectedTutorId : (selectedTutorId || 'admin')}
-                    onChange={e => { setSelectedTutorId(e.target.value); setPrivateMessages([]); setPrivateReplyTo(null); setOpenChatMenu(false); }}
+                    value={isAdmin ? (tutorList.some(tutor => tutor.id === selectedTutorId) ? selectedTutorId : '') : (selectedTutorId || 'admin')}
+                    onChange={e => { setSelectedTutorId(e.target.value); setPrivateMessages([]); setPrivateReplyTo(null); setPrivateSendError(null); setOpenChatMenu(false); }}
                     className="bg-[#142B4A] border border-[#E3E8EF]/30 text-white text-xs rounded-xl px-3 py-2 font-bold focus:outline-none max-w-[210px]"
                   >
+                    {isAdmin && <option value="" disabled className="text-slate-900 bg-white">Select an active tutor</option>}
                     {!isAdmin && <option value="admin" className="text-slate-900 bg-white">FNI Leadership</option>}
                     {tutorList.map(t => (
                       <option key={t.id} value={t.id} className="text-slate-900 bg-white">
