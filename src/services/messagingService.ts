@@ -398,6 +398,10 @@ export class MessagingService {
       console.warn('Notice querying Supabase community messages:', e);
     }
 
+    // Never fall back to a shared local cache when personal visibility controls
+    // could not be loaded; fail closed so cleared/hidden messages stay hidden.
+    if (viewerUid) return [];
+
     const [activeCells, directory] = await Promise.all([
       CellService.getActiveCells(),
       SupabaseService.getMemberDirectory(),
