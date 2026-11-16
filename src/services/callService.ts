@@ -23,6 +23,7 @@ export class CallService {
     callerProfileId: string,
     recipientProfileId: string,
   ): RealtimeChannel {
+    void callId; // Session identity is carried by signals, not the stable participant topic.
     if (!supabase) throw new Error('FNI calling is unavailable because the secure connection is not configured.');
     const [firstParticipant, secondParticipant] = [callerProfileId, recipientProfileId].sort();
     // One stable direct-chat channel lets the other participant receive an incoming
