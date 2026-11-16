@@ -1,4 +1,4 @@
-export type UserRole = 'tutor' | 'admin' | 'super_admin' | 'national_admin' | 'pastor' | 'overseer' | 'leader' | 'regional_leader' | 'cell_leader';
+export type UserRole = 'tutor' | 'admin' | 'cell_leader' | 'super_admin' | 'national_admin' | 'regional_leader';
 
 export type ReportStatus =
   | 'Newly Submitted'

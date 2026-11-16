@@ -242,7 +242,7 @@ export const AdminManagementView: React.FC = () => {
 
   const totalUsersCount = users.length;
   const adminCount = users.filter(u => u.role === 'super_admin' || u.role === 'national_admin').length;
-  const leaderCount = users.filter(u => ['pastor', 'overseer', 'leader', 'regional_leader', 'cell_leader'].includes(u.role)).length;
+  const leaderCount = users.filter(u => u.role === 'regional_leader' || u.role === 'cell_leader').length;
 
   return (
     <div className="space-y-6">
@@ -361,9 +361,6 @@ export const AdminManagementView: React.FC = () => {
                 <option value="all">All Roles</option>
                 <option value="super_admin">Super Administrator</option>
                 <option value="national_admin">National Administrator</option>
-                <option value="pastor">Pastor</option>
-                <option value="overseer">Overseer</option>
-                <option value="leader">Leader</option>
                 <option value="regional_leader">Regional Leader</option>
                 <option value="cell_leader">Cell Leader</option>
               </select>
@@ -466,10 +463,7 @@ export const AdminManagementView: React.FC = () => {
                       >
                         <option value="super_admin">Super Admin</option>
                         <option value="national_admin">National Admin</option>
-                        <option value="pastor">Pastor</option>
-                        <option value="overseer">Overseer</option>
-                        <option value="leader">Leader</option>
-                        <option value="regional_leader">Regional Leader</option>
+                                                <option value="regional_leader">Regional Leader</option>
                         <option value="cell_leader">Cell Leader</option>
                       </select>
                     </td>
@@ -781,9 +775,6 @@ export const AdminManagementView: React.FC = () => {
                 onChange={e => setNewUser({ ...newUser, role: e.target.value as UserRole })}
                 className="w-full rounded-xl border border-slate-200 p-2.5 focus:ring-1 focus:ring-navy-600"
               >
-                <option value="pastor">Pastor</option>
-                <option value="overseer">Overseer</option>
-                <option value="leader">Leader</option>
                 <option value="regional_leader">Regional Leader</option>
                 <option value="cell_leader">Cell Leader</option>
                 <option value="admin">Administrator</option>

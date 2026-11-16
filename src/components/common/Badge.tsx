@@ -49,9 +49,6 @@ export const Badge: React.FC<BadgeProps> = ({
       admin: { label: 'Admin', bg: 'bg-navy-900', text: 'text-white' },
       super_admin: { label: 'Super Admin', bg: 'bg-rose-50', text: 'text-rose-700' },
       national_admin: { label: 'National Admin', bg: 'bg-purple-50', text: 'text-purple-700' },
-      pastor: { label: 'Pastor', bg: 'bg-amber-50', text: 'text-amber-800' },
-      overseer: { label: 'Overseer', bg: 'bg-violet-50', text: 'text-violet-700' },
-      leader: { label: 'Leader', bg: 'bg-blue-50', text: 'text-blue-700' },
       regional_leader: { label: 'Regional Leader', bg: 'bg-blue-50', text: 'text-blue-700' },
       cell_leader: { label: 'Cell Leader', bg: 'bg-slate-100', text: 'text-slate-700' },
     };
