@@ -448,6 +448,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const communityInputRef = useRef<HTMLTextAreaElement>(null);
   const privateInputRef = useRef<HTMLTextAreaElement>(null);
   const communityEndRef = useRef<HTMLDivElement>(null);
+  const communityStreamRef = useRef<HTMLDivElement>(null);
+  const [showCommunityJumpToLatest, setShowCommunityJumpToLatest] = useState(false);
+  const [showPrivateJumpToLatest, setShowPrivateJumpToLatest] = useState(false);
   const privateEndRef = useRef<HTMLDivElement>(null);
   const privateStreamRef = useRef<HTMLDivElement>(null);
   const previousCommunityCountRef = useRef<number | null>(null);
@@ -455,15 +458,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const previousPrivateConversationRef = useRef<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
-  // Private chats keep their own message viewport. Community Hub uses the
-  // app's normal document scrolling, so new posts follow the page scroll.
+  // Telegram-style chat scrolling: each conversation owns its message viewport.
+  // Keep the reader's position when older messages are being viewed; follow new
+  // messages only when the reader was already near the latest message.
   useEffect(() => {
     if (activeTab === 'community') {
-      const previousCount = previousCommunityCountRef.current;
-      const isFirstLoad = previousCount === null;
-      const pageNearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180;
-      if (isFirstLoad || pageNearBottom) {
-        requestAnimationFrame(() => communityEndRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' }));
+      const stream = communityStreamRef.current;
+      if (!stream) return;
+      const isFirstLoad = previousCommunityCountRef.current === null;
+      const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
+      if (isFirstLoad || nearBottom) {
+        requestAnimationFrame(() => {
+          stream.scrollTop = stream.scrollHeight;
+          setShowCommunityJumpToLatest(false);
+        });
       }
       previousCommunityCountRef.current = communityMessages.length;
       return;
@@ -474,7 +482,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     const isFirstLoad = previousPrivateCountRef.current === null || conversationChanged;
     const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
     if (isFirstLoad || nearBottom) {
-      requestAnimationFrame(() => { stream.scrollTop = stream.scrollHeight; });
+      requestAnimationFrame(() => {
+        stream.scrollTop = stream.scrollHeight;
+        setShowPrivateJumpToLatest(false);
+      });
     }
     previousPrivateCountRef.current = privateMessages.length;
     previousPrivateConversationRef.current = selectedTutorId;
@@ -790,8 +801,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Scroll to a quoted message
   const scrollToMessage = (msgId: string) => {
     const el = document.getElementById(`msg-${msgId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const stream = el?.closest('.fni-chat-stream') as HTMLElement | null;
+    if (el && stream) {
+      const streamRect = stream.getBoundingClientRect();
+      const messageRect = el.getBoundingClientRect();
+      const targetTop = stream.scrollTop + messageRect.top - streamRect.top - (stream.clientHeight - messageRect.height) / 2;
+      stream.scrollTo({ top: targetTop, behavior: 'smooth' });
       el.classList.add('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
       setTimeout(() => {
         el.classList.remove('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
@@ -964,7 +979,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setPrivateReplyTo(null);
       setShowPrivateEmoji(false);
       await loadPrivateMessages();
-      privateEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      requestAnimationFrame(() => {
+        const stream = privateStreamRef.current;
+        if (stream) stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
+      });
     } catch (error) {
       console.error('Private message send failed:', error);
       setPrivateSendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
@@ -1009,7 +1027,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setShowCommunityEmoji(false);
       setShowMentionMenu(false);
       await loadCommunity();
-      communityEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      requestAnimationFrame(() => {
+        const stream = communityStreamRef.current;
+        if (stream) stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
+      });
     } catch (error) {
       console.error('Community message send failed:', error);
       setCommunitySendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
@@ -1143,9 +1164,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       {/* TAB 1: TUTOR COMMUNITY FORUM (Open Access, Emojis, Tagging & Telegram/WhatsApp Replies) */}
       {activeTab === 'community' && (
-        <div className="fni-community-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs flex flex-col">
+        <div className="fni-community-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col min-h-0">
           {/* Forum Header */}
-          <div className="sticky top-14 sm:top-16 z-20 relative px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-md">
+          <div className="relative z-20 shrink-0 px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-md">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-1">
                 <Users className="w-4 h-4" /> FNI Community
@@ -1183,7 +1204,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="fni-community-stream w-full px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
+          <div ref={communityStreamRef} onScroll={event => { const el = event.currentTarget; setShowCommunityJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {visibleCommunityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1333,6 +1354,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               })
             )}
             <div ref={communityEndRef} />
+            {showCommunityJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => communityStreamRef.current?.scrollTo({ top: communityStreamRef.current.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
           </div>
 
           {/* ACTIVE REPLY PREVIEW BANNER (WhatsApp / Telegram style) */}
@@ -1440,7 +1462,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Forum Compose Bar */}
-          <form onSubmit={handleSendCommunity} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
+          <form onSubmit={handleSendCommunity} className="fni-chat-composer relative z-20 shrink-0 p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
             {showCommunityStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowCommunityStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setCommunitySticker(sticker); setShowCommunityStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2 text-xs font-semibold text-[#142B4A]">Create sticker from photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) saveCustomSticker(file); event.currentTarget.value = ''; }} /></label>{customStickers.length > 0 && <div className="mt-3 border-t border-[#E3E8EF] pt-3"><p className="mb-2 text-[11px] font-bold text-[#667085]">My stickers · tap to attach</p><div className="grid grid-cols-4 gap-2">{customStickers.map(sticker => <button key={sticker.id} type="button" onClick={() => attachCustomSticker(sticker, 'community')} className="rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-1.5"><img src={sticker.dataUrl} alt={sticker.name} className="mx-auto h-12 w-12 rounded-lg object-contain" /><span className="mt-1 block truncate text-[9px] text-[#667085]">{sticker.name}</span></button>)}</div></div>}</div>}
             {communitySticker && <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{communitySticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{communitySticker.label} sticker ready</span><button type="button" onClick={() => setCommunitySticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {communitySendError && (
@@ -1595,7 +1617,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Messages Stream */}
-          <div ref={privateStreamRef} className="fni-chat-stream flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
+          <div ref={privateStreamRef} onScroll={event => { const el = event.currentTarget; setShowPrivateJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-chat-stream relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
             {visiblePrivateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1703,6 +1725,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               })
             )}
             <div ref={privateEndRef} />
+            {showPrivateJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => privateStreamRef.current?.scrollTo({ top: privateStreamRef.current.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
           </div>
 
           {/* Private Reply Preview */}
