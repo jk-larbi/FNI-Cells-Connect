@@ -1,3 +1,4 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect } from 'react';
 import { CellReport, Region, ReportingPeriod, UnifiedReportItem, ReportStatus, Cell } from '../../types';
 import { Badge } from '../common/Badge';
@@ -223,7 +224,7 @@ export const ReportHistoryTable: React.FC<ReportHistoryTableProps> = ({
   };
 
   // Export CSV
-  const exportCSV = () => {
+  const exportCSV = async () => {
     const headers = [
       'Report Type',
       'Cell Name',
@@ -252,15 +253,8 @@ export const ReportHistoryTable: React.FC<ReportHistoryTableProps> = ({
       ];
     });
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `FNI_Cells_Connect_Reports_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\r\n');
+    await exportCsvFile(`FNI_Cells_Connect_Reports_${new Date().toISOString().split('T')[0]}.csv`, csvContent);
   };
 
   return (
