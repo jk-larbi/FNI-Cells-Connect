@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { MessagingService } from '../../services/messagingService';
 import { supabase } from '../../lib/supabase';
 import { CellService } from '../../services/cellService';
+import { CallService, FniCallKind, FniCallSignal } from '../../services/callService';
 import { PrivateMessage, CommunityMessage, InvitationCode, MessageReply, ChatAttachment } from '../../types';
 import {
   MessageSquare,
@@ -169,6 +170,145 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [privateText, setPrivateText] = useState('');
   const [privateFiles, setPrivateFiles] = useState<File[]>([]);
   const [selectedTutorId, setSelectedTutorId] = useState<string>(() => initialConversationId || (isAdmin ? '' : 'admin'));
+  const [callUi, setCallUi] = useState<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
+  const [callChannelReady, setCallChannelReady] = useState(false);
+  const [incomingCall, setIncomingCall] = useState<FniCallSignal | null>(null);
+  const [activeCallKind, setActiveCallKind] = useState<FniCallKind>('voice');
+  const [callError, setCallError] = useState<string | null>(null);
+  const [localCallStream, setLocalCallStream] = useState<MediaStream | null>(null);
+  const [remoteCallStream, setRemoteCallStream] = useState<MediaStream | null>(null);
+  const callChannelRef = useRef<import('@supabase/supabase-js').RealtimeChannel | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const localCallStreamRef = useRef<MediaStream | null>(null);
+  const queuedIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const localCallVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteCallVideoRef = useRef<HTMLVideoElement>(null);
+
+  const sendCallSignal = async (signal: FniCallSignal) => {
+    const channel = callChannelRef.current;
+    if (!channel) throw new Error('The secure call connection is not ready. Keep this private chat open and try again.');
+    await CallService.send(channel, signal);
+  };
+
+  const finishCall = async (notifyPeer = true) => {
+    const peer = peerConnectionRef.current;
+    if (notifyPeer && peer) {
+      try {
+        await sendCallSignal({ callId: activeCallIdRef.current || '', fromProfileId: currentUser?.id || '', type: 'hangup', sentAt: new Date().toISOString() });
+      } catch (error) { console.warn('Call end signal could not be sent:', error); }
+    }
+    peer?.close();
+    peerConnectionRef.current = null;
+    localCallStreamRef.current?.getTracks().forEach(track => track.stop());
+    localCallStreamRef.current = null;
+    setLocalCallStream(null);
+    setRemoteCallStream(null);
+    setIncomingCall(null);
+    setCallUi('idle');
+    setCallError(null);
+    activeCallIdRef.current = null;
+    queuedIceCandidatesRef.current = [];
+  };
+  const activeCallIdRef = useRef<string | null>(null);
+
+  const createPeerConnection = (callId: string, kind: FniCallKind) => {
+    const peer = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
+    });
+    peerConnectionRef.current = peer;
+    peer.onicecandidate = event => {
+      if (event.candidate) {
+        void sendCallSignal({ callId, fromProfileId: currentUser?.id || '', type: 'ice-candidate', payload: event.candidate.toJSON(), sentAt: new Date().toISOString() }).catch(error => console.warn('ICE signal failed:', error));
+      }
+    };
+    peer.ontrack = event => {
+      const stream = event.streams[0];
+      if (stream) setRemoteCallStream(stream);
+    };
+    peer.onconnectionstatechange = () => {
+      if (peer.connectionState === 'connected') setCallUi('connected');
+      if (peer.connectionState === 'failed' || peer.connectionState === 'disconnected') {
+        setCallError('The connection was interrupted. Check your network and try again.');
+      }
+    };
+    return peer;
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'private' || !currentUser?.id || !selectedTutorId || selectedTutorId === 'admin' || selectedTutorId === currentUser.id) {
+      callChannelRef.current = null;
+      setCallChannelReady(false);
+      return;
+    }
+    let disposed = false;
+    setCallChannelReady(false);
+    const channel = CallService.createChannel('direct', currentUser.id, selectedTutorId);
+    CallService.listen(channel, signal => {
+      if (disposed || signal.fromProfileId !== selectedTutorId) return;
+      if (signal.type === 'offer') {
+        if (activeCallIdRef.current) return;
+        activeCallIdRef.current = signal.callId;
+        setActiveCallKind(signal.kind || 'voice');
+        setIncomingCall(signal);
+        setCallUi('ringing');
+      } else if (signal.type === 'answer' && peerConnectionRef.current && signal.callId === activeCallIdRef.current && signal.payload) {
+        void peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signal.payload as RTCSessionDescriptionInit)).then(async () => {
+          for (const candidate of queuedIceCandidatesRef.current) await peerConnectionRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
+          queuedIceCandidatesRef.current = [];
+        }).catch(error => setCallError(error instanceof Error ? error.message : 'Could not connect the call.'));
+      } else if (signal.type === 'ice-candidate' && signal.callId === activeCallIdRef.current && signal.payload) {
+        const candidate = signal.payload as RTCIceCandidateInit;
+        if (peerConnectionRef.current?.remoteDescription) void peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => console.warn('ICE candidate rejected:', error));
+        else queuedIceCandidatesRef.current.push(candidate);
+      } else if ((signal.type === 'hangup' || signal.type === 'decline') && signal.callId === activeCallIdRef.current) {
+        void finishCall(false);
+      }
+    });
+    callChannelRef.current = channel;
+    void CallService.connect(channel).then(() => {
+      if (!disposed) setCallChannelReady(true);
+    }).catch(error => {
+      if (!disposed) setCallError(error instanceof Error ? error.message : 'Secure calling is unavailable.');
+    });
+    return () => {
+      disposed = true;
+      if (callChannelRef.current === channel) callChannelRef.current = null;
+      setCallChannelReady(false);
+      void CallService.disconnect(channel);
+    };
+  }, [activeTab, currentUser?.id, selectedTutorId]);
+
+  useEffect(() => {
+    if (localCallVideoRef.current && localCallStream) localCallVideoRef.current.srcObject = localCallStream;
+  }, [localCallStream, callUi]);
+  useEffect(() => {
+    if (remoteCallVideoRef.current && remoteCallStream) remoteCallVideoRef.current.srcObject = remoteCallStream;
+  }, [remoteCallStream, callUi]);
+
+  const acceptIncomingCall = async () => {
+    if (!incomingCall || !currentUser?.id) return;
+    try {
+      const kind = incomingCall.kind || 'voice';
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: kind === 'video' });
+      localCallStreamRef.current = stream;
+      setLocalCallStream(stream);
+      const peer = createPeerConnection(incomingCall.callId, kind);
+      stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      await peer.setRemoteDescription(new RTCSessionDescription(incomingCall.payload as RTCSessionDescriptionInit));
+      for (const candidate of queuedIceCandidatesRef.current) await peer.addIceCandidate(new RTCIceCandidate(candidate));
+      queuedIceCandidatesRef.current = [];
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
+      await sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'answer', payload: answer, sentAt: new Date().toISOString() });
+      setIncomingCall(null);
+      setCallUi('calling');
+    } catch (error) {
+      setCallError(error instanceof Error ? error.message : 'Could not accept the call. Check microphone and camera permissions.');
+      try { await sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'decline', sentAt: new Date().toISOString() }); } catch { /* Peer may already be offline. */ }
+      await finishCall(false);
+    }
+  };
+
   const communityWallpaperKey = 'community';
   const privateWallpaperKey = `private:${selectedTutorId || 'admin'}`;
   const communityWallpaper = CHAT_WALLPAPERS.find(item => item.id === wallpapers[communityWallpaperKey]) || CHAT_WALLPAPERS[0];
@@ -308,6 +448,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const communityInputRef = useRef<HTMLTextAreaElement>(null);
   const privateInputRef = useRef<HTMLTextAreaElement>(null);
   const communityEndRef = useRef<HTMLDivElement>(null);
+  const communityStreamRef = useRef<HTMLDivElement>(null);
+  const [showCommunityJumpToLatest, setShowCommunityJumpToLatest] = useState(false);
+  const [showPrivateJumpToLatest, setShowPrivateJumpToLatest] = useState(false);
   const privateEndRef = useRef<HTMLDivElement>(null);
   const privateStreamRef = useRef<HTMLDivElement>(null);
   const previousCommunityCountRef = useRef<number | null>(null);
@@ -315,15 +458,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const previousPrivateConversationRef = useRef<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
-  // Private chats keep their own message viewport. Community Hub uses the
-  // app's normal document scrolling, so new posts follow the page scroll.
+  // Telegram-style chat scrolling: each conversation owns its message viewport.
+  // Keep the reader's position when older messages are being viewed; follow new
+  // messages only when the reader was already near the latest message.
   useEffect(() => {
     if (activeTab === 'community') {
-      const previousCount = previousCommunityCountRef.current;
-      const isFirstLoad = previousCount === null;
-      const pageNearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180;
-      if (isFirstLoad || pageNearBottom) {
-        requestAnimationFrame(() => communityEndRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' }));
+      const stream = communityStreamRef.current;
+      if (!stream) return;
+      const isFirstLoad = previousCommunityCountRef.current === null;
+      const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
+      if (isFirstLoad || nearBottom) {
+        requestAnimationFrame(() => {
+          stream.scrollTop = stream.scrollHeight;
+          setShowCommunityJumpToLatest(false);
+        });
       }
       previousCommunityCountRef.current = communityMessages.length;
       return;
@@ -334,7 +482,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     const isFirstLoad = previousPrivateCountRef.current === null || conversationChanged;
     const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 140;
     if (isFirstLoad || nearBottom) {
-      requestAnimationFrame(() => { stream.scrollTop = stream.scrollHeight; });
+      requestAnimationFrame(() => {
+        stream.scrollTop = stream.scrollHeight;
+        setShowPrivateJumpToLatest(false);
+      });
     }
     previousPrivateCountRef.current = privateMessages.length;
     previousPrivateConversationRef.current = selectedTutorId;
@@ -489,6 +640,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handlePrivateChatAction = async (action: 'clear' | 'delete') => {
+    setOpenChatMenu(false);
     const confirmed = window.confirm(
       action === 'clear'
         ? 'Clear this personal chat from your account? The other participant will keep their messages.'
@@ -512,6 +664,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleClearAllPrivateChats = async () => {
+    setOpenChatMenu(false);
     if (!window.confirm('Clear every private conversation from your account only? Other members will keep their messages.')) return;
     const saved = await MessagingService.clearAllPrivateChats(currentUser.id);
     if (!saved) { setPrivateSendError('Your private chats could not be cleared. Please try again.'); return; }
@@ -521,6 +674,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleClearCommunityHistory = async () => {
+    setOpenCommunityChatMenu(false);
     if (!window.confirm('Clear the Community Hub history from your account only? Other members will still see all messages.')) return;
     const saved = await MessagingService.clearCommunityHistory(currentUser.id);
     if (!saved) { setCommunitySendError('Community history could not be cleared. Please try again.'); return; }
@@ -530,6 +684,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleHideCommunityMessage = async (messageId: string) => {
+    setOpenMessageMenu(null);
     if (!window.confirm('Delete this message from your account only? Everyone else will still see it.')) return;
     const saved = await MessagingService.hideCommunityMessageForUser(currentUser.id, messageId);
     if (!saved) { setCommunitySendError('This message could not be hidden. Please try again.'); return; }
@@ -538,8 +693,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleEditMessage = async (messageId: string, scope: 'private' | 'community', currentContent: string) => {
+    setOpenMessageMenu(null);
     const edited = window.prompt('Edit your message:', currentContent);
-    if (edited === null || edited.trim() === currentContent.trim()) { setOpenMessageMenu(null); return; }
+    if (edited === null || edited.trim() === currentContent.trim()) return;
     if (!edited.trim()) { window.alert('A message cannot be empty.'); return; }
     const saved = await MessagingService.editMessage(messageId, scope, edited);
     if (!saved) { window.alert('This message could not be edited. Only the original sender can edit their message.'); return; }
@@ -549,6 +705,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleDeleteMessageForEveryone = async (messageId: string, scope: 'private' | 'community') => {
+    setOpenMessageMenu(null);
     const confirmed = window.confirm('Delete this message and its attachments for everyone in this conversation?');
     if (!confirmed) return;
     const saved = await MessagingService.deleteMessageForEveryone(messageId, scope);
@@ -567,6 +724,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleHidePrivateMessage = async (messageId: string) => {
+    setOpenMessageMenu(null);
     const confirmed = window.confirm('Hide this message from your account only? The other participant will still see it.');
     if (!confirmed) return;
     const saved = await MessagingService.hidePrivateMessageForUser(currentUser.id, messageId);
@@ -650,8 +808,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Scroll to a quoted message
   const scrollToMessage = (msgId: string) => {
     const el = document.getElementById(`msg-${msgId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const stream = el?.closest('.fni-chat-stream') as HTMLElement | null;
+    if (el && stream) {
+      const streamRect = stream.getBoundingClientRect();
+      const messageRect = el.getBoundingClientRect();
+      const targetTop = stream.scrollTop + messageRect.top - streamRect.top - (stream.clientHeight - messageRect.height) / 2;
+      stream.scrollTo({ top: targetTop, behavior: 'smooth' });
       el.classList.add('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
       setTimeout(() => {
         el.classList.remove('ring-2', 'ring-[#C6A45A]', 'bg-amber-50/60');
@@ -740,51 +902,52 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     recordingStreamRef.current?.getTracks().forEach(track => track.stop());
   }, []);
 
-  // Jitsi rooms are created per call; the invitation is first posted to the selected chat.
+  // Private one-to-one calls use WebRTC directly. Community room calls remain Jitsi links.
   const startChatCall = async (kind: 'voice' | 'video', target: 'community' | 'private') => {
-    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
-    if (target === 'private' && (!recipientId || recipientId === 'admin')) {
-      window.alert('Choose a registered member conversation before starting a call.');
+    if (target === 'community') {
+      const callWindow = window.open('about:blank', '_blank');
+      const room = `FNI-Cells-${crypto.randomUUID()}`;
+      const callUrl = `https://meet.jit.si/${room}${kind === 'voice' ? '#config.startWithVideoMuted=true&config.startAudioOnly=true' : ''}`;
+      try {
+        await MessagingService.sendCommunityMessage({ senderUid: currentUser.id, senderName: currentUser.full_name, senderRole: currentUser.role, cellName: currentUser.cell_name, content: `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`, category: 'general', mentions: [], attachments: [] });
+        await loadCommunity();
+        if (callWindow) callWindow.location.href = callUrl;
+        else window.location.href = callUrl;
+      } catch (error) {
+        callWindow?.close();
+        console.error('Could not create community call invitation:', error);
+        window.alert('The community call invitation could not be sent. Please try again.');
+      }
       return;
     }
-    const callWindow = window.open('about:blank', '_blank');
-    const room = `FNI-Cells-${crypto.randomUUID()}`;
-    const callUrl = `https://meet.jit.si/${room}${kind === 'voice' ? '#config.startWithVideoMuted=true&config.startAudioOnly=true' : ''}`;
-    const invite = `${kind === 'video' ? 'Video' : 'Voice'} call invitation: ${callUrl}`;
+
+    const recipientId = isAdmin ? selectedTutorId : (selectedTutorId || 'admin');
+    if (!recipientId || recipientId === 'admin' || !callChannelRef.current || !callChannelReady) {
+      window.alert('Open a registered member’s private conversation and wait for the secure call connection before calling.');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof RTCPeerConnection === 'undefined') {
+      window.alert('Live calling is not supported by this browser or device. Open FNI Cells Connect over HTTPS or use the installed Android app.');
+      return;
+    }
     try {
-      if (target === 'community') {
-        await MessagingService.sendCommunityMessage({
-          senderUid: currentUser.id,
-          senderName: currentUser.full_name,
-          senderRole: currentUser.role,
-          cellName: currentUser.cell_name,
-          content: invite,
-          category: 'general',
-          mentions: [],
-          attachments: [],
-        });
-        await loadCommunity();
-      } else {
-        const recipientName = tutorList.find(t => t.id === recipientId)?.name || 'FNI Member';
-        await MessagingService.sendPrivateMessage({
-          senderUid: currentUser.id,
-          senderName: currentUser.full_name,
-          senderRole: currentUser.role,
-          recipientUid: recipientId,
-          recipientName,
-          cellId: currentUser.cell_id,
-          cellName: currentUser.cell_name,
-          content: invite,
-          attachments: [],
-        });
-        await loadPrivateMessages();
-      }
-      if (callWindow) callWindow.location.href = callUrl;
-      else window.location.href = callUrl;
+      setCallError(null);
+      const callId = CallService.createSessionId();
+      activeCallIdRef.current = callId;
+      setActiveCallKind(kind);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: kind === 'video' });
+      localCallStreamRef.current = stream;
+      setLocalCallStream(stream);
+      const peer = createPeerConnection(callId, kind);
+      stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      await sendCallSignal({ callId, fromProfileId: currentUser.id, type: 'offer', kind, payload: offer, sentAt: new Date().toISOString() });
+      setCallUi('calling');
     } catch (error) {
-      callWindow?.close();
-      console.error('Could not create call invitation:', error);
-      window.alert('The call invitation could not be sent. Please try again.');
+      console.error('Could not start FNI call:', error);
+      setCallError(error instanceof Error ? error.message : 'Could not start the call. Check your microphone and camera permissions.');
+      await finishCall(false);
     }
   };
 
@@ -823,7 +986,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setPrivateReplyTo(null);
       setShowPrivateEmoji(false);
       await loadPrivateMessages();
-      privateEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      requestAnimationFrame(() => {
+        const stream = privateStreamRef.current;
+        if (stream) stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
+      });
     } catch (error) {
       console.error('Private message send failed:', error);
       setPrivateSendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
@@ -868,7 +1034,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setShowCommunityEmoji(false);
       setShowMentionMenu(false);
       await loadCommunity();
-      communityEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      requestAnimationFrame(() => {
+        const stream = communityStreamRef.current;
+        if (stream) stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
+      });
     } catch (error) {
       console.error('Community message send failed:', error);
       setCommunitySendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.');
@@ -880,6 +1049,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Copy the complete message body without trimming line breaks.
   const copyMessage = async (content: string) => {
+    setOpenMessageMenu(null);
     try {
       await navigator.clipboard.writeText(content);
       setOpenMessageMenu(null);
@@ -891,6 +1061,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Handle reaction on community message
   const handleReaction = async (messageId: string, emoji: string) => {
+    setOpenMessageMenu(null);
     try {
       await MessagingService.reactToCommunityMessage(messageId, emoji, currentUser.id, currentUser.full_name);
       await loadCommunity();
@@ -1002,9 +1173,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
       {/* TAB 1: TUTOR COMMUNITY FORUM (Open Access, Emojis, Tagging & Telegram/WhatsApp Replies) */}
       {activeTab === 'community' && (
-        <div className="fni-community-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs flex flex-col">
+        <div className="fni-community-panel relative bg-white rounded-2xl sm:rounded-3xl border border-[#E3E8EF] shadow-xs overflow-hidden flex flex-col min-h-0">
           {/* Forum Header */}
-          <div className="sticky top-14 sm:top-16 z-20 relative px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-md">
+          <div className="relative z-20 shrink-0 px-3.5 py-3 sm:p-5 bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white border-b border-[#142B4A] flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-md">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-1">
                 <Users className="w-4 h-4" /> FNI Community
@@ -1042,7 +1213,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Forum Messages Stream */}
-          <div className="fni-community-stream w-full px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
+          <div ref={communityStreamRef} onScroll={event => { const el = event.currentTarget; setShowCommunityJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-community-stream fni-chat-stream relative w-full min-h-0 px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={communityWallpaperStyle}>
             {visibleCommunityMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Users className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1192,6 +1363,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               })
             )}
             <div ref={communityEndRef} />
+            {showCommunityJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => communityStreamRef.current?.scrollTo({ top: communityStreamRef.current.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
           </div>
 
           {/* ACTIVE REPLY PREVIEW BANNER (WhatsApp / Telegram style) */}
@@ -1299,7 +1471,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           )}
 
           {/* Forum Compose Bar */}
-          <form onSubmit={handleSendCommunity} className="fni-chat-composer relative p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
+          <form onSubmit={handleSendCommunity} className="fni-chat-composer relative z-20 shrink-0 p-2.5 sm:p-4 bg-white border-t border-[#E3E8EF] space-y-2.5 sm:space-y-3 min-w-0">
             {showCommunityStickers && <div className="absolute bottom-full left-2 z-40 mb-2 w-[min(340px,calc(100%-16px))] rounded-2xl border border-[#E3E8EF] bg-white p-3 shadow-2xl"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-[#142B4A]">FNI Stickers</span><button type="button" onClick={() => setShowCommunityStickers(false)} aria-label="Close stickers" className="rounded-lg p-1 text-[#667085] hover:bg-[#F5F7FA]"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-4 gap-2">{STICKER_PACK.map(sticker => <button key={sticker.label} type="button" onClick={() => { setCommunitySticker(sticker); setShowCommunityStickers(false); }} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-2 hover:border-[#C6A45A] hover:bg-amber-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-semibold text-[#667085]">{sticker.label}</span></button>)}</div><label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#9AAFC8] px-3 py-2 text-xs font-semibold text-[#142B4A]">Create sticker from photo<input type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; if (file) saveCustomSticker(file); event.currentTarget.value = ''; }} /></label>{customStickers.length > 0 && <div className="mt-3 border-t border-[#E3E8EF] pt-3"><p className="mb-2 text-[11px] font-bold text-[#667085]">My stickers · tap to attach</p><div className="grid grid-cols-4 gap-2">{customStickers.map(sticker => <button key={sticker.id} type="button" onClick={() => attachCustomSticker(sticker, 'community')} className="rounded-xl border border-[#E3E8EF] bg-[#F8FAFC] p-1.5"><img src={sticker.dataUrl} alt={sticker.name} className="mx-auto h-12 w-12 rounded-lg object-contain" /><span className="mt-1 block truncate text-[9px] text-[#667085]">{sticker.name}</span></button>)}</div></div>}</div>}
             {communitySticker && <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] px-3 py-2"><span className="text-2xl">{communitySticker.emoji}</span><span className="text-xs font-semibold text-[#142B4A]">{communitySticker.label} sticker ready</span><button type="button" onClick={() => setCommunitySticker(null)} className="ml-auto text-xs text-rose-600">Remove</button></div>}
             {communitySendError && (
@@ -1363,7 +1535,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {selectedTutorId !== 'admin' && selectedTutorId && <><button type="button" onClick={() => startChatCall('voice', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Start private voice call" title="Voice call"><Phone className="h-4 w-4" /></button><button type="button" onClick={() => startChatCall('video', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10" aria-label="Start private video call" title="Video call"><Video className="h-4 w-4" /></button></>}
+              {selectedTutorId !== 'admin' && selectedTutorId && <><button type="button" disabled={!callChannelReady} onClick={() => startChatCall('voice', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10 disabled:cursor-wait disabled:opacity-40" aria-label="Start private voice call" title={callChannelReady ? "Voice call" : "Connecting secure calling…"}><Phone className="h-4 w-4" /></button><button type="button" disabled={!callChannelReady} onClick={() => startChatCall('video', 'private')} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10 disabled:cursor-wait disabled:opacity-40" aria-label="Start private video call" title={callChannelReady ? "Video call" : "Connecting secure calling…"}><Video className="h-4 w-4" /></button></>}
               {(isAdmin ? tutorList.length > 0 : true) && (
                 <>
                   <span className="text-xs text-slate-200 font-medium">{isAdmin ? 'Select Tutor:' : 'Chat with:'}</span>
@@ -1454,7 +1626,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Messages Stream */}
-          <div ref={privateStreamRef} className="fni-chat-stream flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
+          <div ref={privateStreamRef} onScroll={event => { const el = event.currentTarget; setShowPrivateJumpToLatest(el.scrollHeight - el.scrollTop - el.clientHeight > 180); }} className="fni-chat-stream relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6 space-y-3 sm:space-y-4" style={privateWallpaperStyle}>
             {visiblePrivateMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-[#667085]">
                 <Lock className="w-12 h-12 text-[#667085]/40 mb-3" />
@@ -1562,6 +1734,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               })
             )}
             <div ref={privateEndRef} />
+            {showPrivateJumpToLatest && <div className="sticky bottom-2 z-20 ml-auto flex justify-end"><button type="button" onClick={() => privateStreamRef.current?.scrollTo({ top: privateStreamRef.current.scrollHeight, behavior: 'smooth' })} className="rounded-full border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-bold text-[#142B4A] shadow-lg hover:bg-[#F5F7FA]">↓ Latest messages</button></div>}
           </div>
 
           {/* Private Reply Preview */}
@@ -1660,6 +1833,32 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Button type="submit" variant="primary" size="md" isLoading={isSendingPrivate} className="h-10 w-10 min-w-[40px] !p-0 rounded-full shrink-0 flex items-center justify-center" aria-label="Send message"><Send className="w-4 h-4 text-[#C6A45A]" /></Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {(incomingCall || callUi !== 'idle') && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="FNI call">
+          <section className="w-full max-w-3xl overflow-hidden rounded-3xl border border-white/15 bg-[#101C2D] text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
+              <div><p className="text-sm font-bold">{incomingCall ? 'Incoming FNI call' : activeCallKind === 'video' ? 'FNI video call' : 'FNI voice call'}</p><p className="text-xs text-white/60">{callUi === 'connected' ? 'Connected' : incomingCall ? 'A member is calling you' : 'Connecting securely…'}</p></div>
+              <button type="button" onClick={() => { if (incomingCall) { void sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'decline', sentAt: new Date().toISOString() }).catch(() => undefined); void finishCall(false); } else void finishCall(true); }} className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">End</button>
+            </div>
+            {incomingCall && callUi === 'ringing' ? (
+              <div className="space-y-4 px-6 py-12 text-center">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#C6A45A]/20 text-3xl text-[#E8D6A8]">{incomingCall.kind === 'video' ? '▣' : '☎'}</div>
+                <div><h3 className="text-xl font-bold">{allMembers.find(member => member.id === incomingCall.fromProfileId)?.full_name || 'FNI Member'}</h3><p className="mt-1 text-sm text-white/60">{incomingCall.kind === 'video' ? 'Video call' : 'Voice call'}</p></div>
+                <div className="flex justify-center gap-3"><button type="button" onClick={() => { void sendCallSignal({ callId: incomingCall.callId, fromProfileId: currentUser.id, type: 'decline', sentAt: new Date().toISOString() }).catch(() => undefined); void finishCall(false); }} className="rounded-full bg-rose-600 px-6 py-3 text-sm font-bold">Decline</button><button type="button" onClick={() => void acceptIncomingCall()} className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold">Accept</button></div>
+              </div>
+            ) : (
+              <div className="relative min-h-[280px] bg-black sm:min-h-[440px]">
+                {remoteCallStream ? <video ref={remoteCallVideoRef} autoPlay playsInline className="h-full min-h-[280px] w-full object-contain sm:min-h-[440px]" /> : <div className="flex min-h-[280px] items-center justify-center text-center text-sm text-white/65 sm:min-h-[440px]">{callError || 'Waiting for the other person to connect…'}</div>}
+                {activeCallKind === 'video' && localCallStream && <video ref={localCallVideoRef} autoPlay muted playsInline className="absolute bottom-4 right-4 h-24 w-32 rounded-xl border border-white/30 bg-black object-cover sm:h-36 sm:w-48" />}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2"><button type="button" onClick={() => void finishCall(true)} className="rounded-full bg-rose-600 px-7 py-3 text-sm font-bold shadow-lg">End call</button></div>
+              </div>
+            )}
+            {callError && <p className="border-t border-white/10 px-4 py-3 text-xs text-rose-300">{callError}</p>}
+            <p className="px-4 py-3 text-center text-[10px] text-white/45">Direct peer-to-peer calling. Connection depends on both devices, network compatibility and permissions.</p>
+          </section>
         </div>
       )}
 
