@@ -1,3 +1,4 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { FinanceService } from '../../services/financeService';
@@ -51,7 +52,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
     loadFinanceData();
   }, [currentUser]);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (records.length === 0) return;
     const headers = ['Record ID', 'Cell Name', 'Meeting Date', 'Tutor Name', 'Amount (GHS)', 'Logged At'];
     const rows = records.map(r => [
@@ -62,14 +63,8 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
       r.amount.toFixed(2),
       r.submittedAt,
     ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `FNI_Cell_Offerings_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\r\n');
+    await exportCsvFile(`FNI_Cell_Offerings_${new Date().toISOString().split('T')[0]}.csv`, csvContent);
   };
 
   if (!isAdmin && currentUser.role !== 'admin') {
