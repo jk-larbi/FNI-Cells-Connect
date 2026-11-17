@@ -20,7 +20,7 @@ export type ParticipationStatus =
   | 'Quiz completed';
 
 export type QuizStatus = 'draft' | 'published' | 'archived';
-export type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer';
+export type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'written';
 
 export type LearningPortalSection =
   | 'overview'
@@ -84,15 +84,47 @@ export interface AssignmentSubmission {
   results_released: boolean;
 }
 
+export type QuizSectionType = 'mcq' | 'subjective';
+export type SubjectiveMarkingMethod = 'automatic' | 'manual';
+export type QuizResultReleasePolicy = 'immediate' | 'after_close' | 'manual';
+export type QuizAttemptStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'submitted'
+  | 'submitted_late'
+  | 'time_expired'
+  | 'awaiting_grading'
+  | 'graded';
+
 export interface QuizQuestion {
   id: string;
   quiz_id: string;
+  section?: QuizSectionType; // 'mcq' | 'subjective'
   question_text: string;
-  question_type: QuestionType;
-  options?: string[]; // for multiple_choice & true_false
-  correct_answer: string | number; // index or text
+  question_type: QuestionType; // 'multiple_choice' | 'true_false' | 'written'
+  options?: string[]; // for multiple_choice & true_false [A, B, C, D]
+  correct_answer?: string | number; // index (0..3) for MCQ, or expected answer for subjective auto
   points: number;
   explanation?: string;
+  // Subjective Question Specifics
+  marking_method?: SubjectiveMarkingMethod; // 'automatic' | 'manual'
+  expected_answer?: string;
+  acceptable_alternatives?: string[];
+  keywords?: string[];
+}
+
+export interface QuizTimingSettings {
+  opens_at?: string; // ISO string
+  closes_at?: string; // ISO string
+  timezone: string; // 'Africa/Accra'
+  time_limit_minutes: number; // 0 = no time limit, 15, 30, 45, 60, 90, 120, or custom
+  max_attempts: number; // 1, 2, 3, 5, 0 (0 = unlimited)
+  allow_change_answers: boolean;
+  allow_review_before_submit: boolean;
+  allow_resubmission: boolean;
+  allow_late_submissions: boolean;
+  auto_submit_on_expiry: boolean;
+  result_release_policy: QuizResultReleasePolicy; // 'immediate' | 'after_close' | 'manual'
 }
 
 export interface Quiz {
@@ -103,16 +135,38 @@ export interface Quiz {
   time_limit_minutes: number; // 0 = no time limit
   passing_score: number; // percentage (e.g. 70)
   total_points: number;
+  mcq_points?: number;
+  subjective_points?: number;
+  has_mcq?: boolean;
+  has_subjective?: boolean;
   questions?: QuizQuestion[];
   published_at?: string;
   due_date: string;
   status: QuizStatus;
   results_released: boolean;
+  timing_settings?: QuizTimingSettings;
   created_by: string;
   created_at: string;
   updated_at: string;
   // Computed
   attempt_count?: number;
+}
+
+export interface QuestionGradingDetail {
+  question_id: string;
+  question_text: string;
+  section: QuizSectionType;
+  marking_method?: SubjectiveMarkingMethod;
+  user_answer: any;
+  correct_answer?: any;
+  expected_answer?: string;
+  keywords_matched?: string[];
+  max_points: number;
+  points_awarded: number;
+  is_correct?: boolean;
+  is_manual_review_needed?: boolean;
+  feedback?: string;
+  overridden_by_admin?: boolean;
 }
 
 export interface QuizAttempt {
@@ -123,14 +177,21 @@ export interface QuizAttempt {
   tutor_name: string;
   cell_id?: string;
   cell_name?: string;
+  attempt_number?: number;
   answers: Record<string, any>; // question_id -> selected answer
+  question_grades?: Record<string, QuestionGradingDetail>;
   score: number;
   total_possible: number;
   percentage: number;
   passed: boolean;
   started_at: string;
   completed_at: string;
-  status: 'in_progress' | 'completed';
+  status: QuizAttemptStatus;
+  grading_status?: 'graded' | 'awaiting_grading';
+  results_released?: boolean;
+  feedback?: string;
+  graded_by?: string;
+  graded_at?: string;
 }
 
 export interface LearningEvent {

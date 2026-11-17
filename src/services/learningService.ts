@@ -14,6 +14,9 @@ import {
   Quiz,
   QuizQuestion,
   QuizAttempt,
+  QuizTimingSettings,
+  QuestionGradingDetail,
+  QuizAttemptStatus,
   LearningEvent,
   LearningResource,
   TutorParticipationMetric,
@@ -522,7 +525,8 @@ export class LearningService {
   }
 
   // ============================================================================
-  // 3. QUIZZES & OBJECTIVE AUTO-GRADING
+  // ============================================================================
+  // 3. QUIZZES, MCQs, SUBJECTIVE QUESTIONS & TIMED ASSESSMENTS
   // ============================================================================
   static async getQuizzes(isAdmin = false): Promise<Quiz[]> {
     try {
@@ -541,10 +545,15 @@ export class LearningService {
             time_limit_minutes: Number(d.time_limit_minutes || 15),
             passing_score: Number(d.passing_score || 70),
             total_points: Number(d.total_points || 100),
+            mcq_points: Number(d.mcq_points || 0),
+            subjective_points: Number(d.subjective_points || 0),
+            has_mcq: Boolean(d.has_mcq),
+            has_subjective: Boolean(d.has_subjective),
             published_at: d.published_at,
             due_date: d.due_date,
             status: d.status || 'draft',
             results_released: Boolean(d.results_released),
+            timing_settings: d.timing_settings || undefined,
             created_by: d.created_by,
             created_at: d.created_at,
             updated_at: d.updated_at,
@@ -561,7 +570,7 @@ export class LearningService {
     return isAdmin ? local : local.filter(q => q.status === 'published');
   }
 
-  static async getQuizQuestions(quizId: string): Promise<QuizQuestion[]> {
+  static async getQuizQuestions(quizId: string, isTutor = false): Promise<QuizQuestion[]> {
     try {
       if (supabase) {
         const { data, error } = await supabase
@@ -571,16 +580,33 @@ export class LearningService {
           .order('created_at', { ascending: true });
 
         if (!error && data) {
-          const mapped: QuizQuestion[] = data.map((d: any) => ({
-            id: d.id,
-            quiz_id: d.quiz_id,
-            question_text: d.question_text,
-            question_type: d.question_type,
-            options: Array.isArray(d.options) ? d.options : [],
-            correct_answer: d.correct_answer,
-            points: Number(d.points || 10),
-            explanation: d.explanation,
-          }));
+          const mapped: QuizQuestion[] = data.map((d: any) => {
+            const item: QuizQuestion = {
+              id: d.id,
+              quiz_id: d.quiz_id,
+              section: d.section || (d.question_type === 'written' ? 'subjective' : 'mcq'),
+              question_text: d.question_text,
+              question_type: d.question_type,
+              options: Array.isArray(d.options) ? d.options : [],
+              points: Number(d.points || 10),
+              explanation: d.explanation,
+              marking_method: d.marking_method || (d.question_type === 'written' ? 'manual' : undefined),
+              correct_answer: d.correct_answer,
+              expected_answer: d.expected_answer,
+              acceptable_alternatives: d.acceptable_alternatives,
+              keywords: d.keywords,
+            };
+
+            // STRICT SECURITY FOR TUTORS: Never leak answers before result release!
+            if (isTutor) {
+              delete item.correct_answer;
+              delete item.expected_answer;
+              delete item.acceptable_alternatives;
+              delete item.keywords;
+              delete item.explanation;
+            }
+            return item;
+          });
           return mapped;
         }
       }
@@ -589,7 +615,21 @@ export class LearningService {
     }
 
     const all = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, INITIAL_QUESTIONS);
-    return all.filter(q => q.quiz_id === quizId);
+    const questionsForQuiz = all.filter(q => q.quiz_id === quizId);
+
+    if (isTutor) {
+      return questionsForQuiz.map(q => {
+        const copy = { ...q };
+        delete copy.correct_answer;
+        delete copy.expected_answer;
+        delete copy.acceptable_alternatives;
+        delete copy.keywords;
+        delete copy.explanation;
+        return copy;
+      });
+    }
+
+    return questionsForQuiz;
   }
 
   static async saveQuiz(
@@ -600,20 +640,49 @@ export class LearningService {
     const nowIso = new Date().toISOString();
     const id = quiz.id || `quiz-${Date.now()}`;
 
-    const totalPoints = questions.reduce((sum, q) => sum + Number(q.points || 10), 0) || 100;
+    // Separate into MCQs and Subjectives
+    const mcqQuestions = questions.filter(
+      q => q.section === 'mcq' || q.question_type === 'multiple_choice' || q.question_type === 'true_false'
+    );
+    const subjectiveQuestions = questions.filter(
+      q => q.section === 'subjective' || q.question_type === 'written'
+    );
+
+    const mcqPoints = mcqQuestions.reduce((sum, q) => sum + Number(q.points || 0), 0);
+    const subjectivePoints = subjectiveQuestions.reduce((sum, q) => sum + Number(q.points || 0), 0);
+    const totalPoints = mcqPoints + subjectivePoints || 100;
+
+    const timingSettings: QuizTimingSettings = {
+      opens_at: quiz.timing_settings?.opens_at || quiz.published_at || nowIso,
+      closes_at: quiz.timing_settings?.closes_at || quiz.due_date || new Date(Date.now() + 7 * 86400000).toISOString(),
+      timezone: 'Africa/Accra',
+      time_limit_minutes: Number(quiz.timing_settings?.time_limit_minutes ?? quiz.time_limit_minutes ?? 15),
+      max_attempts: Number(quiz.timing_settings?.max_attempts ?? 1),
+      allow_change_answers: quiz.timing_settings?.allow_change_answers ?? true,
+      allow_review_before_submit: quiz.timing_settings?.allow_review_before_submit ?? true,
+      allow_resubmission: quiz.timing_settings?.allow_resubmission ?? true,
+      allow_late_submissions: quiz.timing_settings?.allow_late_submissions ?? false,
+      auto_submit_on_expiry: quiz.timing_settings?.auto_submit_on_expiry ?? true,
+      result_release_policy: quiz.timing_settings?.result_release_policy || 'immediate',
+    };
 
     const record: Quiz = {
       id,
       title: quiz.title?.trim() || 'Untitled Quiz',
       description: quiz.description?.trim() || '',
       instructions: quiz.instructions?.trim() || '',
-      time_limit_minutes: Number(quiz.time_limit_minutes ?? 15),
+      time_limit_minutes: timingSettings.time_limit_minutes,
       passing_score: Number(quiz.passing_score ?? 70),
       total_points: totalPoints,
+      mcq_points: mcqPoints,
+      subjective_points: subjectivePoints,
+      has_mcq: mcqQuestions.length > 0,
+      has_subjective: subjectiveQuestions.length > 0,
       published_at: quiz.status === 'published' ? (quiz.published_at || nowIso) : undefined,
-      due_date: quiz.due_date || new Date(Date.now() + 7 * 86400000).toISOString(),
+      due_date: timingSettings.closes_at || new Date(Date.now() + 7 * 86400000).toISOString(),
       status: quiz.status || 'draft',
       results_released: Boolean(quiz.results_released),
+      timing_settings: timingSettings,
       created_by: quiz.created_by || currentUser.id,
       created_at: quiz.created_at || nowIso,
       updated_at: nowIso,
@@ -630,10 +699,15 @@ export class LearningService {
           time_limit_minutes: record.time_limit_minutes,
           passing_score: record.passing_score,
           total_points: record.total_points,
+          mcq_points: record.mcq_points,
+          subjective_points: record.subjective_points,
+          has_mcq: record.has_mcq,
+          has_subjective: record.has_subjective,
           published_at: record.published_at,
           due_date: record.due_date,
           status: record.status,
           results_released: record.results_released,
+          timing_settings: record.timing_settings,
           created_by: record.created_by,
           updated_at: record.updated_at,
         });
@@ -641,15 +715,21 @@ export class LearningService {
         // Upsert questions
         for (const q of questions) {
           const qId = q.id || `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+          const section = q.section || (q.question_type === 'written' ? 'subjective' : 'mcq');
           await supabase.from('learning_quiz_questions').upsert({
             id: qId,
             quiz_id: record.id,
+            section,
             question_text: q.question_text || '',
-            question_type: q.question_type || 'multiple_choice',
+            question_type: section === 'subjective' ? 'written' : (q.question_type || 'multiple_choice'),
             options: q.options || [],
             correct_answer: String(q.correct_answer ?? 0),
             points: Number(q.points || 10),
             explanation: q.explanation || '',
+            marking_method: q.marking_method || (section === 'subjective' ? 'manual' : undefined),
+            expected_answer: q.expected_answer || '',
+            acceptable_alternatives: q.acceptable_alternatives || [],
+            keywords: q.keywords || [],
           });
         }
       }
@@ -667,16 +747,24 @@ export class LearningService {
     // Save questions locally
     const existingQuestions = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, INITIAL_QUESTIONS);
     const filteredQuestions = existingQuestions.filter(q => q.quiz_id !== id);
-    const preparedQuestions: QuizQuestion[] = questions.map((q, idx) => ({
-      id: q.id || `q-${id}-${idx + 1}`,
-      quiz_id: id,
-      question_text: q.question_text || '',
-      question_type: q.question_type || 'multiple_choice',
-      options: q.options || [],
-      correct_answer: q.correct_answer ?? 0,
-      points: Number(q.points || 10),
-      explanation: q.explanation || '',
-    }));
+    const preparedQuestions: QuizQuestion[] = questions.map((q, idx) => {
+      const section = q.section || (q.question_type === 'written' ? 'subjective' : 'mcq');
+      return {
+        id: q.id || `q-${id}-${idx + 1}`,
+        quiz_id: id,
+        section,
+        question_text: q.question_text || '',
+        question_type: section === 'subjective' ? 'written' : (q.question_type || 'multiple_choice'),
+        options: q.options || [],
+        correct_answer: q.correct_answer ?? 0,
+        points: Number(q.points || 10),
+        explanation: q.explanation || '',
+        marking_method: q.marking_method || (section === 'subjective' ? 'manual' : undefined),
+        expected_answer: q.expected_answer,
+        acceptable_alternatives: q.acceptable_alternatives,
+        keywords: q.keywords,
+      };
+    });
     writeLocal(KEYS.QUESTIONS, [...preparedQuestions, ...filteredQuestions]);
 
     // 3. Notification to active tutors if published
@@ -704,7 +792,38 @@ export class LearningService {
   }
 
   /**
-   * Submit quiz and perform immediate automatic grading for objective questions
+   * Save continuous draft answers for taking a quiz so a refresh never loses work
+   */
+  static saveQuizDraftAnswers(quizId: string, tutorId: string, answers: Record<string, any>, startedAt: string) {
+    try {
+      const key = `fni_quiz_draft_${quizId}_${tutorId}`;
+      localStorage.setItem(key, JSON.stringify({ answers, startedAt, savedAt: Date.now() }));
+    } catch (e) {
+      console.warn('Error saving quiz draft locally:', e);
+    }
+  }
+
+  static getQuizDraftAnswers(quizId: string, tutorId: string): { answers: Record<string, any>; startedAt: string } | null {
+    try {
+      const key = `fni_quiz_draft_${quizId}_${tutorId}`;
+      const item = localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  static clearQuizDraftAnswers(quizId: string, tutorId: string) {
+    try {
+      localStorage.removeItem(`fni_quiz_draft_${quizId}_${tutorId}`);
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Submit quiz with auto-grading for MCQs and Automatic Subjectives, flagging Manual Subjectives
    */
   static async submitQuizAttempt(data: {
     quizId: string;
@@ -714,37 +833,146 @@ export class LearningService {
     cellName?: string;
     answers: Record<string, any>;
     startedAt: string;
+    isAutoSubmittedOnExpiry?: boolean;
   }): Promise<QuizAttempt> {
-    const questions = await this.getQuizQuestions(data.quizId);
+    // Clear draft storage
+    this.clearQuizDraftAnswers(data.quizId, data.tutorId);
+
+    const questions = await this.getQuizQuestions(data.quizId, false);
+    const quiz = (await this.getQuizzes(true)).find(q => q.id === data.quizId);
+
+    const existingAttempts = await this.getQuizAttempts(data.quizId, data.tutorId);
+    const attemptNumber = existingAttempts.length + 1;
+
+    const closesAt = quiz?.timing_settings?.closes_at || quiz?.due_date;
+    const isLate = closesAt ? new Date().toISOString() > closesAt : false;
+
     let totalScore = 0;
     let totalPossible = 0;
+    let hasManualReviewNeeded = false;
+    const questionGrades: Record<string, QuestionGradingDetail> = {};
 
     questions.forEach(q => {
       const qPoints = Number(q.points || 10);
       totalPossible += qPoints;
       const userAnswer = data.answers[q.id];
+      const section = q.section || (q.question_type === 'written' ? 'subjective' : 'mcq');
 
-      // Objective question auto-grading
-      if (q.question_type === 'multiple_choice' || q.question_type === 'true_false') {
-        if (String(userAnswer) === String(q.correct_answer)) {
-          totalScore += qPoints;
-        }
+      if (section === 'mcq' || q.question_type === 'multiple_choice' || q.question_type === 'true_false') {
+        // MCQ Objective Auto-grading
+        const isCorrect = String(userAnswer) === String(q.correct_answer);
+        const pointsAwarded = isCorrect ? qPoints : 0;
+        totalScore += pointsAwarded;
+        questionGrades[q.id] = {
+          question_id: q.id,
+          question_text: q.question_text,
+          section: 'mcq',
+          user_answer: userAnswer,
+          correct_answer: q.correct_answer,
+          max_points: qPoints,
+          points_awarded: pointsAwarded,
+          is_correct: isCorrect,
+          is_manual_review_needed: false,
+        };
       } else {
-        // Simple case-insensitive trim match for short answer
-        if (
-          typeof userAnswer === 'string' &&
-          typeof q.correct_answer === 'string' &&
-          userAnswer.trim().toLowerCase() === q.correct_answer.trim().toLowerCase()
-        ) {
-          totalScore += qPoints;
+        // Subjective Written Question
+        const markingMethod = q.marking_method || 'manual';
+
+        if (markingMethod === 'automatic') {
+          // Automatic Subjective Grading via keyword matching and acceptable alternatives
+          const tutorText = String(userAnswer || '').trim().toLowerCase();
+          const expected = String(q.expected_answer || q.correct_answer || '').trim().toLowerCase();
+          const alternatives = (q.acceptable_alternatives || []).map(a => a.trim().toLowerCase());
+          const keywords = (q.keywords || []).map(k => k.trim().toLowerCase()).filter(Boolean);
+
+          let pointsAwarded = 0;
+          const matchedKeywords: string[] = [];
+
+          if (!tutorText) {
+            pointsAwarded = 0;
+          } else if (expected && tutorText === expected) {
+            pointsAwarded = qPoints;
+          } else if (alternatives.some(alt => alt && (tutorText === alt || tutorText.includes(alt)))) {
+            pointsAwarded = qPoints;
+          } else {
+            // Check keywords
+            keywords.forEach(kw => {
+              if (tutorText.includes(kw)) {
+                matchedKeywords.push(kw);
+              }
+            });
+
+            if (keywords.length > 0) {
+              const matchRatio = matchedKeywords.length / keywords.length;
+              if (matchRatio >= 0.75) pointsAwarded = qPoints;
+              else if (matchRatio >= 0.5) pointsAwarded = Math.round(qPoints * 0.7);
+              else if (matchRatio >= 0.25) pointsAwarded = Math.round(qPoints * 0.4);
+              else pointsAwarded = 0;
+            } else if (expected && tutorText.length >= 10 && expected.includes(tutorText)) {
+              pointsAwarded = Math.round(qPoints * 0.5);
+            }
+          }
+
+          totalScore += pointsAwarded;
+          questionGrades[q.id] = {
+            question_id: q.id,
+            question_text: q.question_text,
+            section: 'subjective',
+            marking_method: 'automatic',
+            user_answer: userAnswer,
+            expected_answer: q.expected_answer || String(q.correct_answer || ''),
+            keywords_matched: matchedKeywords,
+            max_points: qPoints,
+            points_awarded: pointsAwarded,
+            is_correct: pointsAwarded === qPoints,
+            is_manual_review_needed: false,
+          };
+        } else {
+          // Manual Marking: sent to Admin grading queue
+          hasManualReviewNeeded = true;
+          questionGrades[q.id] = {
+            question_id: q.id,
+            question_text: q.question_text,
+            section: 'subjective',
+            marking_method: 'manual',
+            user_answer: userAnswer,
+            max_points: qPoints,
+            points_awarded: 0,
+            is_manual_review_needed: true,
+          };
         }
       }
     });
 
-    const quiz = (await this.getQuizzes(true)).find(q => q.id === data.quizId);
     const passingScore = quiz?.passing_score || 70;
     const percentage = totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0;
     const passed = percentage >= passingScore;
+
+    let status: QuizAttemptStatus = 'submitted';
+    if (data.isAutoSubmittedOnExpiry) {
+      status = 'time_expired';
+    } else if (isLate) {
+      status = 'submitted_late';
+    } else if (hasManualReviewNeeded) {
+      status = 'awaiting_grading';
+    } else {
+      status = 'graded';
+    }
+
+    const gradingStatus = hasManualReviewNeeded ? 'awaiting_grading' : 'graded';
+
+    // Results release policy check
+    let resultsReleased = false;
+    if (!hasManualReviewNeeded) {
+      const policy = quiz?.timing_settings?.result_release_policy || 'immediate';
+      if (policy === 'immediate') {
+        resultsReleased = true;
+      } else if (policy === 'after_close') {
+        resultsReleased = Boolean(closesAt && new Date().toISOString() > closesAt);
+      } else {
+        resultsReleased = false; // manual
+      }
+    }
 
     const attempt: QuizAttempt = {
       id: `att-${Date.now()}`,
@@ -754,14 +982,18 @@ export class LearningService {
       tutor_name: data.tutorName,
       cell_id: data.cellId,
       cell_name: data.cellName,
+      attempt_number: attemptNumber,
       answers: data.answers,
+      question_grades: questionGrades,
       score: totalScore,
       total_possible: totalPossible,
       percentage,
       passed,
       started_at: data.startedAt,
       completed_at: new Date().toISOString(),
-      status: 'completed',
+      status,
+      grading_status: gradingStatus,
+      results_released: resultsReleased,
     };
 
     // 1. Supabase write
@@ -774,7 +1006,9 @@ export class LearningService {
           tutor_name: attempt.tutor_name,
           cell_id: attempt.cell_id,
           cell_name: attempt.cell_name,
+          attempt_number: attempt.attempt_number,
           answers: attempt.answers,
+          question_grades: attempt.question_grades,
           score: attempt.score,
           total_possible: attempt.total_possible,
           percentage: attempt.percentage,
@@ -782,6 +1016,8 @@ export class LearningService {
           started_at: attempt.started_at,
           completed_at: attempt.completed_at,
           status: attempt.status,
+          grading_status: attempt.grading_status,
+          results_released: attempt.results_released,
         });
       }
     } catch (e) {
@@ -794,6 +1030,134 @@ export class LearningService {
     writeLocal(KEYS.ATTEMPTS, all);
 
     return attempt;
+  }
+
+  /**
+   * Admin reviews & grades subjective or MCQ questions, overrides marks, and optionally releases results
+   */
+  static async updateQuizAttemptGrading(data: {
+    attemptId: string;
+    questionGrades: Record<string, QuestionGradingDetail>;
+    feedback?: string;
+    releaseResults: boolean;
+    adminUser: { id: string; full_name?: string };
+  }): Promise<QuizAttempt> {
+    const attempts = readLocal<QuizAttempt[]>(KEYS.ATTEMPTS, []);
+    const index = attempts.findIndex(a => a.id === data.attemptId);
+    if (index === -1) {
+      throw new Error('Quiz attempt not found.');
+    }
+
+    const current = attempts[index];
+    let totalScore = 0;
+    let totalPossible = 0;
+
+    Object.values(data.questionGrades).forEach(g => {
+      totalPossible += Number(g.max_points || 0);
+      totalScore += Number(g.points_awarded || 0);
+    });
+
+    const quiz = (await this.getQuizzes(true)).find(q => q.id === current.quiz_id);
+    const passingScore = quiz?.passing_score || 70;
+    const percentage = totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0;
+    const passed = percentage >= passingScore;
+
+    const updated: QuizAttempt = {
+      ...current,
+      question_grades: data.questionGrades,
+      score: totalScore,
+      total_possible: totalPossible,
+      percentage,
+      passed,
+      status: 'graded',
+      grading_status: 'graded',
+      results_released: Boolean(data.releaseResults),
+      feedback: data.feedback || current.feedback,
+      graded_by: data.adminUser.full_name || data.adminUser.id,
+      graded_at: new Date().toISOString(),
+    };
+
+    // 1. Supabase update
+    try {
+      if (supabase) {
+        await supabase
+          .from('learning_quiz_attempts')
+          .update({
+            question_grades: updated.question_grades,
+            score: updated.score,
+            total_possible: updated.total_possible,
+            percentage: updated.percentage,
+            passed: updated.passed,
+            status: updated.status,
+            grading_status: updated.grading_status,
+            results_released: updated.results_released,
+            feedback: updated.feedback,
+            graded_by: updated.graded_by,
+            graded_at: updated.graded_at,
+          })
+          .eq('id', updated.id);
+      }
+    } catch (e) {
+      console.warn('Notice updating quiz attempt in Supabase:', e);
+    }
+
+    // 2. Local update
+    attempts[index] = updated;
+    writeLocal(KEYS.ATTEMPTS, attempts);
+
+    // 3. If results released, notify tutor
+    if (data.releaseResults) {
+      try {
+        await NotificationService.createNotification({
+          userId: updated.tutor_id,
+          title: `Quiz Results Released: ${updated.quiz_title || 'Your Quiz'}`,
+          message: `Your quiz results have been reviewed and released by Admin. Score: ${updated.score}/${updated.total_possible} (${updated.percentage}%).`,
+          type: 'report_approved',
+          channel: 'in_app',
+          metadata: {
+            category: 'learning',
+            targetTab: 'learning-portal',
+            section: 'quizzes',
+            attemptId: updated.id,
+          },
+        });
+      } catch (err) {
+        console.warn('Notice dispatching quiz result release notification:', err);
+      }
+    }
+
+    return updated;
+  }
+
+  /**
+   * Release results in bulk for all attempts of a specific quiz
+   */
+  static async releaseAllQuizResults(quizId: string): Promise<void> {
+    const attempts = readLocal<QuizAttempt[]>(KEYS.ATTEMPTS, []);
+    const updated = attempts.map(att => {
+      if (att.quiz_id === quizId && att.grading_status === 'graded') {
+        return { ...att, results_released: true };
+      }
+      return att;
+    });
+    writeLocal(KEYS.ATTEMPTS, updated);
+
+    try {
+      if (supabase) {
+        await supabase
+          .from('learning_quiz_attempts')
+          .update({ results_released: true })
+          .eq('quiz_id', quizId)
+          .eq('grading_status', 'graded');
+
+        await supabase
+          .from('learning_quizzes')
+          .update({ results_released: true })
+          .eq('id', quizId);
+      }
+    } catch (e) {
+      console.warn('Notice updating bulk quiz results in Supabase:', e);
+    }
   }
 
   static async getQuizAttempts(quizId?: string, tutorId?: string): Promise<QuizAttempt[]> {
@@ -812,7 +1176,9 @@ export class LearningService {
             tutor_name: d.tutor_name,
             cell_id: d.cell_id,
             cell_name: d.cell_name,
+            attempt_number: Number(d.attempt_number || 1),
             answers: d.answers || {},
+            question_grades: d.question_grades || {},
             score: Number(d.score || 0),
             total_possible: Number(d.total_possible || 100),
             percentage: Number(d.percentage || 0),
@@ -820,6 +1186,11 @@ export class LearningService {
             started_at: d.started_at,
             completed_at: d.completed_at,
             status: d.status || 'completed',
+            grading_status: d.grading_status || 'graded',
+            results_released: Boolean(d.results_released),
+            feedback: d.feedback,
+            graded_by: d.graded_by,
+            graded_at: d.graded_at,
           }));
           return mapped;
         }
