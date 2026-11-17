@@ -42,7 +42,7 @@ import { TeachingMaterialsView } from '../materials/TeachingMaterialsView';
 import { MessagingView } from '../communication/MessagingView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
-import { LatestAndroidUpdate } from '../common/LatestAndroidUpdate';
+import { LatestAndroidUpdate } from '../common/LatestAndroidUpdate';\nimport { SectionHub } from './SectionHub';
 
 interface MobileNavItem {
   id: AppNavTab;
@@ -194,6 +194,41 @@ export const AppLayout: React.FC = () => {
 
           <LatestAndroidUpdate />
           <main className={`fni-app-main flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 ${effectiveTab === 'messages' ? 'fni-messaging-route-main' : ''}`}>
+            {/* Administrator section landing pages keep the hamburger menu compact. */}
+            {isAdmin && effectiveTab === 'cells-hub' && (
+              <SectionHub title="Cells" description="Manage cell profiles, leaders, membership and location records from one place."
+                items={[
+                  { title: 'Cell Management', description: 'View and manage all registered cells and their profiles.', icon: Building, onClick: () => navigateToTab('cell-management') },
+                  { title: 'Cell Leaders', description: 'Review assigned leaders and their cell responsibilities.', icon: Users, onClick: () => navigateToTab('cell-leaders') },
+                  { title: 'Cell Location History', description: 'View location updates and submitted cell location records.', icon: MapPin, onClick: () => navigateToTab('location-sharing') },
+                ]} />
+            )}
+            {isAdmin && effectiveTab === 'reports-hub' && (
+              <SectionHub title="Reports" description="Review submissions and access the history of cell and evangelism reports."
+                items={[
+                  { title: 'Review Reports', description: 'Assess submitted reports and approve or request corrections.', icon: ClipboardCheck, onClick: () => navigateToTab('report-review') },
+                  { title: 'Report History', description: 'Browse previously received and processed reports.', icon: Archive, onClick: () => navigateToTab('received-reports') },
+                ]} />
+            )}
+            {isAdmin && effectiveTab === 'ministry-hub' && (
+              <SectionHub title="Ministry Operations" description="Access the day-to-day ministry tools."
+                items={[
+                  { title: 'Evangelism', description: 'Monitor evangelism activity and outreach records.', icon: Flame, onClick: () => navigateToTab('evangelism') },
+                  { title: 'Follow-ups', description: 'Manage contacts and follow-up progress.', icon: UserCheck, onClick: () => navigateToTab('follow-ups') },
+                  { title: 'Offering Aggregation', description: 'Review offering records and summaries.', icon: DollarSign, onClick: () => navigateToTab('finance') },
+                  { title: 'Teaching Outlines', description: 'Publish and manage teaching materials.', icon: BookOpen, onClick: () => navigateToTab('materials') },
+                  { title: 'Communications Hub', description: 'Open private and community messaging.', icon: MessagesSquare, onClick: () => navigateToTab('messages') },
+                ]} />
+            )}
+            {isAdmin && effectiveTab === 'more-hub' && (
+              <SectionHub title="More" description="Insights, alerts and platform configuration."
+                items={[
+                  { title: 'Analytics', description: 'View ministry performance and activity insights.', icon: BarChart3, onClick: () => navigateToTab('analytics') },
+                  { title: 'Notifications', description: 'Review alerts and important updates.', icon: Bell, onClick: () => navigateToTab('notifications') },
+                  { title: 'Settings', description: 'Manage administrator and platform settings.', icon: Settings, onClick: () => navigateToTab('settings') },
+                ]} />
+            )}
+
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
@@ -361,8 +396,8 @@ export const AppLayout: React.FC = () => {
         {(isAdmin
           ? [
               { id: 'dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard },
-              { id: 'cell-management' as AppNavTab, label: 'Cells', icon: Building },
-              { id: 'report-review' as AppNavTab, label: 'Reports', icon: FileCheck },
+              { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: Building },
+              { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: FileCheck },
               { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
               { id: 'notifications' as AppNavTab, label: 'Alerts', icon: Bell },
             ]
