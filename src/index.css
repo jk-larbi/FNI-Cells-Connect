@@ -534,839 +534,6 @@ html.dark .fni-simple-landing .border-white {
 }
 
 
-/* ==========================================================
-   FNI CONNECT FAMILY THEME — Telegram-inspired visual layer
-   Appearance only: all existing screens, roles and workflows
-   remain owned by their existing React components.
-   ========================================================== */
-:root {
-  --fni-blue: #2463D3;
-  --fni-blue-deep: #1D4FA8;
-  --fni-purple: #30245F;
-  --fni-gold: #D9A52B;
-  --fni-canvas: #F4F5F8;
-  --fni-border: #E6E9EF;
-  --fni-text: #202634;
-  --fni-muted: #778092;
-  --fni-dark: #12141B;
-  --fni-dark-surface: #1C202A;
-  --fni-dark-border: #343B49;
-}
-html, body, #root { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-html:not(.dark), html:not(.dark) body { background: var(--fni-canvas); color: var(--fni-text); }
-html:not(.dark) header,
-html:not(.dark) aside,
-html:not(.dark) .mobile-bottom-nav { background-color: #fff; border-color: var(--fni-border); }
-html:not(.dark) [class*="bg-[#142B4A]"],
-html:not(.dark) [class*="bg-navy-800"],
-html:not(.dark) [class*="bg-navy-900"] { background-color: var(--fni-blue) !important; }
-html:not(.dark) [class*="hover:bg-[#203D63]"]:hover { background-color: var(--fni-blue-deep) !important; }
-html:not(.dark) [class*="text-[#142B4A]"],
-html:not(.dark) [class*="text-navy-800"],
-html:not(.dark) [class*="text-navy-900"] { color: var(--fni-blue) !important; }
-html:not(.dark) [class*="text-[#C6A45A]"],
-html:not(.dark) [class*="text-gold-"] { color: var(--fni-gold) !important; }
-html:not(.dark) [class*="border-[#C6A45A]"] { border-color: var(--fni-gold) !important; }
-html:not(.dark) [class*="bg-[#142B4A]/"] { background-color: rgb(36 99 211 / .08) !important; }
-html:not(.dark) [class*="border-[#E3E8EF]"],
-html:not(.dark) [class*="border-slate-200"] { border-color: var(--fni-border) !important; }
-html:not(.dark) .bg-canvas,
-html:not(.dark) [class*="bg-[#F5F7FA]"] { background-color: var(--fni-canvas) !important; }
-html:not(.dark) [class*="rounded-xl"],
-html:not(.dark) [class*="rounded-2xl"] { transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
-html:not(.dark) button { -webkit-tap-highlight-color: transparent; }
-html:not(.dark) button:focus-visible,
-html:not(.dark) a:focus-visible,
-html:not(.dark) input:focus-visible,
-html:not(.dark) select:focus-visible,
-html:not(.dark) textarea:focus-visible { outline: 2px solid var(--fni-blue); outline-offset: 2px; }
-
-/* Cleaner Telegram-like application shell without changing navigation logic. */
-@media (min-width: 768px) {
-  aside[class*="fixed"] { box-shadow: 1px 0 0 var(--fni-border); }
-  header { min-height: 60px; }
-}
-@media (max-width: 767px) {
-  header { min-height: 58px; }
-  .mobile-bottom-nav { box-shadow: 0 -4px 18px rgb(24 35 58 / .06) !important; backdrop-filter: blur(16px); }
-  .mobile-bottom-nav button { min-height: 58px; }
-  main { padding-left: 14px !important; padding-right: 14px !important; }
-}
-
-/* Unified dark palette from the FNI app. */
-html.dark, html.dark body, html.dark #root { background: var(--fni-dark) !important; color: #E8EAF0 !important; }
-html.dark header, html.dark aside, html.dark footer, html.dark .mobile-bottom-nav,
-html.dark [class*="bg-white"], html.dark .bg-canvas, html.dark .bg-slate-50 {
-  background-color: var(--fni-dark-surface) !important;
-  border-color: var(--fni-dark-border) !important;
-}
-html.dark [class~="bg-[#142B4A]"],
-html.dark [class*="bg-navy-800"],
-html.dark [class*="bg-navy-900"] { background-color: var(--fni-blue-deep) !important; }
-html.dark [class~="text-[#142B4A]"],
-html.dark [class*="text-navy-800"],
-html.dark [class*="text-navy-900"] { color: #A9C6FF !important; }
-html.dark [class*="text-[#C6A45A]"],
-html.dark [class*="text-gold-"] { color: #E7BD59 !important; }
-html.dark [class*="border-[#E3E8EF]"],
-html.dark [class*="border-slate-200"] { border-color: var(--fni-dark-border) !important; }
-html.dark [class*="bg-[#F5F7FA]"],
-html.dark [class*="bg-[#142B4A]/"] { background-color: #252B37 !important; }
-html.dark input, html.dark textarea, html.dark select { background-color: #171B24 !important; border-color: #414958 !important; color: #F2F4F8 !important; }
-html.dark button:focus-visible, html.dark a:focus-visible,
-html.dark input:focus-visible, html.dark select:focus-visible,
-html.dark textarea:focus-visible { outline-color: #8FB4FF; }
-@media (prefers-reduced-motion: reduce) {
-  html:not(.dark) [class*="rounded-xl"], html:not(.dark) [class*="rounded-2xl"] { transition: none; }
-}
-
-
-/* ==========================================================
-   FNI Cells Connect — final accessible theme and mobile control
-   Keep the theme switch inside the authenticated header so it
-   never floats over forms, navigation, or mobile action areas.
-   ========================================================== */
-:root {
-  --fni-page: #F4F5F8;
-  --fni-surface: #FFFFFF;
-  --fni-surface-muted: #F5F7FA;
-  --fni-ink: #202634;
-  --fni-ink-muted: #667085;
-  --fni-line: #E3E8EF;
-  --fni-action: #2463D3;
-  --fni-action-hover: #1D4FA8;
-  --fni-accent: #D9A52B;
-}
-html:not(.dark), html:not(.dark) body, html:not(.dark) #root {
-  background-color: var(--fni-page);
-  color: var(--fni-ink);
-}
-html:not(.dark) header, html:not(.dark) aside, html:not(.dark) footer,
-html:not(.dark) .mobile-bottom-nav {
-  background-color: var(--fni-surface);
-  border-color: var(--fni-line);
-}
-html:not(.dark) [class~="bg-white"], html:not(.dark) [class*="bg-white/"] {
-  color: inherit;
-}
-html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
-html:not(.dark) textarea, html:not(.dark) select {
-  color: #202634;
-  background-color: #FFFFFF;
-  border-color: #D6DDE8;
-}
-html:not(.dark) input::placeholder, html:not(.dark) textarea::placeholder {
-  color: #778092;
-  opacity: 1;
-}
-html:not(.dark) button:focus-visible, html:not(.dark) a:focus-visible,
-html:not(.dark) input:focus-visible, html:not(.dark) select:focus-visible,
-html:not(.dark) textarea:focus-visible {
-  outline: 2px solid #2463D3;
-  outline-offset: 2px;
-}
-
-/* Dark mode: neutral surfaces, readable text, and visible borders. */
-html.dark, html.dark body, html.dark #root {
-  background-color: #12141B !important;
-  color: #E8EAF0 !important;
-}
-html.dark header, html.dark aside, html.dark footer,
-html.dark .mobile-bottom-nav, html.dark [class~="bg-white"],
-html.dark [class*="bg-white/"], html.dark .bg-canvas,
-html.dark .bg-slate-50, html.dark .bg-gray-50 {
-  background-color: #1C202A !important;
-  border-color: #343B49 !important;
-}
-html.dark [class~="bg-slate-100"], html.dark [class~="bg-slate-200"],
-html.dark [class~="bg-gray-100"], html.dark [class~="bg-gray-200"],
-html.dark [class*="bg-[#F5F7FA]"], html.dark [class*="bg-[#F8FAFC]"],
-html.dark [class*="bg-[#FAFAFA]"], html.dark [class*="bg-[#F9FAFB]"] {
-  background-color: #252B37 !important;
-  border-color: #3A4352 !important;
-}
-html.dark [class*="hover:bg-slate-50"]:hover,
-html.dark [class*="hover:bg-gray-50"]:hover,
-html.dark [class*="hover:bg-[#F5F7FA]"]:hover {
-  background-color: #30394A !important;
-}
-html.dark [class*="text-[#182230]"], html.dark [class*="text-[#142B4A]"],
-html.dark [class*="text-[#101828]"], html.dark [class*="text-navy-950"],
-html.dark [class*="text-navy-900"], html.dark [class*="text-slate-950"],
-html.dark [class*="text-slate-900"], html.dark [class*="text-slate-800"],
-html.dark [class*="text-gray-900"], html.dark [class*="text-gray-800"] {
-  color: #F2F4F8 !important;
-}
-html.dark [class*="text-[#667085]"], html.dark [class*="text-[#475467]"],
-html.dark [class*="text-[#344054]"], html.dark [class*="text-slate-700"],
-html.dark [class*="text-slate-600"], html.dark [class*="text-slate-500"],
-html.dark [class*="text-gray-700"], html.dark [class*="text-gray-600"],
-html.dark [class*="text-gray-500"] {
-  color: #B5BECC !important;
-}
-html.dark [class*="border-[#E3E8EF]"], html.dark [class*="border-slate-100"],
-html.dark [class*="border-slate-200"], html.dark [class*="border-slate-300"],
-html.dark [class*="border-gray-100"], html.dark [class*="border-gray-200"] {
-  border-color: #3A4352 !important;
-}
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark textarea, html.dark select {
-  background-color: #171B24 !important;
-  color: #F2F4F8 !important;
-  border-color: #414958 !important;
-}
-html.dark input::placeholder, html.dark textarea::placeholder {
-  color: #A0AABD !important;
-  opacity: 1;
-}
-html.dark input:focus, html.dark textarea:focus, html.dark select:focus {
-  border-color: #E7BD59 !important;
-  box-shadow: 0 0 0 3px rgb(231 189 89 / .18) !important;
-}
-html.dark table th, html.dark table td {
-  border-color: #343B49;
-}
-html.dark hr { border-color: #343B49; }
-html.dark [class*="bg-[#142B4A]"], html.dark [class*="bg-navy-800"],
-html.dark [class*="bg-navy-900"], html.dark [class*="bg-navy-950"] {
-  background-color: #244F9A !important;
-}
-html.dark [class*="text-[#C6A45A]"], html.dark [class*="text-gold-400"],
-html.dark [class*="text-gold-500"], html.dark [class*="text-gold-600"] {
-  color: #E7BD59 !important;
-}
-html.dark [class*="border-[#C6A45A]"], html.dark [class*="border-gold-"] {
-  border-color: #A98537 !important;
-}
-html.dark [class*="bg-emerald-50"], html.dark [class*="bg-green-50"] {
-  background-color: #123326 !important;
-  border-color: #286449 !important;
-}
-html.dark [class*="text-emerald-"], html.dark [class*="text-green-"] {
-  color: #72D6A5 !important;
-}
-html.dark [class*="bg-amber-50"], html.dark [class*="bg-yellow-50"] {
-  background-color: #382D17 !important;
-  border-color: #6B5426 !important;
-}
-html.dark [class*="text-amber-"], html.dark [class*="text-yellow-"] {
-  color: #F0C66A !important;
-}
-html.dark [class*="bg-rose-50"], html.dark [class*="bg-red-50"] {
-  background-color: #3A2028 !important;
-  border-color: #713544 !important;
-}
-html.dark [class*="text-rose-"], html.dark [class*="text-red-"] {
-  color: #FF929D !important;
-}
-html.dark [class*="bg-blue-50"], html.dark [class*="bg-indigo-50"] {
-  background-color: #1B2D4A !important;
-  border-color: #355A8E !important;
-}
-html.dark [class*="text-blue-"], html.dark [class*="text-indigo-"] {
-  color: #9FC3FF !important;
-}
-html.dark * { scrollbar-color: #526078 transparent; }
-html.dark button:focus-visible, html.dark a:focus-visible,
-html.dark input:focus-visible, html.dark select:focus-visible,
-html.dark textarea:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 2px; }
-
-@media (max-width: 767px) {
-  /* The theme switch is now part of the normal header action row. */
-  header { position: sticky; top: 0; z-index: 30; }
-  header > div:last-child { min-width: 0; }
-  header > div:last-child > button { flex-shrink: 0; }
-}
-
-
-
-/* ==========================================================
-   FNI CELLS CONNECT — SHARED FNI DESIGN SYSTEM
-   Brand: Royal Blue / Deep Purple / Gold
-   Semantic theme tokens keep legacy screens consistent without
-   changing their structure, routes, or business logic.
-   ========================================================== */
-:root {
-  color-scheme: light;
-  --fni-brand-blue: #173B8F;
-  --fni-brand-purple: #39216B;
-  --fni-brand-gold: #D9A72E;
-  --fni-page: #F5F7FC;
-  --fni-surface: #FFFFFF;
-  --fni-surface-raised: #F8FAFD;
-  --fni-surface-subtle: #EEF2F8;
-  --fni-text: #182230;
-  --fni-text-secondary: #475467;
-  --fni-text-muted: #667085;
-  --fni-border: #E2E7F0;
-  --fni-divider: #E9EDF4;
-  --fni-focus: #315DB5;
-  --fni-shadow: 0 1px 3px rgba(23, 59, 143, .06), 0 1px 2px rgba(16, 24, 40, .04);
-}
-html.dark {
-  color-scheme: dark;
-  --fni-page: #171A24;
-  --fni-surface: #202532;
-  --fni-surface-raised: #252B38;
-  --fni-surface-subtle: #2D3545;
-  --fni-text: #F4F6FA;
-  --fni-text-secondary: #D0D7E2;
-  --fni-text-muted: #AEB8C8;
-  --fni-border: #3B4557;
-  --fni-divider: #30394A;
-  --fni-focus: #A8C3FF;
-  --fni-shadow: 0 2px 8px rgba(0, 0, 0, .18);
-}
-html, body, #root {
-  min-height: 100%;
-  background: var(--fni-page);
-  color: var(--fni-text);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-body { background-color: var(--fni-page) !important; }
-html.dark body, html.dark #root { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
-
-/* Core app surfaces and legacy hard-coded white / pale backgrounds. */
-html.dark [class~="bg-white"],
-html.dark [class*="bg-white/95"],
-html.dark [class*="bg-white/90"],
-html.dark [class*="bg-slate-50"],
-html.dark [class*="bg-slate-100"],
-html.dark [class*="bg-gray-50"],
-html.dark [class*="bg-gray-100"],
-html.dark [class*="bg-[#F5F7FA]"],
-html.dark [class*="bg-[#F5F7FC]"],
-html.dark [class*="bg-[#F8FAFC]"],
-html.dark [class*="bg-[#FAFAFA]"] {
-  background-color: var(--fni-surface) !important;
-  border-color: var(--fni-border) !important;
-}
-html.dark [class*="bg-slate-200"],
-html.dark [class*="bg-gray-200"],
-html.dark [class*="bg-[#E3E8EF]"] {
-  background-color: var(--fni-surface-subtle) !important;
-  border-color: var(--fni-border) !important;
-}
-html.dark [class*="hover:bg-slate-50"]:hover,
-html.dark [class*="hover:bg-slate-100"]:hover,
-html.dark [class*="hover:bg-gray-50"]:hover,
-html.dark [class*="hover:bg-[#F5F7FA]"]:hover,
-html.dark [class*="hover:bg-[#E3E8EF]"]:hover {
-  background-color: var(--fni-surface-subtle) !important;
-}
-
-/* Legacy FNI navy hex values now resolve to the current royal-blue brand. */
-[class*="bg-[#142B4A]"] { background-color: var(--fni-brand-blue) !important; }
-[class*="hover:bg-[#203D63]"]:hover { background-color: #12306F !important; }
-html.dark [class*="bg-[#142B4A]"] { background-color: #214A9B !important; }
-[class*="text-[#142B4A]"] { color: var(--fni-brand-blue) !important; }
-html.dark [class*="text-[#142B4A]"] { color: #B8CCFF !important; }
-[class*="text-[#182230]"] { color: #182230 !important; }
-html.dark [class*="text-[#182230]"] { color: var(--fni-text) !important; }
-[class*="text-[#667085]"] { color: #667085 !important; }
-html.dark [class*="text-[#667085]"] { color: var(--fni-text-muted) !important; }
-[class*="text-[#C6A45A]"] { color: #946B12 !important; }
-html.dark [class*="text-[#C6A45A]"] { color: #F0C75E !important; }
-[class~="bg-[#C6A45A]"] { background-color: var(--fni-brand-gold) !important; }
-[class*="border-[#C6A45A]"] { border-color: var(--fni-brand-gold) !important; }
-
-/* Main navigation, sidebars and bottom mobile navigation. */
-html.dark header,
-html.dark aside,
-html.dark nav,
-html.dark .mobile-bottom-nav {
-  background-color: var(--fni-surface) !important;
-  border-color: var(--fni-border) !important;
-}
-html.dark [class*="border-[#E3E8EF]"],
-html.dark [class*="border-slate-100"],
-html.dark [class*="border-slate-200"],
-html.dark [class*="border-gray-100"],
-html.dark [class*="border-gray-200"],
-html.dark [class*="divide-[#E3E8EF]"] > * + *,
-html.dark hr,
-html.dark table th,
-html.dark table td {
-  border-color: var(--fni-divider) !important;
-}
-
-/* Neutral text shades and labels. */
-html.dark [class*="text-slate-900"],
-html.dark [class*="text-slate-800"],
-html.dark [class*="text-gray-900"],
-html.dark [class*="text-gray-800"],
-html.dark [class*="text-[#101828]"],
-html.dark [class*="text-[#182230]"] { color: var(--fni-text) !important; }
-html.dark [class*="text-slate-700"],
-html.dark [class*="text-slate-600"],
-html.dark [class*="text-slate-500"],
-html.dark [class*="text-gray-700"],
-html.dark [class*="text-gray-600"],
-html.dark [class*="text-gray-500"],
-html.dark [class*="text-[#667085]"],
-html.dark [class*="text-[#475467]"] { color: var(--fni-text-secondary) !important; }
-html:not(.dark) [class*="text-slate-400"],
-html:not(.dark) [class*="text-gray-400"] { color: #667085 !important; }
-
-/* Inputs, selects, date fields, textareas and disabled states. */
-input:not([type="checkbox"]):not([type="radio"]),
-textarea,
-select {
-  min-height: 2.5rem;
-  border-radius: .75rem;
-}
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark textarea,
-html.dark select {
-  background-color: #191E29 !important;
-  color: var(--fni-text) !important;
-  border-color: var(--fni-border) !important;
-}
-html.dark input::placeholder,
-html.dark textarea::placeholder,
-html.dark select:invalid {
-  color: var(--fni-text-muted) !important;
-  opacity: 1;
-}
-html.dark input:disabled,
-html.dark textarea:disabled,
-html.dark select:disabled {
-  background-color: #252B38 !important;
-  color: #AEB8C8 !important;
-  border-color: #3B4557 !important;
-  opacity: 1;
-}
-input:focus-visible, textarea:focus-visible, select:focus-visible,
-button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
-  outline: 2px solid var(--fni-focus);
-  outline-offset: 2px;
-}
-button:disabled, [aria-disabled="true"] {
-  cursor: not-allowed;
-}
-
-/* Semantic feedback remains distinct and legible in both themes. */
-html.dark [class*="bg-emerald-50"],
-html.dark [class*="bg-green-50"] { background-color: #143629 !important; border-color: #286449 !important; }
-html.dark [class*="text-emerald-"],
-html.dark [class*="text-green-"] { color: #83E0B2 !important; }
-html.dark [class*="bg-amber-50"],
-html.dark [class*="bg-yellow-50"],
-html.dark [class*="bg-orange-50"] { background-color: #3A301B !important; border-color: #725B2A !important; }
-html.dark [class*="text-amber-"],
-html.dark [class*="text-yellow-"],
-html.dark [class*="text-orange-"] { color: #F4CE76 !important; }
-html.dark [class*="bg-rose-50"],
-html.dark [class*="bg-red-50"] { background-color: #3A242B !important; border-color: #75404B !important; }
-html.dark [class*="text-rose-"],
-html.dark [class*="text-red-"] { color: #FF9EAA !important; }
-html.dark [class*="bg-blue-50"],
-html.dark [class*="bg-indigo-50"] { background-color: #1D3152 !important; border-color: #355A8E !important; }
-html.dark [class*="text-blue-"],
-html.dark [class*="text-indigo-"] { color: #A8C7FF !important; }
-html.dark [class*="bg-purple-50"],
-html.dark [class*="bg-violet-50"] { background-color: #302744 !important; border-color: #594674 !important; }
-html.dark [class*="text-purple-"],
-html.dark [class*="text-violet-"] { color: #D9C1FF !important; }
-
-/* Tables, charts, scrollbars and floating layers. */
-html.dark .recharts-text,
-html.dark .recharts-cartesian-axis-tick-value,
-html.dark .recharts-legend-item-text { fill: #D0D7E2 !important; color: #D0D7E2 !important; }
-html.dark .recharts-cartesian-grid line { stroke: #3B4557 !important; }
-html.dark .recharts-tooltip-wrapper > div {
-  background-color: var(--fni-surface) !important;
-  border-color: var(--fni-border) !important;
-  color: var(--fni-text) !important;
-}
-html.dark * { scrollbar-color: #59667D transparent; }
-::selection { background: #D9A72E55; color: #182230; }
-html.dark ::selection { background: #315DB588; color: #FFFFFF; }
-
-@media (max-width: 767px) {
-  .mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
-}
-
-/* Legacy tinted status surfaces and navy/gold text utilities. */
-html.dark [class*="bg-[#FFF5F5]"] { background-color: #3A242B !important; border-color: #75404B !important; }
-html.dark [class*="bg-[#ECFDF3]"] { background-color: #143629 !important; border-color: #286449 !important; }
-html.dark [class*="bg-[#FEE4E2]"] { background-color: #4A2A32 !important; }
-html.dark [class*="text-[#C74646]"] { color: #FF9EAA !important; }
-html.dark [class*="text-[#23845B]"] { color: #83E0B2 !important; }
-html.dark [class*="text-navy-900"] { color: #E1E8F7 !important; }
-html.dark [class*="text-navy-800"] { color: #A8C7FF !important; }
-html.dark [class*="text-gold-600"],
-html.dark [class*="text-gold-700"],
-html.dark [class*="text-gold-800"] { color: #F0C75E !important; }
-
-html.dark [class*="bg-gold-50"],
-html.dark [class*="bg-gold-100"] { background-color: #3A321F !important; border-color: #6D5A2C !important; }
-html.dark [class*="border-gold-"] { border-color: #806A34 !important; }
-html.dark [class*="text-gold-"] { color: #F0C75E !important; }
-
-
-/* Android-first responsive shell and pill-shaped messaging composer */
-@media (max-width: 639px) {
-  .fni-messaging-view { width: 100%; min-width: 0; }
-  .fni-chat-panel { border-left: 0; border-right: 0; border-radius: 1rem; box-shadow: 0 1px 3px rgba(16,35,63,.06); }
-  .fni-chat-stream { min-height: 280px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scroll-padding-bottom: 1rem; }
-  .fni-chat-composer { padding-bottom: max(.65rem, env(safe-area-inset-bottom)); }
-  .fni-chat-composer input { min-width: 0; box-shadow: none !important; }
-  .fni-chat-composer input:focus { box-shadow: none !important; outline: none !important; }
-  .fni-messaging-view button, .fni-messaging-view select { -webkit-tap-highlight-color: transparent; }
-}
-@media (max-width: 380px) {
-  .fni-messaging-view .fni-chat-stream { min-height: 250px; }
-  .fni-messaging-view .fni-chat-composer { gap: .4rem; }
-}
-
-
-/* Community and leadership conversations use the page's single scroll container. */
-.fni-messaging-view .fni-chat-stream {
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
-  overscroll-behavior: auto !important;
-}
-@media (max-width: 639px) {
-  .fni-messaging-view .fni-chat-stream { min-height: 0 !important; }
-}
-
-
-/* Tutor dashboard sanctuary header: intentional contrast in both themes. */
-.fni-tutor-sanctuary-header {
-  background: linear-gradient(112deg, #142B4A 0%, #1A365D 58%, #263F70 100%) !important;
-  border-color: #29466F !important;
-  color: #F8FAFF !important;
-}
-.fni-tutor-sanctuary-header .fni-sanctuary-muted { color: #E2EAF7 !important; }
-html.dark .fni-tutor-sanctuary-header {
-  background: linear-gradient(112deg, #111C35 0%, #192B50 54%, #292653 100%) !important;
-  border-color: #46577A !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,.24) !important;
-}
-html.dark .fni-tutor-sanctuary-header h1,
-html.dark .fni-tutor-sanctuary-header p,
-html.dark .fni-tutor-sanctuary-header span { text-shadow: none; }
-html.dark .fni-tutor-sanctuary-header h1 { color: #FFFFFF !important; }
-html.dark .fni-tutor-sanctuary-header .text-slate-200,
-html.dark .fni-tutor-sanctuary-header .text-slate-300 { color: #E3EAF7 !important; }
-html.dark .fni-tutor-sanctuary-header .text-slate-400 { color: #B8C5DC !important; }
-html.dark .fni-tutor-sanctuary-header [class*="bg-white/10"] {
-  background-color: rgba(255,255,255,.12) !important;
-  border-color: rgba(255,255,255,.22) !important;
-}
-html.dark .fni-tutor-sanctuary-header [class~="bg-[#C6A45A]"] {
-  background-color: #F0C75E !important;
-  color: #17233D !important;
-}
-html.dark .fni-tutor-sanctuary-header button:first-child {
-  background: #F0C75E !important;
-  color: #17233D !important;
-}
-html.dark .fni-tutor-sanctuary-header button:first-child * { color: #17233D !important; }
-html.dark .fni-tutor-sanctuary-header button:last-child {
-  background: rgba(255,255,255,.12) !important;
-  color: #F8FAFF !important;
-  border-color: rgba(255,255,255,.28) !important;
-}
-html.dark .fni-tutor-sanctuary-header button:last-child svg { color: #F0C75E !important; }
-
-
-/* Location sharing panel: deliberately tuned for both appearance modes. */
-.fni-location-panel { color: #182230; background: #ffffff; border-color: #e3e8ef; }
-.fni-location-panel h2, .fni-location-panel .fni-location-heading { color: #142b4a; }
-html.dark .fni-location-panel {
-  color: #e6edf5 !important;
-  background: #111c2d !important;
-  border-color: #304258 !important;
-  box-shadow: 0 8px 24px rgb(0 0 0 / .18);
-}
-html.dark .fni-location-panel h2,
-html.dark .fni-location-panel h3,
-html.dark .fni-location-panel .text-\\[\\#142B4A\\],
-html.dark .fni-location-panel .text-\\[\\#182230\\] {
-  color: #f1f5f9 !important;
-}
-html.dark .fni-location-panel [class*="text-[#667085]"],
-html.dark .fni-location-panel [class*="text-[#98A2B3]"],
-html.dark .fni-location-panel [class*="text-[#475467]"] {
-  color: #b7c5d6 !important;
-}
-html.dark .fni-location-panel [class*="border-[#E3E8EF]"] {
-  border-color: #304258 !important;
-}
-html.dark .fni-location-panel [class*="bg-white"] {
-  background-color: #172437 !important;
-}
-html.dark .fni-location-panel [class*="bg-emerald-50"] {
-  background-color: #123528 !important;
-  border-color: #236348 !important;
-}
-html.dark .fni-location-panel [class*="text-emerald-900"],
-html.dark .fni-location-panel [class*="text-emerald-800"] {
-  color: #b9f3d2 !important;
-}
-html.dark .fni-location-panel [class~="bg-[#F7FAFE]"] {
-  background-color: #172437 !important;
-  border-color: #304258 !important;
-}
-html.dark .fni-location-panel .text-emerald-700 {
-  color: #7ee0aa !important;
-}
-html.dark .fni-location-panel .leaflet-tooltip {
-  background: #172437 !important;
-  border-color: #40546d !important;
-  color: #f1f5f9 !important;
-}
-html.dark .fni-location-panel .leaflet-tooltip-top:before {
-  border-top-color: #40546d !important;
-}
-html.dark .fni-location-panel [class*="bg-amber-50"] {
-  background-color: #332712 !important;
-  border-color: #574119 !important;
-}
-html.dark .fni-location-panel [class*="text-rose-600"] { color: #fda4af !important; }
-
-
-/* Telegram-inspired messaging interaction and icon language. */
-.fni-messaging-view svg,
-.fni-chat-panel svg {
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.fni-swipe-message {
-  touch-action: pan-y;
-  -webkit-user-select: text;
-  user-select: text;
-}
-.fni-chat-panel .fni-swipe-message {
-  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
-}
-html.dark .fni-chat-panel .fni-swipe-message {
-  border-color: #304258 !important;
-}
-html.dark .fni-chat-panel .fni-swipe-message[class*="bg-white"] {
-  background-color: #172437 !important;
-}
-html.dark .fni-chat-panel .fni-swipe-message [class*="text-[#142B4A]"],
-html.dark .fni-chat-panel .fni-swipe-message [class*="text-[#182230]"] {
-  color: #edf4fb !important;
-}
-html.dark .fni-chat-panel .fni-swipe-message [class*="text-[#667085]"] {
-  color: #b7c5d6 !important;
-}
-
-
-/* Consistent Telegram-like Lucide icon treatment across the application.
-   Keep the official FNI wordmark/logo artwork unchanged. */
-svg.lucide {
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-}
-
-
-/* ==========================================================
-   FNI RESPONSIVE + THEME TOKENS (final cascade)
-   Keeps the established royal-blue / purple / gold identity
-   while avoiding the conflicting legacy dark-mode overrides.
-   ========================================================== */
-:root {
-  color-scheme: light;
-  --fni-brand-blue: #173B8F;
-  --fni-brand-purple: #39216B;
-  --fni-brand-gold: #D9A72E;
-  --fni-page: #F4F6FB;
-  --fni-surface: #FFFFFF;
-  --fni-surface-raised: #F8FAFD;
-  --fni-surface-subtle: #EDF1F7;
-  --fni-text: #182230;
-  --fni-text-secondary: #475467;
-  --fni-text-muted: #667085;
-  --fni-border: #E0E6F0;
-  --fni-divider: #E9EDF4;
-  --fni-focus: #315DB5;
-}
-html.dark {
-  color-scheme: dark;
-  --fni-page: #101522;
-  --fni-surface: #171F30;
-  --fni-surface-raised: #1D293D;
-  --fni-surface-subtle: #26344B;
-  --fni-text: #F4F6FB;
-  --fni-text-secondary: #CBD5E1;
-  --fni-text-muted: #A6B3C5;
-  --fni-border: #35445C;
-  --fni-divider: #2A384E;
-  --fni-focus: #9AB9FF;
-}
-html, body, #root { min-height: 100%; background: var(--fni-page); color: var(--fni-text); }
-body { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
-html.dark body, html.dark #root { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
-
-/* Surface hierarchy: keep cards distinguishable from the page. */
-html.dark [class~="bg-white"], html.dark [class*="bg-white/"],
-html.dark [class~="bg-canvas"], html.dark [class~="bg-slate-50"],
-html.dark [class~="bg-gray-50"], html.dark [class*="bg-[#F5F7FA]"],
-html.dark [class*="bg-[#F8FAFC]"], html.dark [class*="bg-[#F7FAFE]"] {
-  background-color: var(--fni-surface) !important;
-  border-color: var(--fni-border) !important;
-}
-html.dark [class~="bg-slate-100"], html.dark [class~="bg-slate-200"],
-html.dark [class~="bg-gray-100"], html.dark [class~="bg-gray-200"],
-html.dark [class*="bg-[#E3E8EF]"] {
-  background-color: var(--fni-surface-subtle) !important;
-  border-color: var(--fni-border) !important;
-}
-html.dark header, html.dark aside, html.dark footer,
-html.dark .mobile-bottom-nav {
-  background-color: var(--fni-surface) !important;
-  border-color: var(--fni-border) !important;
-}
-
-/* Typography and icons. */
-html.dark h1, html.dark h2, html.dark h3, html.dark h4,
-html.dark h5, html.dark h6,
-html.dark [class*="text-[#182230]"], html.dark [class*="text-slate-900"],
-html.dark [class*="text-slate-800"], html.dark [class*="text-gray-900"],
-html.dark [class*="text-gray-800"] { color: var(--fni-text) !important; }
-html.dark [class*="text-[#667085]"], html.dark [class*="text-[#475467]"],
-html.dark [class*="text-slate-700"], html.dark [class*="text-slate-600"],
-html.dark [class*="text-slate-500"], html.dark [class*="text-gray-700"],
-html.dark [class*="text-gray-600"], html.dark [class*="text-gray-500"] {
-  color: var(--fni-text-secondary) !important;
-}
-html.dark [class*="border-[#E3E8EF]"], html.dark [class*="border-slate-100"],
-html.dark [class*="border-slate-200"], html.dark [class*="border-gray-100"],
-html.dark [class*="border-gray-200"], html.dark hr,
-html.dark table th, html.dark table td { border-color: var(--fni-divider) !important; }
-
-/* FNI blue/purple/gold brand colours remain intentional accents. */
-html.dark [class*="bg-[#142B4A]"], html.dark [class*="bg-navy-900"],
-html.dark [class*="bg-navy-950"] { background-color: #244A91 !important; }
-html.dark [class*="text-[#142B4A]"], html.dark [class*="text-navy-900"],
-html.dark [class*="text-navy-950"] { color: #B9CEFF !important; }
-html.dark [class*="bg-purple-"], html.dark [class*="bg-violet-"] { background-color: #30264B !important; }
-html.dark [class*="text-purple-"], html.dark [class*="text-violet-"] { color: #D9C1FF !important; }
-html.dark [class*="text-[#C6A45A]"], html.dark [class*="text-gold-"] { color: #F2CA68 !important; }
-html.dark [class*="border-[#C6A45A]"], html.dark [class*="border-gold-"] { border-color: #9A7938 !important; }
-html.dark [class*="bg-[#C6A45A]"], html.dark [class~="bg-gold-500"] { background-color: #D9A72E !important; color: #1B2433 !important; }
-
-/* Inputs, controls and dropdowns use the same readable surfaces. */
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark textarea, html.dark select {
-  background-color: #121A29 !important;
-  color: var(--fni-text) !important;
-  border-color: var(--fni-border) !important;
-}
-html.dark input::placeholder, html.dark textarea::placeholder { color: var(--fni-text-muted) !important; opacity: 1; }
-html.dark input:disabled, html.dark textarea:disabled, html.dark select:disabled {
-  background-color: #202B3E !important; color: #A6B3C5 !important; opacity: 1;
-}
-html.dark [class*="bg-emerald-50"], html.dark [class*="bg-green-50"] { background-color: #15392D !important; border-color: #28634A !important; }
-html.dark [class*="text-emerald-"], html.dark [class*="text-green-"] { color: #8CE0B5 !important; }
-html.dark [class*="bg-amber-50"], html.dark [class*="bg-yellow-50"] { background-color: #3A301C !important; border-color: #6D5729 !important; }
-html.dark [class*="text-amber-"], html.dark [class*="text-yellow-"] { color: #F3CE79 !important; }
-html.dark [class*="bg-rose-50"], html.dark [class*="bg-red-50"] { background-color: #3A242D !important; border-color: #75404C !important; }
-html.dark [class*="text-rose-"], html.dark [class*="text-red-"] { color: #FFA2AE !important; }
-html.dark [class*="bg-blue-50"], html.dark [class*="bg-indigo-50"] { background-color: #1D3152 !important; border-color: #385B8D !important; }
-html.dark [class*="text-blue-"], html.dark [class*="text-indigo-"] { color: #A9C8FF !important; }
-html.dark * { scrollbar-color: #53627A transparent; }
-html.dark ::selection { background: #315DB588; color: #FFFFFF; }
-
-/* Scale the shell and controls for compact phones through large displays. */
-html { font-size: clamp(14px, calc(13.5px + .16vw), 16px); }
-button, input, select, textarea { max-width: 100%; }
-button { min-height: 2.25rem; }
-main { min-width: 0; }
-main > * { min-width: 0; }
-img, video, canvas { max-width: 100%; }
-.table-scroll-container { max-width: 100%; }
-@media (max-width: 767px) {
-  html { font-size: 15px; }
-  main { padding-left: clamp(.625rem, 3vw, 1rem); padding-right: clamp(.625rem, 3vw, 1rem); }
-  main .grid { min-width: 0; }
-  main [class*="min-w-[240px]"] { min-width: 0 !important; width: 100%; }
-  main table { font-size: .78rem; }
-  main button, main a[role="button"] { min-height: 2.5rem; }
-  header { min-height: 3.5rem; }
-}
-@media (max-width: 390px) {
-  html { font-size: 14px; }
-  main { padding-left: .625rem; padding-right: .625rem; }
-  .mobile-bottom-nav button { min-width: 0; }
-}
-@media (min-width: 768px) and (max-width: 1100px) {
-  html { font-size: 15px; }
-  main { padding-left: 1.25rem; padding-right: 1.25rem; }
-}
-
-/* Preserve translucent FNI brand tints; do not turn opacity utilities into solid fills. */
-html.dark [class*="bg-[#142B4A]/5"] { background-color: rgb(65 105 180 / .16) !important; border-color: rgb(117 153 218 / .24) !important; }
-html.dark [class*="bg-[#142B4A]/10"] { background-color: rgb(65 105 180 / .22) !important; border-color: rgb(117 153 218 / .30) !important; }
-html.dark [class*="hover:bg-[#142B4A]/10"]:hover { background-color: rgb(65 105 180 / .30) !important; }
-html.dark [class*="bg-[#C6A45A]/"] { background-color: rgb(217 167 46 / .16) !important; }
-html.dark [class*="bg-purple-900"], html.dark [class*="bg-violet-900"] { background-color: #30264B !important; }
-
-
-/* Notification centre: keep the entire panel high-contrast in both themes.
-   This view intentionally stays light so dark-mode global overrides cannot
-   pair dark text with dark surfaces. */
-.fni-notification-center,
-html.dark .fni-notification-center {
-  background: #F1F4F8 !important;
-  color: #172033 !important;
-}
-html.dark .fni-notification-center [class*="bg-white"],
-html.dark .fni-notification-center [class~="bg-white"] {
-  background: #FFFFFF !important;
-  border-color: #D5DDE8 !important;
-}
-html.dark .fni-notification-center [class*="bg-[#E2E8F0]"],
-html.dark .fni-notification-center [class*="bg-slate-100"],
-html.dark .fni-notification-center [class*="bg-slate-200"] {
-  background: #E2E8F0 !important;
-}
-html.dark .fni-notification-center [class*="text-[#102A4C]"],
-html.dark .fni-notification-center [class*="text-[#142B4A]"],
-html.dark .fni-notification-center [class*="text-[#172033]"],
-html.dark .fni-notification-center [class*="text-[#263548]"],
-html.dark .fni-notification-center [class*="text-[#334155]"],
-html.dark .fni-notification-center [class*="text-[#475569]"],
-html.dark .fni-notification-center [class*="text-slate-600"],
-html.dark .fni-notification-center [class*="text-slate-700"] {
-  color: #263548 !important;
-}
-html.dark .fni-notification-center [class*="text-white"] {
-  color: #FFFFFF !important;
-}
-html.dark .fni-notification-center [class*="bg-[#142B4A]"] {
-  background: #142B4A !important;
-}
-html.dark .fni-notification-center [class*="bg-[#142B4A]"] *,
-html.dark .fni-notification-center [class*="bg-[#142B4A]"] span {
-  color: #FFFFFF !important;
-}
-html.dark .fni-notification-center [class*="bg-[#EAF1FA]"] {
-  background: #EAF1FA !important;
-}
-html.dark .fni-notification-center [class*="bg-[#EAF1FA]"] * {
-  color: #263548 !important;
-}
-html.dark .fni-notification-center button:not([class*="bg-[#142B4A]"]) {
-  color: #263548;
-}
-html.dark .fni-notification-center button[class*="bg-[#142B4A]"] {
-  color: #FFFFFF !important;
-}
-html.dark .fni-notification-center p,
-html.dark .fni-notification-center span {
-  text-shadow: none !important;
-}
-
-
 /* Compact, Telegram-inspired message rhythm and safe long-message wrapping. */
 .fni-messaging-view .fni-chat-stream > * + * { margin-top: .55rem !important; }
 .fni-messaging-view .fni-swipe-message { overflow-wrap: anywhere; word-break: normal; }
@@ -2423,169 +1590,177 @@ html.dark :is(button:disabled, input:disabled, select:disabled, textarea:disable
 html.dark ::placeholder { color: #8fa1b8 !important; opacity: 1; }
 
 
+
+
 /* ==========================================================
-   FNI THEME CONTRAST AUDIT — November 2026
-   Keep semantic text/status colours readable on both surfaces.
-   These rules intentionally sit after legacy component overrides.
+   FNI CELLS CONNECT — SINGLE SOURCE THEME SYSTEM
+   Royal blue / deep purple / gold. Keep all theme decisions
+   here so legacy overrides cannot fight one another.
    ========================================================== */
 :root {
   color-scheme: light;
-  --fni-surface: #ffffff;
-  --fni-surface-muted: #f4f6fa;
-  --fni-foreground: #202634;
-  --fni-foreground-muted: #586579;
-  --fni-outline: #d8e0eb;
+  --fni-brand-blue: #173B8F;
+  --fni-brand-purple: #39216B;
+  --fni-brand-gold: #D9A72E;
+  --fni-page: #F4F6FB;
+  --fni-surface: #FFFFFF;
+  --fni-surface-raised: #F8FAFD;
+  --fni-surface-subtle: #EDF1F7;
+  --fni-text: #182230;
+  --fni-text-secondary: #475467;
+  --fni-text-muted: #667085;
+  --fni-border: #E0E6F0;
+  --fni-divider: #E9EDF4;
+  --fni-focus: #315DB5;
 }
-html:not(.dark) body,
-html:not(.dark) #root {
-  color: var(--fni-foreground);
-}
-html:not(.dark) :is(.text-slate-400,.text-gray-400,.text-zinc-400,.text-neutral-400) {
-  color: #64748b !important;
-}
-html:not(.dark) :is(.text-slate-500,.text-gray-500,.text-zinc-500,.text-neutral-500) {
-  color: #586579 !important;
-}
-html:not(.dark) :is(input,textarea,select) {
-  color: #202634;
-}
-html:not(.dark) :is(input,textarea,select):disabled {
-  color: #64748b;
-  background-color: #eef2f7;
-}
-html:not(.dark) :is(button,a,[role="button"]):focus-visible,
-html:not(.dark) :is(input,textarea,select):focus-visible {
-  outline: 2px solid #245fc4;
-  outline-offset: 2px;
-}
-
-/* Dark theme semantic surfaces and default copy. */
 html.dark {
   color-scheme: dark;
-  --fni-surface: #111c2d;
-  --fni-surface-muted: #172437;
-  --fni-foreground: #f1f5f9;
-  --fni-foreground-muted: #bdc9d8;
-  --fni-outline: #3a4d64;
+  --fni-page: #101827;
+  --fni-surface: #172437;
+  --fni-surface-raised: #1C2B40;
+  --fni-surface-subtle: #24354D;
+  --fni-text: #F3F6FC;
+  --fni-text-secondary: #CBD5E1;
+  --fni-text-muted: #A6B5C8;
+  --fni-border: #354861;
+  --fni-divider: #2A3B52;
+  --fni-focus: #A9C7FF;
 }
-html.dark body,
-html.dark #root,
-html.dark main {
-  color: var(--fni-foreground);
+html, body, #root {
+  min-height: 100%;
+  background: var(--fni-page);
+  color: var(--fni-text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-html.dark :is(p,li,dt,dd,label,legend,figcaption,caption,blockquote) {
-  color: inherit;
+body { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
+
+/* Light theme base: predictable surfaces and readable form controls. */
+html:not(.dark) :is(header,aside,footer,.mobile-bottom-nav) {
+  background-color: var(--fni-surface);
+  border-color: var(--fni-border);
 }
+html:not(.dark) :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+  color: var(--fni-text);
+  background-color: var(--fni-surface);
+  border-color: #D6DDE8;
+}
+html:not(.dark) :is(input,textarea)::placeholder { color: var(--fni-text-muted); opacity: 1; }
+html:not(.dark) :is(.text-slate-400,.text-gray-400,.text-zinc-400,.text-neutral-400) { color: #64748B !important; }
+html:not(.dark) :is(.text-slate-500,.text-gray-500,.text-zinc-500,.text-neutral-500) { color: #586579 !important; }
+
+/* Dark theme page, cards, navigation and floating surfaces. */
+html.dark body, html.dark #root, html.dark main { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
+html.dark :is(header,aside,footer,nav,.mobile-bottom-nav),
+html.dark :is(.bg-white,.bg-canvas,.bg-slate-50,.bg-gray-50),
+html.dark :is([class*="bg-white/"],[class*="bg-[#F5F7FA]"],[class*="bg-[#F5F7FC]"],[class*="bg-[#F8FAFC]"],[class*="bg-[#F7FAFE]"],[class*="bg-[#FAFAFA]"],[class*="bg-[#F9FAFB]"]) {
+  background-color: var(--fni-surface) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark :is(.bg-slate-100,.bg-slate-200,.bg-gray-100,.bg-gray-200),
+html.dark :is([class*="bg-[#E3E8EF]"],[class*="bg-[#E2E8F0]"]) {
+  background-color: var(--fni-surface-subtle) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark :is([class*="hover:bg-slate-50"],[class*="hover:bg-gray-50"],[class*="hover:bg-[#F5F7FA]"]):hover {
+  background-color: #2B405B !important;
+}
+
+/* Typography: explicit foregrounds for legacy Tailwind and hex utilities. */
+html.dark :is(h1,h2,h3,h4,h5,h6,label,legend,th,td,p,li,dt,dd,figcaption,blockquote) { color: inherit; }
+html.dark :is(.text-slate-950,.text-slate-900,.text-slate-800,.text-gray-900,.text-gray-800,
+[class*="text-[#101828]"],[class*="text-[#182230]"],[class*="text-[#172033]"]) { color: var(--fni-text) !important; }
+html.dark :is(.text-slate-700,.text-slate-600,.text-slate-500,.text-gray-700,.text-gray-600,.text-gray-500,
+[class*="text-[#667085]"],[class*="text-[#475467]"],[class*="text-[#344054]"]) { color: var(--fni-text-secondary) !important; }
 html.dark :is(.text-blue-400,.text-blue-500,.text-blue-600,.text-blue-700,.text-blue-800,.text-blue-900,
 .text-indigo-400,.text-indigo-500,.text-indigo-600,.text-indigo-700,.text-indigo-800,.text-indigo-900,
-.text-sky-400,.text-sky-500,.text-sky-600,.text-sky-700,.text-sky-800,.text-sky-900,
-.text-cyan-400,.text-cyan-500,.text-cyan-600,.text-cyan-700,.text-cyan-800,.text-cyan-900,
-.text-purple-400,.text-purple-500,.text-purple-600,.text-purple-700,.text-purple-800,.text-purple-900,
-.text-violet-400,.text-violet-500,.text-violet-600,.text-violet-700,.text-violet-800,.text-violet-900,
-.text-fuchsia-400,.text-fuchsia-500,.text-fuchsia-600,.text-fuchsia-700,.text-fuchsia-800,.text-fuchsia-900,
-.text-pink-400,.text-pink-500,.text-pink-600,.text-pink-700,.text-pink-800,.text-pink-900,
-.text-rose-400,.text-rose-500,.text-rose-600,.text-rose-700,.text-rose-800,.text-rose-900,
-.text-red-400,.text-red-500,.text-red-600,.text-red-700,.text-red-800,.text-red-900,
-.text-orange-400,.text-orange-500,.text-orange-600,.text-orange-700,.text-orange-800,.text-orange-900,
-.text-amber-400,.text-amber-500,.text-amber-600,.text-amber-700,.text-amber-800,.text-amber-900,
-.text-yellow-400,.text-yellow-500,.text-yellow-600,.text-yellow-700,.text-yellow-800,.text-yellow-900,
-.text-lime-400,.text-lime-500,.text-lime-600,.text-lime-700,.text-lime-800,.text-lime-900,
-.text-green-400,.text-green-500,.text-green-600,.text-green-700,.text-green-800,.text-green-900,
-.text-emerald-400,.text-emerald-500,.text-emerald-600,.text-emerald-700,.text-emerald-800,.text-emerald-900,
-.text-teal-400,.text-teal-500,.text-teal-600,.text-teal-700,.text-teal-800,.text-teal-900) {
-  color: #a9c9ff !important;
-}
-html.dark :is(.text-red-400,.text-red-500,.text-red-600,.text-red-700,.text-red-800,.text-red-900,
-.text-rose-400,.text-rose-500,.text-rose-600,.text-rose-700,.text-rose-800,.text-rose-900) {
-  color: #ff9b9b !important;
-}
-html.dark :is(.text-green-400,.text-green-500,.text-green-600,.text-green-700,.text-green-800,.text-green-900,
-.text-emerald-400,.text-emerald-500,.text-emerald-600,.text-emerald-700,.text-emerald-800,.text-emerald-900,
-.text-teal-400,.text-teal-500,.text-teal-600,.text-teal-700,.text-teal-800,.text-teal-900) {
-  color: #78ddb0 !important;
-}
+[class*="text-[#142B4A]"],[class*="text-navy-800"],[class*="text-navy-900"]) { color: #AFC9FF !important; }
+html.dark :is(.text-purple-400,.text-purple-500,.text-purple-600,.text-purple-700,.text-purple-800,.text-purple-900,
+.text-violet-400,.text-violet-500,.text-violet-600,.text-violet-700,.text-violet-800,.text-violet-900) { color: #D9C5FF !important; }
 html.dark :is(.text-amber-400,.text-amber-500,.text-amber-600,.text-amber-700,.text-amber-800,.text-amber-900,
 .text-yellow-400,.text-yellow-500,.text-yellow-600,.text-yellow-700,.text-yellow-800,.text-yellow-900,
-.text-orange-400,.text-orange-500,.text-orange-600,.text-orange-700,.text-orange-800,.text-orange-900) {
-  color: #f5ca76 !important;
-}
-/* Explicit hex-based status labels used throughout legacy screens. */
-html.dark [class*="text-[#16A34A]"],
-html.dark [class*="text-[#15803D]"],
-html.dark [class*="text-[#22C55E]"] { color: #78ddb0 !important; }
-html.dark [class*="text-[#DC2626]"],
-html.dark [class*="text-[#B91C1C]"],
-html.dark [class*="text-[#EF4444]"] { color: #ff9b9b !important; }
-html.dark [class*="text-[#D97706]"],
-html.dark [class*="text-[#B45309]"],
-html.dark [class*="text-[#F59E0B]"] { color: #f5ca76 !important; }
+[class*="text-[#C6A45A]"],[class*="text-gold-"]) { color: #F2CA68 !important; }
+html.dark :is(.text-green-400,.text-green-500,.text-green-600,.text-green-700,.text-green-800,.text-green-900,
+.text-emerald-400,.text-emerald-500,.text-emerald-600,.text-emerald-700,.text-emerald-800,.text-emerald-900,
+[class*="text-[#16A34A]"],[class*="text-[#15803D]"],[class*="text-[#22C55E]"]) { color: #83DDB2 !important; }
+html.dark :is(.text-red-400,.text-red-500,.text-red-600,.text-red-700,.text-red-800,.text-red-900,
+.text-rose-400,.text-rose-500,.text-rose-600,.text-rose-700,.text-rose-800,.text-rose-900,
+[class*="text-[#DC2626]"],[class*="text-[#B91C1C]"],[class*="text-[#EF4444]"]) { color: #FFA0AA !important; }
 
-/* Pale status chips must become deep tinted surfaces in dark mode. */
-html.dark :is(.bg-blue-100,.bg-indigo-100,.bg-sky-100,.bg-cyan-100,
-.bg-purple-100,.bg-violet-100,.bg-pink-100,.bg-rose-100) {
-  background-color: #203653 !important;
-  border-color: #355477 !important;
+/* Brand surfaces and status chips retain meaning without low contrast. */
+html.dark :is([class*="bg-[#142B4A]"],[class*="bg-navy-800"],[class*="bg-navy-900"],[class*="bg-navy-950"]) { background-color: #244A91 !important; }
+html.dark :is([class*="bg-purple-"],[class*="bg-violet-"]) { background-color: #30264B !important; }
+html.dark :is([class*="bg-emerald-50"],[class*="bg-green-50"],.bg-green-100,.bg-emerald-100) { background-color: #173B30 !important; border-color: #28614D !important; }
+html.dark :is([class*="bg-amber-50"],[class*="bg-yellow-50"],[class*="bg-orange-50"],.bg-amber-100,.bg-yellow-100) { background-color: #44351C !important; border-color: #70562B !important; }
+html.dark :is([class*="bg-rose-50"],[class*="bg-red-50"],.bg-red-100,.bg-rose-100) { background-color: #48252B !important; border-color: #713640 !important; }
+html.dark :is([class*="bg-blue-50"],[class*="bg-indigo-50"],.bg-blue-100,.bg-indigo-100) { background-color: #203653 !important; border-color: #355477 !important; }
+html.dark :is([class*="border-[#E3E8EF]"],[class*="border-slate-100"],[class*="border-slate-200"],[class*="border-gray-100"],[class*="border-gray-200"],hr,table th,table td) { border-color: var(--fni-divider) !important; }
+
+/* Inputs, selects, date pickers, checkboxes and disabled controls. */
+html.dark :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+  color: var(--fni-text) !important;
+  background-color: #111C2D !important;
+  border-color: var(--fni-border) !important;
 }
-html.dark :is(.bg-green-100,.bg-emerald-100,.bg-teal-100,.bg-lime-100) {
-  background-color: #173b30 !important;
-  border-color: #28614d !important;
+html.dark :is(input,textarea,select)::placeholder { color: var(--fni-text-muted) !important; opacity: 1; }
+html.dark :is(input,textarea,select):disabled { color: var(--fni-text-muted) !important; background-color: #202F45 !important; opacity: 1; }
+html.dark input[type="checkbox"],html.dark input[type="radio"] { accent-color: #86AFFF; }
+
+/* Notification centre intentionally follows the same blue-black palette. */
+html.dark .fni-notification-center {
+  background: #0B1422 !important;
+  color: var(--fni-text) !important;
 }
-html.dark :is(.bg-red-100,.bg-rose-100) {
-  background-color: #48252b !important;
-  border-color: #713640 !important;
+html.dark .fni-notification-center :is([class*="bg-white"],[class*="bg-[#F1F4F8]"],[class*="bg-[#E2E8F0]"],[class*="bg-[#EAF1FA]"],[class*="bg-slate-100"],[class*="bg-slate-200"]) {
+  background: #142238 !important;
+  border-color: #354861 !important;
 }
-html.dark :is(.bg-amber-100,.bg-yellow-100,.bg-orange-100) {
-  background-color: #44351c !important;
-  border-color: #70562b !important;
-}
-/* Avoid white text on white translucent/light utility surfaces. */
-html.dark :is([class*="bg-white/"],[class*="bg-slate-50/"],[class*="bg-gray-50/"]) {
-  color: #e6edf5;
-}
-html.dark :is([class*="bg-white/5"],[class*="bg-white/10"],[class*="bg-white/20"]) {
-  background-color: rgb(255 255 255 / .07) !important;
-  border-color: #3a4d64 !important;
-}
-html.dark :is(button,a,[role="button"]):focus-visible,
-html.dark :is(input,textarea,select):focus-visible {
-  outline: 2px solid #e7bd59;
+html.dark .fni-notification-center :is(p,span,button,label) { color: inherit; }
+html.dark .fni-notification-center [class*="bg-[#142B4A]"] { background: #244A91 !important; color: #FFFFFF !important; }
+html.dark .fni-notification-center [class*="bg-[#142B4A]"] * { color: #FFFFFF !important; }
+html.dark .fni-notification-center [class*="hover:!bg-[#F8FAFC]"]:hover,
+html.dark .fni-notification-center [class*="hover:!bg-[#E1EBF7]"]:hover { background: #1B304A !important; }
+
+/* Consistent borders, focus states, selection and motion accessibility. */
+html.dark * { scrollbar-color: #536780 transparent; }
+html:not(.dark) * { scrollbar-color: #CBD5E1 transparent; }
+:where(button,a,input,select,textarea,[role="button"],[tabindex]):focus-visible {
+  outline: 2px solid var(--fni-focus);
   outline-offset: 2px;
 }
-html.dark :is(input,textarea,select)::placeholder {
-  color: #a8b6c8 !important;
-  opacity: 1;
-}
-html.dark :is(input,textarea,select):disabled {
-  color: #a8b6c8 !important;
-  background-color: #1b293b !important;
-  opacity: 1;
-}
-html.dark :is(th,td) { color: inherit; }
-html.dark :is(.text-white,.text-white\/90,.text-white\/80) { color: #ffffff !important; }
-@media (forced-colors: active) {
-  :is(button,a,input,select,textarea,[role="button"]):focus-visible {
-    outline: 2px solid CanvasText !important;
-  }
+html.dark :where(button,a,input,select,textarea,[role="button"],[tabindex]):focus-visible { outline-color: #E7BD59; }
+html.dark ::selection { background: #315DB588; color: #FFFFFF; }
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
 
-
-/* Notification center surfaces: use the app's blue-black dark palette. */
-html.dark .fni-notification-center {
-  background-color: #0b1422 !important;
+/* Responsive shell sizing retained from the previous design system. */
+html { font-size: clamp(14px, calc(13.5px + .16vw), 16px); }
+button,input,select,textarea { max-width: 100%; }
+main,main > * { min-width: 0; }
+img,video,canvas { max-width: 100%; }
+.table-scroll-container { max-width: 100%; }
+@media (max-width: 767px) {
+  html { font-size: 15px; }
+  main { padding-left: clamp(.625rem,3vw,1rem); padding-right: clamp(.625rem,3vw,1rem); }
+  main .grid { min-width: 0; }
+  main [class*="min-w-[240px]"] { min-width: 0 !important; width: 100%; }
+  main table { font-size: .78rem; }
+  main button,main a[role="button"] { min-height: 2.5rem; }
+  header { min-height: 3.5rem; position: sticky; top: 0; z-index: 30; }
+  header > div:last-child { min-width: 0; }
+  header > div:last-child > button { flex-shrink: 0; }
+  .mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
 }
-html.dark .fni-notification-center [class*="bg-white"],
-html.dark .fni-notification-center [class*="!bg-white"],
-html.dark .fni-notification-center [class*="bg-[#F1F4F8]"],
-html.dark .fni-notification-center [class*="bg-[#E2E8F0]"],
-html.dark .fni-notification-center [class*="bg-[#EAF1FA]"],
-html.dark .fni-notification-center [class*="bg-slate-100"],
-html.dark .fni-notification-center [class*="bg-slate-200"] {
-  background-color: #142238 !important;
+@media (max-width: 390px) {
+  html { font-size: 14px; }
+  main { padding-left: .625rem; padding-right: .625rem; }
+  .mobile-bottom-nav button { min-width: 0; }
 }
-html.dark .fni-notification-center [class*="hover:!bg-[#F8FAFC]"]:hover,
-html.dark .fni-notification-center [class*="hover:!bg-[#E1EBF7]"]:hover {
-  background-color: #1b304a !important;
+@media (min-width: 768px) and (max-width: 1100px) {
+  html { font-size: 15px; }
+  main { padding-left: 1.25rem; padding-right: 1.25rem; }
 }
-html.dark .fni-notification-center .custom-scrollbar {
-  scrollbar-color: #526981 transparent;
+@media (min-width: 768px) {
+  aside[class*="fixed"] { box-shadow: 1px 0 0 var(--fni-border); }
+  header { min-height: 60px; }
 }
