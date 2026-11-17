@@ -26,11 +26,19 @@ import { LearningMaterialsView } from './LearningMaterialsView';
 interface LearningPortalViewProps {
   initialSection?: LearningPortalSection;
   onBack?: () => void;
+  onNavigateAppTab?: (tab: any) => void;
+  onOpenNotifications?: () => void;
+  onOpenAccountSettings?: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
   initialSection = 'overview',
   onBack,
+  onNavigateAppTab,
+  onOpenNotifications,
+  onOpenAccountSettings,
+  onToggleSidebar,
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const [activeSection, setActiveSection] = useState<LearningPortalSection>(initialSection);
@@ -176,6 +184,11 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
             events={events}
             mySubmissionsCount={mySubmissionsCount}
             myQuizzesCompletedCount={myQuizzesCompletedCount}
+            onNavigateAppTab={onNavigateAppTab}
+            onOpenNotifications={onOpenNotifications}
+            onOpenAccountSettings={onOpenAccountSettings}
+            onToggleSidebar={onToggleSidebar}
+            onBack={onBack}
           />
         )}
 

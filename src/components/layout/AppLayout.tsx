@@ -311,11 +311,15 @@ export const AppLayout: React.FC = () => {
               </>
             )}
 
-                        {/* SHARED LEARNING PORTAL VIEW */}
+            {/* SHARED LEARNING PORTAL VIEW */}
             {isLearningTab && (
               <LearningPortalView
                 initialSection={getLearningSection(effectiveTab)}
                 onBack={handleGoBack}
+                onNavigateAppTab={navigateToTab}
+                onOpenNotifications={() => setIsNotifModalOpen(true)}
+                onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               />
             )}
 

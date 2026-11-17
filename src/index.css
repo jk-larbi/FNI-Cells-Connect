@@ -327,6 +327,16 @@ html.dark select {
   border-color: #2e4057 !important;
 }
 
+html.dark select option {
+  background-color: #172437 !important;
+  color: #f1f5f9 !important;
+}
+
+html:not(.dark) select option {
+  background-color: #ffffff !important;
+  color: #182230 !important;
+}
+
 html.dark input::placeholder,
 html.dark textarea::placeholder {
   color: #7b8eac !important;
