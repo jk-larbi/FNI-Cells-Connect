@@ -166,24 +166,24 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       subtitle="Connected alerting across reports, reviews, pastoral messages, and teaching outlines"
       maxWidth="2xl"
     >
-      <div className="fni-notification-center space-y-4 rounded-2xl bg-[#F1F4F8] p-3 text-[#172033]">
+      <div className="fni-notification-center space-y-4 rounded-2xl bg-[#F1F4F8] p-3 text-[#172033] dark:bg-[#0b1422] dark:text-slate-100">
         {/* Push Notification Device Status & Permission Card */}
-        <div className="p-3.5 !bg-white rounded-2xl border border-[#D5DDE8] text-xs text-[#172033]">
+        <div className="p-3.5 !bg-white dark:!bg-[#142238] rounded-2xl border border-[#D5DDE8] dark:border-[#344861] text-xs text-[#172033] dark:text-slate-100">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-gold-600" />
               <div>
-                <span className="font-bold !text-[#102A4C]">Device Push Notification Status: </span>
+                <span className="font-bold !text-[#102A4C] dark:!text-slate-100">Device Push Notification Status: </span>
                 {isPushEnabled ? (
-                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[11px]">
+                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 dark:!bg-[#123a2b] px-2 py-0.5 rounded-full border border-emerald-200 dark:border-[#28664b] text-[11px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" /> Active & Registered
                   </span>
                 ) : pushPermission === 'denied' ? (
-                  <span className="font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 text-[11px]">
+                  <span className="font-semibold text-rose-700 bg-rose-50 dark:!bg-[#431f2a] px-2 py-0.5 rounded-full border border-rose-200 dark:border-[#713444] text-[11px]">
                     Blocked by Browser
                   </span>
                 ) : (
-                  <span className="font-semibold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded-full text-[11px]">
+                  <span className="font-semibold text-slate-600 bg-slate-200/80 dark:!bg-[#293b52] px-2 py-0.5 rounded-full text-[11px] dark:!text-slate-100">
                     Not Enabled
                   </span>
                 )}
@@ -203,7 +203,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               ) : (
                 <button
                   onClick={handleTestPush}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 transition-colors shadow-xs text-[11px] flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl bg-white dark:!bg-[#263b55] border border-slate-300 dark:border-[#526981] text-slate-700 dark:!text-slate-100 font-bold hover:bg-slate-100 dark:hover:!bg-[#324b69] transition-colors shadow-xs text-[11px] flex items-center gap-1.5"
                 >
                   <BellRing className="w-3.5 h-3.5 text-gold-600" />
                   <span>Test Push</span>
@@ -213,25 +213,25 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           </div>
 
           {pushStatusMessage && (
-            <p className="mt-2 text-[11px] text-[#203D63] bg-blue-50/70 p-2 rounded-lg border border-blue-100">
+            <p className="mt-2 text-[11px] text-[#203D63] dark:!text-blue-100 bg-blue-50/70 dark:!bg-[#1b304a] p-2 rounded-lg border border-blue-100 dark:border-[#3b5877]">
               {pushStatusMessage}
             </p>
           )}
           {Capacitor.isNativePlatform() && (
-            <p className="mt-2 text-[11px] text-[#475569]">
+            <p className="mt-2 text-[11px] text-[#475569] dark:!text-slate-300">
               Android push uses your phone's notification permission. Enable it once, then FNI can alert you when the app is in the background or closed. Use Test Push to verify delivery.
             </p>
           )}
 
           {!isPushSupported && (
-            <p className="mt-2 text-[11px] text-amber-700">
+            <p className="mt-2 text-[11px] text-amber-700 dark:!text-amber-300">
               {PushNotificationService.getSupportMessage() || 'Background push is unavailable on this device. In-app real-time notifications remain active.'}
             </p>
           )}
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2 gap-2 flex-wrap">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#344861] pb-2 gap-2 flex-wrap">
           <div className="flex flex-wrap gap-1.5">
             {[
               { id: 'all', label: 'All Updates' },
@@ -246,7 +246,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                   categoryFilter === cat.id
                     ? 'bg-[#142B4A] text-white shadow-xs'
-                    : 'bg-[#E2E8F0] text-[#263548] hover:bg-[#CBD5E1]'
+                    : 'bg-[#E2E8F0] dark:!bg-[#26384e] text-[#263548] dark:!text-slate-100 hover:bg-[#CBD5E1] dark:hover:!bg-[#344b66]'
                 }`}
               >
                 {cat.label}
@@ -279,7 +279,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         </div>
 
         {/* Channel Filter Pills */}
-        <div className="flex items-center gap-2 text-xs text-[#475569] overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 text-xs text-[#475569] dark:!text-slate-300 overflow-x-auto pb-1">
           <span className="font-medium text-[#475569] text-[11px]">Channel:</span>
           {(['all', 'in_app', 'whatsapp', 'email'] as const).map(ch => (
             <button
@@ -299,10 +299,10 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         {/* Notification List */}
         <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar overscroll-contain">
           {filteredNotifs.length === 0 ? (
-            <div className="py-12 text-center text-xs text-[#334155] !bg-white rounded-2xl border border-dashed border-[#CBD5E1]">
-              <Bell className="w-8 h-8 text-[#64748B] mx-auto mb-2" />
-              <p className="font-semibold text-[#172033]">No notifications in this view.</p>
-              <p className="text-[11px] text-[#475569] mt-0.5">
+            <div className="py-12 text-center text-xs text-[#334155] dark:!text-slate-200 !bg-white dark:!bg-[#142238] rounded-2xl border border-dashed border-[#CBD5E1] dark:border-[#40546c]">
+              <Bell className="w-8 h-8 text-[#64748B] dark:!text-slate-400 mx-auto mb-2" />
+              <p className="font-semibold text-[#172033] dark:!text-slate-100">No notifications in this view.</p>
+              <p className="text-[11px] text-[#475569] dark:!text-slate-300 mt-0.5">
                 New submissions, reviews, messages and announcements will automatically appear in real time.
               </p>
             </div>
@@ -330,23 +330,23 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   onClick={() => handleItemClick(n)}
                   className={`p-3.5 rounded-2xl border text-xs transition-all cursor-pointer relative group ${
                     n.is_read
-                      ? '!bg-white border-[#CBD5E1] !text-[#263548] hover:border-[#94A3B8] hover:!bg-[#F8FAFC]'
-                      : '!bg-[#EAF1FA] border-[#9FB4D0] !text-[#172033] font-semibold shadow-sm hover:!bg-[#E1EBF7] hover:border-[#142B4A]'
+                      ? '!bg-white dark:!bg-[#142238] border-[#CBD5E1] dark:border-[#344861] !text-[#263548] dark:!text-slate-200 hover:border-[#94A3B8] hover:!bg-[#F8FAFC] dark:hover:!bg-[#1d3048]'
+                      : '!bg-[#EAF1FA] dark:!bg-[#1b304a] border-[#9FB4D0] dark:border-[#52749a] !text-[#172033] dark:!text-slate-100 font-semibold shadow-sm hover:!bg-[#E1EBF7] dark:hover:!bg-[#263d59] hover:border-[#142B4A]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="p-1 rounded-lg bg-white border border-slate-200 shadow-2xs">
+                      <div className="p-1 rounded-lg bg-white dark:!bg-[#26384e] border border-slate-200 dark:border-[#40546c] shadow-2xs">
                         {getNotificationIcon(n)}
                       </div>
-                      <span className="font-bold text-[#142B4A]">{n.title}</span>
+                      <span className="font-bold text-[#142B4A] dark:!text-slate-100">{n.title}</span>
                       {!n.is_read && (
                         <span className="w-2 h-2 rounded-full bg-[#C6A45A]" />
                       )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] !text-[#475569] whitespace-nowrap">
+                      <span className="text-[10px] !text-[#475569] dark:!text-slate-300 dark:!text-slate-300 whitespace-nowrap">
                         {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       {hasAction && (
@@ -355,24 +355,24 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     </div>
                   </div>
 
-                  <p className="text-xs !text-[#263548] mt-2 leading-relaxed pl-7">
+                  <p className="text-xs !text-[#263548] dark:!text-slate-200 mt-2 leading-relaxed pl-7">
                     {n.message}
                   </p>
 
-                  <div className="mt-2.5 pl-7 flex items-center justify-between text-[10px] !text-[#475569]">
+                  <div className="mt-2.5 pl-7 flex items-center justify-between text-[10px] !text-[#475569] dark:!text-slate-300">
                     <div className="flex items-center gap-2">
                       <span className="uppercase tracking-wider font-semibold text-[#475569]">
                         {n.channel || 'IN_APP'}
                       </span>
                       {n.metadata?.cellName && (
-                        <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:!bg-[#293b52] text-slate-600 dark:!text-slate-200">
                           {n.metadata.cellName}
                         </span>
                       )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="!text-[#102A4C] font-bold group-hover:underline">
+                      <span className="!text-[#102A4C] dark:!text-slate-100 font-bold group-hover:underline">
                         {actionLabel} &rarr;
                       </span>
                       {!n.is_read && (
@@ -381,7 +381,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                             e.stopPropagation();
                             markAsRead(n.id);
                           }}
-                          className="hover:text-emerald-800 !text-[#334155] font-semibold ml-2"
+                          className="hover:text-emerald-800 dark:hover:!text-emerald-300 !text-[#334155] dark:!text-slate-200 font-semibold ml-2"
                         >
                           Mark read
                         </button>
