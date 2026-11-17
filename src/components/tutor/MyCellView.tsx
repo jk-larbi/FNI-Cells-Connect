@@ -4,6 +4,7 @@ import { CellService } from '../../services/cellService';
 import { Cell, CellMeetingReport, EvangelismReport } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
+import { CellMembersPanel } from '../CellMembersPanel';
 import {
   Building,
   MapPin,
@@ -380,6 +381,7 @@ export const MyCellView: React.FC<MyCellViewProps> = ({ onBack }) => {
           </div>
         </div>
       </div>
+      <CellMembersPanel cellId={cell.id} createdBy={currentUser.id} canEdit />
     </div>
   );
 };

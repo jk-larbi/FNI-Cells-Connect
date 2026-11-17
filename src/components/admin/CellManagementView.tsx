@@ -3,6 +3,7 @@ import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact } from '..
 import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
+import { CellMembersPanel } from '../CellMembersPanel';
 import { supabase } from '../../lib/supabase';
 import {
   Building,
@@ -533,6 +534,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 </div>
               </div>
             </div>
+
+            <CellMembersPanel cellId={selectedCell.id} canEdit={false} />
 
             {/* Meeting Reports History */}
             <div>
