@@ -148,12 +148,21 @@ html.dark header {
 }
 
 /* 2. Secondary light surfaces (pills, inner cards, table headers, sidebar boxes) */
+/* NOTE: Tailwind JIT escapes square brackets → class is "bg-\[#F5F7FA\]" in the DOM.
+   We target both the escaped and unescaped forms, plus .bg-slate-50 which maps to the same color. */
 html.dark [class*="bg-[#F5F7FA]"],
+html.dark [class*="bg-\[#F5F7FA\]"],
 html.dark [class*="bg-[#F8FAFC]"],
+html.dark [class*="bg-\[#F8FAFC\]"],
 html.dark [class*="bg-[#FAF6EE]"],
+html.dark [class*="bg-\[#FAF6EE\]"],
 html.dark [class*="bg-[#F0F5FA]"],
+html.dark [class*="bg-\[#F0F5FA\]"],
 html.dark [class*="bg-[#F5F0E4]"],
+html.dark [class*="bg-\[#F5F0E4\]"],
 html.dark [class*="bg-[#E3E8EF]"],
+html.dark [class*="bg-\[#E3E8EF\]"],
+html.dark .bg-slate-50,
 html.dark .bg-slate-100,
 html.dark .bg-slate-200,
 html.dark .bg-gray-100,
@@ -163,6 +172,9 @@ html.dark .bg-gray-200 {
 }
 
 html.dark [class*="hover:bg-[#F5F7FA]"]:hover,
+html.dark [class*="hover:bg-\[#F5F7FA\]"]:hover,
+html.dark [class*="hover:bg-[#F8FAFC]"]:hover,
+html.dark [class*="hover:bg-\[#F8FAFC\]"]:hover,
 html.dark [class*="hover:bg-slate-50"]:hover,
 html.dark [class*="hover:bg-gray-50"]:hover {
   background-color: #1d2e45 !important;
@@ -170,7 +182,9 @@ html.dark [class*="hover:bg-gray-50"]:hover {
 
 /* 3. Borders & Dividers */
 html.dark [class*="border-[#E3E8EF]"],
+html.dark [class*="border-\[#E3E8EF\]"],
 html.dark [class*="divide-[#E3E8EF]"] > * + *,
+html.dark [class*="divide-\[#E3E8EF\]"] > * + *,
 html.dark .border-slate-100,
 html.dark .border-slate-200,
 html.dark .border-slate-300,
@@ -181,8 +195,11 @@ html.dark .border-gray-200 {
 
 /* 4. Text & Typography Readability */
 html.dark [class*="text-[#182230]"],
+html.dark [class*="text-\[#182230\]"],
 html.dark [class*="text-[#142B4A]"],
+html.dark [class*="text-\[#142B4A\]"],
 html.dark [class*="text-[#101828]"],
+html.dark [class*="text-\[#101828\]"],
 html.dark .text-slate-900,
 html.dark .text-slate-800,
 html.dark .text-gray-900,
@@ -192,10 +209,24 @@ html.dark .text-navy-900 {
   color: #f1f5f9 !important;
 }
 
+/* General catch-all: any element with dark navy text should be light in dark mode */
+html.dark p,
+html.dark span:not([class*="bg-"]),
+html.dark div:not([class*="bg-"]),
+html.dark td,
+html.dark th,
+html.dark li {
+  color: inherit;
+}
+
 html.dark [class*="text-[#667085]"],
+html.dark [class*="text-\[#667085\]"],
 html.dark [class*="text-[#98A2B3]"],
+html.dark [class*="text-\[#98A2B3\]"],
 html.dark [class*="text-[#475467]"],
+html.dark [class*="text-\[#475467\]"],
 html.dark [class*="text-[#344054]"],
+html.dark [class*="text-\[#344054\]"],
 html.dark .text-slate-700,
 html.dark .text-slate-600,
 html.dark .text-slate-500,
@@ -252,6 +283,39 @@ html.dark .bg-indigo-50,
 html.dark [class*="bg-blue-50"] {
   background-color: #162a45 !important;
   border-color: #24416b !important;
+}
+
+/* 5b. Catch-all: any element rendered with a Tailwind JIT arbitrary bg that is light/white.
+   This covers the cases where escaped-bracket classes can't be targeted precisely.
+   We use a universal rule with low specificity that only applies when bg appears white. */
+html.dark .bg-canvas { background-color: #0f1b2d !important; }
+
+/* Cover all bg-[hex] light arbitrary colors: table header rows, filter pills, etc. */
+html.dark thead tr,
+html.dark .rounded-2xl.border,
+html.dark .rounded-xl.border,
+html.dark .rounded-lg.border {
+  background-color: inherit;
+}
+html.dark thead tr {
+  background-color: #172437 !important;
+  color: #94a3b8 !important;
+}
+html.dark thead th {
+  color: #94a3b8 !important;
+  border-color: #26384d !important;
+}
+html.dark tbody tr:hover {
+  background-color: #1a2e44 !important;
+}
+html.dark tbody tr.bg-\[\#FFF5F5\],
+html.dark tbody tr[class*="bg-[#FFF5F5]"] {
+  background-color: #2d1217 !important;
+}
+html.dark tbody td,
+html.dark tbody th {
+  border-color: #26384d !important;
+  color: #c8d3e0 !important;
 }
 
 /* 6. Form Inputs & Interactive controls */

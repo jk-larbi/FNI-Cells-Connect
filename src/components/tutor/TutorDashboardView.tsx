@@ -18,7 +18,6 @@ import {
   MapPin,
   Bell,
   Heart,
-  Sparkles,
   BookOpen,
   Phone,
   MessageCircle,

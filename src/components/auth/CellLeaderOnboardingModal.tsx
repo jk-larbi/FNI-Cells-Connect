@@ -14,7 +14,6 @@ import {
   AlertCircle, 
   CheckCircle2, 
   ArrowRight,
-  Sparkles,
   Link2
 } from 'lucide-react';
 
@@ -104,7 +103,7 @@ export const CellLeaderOnboardingModal: React.FC = () => {
         <div className="bg-navy-900 px-6 py-5 text-white relative shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-gold-500/20 text-gold-400 flex items-center justify-center border border-gold-400/30">
-              <Sparkles className="w-5 h-5 text-gold-400" />
+              <Building2 className="w-5 h-5 text-gold-400" />
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-gold-400 bg-navy-950/60 px-2.5 py-0.5 rounded-full border border-gold-500/20">

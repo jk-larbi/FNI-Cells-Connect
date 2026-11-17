@@ -1,0 +1,1393 @@
+/**
+ * Forerunners Network International (FNI) - Digital Reporting System
+ * Learning Portal Service
+ * 
+ * Handles Assignments, Attempt Limits, Versioned Submissions, Quizzes,
+ * Auto-grading, Upcoming Events, and Learning Materials.
+ * Fully backed by Supabase with safe offline localStorage fallbacks.
+ */
+
+import { supabase } from '../lib/supabase';
+import {
+  Assignment,
+  AssignmentSubmission,
+  Quiz,
+  QuizQuestion,
+  QuizAttempt,
+  LearningEvent,
+  LearningResource,
+  TutorParticipationMetric,
+  SubmissionStatus,
+} from '../types/learning';
+import { NotificationService } from './notificationService';
+
+// Storage Keys for Offline Resilience
+const KEYS = {
+  ASSIGNMENTS: 'fni_learning_assignments_v1',
+  SUBMISSIONS: 'fni_learning_submissions_v1',
+  QUIZZES: 'fni_learning_quizzes_v1',
+  QUESTIONS: 'fni_learning_quiz_questions_v1',
+  ATTEMPTS: 'fni_learning_quiz_attempts_v1',
+  EVENTS: 'fni_learning_events_v1',
+  RESOURCES: 'fni_learning_resources_v1',
+};
+
+// Seed initial realistic items if completely empty so the portal is lively from day 1
+const DEFAULT_ASSIGNMENTS: Assignment[] = [
+  {
+    id: 'asg-fni-101',
+    title: 'Cell Discipleship Strategy & Multiplication Plan',
+    description: 'Comprehensive outreach blueprint for reaching unchurched youth and building 5-person cell discipleship clusters.',
+    instructions: '1. Review the FNI Cell Multiplication Handbook.\n2. Write out your cell specific outreach calendar for the upcoming cycle.\n3. Identify at least 3 apprentice cell leaders undergoing training.\n4. Attach your discipleship tracking sheet.',
+    attachments: [
+      {
+        name: 'FNI_Cell_Multiplication_Framework_2026.pdf',
+        url: '#',
+        size: '2.4 MB',
+        type: 'application/pdf',
+      },
+      {
+        name: 'Weekly_Discipleship_Log_Template.xlsx',
+        url: '#',
+        size: '420 KB',
+        type: 'application/vnd.ms-excel',
+      },
+    ],
+    total_marks: 100,
+    published_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    due_date: new Date(Date.now() + 5 * 86400000).toISOString(),
+    late_policy: 'allow_with_penalty',
+    submission_format: 'both',
+    max_attempts: 3,
+    status: 'published',
+    created_by: 'admin',
+    created_by_name: 'FNI Leadership Directorate',
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+  },
+  {
+    id: 'asg-fni-102',
+    title: 'Gospel Presentation & Soul-Winning Apologetics',
+    description: 'Practical ministry assignment testing personal testimony formulation and responding to modern worldview inquiries in outreach.',
+    instructions: 'Provide a written synopsis of your 3-minute salvation testimony and submit your evangelistic outreach log for the previous weekend.',
+    attachments: [
+      {
+        name: 'FNI_SoulWinning_Apologetics_Guide.pdf',
+        url: '#',
+        size: '1.8 MB',
+        type: 'application/pdf',
+      },
+    ],
+    total_marks: 50,
+    published_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+    due_date: new Date(Date.now() + 8 * 86400000).toISOString(),
+    late_policy: 'allow_no_penalty',
+    submission_format: 'both',
+    max_attempts: 2,
+    status: 'published',
+    created_by: 'admin',
+    created_by_name: 'FNI Leadership Directorate',
+    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+  },
+];
+
+const DEFAULT_QUIZZES: Quiz[] = [
+  {
+    id: 'quiz-fni-201',
+    title: 'FNI Kingdom Vision, Core Doctrine & Cell Governance',
+    description: 'Knowledge assessment covering the 5,000 Soul Target mandate, cell reporting protocols, and pastoral accountability.',
+    instructions: 'Answer all 5 questions. Objective questions are graded automatically upon submission. Minimum passing score is 70%.',
+    time_limit_minutes: 20,
+    passing_score: 70,
+    total_points: 50,
+    published_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    due_date: new Date(Date.now() + 6 * 86400000).toISOString(),
+    status: 'published',
+    results_released: true,
+    created_by: 'admin',
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+];
+
+const DEFAULT_QUESTIONS: QuizQuestion[] = [
+  {
+    id: 'q-1',
+    quiz_id: 'quiz-fni-201',
+    question_text: 'What is the annual verified harvest target for FNI Fellowship Cells in the current cycle?',
+    question_type: 'multiple_choice',
+    options: ['1,000 Souls', '2,500 Souls', '5,000 Souls', '10,000 Souls'],
+    correct_answer: 2, // 5,000 Souls (index 2)
+    points: 10,
+    explanation: 'The FNI Kingdom Vision sets an annual target of 5,000 verified souls won for Christ across all fellowship cells.',
+  },
+  {
+    id: 'q-2',
+    quiz_id: 'quiz-fni-201',
+    question_text: 'What is the weekly deadline for submitting fellowship meeting reports to church administration?',
+    question_type: 'multiple_choice',
+    options: ['Saturday 11:59 PM', 'Sunday 6:00 PM GMT', 'Sunday 11:59 PM', 'Monday Morning 8:00 AM'],
+    correct_answer: 1, // Sunday 6:00 PM GMT
+    points: 10,
+    explanation: 'Sunday 6:00 PM GMT (Africa/Accra timezone) is the official cutoff for timely meeting returns.',
+  },
+  {
+    id: 'q-3',
+    quiz_id: 'quiz-fni-201',
+    question_text: 'Every evangelism return must be filed separately from weekly cell meeting reports.',
+    question_type: 'true_false',
+    options: ['True', 'False'],
+    correct_answer: 0, // True
+    points: 10,
+    explanation: 'Evangelism outreach records and cell meeting returns have dedicated separate tracking directorates in FNI Cells Connect.',
+  },
+  {
+    id: 'q-4',
+    quiz_id: 'quiz-fni-201',
+    question_text: 'What is the primary biblical role of a Fellowship Cell Tutor in Forerunners Network?',
+    question_type: 'multiple_choice',
+    options: [
+      'Managing church finance only',
+      'Pastoral care, discipleship, and evangelistic leadership of the cell fellowship',
+      'Event security coordinator',
+      'General Sunday morning ushering',
+    ],
+    correct_answer: 1,
+    points: 10,
+    explanation: 'Cell Tutors lead the flock at the grassroots level through Bible teaching, pastoral visitation, discipleship, and evangelism.',
+  },
+  {
+    id: 'q-5',
+    quiz_id: 'quiz-fni-201',
+    question_text: 'When a new convert is won during cell evangelism, what is the mandatory immediate next step?',
+    question_type: 'multiple_choice',
+    options: [
+      'Ignore until they show up on Sunday',
+      'Record contact details and initiate follow-up within 24 to 48 hours',
+      'Assign them to lead a cell immediately',
+      'Wait for the annual convention',
+    ],
+    correct_answer: 1,
+    points: 10,
+    explanation: 'Prompt follow-up within 24 to 48 hours is critical for convert retention and spiritual integration.',
+  },
+];
+
+const DEFAULT_EVENTS: LearningEvent[] = [
+  {
+    id: 'evt-301',
+    title: 'National Cell Leaders & Tutors Leadership Masterclass',
+    description: 'Equipping session with Senior Pastoral Leadership on cell multiplication dynamics, dynamic Holy Ghost ministry in small groups, and harvest management.',
+    event_date: new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0],
+    start_time: '18:30',
+    end_time: '20:30',
+    location_or_link: 'FNI Ministry Headquarters Auditorium & Live Zoom Webinar',
+    meeting_type: 'hybrid',
+    speaker: 'Apostolic Leadership Directorate',
+    materials_link: '#',
+    status: 'upcoming',
+    created_by: 'admin',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'evt-302',
+    title: 'Mid-Cycle Evangelism Strategy & Soul Retention Workshop',
+    description: 'Hands-on practical training for street evangelism, campus outreach, and systematic discipleship follow-up pipelines.',
+    event_date: new Date(Date.now() + 11 * 86400000).toISOString().split('T')[0],
+    start_time: '10:00',
+    end_time: '12:30',
+    location_or_link: 'Online Conference Stream (Link will be dispatched)',
+    meeting_type: 'online',
+    speaker: 'Evangelism & Harvest Directorate',
+    materials_link: '#',
+    status: 'upcoming',
+    created_by: 'admin',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'evt-303',
+    title: 'Quarterly Pastoral Review & All-Tutors Assembly',
+    description: 'High-level review of cell returns, outstanding awards for top soul-winning cells, and strategic calendar unveiling.',
+    event_date: new Date(Date.now() + 25 * 86400000).toISOString().split('T')[0],
+    start_time: '16:00',
+    end_time: '19:00',
+    location_or_link: 'FNI Cathedral Annex, Accra',
+    meeting_type: 'in_person',
+    speaker: 'General Overseer & Executive Council',
+    status: 'upcoming',
+    created_by: 'admin',
+    created_at: new Date().toISOString(),
+  },
+];
+
+const DEFAULT_RESOURCES: LearningResource[] = [
+  {
+    id: 'res-401',
+    title: 'The Blueprint for Cell Church Multiplication',
+    description: 'Core manual on cell anatomy, ice-breakers, leading impactful discussions, and multiplying from 8 to 15 members in 6 months.',
+    category: 'cell_operations',
+    file_name: 'FNI_Cell_Multiplication_Blueprint.pdf',
+    file_url: '#',
+    file_size: '3.1 MB',
+    file_type: 'application/pdf',
+    reading_time_minutes: 25,
+    status: 'published',
+    published_at: new Date().toISOString(),
+    uploaded_by: 'admin',
+    uploaded_by_name: 'Church Administration',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'res-402',
+    title: 'Soul Winning & Discipleship Foundations: Volume 1',
+    description: 'Scriptural foundations for evangelism, overcoming fear of sharing the Gospel, and nurturing baby Christians into maturity.',
+    category: 'evangelism',
+    file_name: 'Soul_Winning_Discipleship_Vol1.pdf',
+    file_url: '#',
+    file_size: '2.5 MB',
+    file_type: 'application/pdf',
+    reading_time_minutes: 20,
+    status: 'published',
+    published_at: new Date().toISOString(),
+    uploaded_by: 'admin',
+    uploaded_by_name: 'Church Administration',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'res-403',
+    title: 'Shepherding with Love: The Heart of a Cell Tutor',
+    description: 'Pastoral counseling basics, identifying struggling brethren, handling confidentiality, and building deep relational fellowship.',
+    category: 'leadership',
+    file_name: 'Shepherding_With_Love_Tutor_Manual.pdf',
+    file_url: '#',
+    file_size: '1.9 MB',
+    file_type: 'application/pdf',
+    reading_time_minutes: 15,
+    status: 'published',
+    published_at: new Date().toISOString(),
+    uploaded_by: 'admin',
+    uploaded_by_name: 'Church Administration',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'res-404',
+    title: 'Kingdom Stewardship & Cell Offering Sanctity',
+    description: 'Guidance on proper accounting, remittance transparency, and fostering generous hearts in the cell setting.',
+    category: 'theology',
+    file_name: 'Kingdom_Stewardship_Guidelines.pdf',
+    file_url: '#',
+    file_size: '1.4 MB',
+    file_type: 'application/pdf',
+    reading_time_minutes: 12,
+    status: 'published',
+    published_at: new Date().toISOString(),
+    uploaded_by: 'admin',
+    uploaded_by_name: 'Church Administration',
+    created_at: new Date().toISOString(),
+  },
+];
+
+// Helper: safe local storage reader & writer
+function readLocal<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeLocal<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.warn(`LocalStorage write notice for ${key}:`, e);
+  }
+}
+
+export class LearningService {
+  // ============================================================================
+  // 1. ASSIGNMENTS
+  // ============================================================================
+  static async getAssignments(isAdmin = false): Promise<Assignment[]> {
+    // 1. Try Supabase
+    try {
+      if (supabase) {
+        let query = supabase.from('learning_assignments').select('*').order('created_at', { ascending: false });
+        if (!isAdmin) {
+          query = query.eq('status', 'published');
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          const mapped: Assignment[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            description: d.description,
+            instructions: d.instructions,
+            attachments: Array.isArray(d.attachments) ? d.attachments : [],
+            total_marks: Number(d.total_marks || 100),
+            published_at: d.published_at,
+            due_date: d.due_date,
+            late_policy: d.late_policy || 'allow_with_penalty',
+            submission_format: d.submission_format || 'both',
+            max_attempts: Number(d.max_attempts ?? 1),
+            status: d.status || 'draft',
+            created_by: d.created_by,
+            created_by_name: d.created_by_name || 'Church Leadership',
+            created_at: d.created_at,
+            updated_at: d.updated_at,
+          }));
+          writeLocal(KEYS.ASSIGNMENTS, mapped);
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading Supabase assignments, using local data:', e);
+    }
+
+    // 2. Local Fallback
+    const local = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    return isAdmin ? local : local.filter(a => a.status === 'published');
+  }
+
+  static async getAssignmentById(id: string): Promise<Assignment | null> {
+    const all = await this.getAssignments(true);
+    return all.find(a => a.id === id) || null;
+  }
+
+  static async saveAssignment(
+    assignment: Partial<Assignment>,
+    currentUser: { id: string; name?: string }
+  ): Promise<Assignment> {
+    const nowIso = new Date().toISOString();
+    const isNew = !assignment.id;
+    const id = assignment.id || `asg-${Date.now()}`;
+
+    const record: Assignment = {
+      id,
+      title: assignment.title?.trim() || 'Untitled Assignment',
+      description: assignment.description?.trim() || '',
+      instructions: assignment.instructions?.trim() || '',
+      attachments: assignment.attachments || [],
+      total_marks: Number(assignment.total_marks || 100),
+      published_at: assignment.status === 'published' ? (assignment.published_at || nowIso) : undefined,
+      due_date: assignment.due_date || new Date(Date.now() + 7 * 86400000).toISOString(),
+      late_policy: assignment.late_policy || 'allow_with_penalty',
+      submission_format: assignment.submission_format || 'both',
+      max_attempts: Number(assignment.max_attempts ?? 1),
+      status: assignment.status || 'draft',
+      created_by: assignment.created_by || currentUser.id,
+      created_by_name: assignment.created_by_name || currentUser.name || 'FNI Administrator',
+      created_at: assignment.created_at || nowIso,
+      updated_at: nowIso,
+    };
+
+    // 1. Supabase write
+    try {
+      if (supabase) {
+        await supabase.from('learning_assignments').upsert({
+          id: record.id,
+          title: record.title,
+          description: record.description,
+          instructions: record.instructions,
+          attachments: record.attachments,
+          total_marks: record.total_marks,
+          published_at: record.published_at,
+          due_date: record.due_date,
+          late_policy: record.late_policy,
+          submission_format: record.submission_format,
+          max_attempts: record.max_attempts,
+          status: record.status,
+          created_by: record.created_by,
+          created_by_name: record.created_by_name,
+          updated_at: record.updated_at,
+        });
+      }
+    } catch (e) {
+      console.warn('Notice saving assignment to Supabase:', e);
+    }
+
+    // 2. Local update
+    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    const index = current.findIndex(a => a.id === id);
+    if (index >= 0) {
+      current[index] = record;
+    } else {
+      current.unshift(record);
+    }
+    writeLocal(KEYS.ASSIGNMENTS, current);
+
+    // 3. Distribution notification to all active tutors if newly published
+    if (record.status === 'published') {
+      try {
+        await NotificationService.createNotification({
+          userId: 'tutor_community',
+          title: `New Assignment Published: ${record.title}`,
+          message: `Leadership has published a new cell assignment. Due: ${new Date(record.due_date).toLocaleDateString()}. Maximum attempts: ${record.max_attempts === 0 ? 'Unlimited' : record.max_attempts}.`,
+          type: 'announcement',
+          channel: 'in_app',
+          metadata: {
+            category: 'learning',
+            targetTab: 'learning-portal',
+            section: 'assignments',
+            assignmentId: record.id,
+          },
+        });
+      } catch (err) {
+        console.warn('Notice dispatching assignment notification:', err);
+      }
+    }
+
+    return record;
+  }
+
+  static async archiveAssignment(id: string): Promise<void> {
+    try {
+      if (supabase) {
+        await supabase.from('learning_assignments').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', id);
+      }
+    } catch (e) {
+      console.warn('Notice archiving assignment in Supabase:', e);
+    }
+    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    const updated = current.map(a => a.id === id ? { ...a, status: 'archived' as const } : a);
+    writeLocal(KEYS.ASSIGNMENTS, updated);
+  }
+
+  static async deleteAssignment(id: string): Promise<void> {
+    try {
+      if (supabase) {
+        await supabase.from('learning_assignments').delete().eq('id', id);
+      }
+    } catch (e) {
+      console.warn('Notice deleting assignment in Supabase:', e);
+    }
+    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    writeLocal(KEYS.ASSIGNMENTS, current.filter(a => a.id !== id));
+  }
+
+  // ============================================================================
+  // 2. SUBMISSIONS & ATTEMPT TRACKING
+  // ============================================================================
+  static async getSubmissions(assignmentId?: string, tutorId?: string): Promise<AssignmentSubmission[]> {
+    try {
+      if (supabase) {
+        let query = supabase
+          .from('learning_assignment_submissions')
+          .select('*')
+          .order('submitted_at', { ascending: false });
+
+        if (assignmentId) query = query.eq('assignment_id', assignmentId);
+        if (tutorId) query = query.eq('tutor_id', tutorId);
+
+        const { data, error } = await query;
+        if (!error && data) {
+          const mapped: AssignmentSubmission[] = data.map((d: any) => ({
+            id: d.id,
+            assignment_id: d.assignment_id,
+            tutor_id: d.tutor_id,
+            tutor_name: d.tutor_name,
+            cell_id: d.cell_id,
+            cell_name: d.cell_name,
+            attempt_number: Number(d.attempt_number || 1),
+            written_response: d.written_response,
+            attachment_name: d.attachment_name,
+            attachment_url: d.attachment_url,
+            attachment_size: d.attachment_size,
+            submitted_at: d.submitted_at,
+            is_late: Boolean(d.is_late),
+            status: d.status || 'submitted',
+            grade: d.grade !== null && d.grade !== undefined ? Number(d.grade) : undefined,
+            feedback: d.feedback,
+            graded_by: d.graded_by,
+            graded_by_name: d.graded_by_name,
+            graded_at: d.graded_at,
+            results_released: Boolean(d.results_released),
+          }));
+          writeLocal(KEYS.SUBMISSIONS, mapped);
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading Supabase submissions, using local data:', e);
+    }
+
+    const local = readLocal<AssignmentSubmission[]>(KEYS.SUBMISSIONS, []);
+    return local.filter(s => {
+      if (assignmentId && s.assignment_id !== assignmentId) return false;
+      if (tutorId && s.tutor_id !== tutorId) return false;
+      return true;
+    });
+  }
+
+  /**
+   * Secure attempt counter and validation
+   * Returns exact remaining attempts and latest submission details.
+   */
+  static async getAttemptStatus(
+    assignmentId: string,
+    tutorId: string
+  ): Promise<{
+    assignment: Assignment | null;
+    attempts: AssignmentSubmission[];
+    usedAttempts: number;
+    maxAttempts: number;
+    remainingAttempts: number | 'Unlimited';
+    canSubmit: boolean;
+    latestSubmission: AssignmentSubmission | null;
+  }> {
+    const [assignment, submissions] = await Promise.all([
+      this.getAssignmentById(assignmentId),
+      this.getSubmissions(assignmentId, tutorId),
+    ]);
+
+    const maxAttempts = assignment ? assignment.max_attempts : 1;
+    const sortedAttempts = [...submissions].sort((a, b) => a.attempt_number - b.attempt_number);
+    const usedAttempts = sortedAttempts.length;
+    const latestSubmission = sortedAttempts.length > 0 ? sortedAttempts[sortedAttempts.length - 1] : null;
+
+    let canSubmit = true;
+    let remainingAttempts: number | 'Unlimited' = 'Unlimited';
+
+    if (maxAttempts > 0) {
+      const remaining = Math.max(0, maxAttempts - usedAttempts);
+      remainingAttempts = remaining;
+      canSubmit = remaining > 0;
+    }
+
+    return {
+      assignment,
+      attempts: sortedAttempts,
+      usedAttempts,
+      maxAttempts,
+      remainingAttempts,
+      canSubmit,
+      latestSubmission,
+    };
+  }
+
+  /**
+   * Submit an assignment attempt. Enforces attempt count, preserves history,
+   * flags late submissions, and prevents silent overwriting.
+   */
+  static async submitAssignmentAttempt(data: {
+    assignmentId: string;
+    tutorId: string;
+    tutorName: string;
+    cellId?: string;
+    cellName?: string;
+    writtenResponse?: string;
+    attachmentName?: string;
+    attachmentUrl?: string;
+    attachmentSize?: string;
+  }): Promise<AssignmentSubmission> {
+    const attemptStatus = await this.getAttemptStatus(data.assignmentId, data.tutorId);
+    if (!attemptStatus.canSubmit) {
+      throw new Error(`Submission limit reached. You have already used all ${attemptStatus.maxAttempts} allowed attempts.`);
+    }
+
+    const assignment = attemptStatus.assignment;
+    if (!assignment) {
+      throw new Error('Assignment not found.');
+    }
+
+    const now = new Date();
+    const dueDate = new Date(assignment.due_date);
+    const isLate = now.getTime() > dueDate.getTime();
+
+    if (isLate && assignment.late_policy === 'reject_late') {
+      throw new Error('The deadline for this assignment has passed and late submissions are not accepted.');
+    }
+
+    const newAttemptNumber = attemptStatus.usedAttempts + 1;
+    const submissionId = `sub-${Date.now()}-${newAttemptNumber}`;
+
+    const submission: AssignmentSubmission = {
+      id: submissionId,
+      assignment_id: data.assignmentId,
+      tutor_id: data.tutorId,
+      tutor_name: data.tutorName,
+      cell_id: data.cellId,
+      cell_name: data.cellName,
+      attempt_number: newAttemptNumber,
+      written_response: data.writtenResponse?.trim(),
+      attachment_name: data.attachmentName,
+      attachment_url: data.attachmentUrl,
+      attachment_size: data.attachmentSize,
+      submitted_at: now.toISOString(),
+      is_late: isLate,
+      status: isLate ? 'submitted_late' : 'submitted',
+      results_released: false,
+    };
+
+    // 1. Supabase write
+    try {
+      if (supabase) {
+        await supabase.from('learning_assignment_submissions').insert({
+          id: submission.id,
+          assignment_id: submission.assignment_id,
+          tutor_id: submission.tutor_id,
+          tutor_name: submission.tutor_name,
+          cell_id: submission.cell_id,
+          cell_name: submission.cell_name,
+          attempt_number: submission.attempt_number,
+          written_response: submission.written_response,
+          attachment_name: submission.attachment_name,
+          attachment_url: submission.attachment_url,
+          attachment_size: submission.attachment_size,
+          submitted_at: submission.submitted_at,
+          is_late: submission.is_late,
+          status: submission.status,
+          results_released: false,
+        });
+      }
+    } catch (e) {
+      console.warn('Notice saving submission to Supabase:', e);
+    }
+
+    // 2. Local update
+    const all = readLocal<AssignmentSubmission[]>(KEYS.SUBMISSIONS, []);
+    all.unshift(submission);
+    writeLocal(KEYS.SUBMISSIONS, all);
+
+    return submission;
+  }
+
+  /**
+   * Grade a submission and provide feedback
+   */
+  static async gradeSubmission(
+    submissionId: string,
+    grade: number,
+    feedback: string,
+    adminId: string,
+    adminName: string,
+    releaseResults = false
+  ): Promise<AssignmentSubmission> {
+    const nowIso = new Date().toISOString();
+    const status: SubmissionStatus = 'graded';
+
+    try {
+      if (supabase) {
+        await supabase
+          .from('learning_assignment_submissions')
+          .update({
+            grade,
+            feedback,
+            graded_by: adminId,
+            graded_by_name: adminName,
+            graded_at: nowIso,
+            status,
+            results_released: releaseResults,
+          })
+          .eq('id', submissionId);
+      }
+    } catch (e) {
+      console.warn('Notice grading submission in Supabase:', e);
+    }
+
+    const all = readLocal<AssignmentSubmission[]>(KEYS.SUBMISSIONS, []);
+    let updatedItem: AssignmentSubmission | null = null;
+    const updated = all.map(s => {
+      if (s.id === submissionId) {
+        updatedItem = {
+          ...s,
+          grade,
+          feedback,
+          graded_by: adminId,
+          graded_by_name: adminName,
+          graded_at: nowIso,
+          status,
+          results_released: releaseResults,
+        };
+        return updatedItem;
+      }
+      return s;
+    });
+    writeLocal(KEYS.SUBMISSIONS, updated);
+
+    // Notify tutor of grading
+    if (updatedItem) {
+      const item: AssignmentSubmission = updatedItem;
+      try {
+        await NotificationService.createNotification({
+          userId: item.tutor_id,
+          title: `Assignment Graded: ${grade} Marks Awarded`,
+          message: `Your assignment submission (Attempt #${item.attempt_number}) has been evaluated by leadership. Feedback: "${feedback.slice(0, 80)}..."`,
+          type: 'announcement',
+          channel: 'in_app',
+          metadata: {
+            category: 'learning',
+            targetTab: 'learning-portal',
+            section: 'grades',
+            submissionId: item.id,
+          },
+        });
+      } catch (err) {
+        console.warn('Notice dispatching grade notification:', err);
+      }
+      return item;
+    }
+
+    throw new Error('Submission not found.');
+  }
+
+  /**
+   * Release all grades for an assignment
+   */
+  static async releaseAssignmentResults(assignmentId: string): Promise<void> {
+    try {
+      if (supabase) {
+        await supabase
+          .from('learning_assignment_submissions')
+          .update({ results_released: true })
+          .eq('assignment_id', assignmentId);
+      }
+    } catch (e) {
+      console.warn('Notice releasing results in Supabase:', e);
+    }
+
+    const all = readLocal<AssignmentSubmission[]>(KEYS.SUBMISSIONS, []);
+    const updated = all.map(s => (s.assignment_id === assignmentId ? { ...s, results_released: true } : s));
+    writeLocal(KEYS.SUBMISSIONS, updated);
+  }
+
+  // ============================================================================
+  // 3. QUIZZES & OBJECTIVE AUTO-GRADING
+  // ============================================================================
+  static async getQuizzes(isAdmin = false): Promise<Quiz[]> {
+    try {
+      if (supabase) {
+        let query = supabase.from('learning_quizzes').select('*').order('created_at', { ascending: false });
+        if (!isAdmin) {
+          query = query.eq('status', 'published');
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          const mapped: Quiz[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            description: d.description,
+            instructions: d.instructions,
+            time_limit_minutes: Number(d.time_limit_minutes || 15),
+            passing_score: Number(d.passing_score || 70),
+            total_points: Number(d.total_points || 100),
+            published_at: d.published_at,
+            due_date: d.due_date,
+            status: d.status || 'draft',
+            results_released: Boolean(d.results_released),
+            created_by: d.created_by,
+            created_at: d.created_at,
+            updated_at: d.updated_at,
+          }));
+          writeLocal(KEYS.QUIZZES, mapped);
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading Supabase quizzes, using local data:', e);
+    }
+
+    const local = readLocal<Quiz[]>(KEYS.QUIZZES, DEFAULT_QUIZZES);
+    return isAdmin ? local : local.filter(q => q.status === 'published');
+  }
+
+  static async getQuizQuestions(quizId: string): Promise<QuizQuestion[]> {
+    try {
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('learning_quiz_questions')
+          .select('*')
+          .eq('quiz_id', quizId)
+          .order('created_at', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const mapped: QuizQuestion[] = data.map((d: any) => ({
+            id: d.id,
+            quiz_id: d.quiz_id,
+            question_text: d.question_text,
+            question_type: d.question_type,
+            options: Array.isArray(d.options) ? d.options : [],
+            correct_answer: d.correct_answer,
+            points: Number(d.points || 10),
+            explanation: d.explanation,
+          }));
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading quiz questions from Supabase:', e);
+    }
+
+    const all = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, DEFAULT_QUESTIONS);
+    return all.filter(q => q.quiz_id === quizId);
+  }
+
+  static async saveQuiz(
+    quiz: Partial<Quiz>,
+    questions: Partial<QuizQuestion>[],
+    currentUser: { id: string }
+  ): Promise<Quiz> {
+    const nowIso = new Date().toISOString();
+    const id = quiz.id || `quiz-${Date.now()}`;
+
+    const totalPoints = questions.reduce((sum, q) => sum + Number(q.points || 10), 0) || 100;
+
+    const record: Quiz = {
+      id,
+      title: quiz.title?.trim() || 'Untitled Quiz',
+      description: quiz.description?.trim() || '',
+      instructions: quiz.instructions?.trim() || '',
+      time_limit_minutes: Number(quiz.time_limit_minutes ?? 15),
+      passing_score: Number(quiz.passing_score ?? 70),
+      total_points: totalPoints,
+      published_at: quiz.status === 'published' ? (quiz.published_at || nowIso) : undefined,
+      due_date: quiz.due_date || new Date(Date.now() + 7 * 86400000).toISOString(),
+      status: quiz.status || 'draft',
+      results_released: Boolean(quiz.results_released),
+      created_by: quiz.created_by || currentUser.id,
+      created_at: quiz.created_at || nowIso,
+      updated_at: nowIso,
+    };
+
+    // 1. Supabase write
+    try {
+      if (supabase) {
+        await supabase.from('learning_quizzes').upsert({
+          id: record.id,
+          title: record.title,
+          description: record.description,
+          instructions: record.instructions,
+          time_limit_minutes: record.time_limit_minutes,
+          passing_score: record.passing_score,
+          total_points: record.total_points,
+          published_at: record.published_at,
+          due_date: record.due_date,
+          status: record.status,
+          results_released: record.results_released,
+          created_by: record.created_by,
+          updated_at: record.updated_at,
+        });
+
+        // Upsert questions
+        for (const q of questions) {
+          const qId = q.id || `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+          await supabase.from('learning_quiz_questions').upsert({
+            id: qId,
+            quiz_id: record.id,
+            question_text: q.question_text || '',
+            question_type: q.question_type || 'multiple_choice',
+            options: q.options || [],
+            correct_answer: String(q.correct_answer ?? 0),
+            points: Number(q.points || 10),
+            explanation: q.explanation || '',
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Notice saving quiz to Supabase:', e);
+    }
+
+    // 2. Local update
+    const current = readLocal<Quiz[]>(KEYS.QUIZZES, DEFAULT_QUIZZES);
+    const index = current.findIndex(q => q.id === id);
+    if (index >= 0) current[index] = record;
+    else current.unshift(record);
+    writeLocal(KEYS.QUIZZES, current);
+
+    // Save questions locally
+    const existingQuestions = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, DEFAULT_QUESTIONS);
+    const filteredQuestions = existingQuestions.filter(q => q.quiz_id !== id);
+    const preparedQuestions: QuizQuestion[] = questions.map((q, idx) => ({
+      id: q.id || `q-${id}-${idx + 1}`,
+      quiz_id: id,
+      question_text: q.question_text || '',
+      question_type: q.question_type || 'multiple_choice',
+      options: q.options || [],
+      correct_answer: q.correct_answer ?? 0,
+      points: Number(q.points || 10),
+      explanation: q.explanation || '',
+    }));
+    writeLocal(KEYS.QUESTIONS, [...preparedQuestions, ...filteredQuestions]);
+
+    // 3. Notification to active tutors if published
+    if (record.status === 'published') {
+      try {
+        await NotificationService.createNotification({
+          userId: 'tutor_community',
+          title: `New Quiz Available: ${record.title}`,
+          message: `A new learning quiz has been published for cell tutors. Total marks: ${record.total_points}. Due: ${new Date(record.due_date).toLocaleDateString()}.`,
+          type: 'announcement',
+          channel: 'in_app',
+          metadata: {
+            category: 'learning',
+            targetTab: 'learning-portal',
+            section: 'quizzes',
+            quizId: record.id,
+          },
+        });
+      } catch (err) {
+        console.warn('Notice dispatching quiz notification:', err);
+      }
+    }
+
+    return record;
+  }
+
+  /**
+   * Submit quiz and perform immediate automatic grading for objective questions
+   */
+  static async submitQuizAttempt(data: {
+    quizId: string;
+    tutorId: string;
+    tutorName: string;
+    cellId?: string;
+    cellName?: string;
+    answers: Record<string, any>;
+    startedAt: string;
+  }): Promise<QuizAttempt> {
+    const questions = await this.getQuizQuestions(data.quizId);
+    let totalScore = 0;
+    let totalPossible = 0;
+
+    questions.forEach(q => {
+      const qPoints = Number(q.points || 10);
+      totalPossible += qPoints;
+      const userAnswer = data.answers[q.id];
+
+      // Objective question auto-grading
+      if (q.question_type === 'multiple_choice' || q.question_type === 'true_false') {
+        if (String(userAnswer) === String(q.correct_answer)) {
+          totalScore += qPoints;
+        }
+      } else {
+        // Simple case-insensitive trim match for short answer
+        if (
+          typeof userAnswer === 'string' &&
+          typeof q.correct_answer === 'string' &&
+          userAnswer.trim().toLowerCase() === q.correct_answer.trim().toLowerCase()
+        ) {
+          totalScore += qPoints;
+        }
+      }
+    });
+
+    const quiz = (await this.getQuizzes(true)).find(q => q.id === data.quizId);
+    const passingScore = quiz?.passing_score || 70;
+    const percentage = totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0;
+    const passed = percentage >= passingScore;
+
+    const attempt: QuizAttempt = {
+      id: `att-${Date.now()}`,
+      quiz_id: data.quizId,
+      quiz_title: quiz?.title,
+      tutor_id: data.tutorId,
+      tutor_name: data.tutorName,
+      cell_id: data.cellId,
+      cell_name: data.cellName,
+      answers: data.answers,
+      score: totalScore,
+      total_possible: totalPossible,
+      percentage,
+      passed,
+      started_at: data.startedAt,
+      completed_at: new Date().toISOString(),
+      status: 'completed',
+    };
+
+    // 1. Supabase write
+    try {
+      if (supabase) {
+        await supabase.from('learning_quiz_attempts').insert({
+          id: attempt.id,
+          quiz_id: attempt.quiz_id,
+          tutor_id: attempt.tutor_id,
+          tutor_name: attempt.tutor_name,
+          cell_id: attempt.cell_id,
+          cell_name: attempt.cell_name,
+          answers: attempt.answers,
+          score: attempt.score,
+          total_possible: attempt.total_possible,
+          percentage: attempt.percentage,
+          passed: attempt.passed,
+          started_at: attempt.started_at,
+          completed_at: attempt.completed_at,
+          status: attempt.status,
+        });
+      }
+    } catch (e) {
+      console.warn('Notice saving quiz attempt to Supabase:', e);
+    }
+
+    // 2. Local update
+    const all = readLocal<QuizAttempt[]>(KEYS.ATTEMPTS, []);
+    all.unshift(attempt);
+    writeLocal(KEYS.ATTEMPTS, all);
+
+    return attempt;
+  }
+
+  static async getQuizAttempts(quizId?: string, tutorId?: string): Promise<QuizAttempt[]> {
+    try {
+      if (supabase) {
+        let query = supabase.from('learning_quiz_attempts').select('*').order('completed_at', { ascending: false });
+        if (quizId) query = query.eq('quiz_id', quizId);
+        if (tutorId) query = query.eq('tutor_id', tutorId);
+
+        const { data, error } = await query;
+        if (!error && data) {
+          const mapped: QuizAttempt[] = data.map((d: any) => ({
+            id: d.id,
+            quiz_id: d.quiz_id,
+            tutor_id: d.tutor_id,
+            tutor_name: d.tutor_name,
+            cell_id: d.cell_id,
+            cell_name: d.cell_name,
+            answers: d.answers || {},
+            score: Number(d.score || 0),
+            total_possible: Number(d.total_possible || 100),
+            percentage: Number(d.percentage || 0),
+            passed: Boolean(d.passed),
+            started_at: d.started_at,
+            completed_at: d.completed_at,
+            status: d.status || 'completed',
+          }));
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading quiz attempts from Supabase:', e);
+    }
+
+    const local = readLocal<QuizAttempt[]>(KEYS.ATTEMPTS, []);
+    return local.filter(a => {
+      if (quizId && a.quiz_id !== quizId) return false;
+      if (tutorId && a.tutor_id !== tutorId) return false;
+      return true;
+    });
+  }
+
+  // ============================================================================
+  // 4. UPCOMING EVENTS
+  // ============================================================================
+  static async getEvents(): Promise<LearningEvent[]> {
+    try {
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('learning_events')
+          .select('*')
+          .order('event_date', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const mapped: LearningEvent[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            description: d.description,
+            event_date: d.event_date,
+            start_time: d.start_time,
+            end_time: d.end_time,
+            location_or_link: d.location_or_link,
+            meeting_type: d.meeting_type || 'online',
+            speaker: d.speaker,
+            materials_link: d.materials_link,
+            status: d.status || 'upcoming',
+            created_by: d.created_by,
+            created_at: d.created_at,
+          }));
+          writeLocal(KEYS.EVENTS, mapped);
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading learning events from Supabase:', e);
+    }
+
+    return readLocal<LearningEvent[]>(KEYS.EVENTS, DEFAULT_EVENTS);
+  }
+
+  static async saveEvent(
+    eventData: Partial<LearningEvent>,
+    currentUser: { id: string }
+  ): Promise<LearningEvent> {
+    const id = eventData.id || `evt-${Date.now()}`;
+    const record: LearningEvent = {
+      id,
+      title: eventData.title?.trim() || 'Upcoming Event',
+      description: eventData.description?.trim() || '',
+      event_date: eventData.event_date || new Date().toISOString().split('T')[0],
+      start_time: eventData.start_time || '18:00',
+      end_time: eventData.end_time || '20:00',
+      location_or_link: eventData.location_or_link || 'Zoom Webinar',
+      meeting_type: eventData.meeting_type || 'online',
+      speaker: eventData.speaker || 'FNI Ministry Leadership',
+      materials_link: eventData.materials_link,
+      status: eventData.status || 'upcoming',
+      created_by: eventData.created_by || currentUser.id,
+      created_at: eventData.created_at || new Date().toISOString(),
+    };
+
+    try {
+      if (supabase) {
+        await supabase.from('learning_events').upsert({
+          id: record.id,
+          title: record.title,
+          description: record.description,
+          event_date: record.event_date,
+          start_time: record.start_time,
+          end_time: record.end_time,
+          location_or_link: record.location_or_link,
+          meeting_type: record.meeting_type,
+          speaker: record.speaker,
+          materials_link: record.materials_link,
+          status: record.status,
+          created_by: record.created_by,
+        });
+      }
+    } catch (e) {
+      console.warn('Notice saving event to Supabase:', e);
+    }
+
+    const all = readLocal<LearningEvent[]>(KEYS.EVENTS, DEFAULT_EVENTS);
+    const index = all.findIndex(e => e.id === id);
+    if (index >= 0) all[index] = record;
+    else all.push(record);
+    writeLocal(KEYS.EVENTS, all);
+
+    // Notify all tutors
+    try {
+      await NotificationService.createNotification({
+        userId: 'tutor_community',
+        title: `Upcoming Ministry Event: ${record.title}`,
+        message: `Date: ${record.event_date} from ${record.start_time} to ${record.end_time}. Venue/Link: ${record.location_or_link}.`,
+        type: 'announcement',
+        channel: 'in_app',
+        metadata: {
+          category: 'learning',
+          targetTab: 'learning-portal',
+          section: 'events',
+          eventId: record.id,
+        },
+      });
+    } catch (err) {
+      console.warn('Notice dispatching event notification:', err);
+    }
+
+    return record;
+  }
+
+  static async deleteEvent(id: string): Promise<void> {
+    try {
+      if (supabase) {
+        await supabase.from('learning_events').delete().eq('id', id);
+      }
+    } catch (e) {
+      console.warn('Notice deleting event from Supabase:', e);
+    }
+    const all = readLocal<LearningEvent[]>(KEYS.EVENTS, DEFAULT_EVENTS);
+    writeLocal(KEYS.EVENTS, all.filter(e => e.id !== id));
+  }
+
+  // ============================================================================
+  // 5. LEARNING MATERIALS / RESOURCES
+  // ============================================================================
+  static async getResources(isAdmin = false): Promise<LearningResource[]> {
+    try {
+      if (supabase) {
+        let query = supabase.from('learning_resources').select('*').order('created_at', { ascending: false });
+        if (!isAdmin) {
+          query = query.eq('status', 'published');
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          const mapped: LearningResource[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            description: d.description,
+            category: d.category || 'leadership',
+            file_name: d.file_name,
+            file_url: d.file_url,
+            file_size: d.file_size || '1.0 MB',
+            file_type: d.file_type || 'application/pdf',
+            reading_time_minutes: d.reading_time_minutes,
+            status: d.status || 'published',
+            published_at: d.published_at,
+            uploaded_by: d.uploaded_by,
+            uploaded_by_name: d.uploaded_by_name || 'Church Administration',
+            created_at: d.created_at,
+          }));
+          writeLocal(KEYS.RESOURCES, mapped);
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading learning resources from Supabase:', e);
+    }
+
+    const local = readLocal<LearningResource[]>(KEYS.RESOURCES, DEFAULT_RESOURCES);
+    return isAdmin ? local : local.filter(r => r.status === 'published');
+  }
+
+  static async saveResource(
+    resourceData: Partial<LearningResource>,
+    currentUser: { id: string; name?: string }
+  ): Promise<LearningResource> {
+    const id = resourceData.id || `res-${Date.now()}`;
+    const nowIso = new Date().toISOString();
+
+    const record: LearningResource = {
+      id,
+      title: resourceData.title?.trim() || 'Untitled Resource',
+      description: resourceData.description?.trim() || '',
+      category: resourceData.category || 'leadership',
+      file_name: resourceData.file_name || `${(resourceData.title || 'document').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+      file_url: resourceData.file_url || '#',
+      file_size: resourceData.file_size || '1.2 MB',
+      file_type: resourceData.file_type || 'application/pdf',
+      reading_time_minutes: Number(resourceData.reading_time_minutes || 15),
+      status: resourceData.status || 'published',
+      published_at: resourceData.status === 'published' ? (resourceData.published_at || nowIso) : undefined,
+      uploaded_by: resourceData.uploaded_by || currentUser.id,
+      uploaded_by_name: resourceData.uploaded_by_name || currentUser.name || 'Church Administration',
+      created_at: resourceData.created_at || nowIso,
+    };
+
+    try {
+      if (supabase) {
+        await supabase.from('learning_resources').upsert({
+          id: record.id,
+          title: record.title,
+          description: record.description,
+          category: record.category,
+          file_name: record.file_name,
+          file_url: record.file_url,
+          file_size: record.file_size,
+          file_type: record.file_type,
+          reading_time_minutes: record.reading_time_minutes,
+          status: record.status,
+          published_at: record.published_at,
+          uploaded_by: record.uploaded_by,
+          uploaded_by_name: record.uploaded_by_name,
+        });
+      }
+    } catch (e) {
+      console.warn('Notice saving resource to Supabase:', e);
+    }
+
+    const all = readLocal<LearningResource[]>(KEYS.RESOURCES, DEFAULT_RESOURCES);
+    const index = all.findIndex(r => r.id === id);
+    if (index >= 0) all[index] = record;
+    else all.unshift(record);
+    writeLocal(KEYS.RESOURCES, all);
+
+    // Notify all tutors
+    if (record.status === 'published') {
+      try {
+        await NotificationService.createNotification({
+          userId: 'tutor_community',
+          title: `New Learning Material: ${record.title}`,
+          message: `Category: ${record.category.toUpperCase()}. A new official document has been added to the Learning Materials library.`,
+          type: 'teaching_notes',
+          channel: 'in_app',
+          metadata: {
+            category: 'learning',
+            targetTab: 'learning-portal',
+            section: 'materials',
+            resourceId: record.id,
+          },
+        });
+      } catch (err) {
+        console.warn('Notice dispatching material notification:', err);
+      }
+    }
+
+    return record;
+  }
+
+  static async deleteResource(id: string): Promise<void> {
+    try {
+      if (supabase) {
+        await supabase.from('learning_resources').delete().eq('id', id);
+      }
+    } catch (e) {
+      console.warn('Notice deleting resource from Supabase:', e);
+    }
+    const all = readLocal<LearningResource[]>(KEYS.RESOURCES, DEFAULT_RESOURCES);
+    writeLocal(KEYS.RESOURCES, all.filter(r => r.id !== id));
+  }
+
+  // ============================================================================
+  // 6. PARTICIPATION METRICS & GRADES AUDIT
+  // ============================================================================
+  static async getParticipationMetrics(allProfiles: any[]): Promise<TutorParticipationMetric[]> {
+    const [assignments, submissions, quizzes, attempts] = await Promise.all([
+      this.getAssignments(false),
+      this.getSubmissions(),
+      this.getQuizzes(false),
+      this.getQuizAttempts(),
+    ]);
+
+    const activeTutors = allProfiles.filter(p => p.role === 'cell_leader' || p.role === 'tutor' || p.role !== 'admin');
+
+    const metrics: TutorParticipationMetric[] = activeTutors.map(tutor => {
+      const tutorSubs = submissions.filter(s => s.tutor_id === tutor.id);
+      const tutorAttempts = attempts.filter(a => a.tutor_id === tutor.id);
+
+      // Unique assignments submitted
+      const uniqueSubmittedAssignmentIds = new Set(tutorSubs.map(s => s.assignment_id));
+      const assignmentsSubmitted = uniqueSubmittedAssignmentIds.size;
+      const assignmentsTotal = assignments.length;
+
+      // Unique quizzes completed
+      const uniqueCompletedQuizIds = new Set(tutorAttempts.map(a => a.quiz_id));
+      const quizzesCompleted = uniqueCompletedQuizIds.size;
+      const quizzesTotal = quizzes.length;
+
+      // Average score across graded submissions and quiz attempts
+      const gradedGrades = tutorSubs.filter(s => s.grade !== undefined && s.grade !== null).map(s => s.grade as number);
+      const quizPercentages = tutorAttempts.map(a => a.percentage);
+      const allScores = [...gradedGrades, ...quizPercentages];
+      const avgScore = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
+
+      // Participation rate
+      const totalTasks = assignmentsTotal + quizzesTotal;
+      const completedTasks = assignmentsSubmitted + quizzesCompleted;
+      const participationRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100;
+
+      // Last activity
+      const allDates = [
+        ...tutorSubs.map(s => s.submitted_at),
+        ...tutorAttempts.map(a => a.completed_at),
+      ].filter(Boolean).sort().reverse();
+      const lastActivityDate = allDates[0];
+
+      // Status determination
+      let status: TutorParticipationMetric['status'] = 'Not started';
+      if (completedTasks === totalTasks && totalTasks > 0) {
+        status = 'Graded';
+      } else if (completedTasks > 0) {
+        status = 'In progress';
+      } else {
+        status = 'Not started';
+      }
+
+      return {
+        tutor_id: tutor.id,
+        tutor_name: tutor.full_name || tutor.username || 'Fellowship Tutor',
+        cell_id: tutor.cell_id,
+        cell_name: tutor.cell_name || 'Assigned Cell',
+        phone: tutor.phone_number,
+        assignments_submitted: assignmentsSubmitted,
+        assignments_total: assignmentsTotal,
+        quizzes_completed: quizzesCompleted,
+        quizzes_total: quizzesTotal,
+        average_score: avgScore,
+        participation_rate: participationRate,
+        status,
+        last_activity_date: lastActivityDate,
+      };
+    });
+
+    return metrics;
+  }
+}

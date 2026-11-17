@@ -13,7 +13,6 @@ import {
   HeartHandshake,
   Globe,
   Award,
-  Sparkles,
   ChevronRight,
   HelpCircle,
   FileCheck,
@@ -628,7 +627,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
       <section className="py-16 bg-[#142B4A] text-white text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
           <div className="w-12 h-12 rounded-2xl bg-[#C6A45A]/20 border border-[#C6A45A]/40 text-[#C6A45A] flex items-center justify-center mx-auto">
-            <Sparkles className="w-6 h-6" />
+            <Flame className="w-6 h-6" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Ready to lodge your cell return or access your dashboard?

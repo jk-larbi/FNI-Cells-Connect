@@ -21,7 +21,6 @@ import {
   DollarSign,
   HeartHandshake,
   Target,
-  Sparkles,
 } from 'lucide-react';
 
 interface EvangelismAdminViewProps {
@@ -638,7 +637,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
             {inspectingReport.testimonies && (
               <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100 text-xs">
                 <div className="font-bold text-emerald-950 mb-1 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Member Testimonies & Breakthroughs</span>
                 </div>
                 <p className="text-emerald-900 whitespace-pre-wrap leading-relaxed">{inspectingReport.testimonies}</p>

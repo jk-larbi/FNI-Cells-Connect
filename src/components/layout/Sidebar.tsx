@@ -3,6 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import { AppNavTab } from '../../types';
 import {
   LayoutDashboard,
+  Calendar,
+  GraduationCap,
+  ChevronDown,
+  ChevronRight,
+  FileCheck2,
+  Library,
   Building,
   Users,
   FileCheck,
@@ -44,6 +50,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAccountSettings,
 }) => {
   const { currentUser, logout, isAdmin } = useAuth();
+  const [isLearningExpanded, setIsLearningExpanded] = React.useState<boolean>(() => {
+    return currentTab.startsWith('learning-') || currentTab === 'learning-portal';
+  });
+
+  React.useEffect(() => {
+    if (currentTab.startsWith('learning-') || currentTab === 'learning-portal') {
+      setIsLearningExpanded(true);
+    }
+  }, [currentTab]);
 
   // Administrator Portal Navigation: Full institutional oversight
   const adminNavItems = [
@@ -51,6 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
     { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users },
     { id: 'report-review' as AppNavTab, label: 'Accept / Decline Reports', icon: FileCheck },
+    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true },
     { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
     { id: 'finance' as AppNavTab, label: 'Offering Aggregation', icon: DollarSign },
@@ -68,6 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: FileText },
     { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: Flame },
     { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: FileCheck },
+    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true },
     { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: Users },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
     { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
@@ -75,6 +92,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: History },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'my-account' as AppNavTab, label: 'My Account', icon: User },
+  ];
+
+  // Learning Portal Sub-modules
+  const learningSubItems = [
+    { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: LayoutDashboard },
+    { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: BookOpen },
+    { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: FileCheck2 },
+    { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: Users },
+    { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: BarChart3 },
+    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: Calendar || History },
+    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: Library || BookOpen },
   ];
 
   const navItems = isAdmin ? adminNavItems : tutorNavItems;
@@ -186,7 +214,81 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <nav className="space-y-1">
             {navItems.map(item => {
               const Icon = item.icon;
-              const isActive = currentTab === item.id;
+              const isLearning = item.id === 'learning-portal';
+              const isLearningActive = currentTab.startsWith('learning-') || currentTab === 'learning-portal';
+              const isActive = isLearning ? isLearningActive : currentTab === item.id;
+
+              if (isLearning) {
+                return (
+                  <div key={item.id} className="space-y-1">
+                    <div
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isLearningActive
+                          ? 'bg-[#142B4A] text-white shadow-sm'
+                          : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelectTab('learning-portal');
+                          setIsLearningExpanded(true);
+                          onCloseMobile();
+                        }}
+                        className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
+                      >
+                        <GraduationCap className={`w-4 h-4 shrink-0 ${isLearningActive ? 'text-[#C6A45A]' : 'text-[#667085]'}`} />
+                        <span className="truncate font-bold">Learning Portal</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsLearningExpanded(prev => !prev);
+                        }}
+                        className="p-1 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        title={isLearningExpanded ? 'Collapse sub-menu' : 'Expand sub-menu'}
+                      >
+                        {isLearningExpanded ? (
+                          <ChevronDown className="w-3.5 h-3.5 text-[#C6A45A]" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Expandable Sub-items */}
+                    {isLearningExpanded && (
+                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/30 ml-3.5 my-1 animate-fade-in">
+                        {learningSubItems.map(sub => {
+                          const SubIcon = sub.icon;
+                          const isSubActive = currentTab === sub.id;
+                          return (
+                            <button
+                              key={sub.id}
+                              type="button"
+                              onClick={() => {
+                                onSelectTab(sub.id);
+                                onCloseMobile();
+                              }}
+                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                                isSubActive
+                                  ? 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-white/10 dark:text-white font-bold'
+                                  : 'text-[#667085] hover:text-[#182230] dark:hover:text-white hover:bg-[#F5F7FA] dark:hover:bg-[#172437]'
+                              }`}
+                            >
+                              <SubIcon className={`w-3 h-3 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
+                              <span className="truncate">{sub.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <button
                   key={item.id}

@@ -15,7 +15,6 @@ import {
   FileCheck,
   BookOpen,
   Calendar,
-  Sparkles,
   ExternalLink,
   ShieldCheck,
   CheckCircle2,
@@ -154,12 +153,12 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     >
       <div className="space-y-4">
         {/* Push Notification Device Status & Permission Card */}
-        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+        <div className="p-3.5 bg-slate-50 dark:bg-[#172437] rounded-2xl border border-slate-200 dark:border-[#26384d] text-xs">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-gold-600" />
               <div>
-                <span className="font-bold text-[#142B4A]">Device Push Notification Status: </span>
+                <span className="font-bold text-[#142B4A] dark:text-white">Device Push Notification Status: </span>
                 {isPushEnabled ? (
                   <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[11px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" /> Active & Registered
@@ -189,9 +188,9 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               ) : (
                 <button
                   onClick={handleTestPush}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 transition-colors shadow-xs text-[11px] flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#172437] border border-slate-300 dark:border-[#26384d] text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs text-[11px] flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-gold-600" />
+                  <Bell className="w-3.5 h-3.5 text-gold-600" />
                   <span>Test Push</span>
                 </button>
               )}

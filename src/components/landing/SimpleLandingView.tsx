@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, ArrowLeft, LogIn, UserPlus, Sparkles, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, LogIn, UserPlus, ShieldCheck } from 'lucide-react';
 
 interface SimpleLandingViewProps {
   onSignUp: () => void;

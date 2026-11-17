@@ -692,38 +692,42 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             )}
           </div>
 
-          {/* Category Switcher Tabs */}
-          <div className="flex items-center gap-1 bg-[#F5F7FA] p-1 rounded-xl border border-[#E3E8EF] text-xs font-semibold text-[#667085]">
+          {/* ── Report Type Section Tabs ── */}
+          <div className="flex items-center gap-0 border border-[#E3E8EF] rounded-xl overflow-hidden shadow-2xs text-xs font-semibold">
             <button
               onClick={() => setTypeFilter('all')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                typeFilter === 'all' ? 'bg-[#142B4A] text-white shadow-2xs' : 'hover:text-[#182230]'
+              className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all border-r border-[#E3E8EF] ${
+                typeFilter === 'all' ? 'bg-[#142B4A] text-white' : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
               }`}
             >
-              <span>All Types</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                typeFilter === 'all' ? 'bg-[#203D63] text-white' : 'bg-[#E3E8EF] text-[#667085]'
-              }`}>
-                {reports.length}
-              </span>
+              <span>All Reports</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                typeFilter === 'all' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#E3E8EF] text-[#667085]'
+              }`}>{reports.length}</span>
             </button>
             <button
               onClick={() => setTypeFilter('meeting')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                typeFilter === 'meeting' ? 'bg-[#142B4A] text-white shadow-2xs' : 'hover:text-[#182230]'
+              className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all border-r border-[#E3E8EF] ${
+                typeFilter === 'meeting' ? 'bg-[#142B4A] text-white' : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
               }`}
             >
-              <FileText className="w-3 h-3 text-[#C6A45A]" />
+              <FileText className="w-3 h-3" />
               <span>Cell Meetings</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                typeFilter === 'meeting' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#E3E8EF] text-[#667085]'
+              }`}>{reports.filter(r => r.reportType === 'meeting').length}</span>
             </button>
             <button
               onClick={() => setTypeFilter('evangelism')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                typeFilter === 'evangelism' ? 'bg-[#142B4A] text-white shadow-2xs' : 'hover:text-[#182230]'
+              className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all ${
+                typeFilter === 'evangelism' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
               }`}
             >
-              <Flame className="w-3 h-3 text-[#C6A45A]" />
+              <Flame className="w-3 h-3" />
               <span>Evangelism</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                typeFilter === 'evangelism' ? 'bg-[#142B4A] text-[#C6A45A]' : 'bg-[#E3E8EF] text-[#667085]'
+              }`}>{reports.filter(r => r.reportType === 'evangelism').length}</span>
             </button>
           </div>
 
@@ -816,6 +820,36 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* ── Active Section Banner ── */}
+      {typeFilter !== 'all' && (
+        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${
+          typeFilter === 'meeting'
+            ? 'bg-[#EEF4FB] border-[#142B4A]/20'
+            : 'bg-[#FDF8EE] border-[#C6A45A]/30'
+        }`}>
+          {typeFilter === 'meeting'
+            ? <FileText className="w-4 h-4 text-[#142B4A] shrink-0" />
+            : <Flame className="w-4 h-4 text-[#C6A45A] shrink-0" />}
+          <div className="flex-1">
+            <div className={`text-xs font-black ${typeFilter === 'meeting' ? 'text-[#142B4A]' : 'text-[#8B6914]'}`}>
+              {typeFilter === 'meeting' ? 'Cell Meeting Reports Section' : 'Evangelism Outreach Reports Section'}
+            </div>
+            <div className="text-[11px] text-[#667085] mt-0.5">
+              {typeFilter === 'meeting'
+                ? 'Viewing only cell meeting returns. Click "All Reports" or "Evangelism" above to switch sections.'
+                : 'Viewing only evangelism outreach reports. Click "All Reports" or "Cell Meetings" above to switch sections.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTypeFilter('all')}
+            className="text-[11px] font-bold text-[#667085] hover:text-[#142B4A] border border-[#E3E8EF] px-3 py-1 rounded-lg bg-white transition-colors cursor-pointer"
+          >
+            View All
+          </button>
+        </div>
+      )}
 
       {/* BATCH ACTION BAR (Shown when items are selected) */}
       {selectedIds.size > 0 && (

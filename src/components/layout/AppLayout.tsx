@@ -40,6 +40,8 @@ import { TeachingMaterialsView } from '../materials/TeachingMaterialsView';
 import { MessagingView } from '../communication/MessagingView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
+import { LearningPortalView } from '../learning/LearningPortalView';
+import { LearningPortalSection } from '../../types/learning';
 
 interface MobileNavItem {
   id: AppNavTab;
@@ -125,6 +127,18 @@ export const AppLayout: React.FC = () => {
     currentTab === 'settings' ||
     currentTab === 'finance'
   ) ? 'my-dashboard' : currentTab;
+
+  // Resolve learning portal sub-section
+  const getLearningSection = (tab: AppNavTab): LearningPortalSection => {
+    if (tab === 'learning-assignments') return 'assignments';
+    if (tab === 'learning-quizzes') return 'quizzes';
+    if (tab === 'learning-participation') return 'participation';
+    if (tab === 'learning-grades') return 'grades';
+    if (tab === 'learning-events') return 'events';
+    if (tab === 'learning-materials') return 'materials';
+    return 'overview';
+  };
+  const isLearningTab = effectiveTab.startsWith('learning-') || effectiveTab === 'learning-portal';
 
   return (
     <div className="min-h-screen bg-white flex flex-col text-[#182230]">
@@ -284,6 +298,14 @@ export const AppLayout: React.FC = () => {
                   <MyAccountView onBack={handleGoBack} />
                 )}
               </>
+            )}
+
+                        {/* SHARED LEARNING PORTAL VIEW */}
+            {isLearningTab && (
+              <LearningPortalView
+                initialSection={getLearningSection(effectiveTab)}
+                onBack={handleGoBack}
+              />
             )}
 
             {/* Shared notifications tab */}

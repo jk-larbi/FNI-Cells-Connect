@@ -14,7 +14,6 @@ import {
   Eye,
   X,
   ExternalLink,
-  Sparkles,
   ArrowLeft,
 } from 'lucide-react';
 import { Button } from '../common/Button';

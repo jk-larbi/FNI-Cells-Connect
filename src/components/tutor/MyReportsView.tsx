@@ -121,48 +121,96 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="relative flex-1 min-w-[240px]">
+      {/* ── Section Tab Switcher ── */}
+      <div className="flex items-center gap-0 border border-[#E3E8EF] rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-[#111c2d]">
+        {/* ALL */}
+        <button
+          onClick={() => setTypeFilter('all')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold transition-all border-r border-[#E3E8EF] ${
+            typeFilter === 'all'
+              ? 'bg-[#142B4A] text-white'
+              : 'bg-white text-[#667085] hover:bg-[#F5F7FA]'
+          }`}
+        >
+          <FileCheck className="w-3.5 h-3.5" />
+          <span>All Returns</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+            typeFilter === 'all' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#E3E8EF] text-[#667085]'
+          }`}>
+            {reports.length}
+          </span>
+        </button>
+        {/* CELL MEETINGS */}
+        <button
+          onClick={() => setTypeFilter('meeting')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold transition-all border-r border-[#E3E8EF] ${
+            typeFilter === 'meeting'
+              ? 'bg-[#142B4A] text-white'
+              : 'bg-white text-[#667085] hover:bg-[#F5F7FA]'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Cell Meeting Reports</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+            typeFilter === 'meeting' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#E3E8EF] text-[#667085]'
+          }`}>
+            {reports.filter(r => r.reportType === 'meeting').length}
+          </span>
+        </button>
+        {/* EVANGELISM */}
+        <button
+          onClick={() => setTypeFilter('evangelism')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold transition-all ${
+            typeFilter === 'evangelism'
+              ? 'bg-[#C6A45A] text-[#142B4A]'
+              : 'bg-white text-[#667085] hover:bg-[#FDF8EE]'
+          }`}
+        >
+          <Flame className="w-3.5 h-3.5" />
+          <span>Evangelism Reports</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+            typeFilter === 'evangelism' ? 'bg-[#142B4A] text-[#C6A45A]' : 'bg-[#E3E8EF] text-[#667085]'
+          }`}>
+            {reports.filter(r => r.reportType === 'evangelism').length}
+          </span>
+        </button>
+      </div>
+
+      {/* Section header banner */}
+      {typeFilter !== 'all' && (
+        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${
+          typeFilter === 'meeting'
+            ? 'bg-[#F0F5FA] border-[#142B4A]/20 text-[#142B4A]'
+            : 'bg-[#FDF8EE] border-[#C6A45A]/30 text-[#8B6914]'
+        }`}>
+          {typeFilter === 'meeting'
+            ? <FileText className="w-4 h-4 shrink-0" />
+            : <Flame className="w-4 h-4 shrink-0" />}
+          <div>
+            <div className="text-xs font-black">
+              {typeFilter === 'meeting' ? 'Cell Meeting Reports' : 'Evangelism Outreach Reports'}
+            </div>
+            <div className="text-[11px] opacity-75 mt-0.5">
+              {typeFilter === 'meeting'
+                ? 'Showing only your weekly cell meeting returns. Use tabs above to switch sections.'
+                : 'Showing only your evangelism outreach records. Use tabs above to switch sections.'}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search + Status filters */}
+      <div className="bg-white p-3 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-3" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search your returns..."
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230] bg-white"
           />
         </div>
-
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 bg-[#F5F7FA] p-1 rounded-xl border border-[#E3E8EF] text-xs font-semibold text-[#667085]">
-          <button
-            onClick={() => setTypeFilter('all')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              typeFilter === 'all' ? 'bg-[#142B4A] text-white shadow-2xs' : 'hover:text-[#182230]'
-            }`}
-          >
-            All Returns
-          </button>
-          <button
-            onClick={() => setTypeFilter('meeting')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              typeFilter === 'meeting' ? 'bg-[#142B4A] text-white shadow-2xs' : 'hover:text-[#182230]'
-            }`}
-          >
-            Meetings
-          </button>
-          <button
-            onClick={() => setTypeFilter('evangelism')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              typeFilter === 'evangelism' ? 'bg-[#142B4A] text-white shadow-2xs' : 'hover:text-[#182230]'
-            }`}
-          >
-            Evangelism
-          </button>
-        </div>
-
-        {/* Status Filter */}
         <div className="flex items-center gap-1.5">
           {(['all', 'Newly Submitted', 'Approved', 'Needs Correction'] as const).map(st => (
             <button
@@ -174,7 +222,7 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
                   : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
               }`}
             >
-              {st === 'all' ? 'All' : st}
+              {st === 'all' ? 'All Statuses' : st}
             </button>
           ))}
         </div>

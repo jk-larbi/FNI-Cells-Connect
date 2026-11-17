@@ -15,7 +15,6 @@ import {
   Calendar,
   Building,
   Printer,
-  Sparkles,
   FileCheck,
   AlertTriangle,
   ArrowLeft,
