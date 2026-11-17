@@ -11,7 +11,10 @@
     "test:notifications": "node scripts/test-notification-system.mjs",
     "test:fni": "node scripts/test-fni-system.mjs",
     "test:backend": "node scripts/test-backend.mjs",
-    "test:firebase": "node scripts/test-firebase.mjs"
+    "test:firebase": "node scripts/test-firebase.mjs",
+    "analytics:analyze": "python scripts/analytics_stream_service.py --mode analyze",
+    "analytics:stream": "python scripts/analytics_stream_service.py --mode stream",
+    "analytics:server": "python scripts/analytics_stream_service.py --mode server"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "1.3.1",

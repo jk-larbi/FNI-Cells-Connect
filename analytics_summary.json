@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-11-17T13:15:08.501144+00:00",
+  "total_registered_cells": 8,
+  "total_meetings_held": 0,
+  "total_attendance": 0,
+  "mean_meeting_attendance": 0.0,
+  "attendance_std_deviation": 0.0,
+  "attendance_ema": 0.0,
+  "total_souls_harvested": 0,
+  "people_gospel_reached": 0,
+  "annual_target": 5000,
+  "current_progress_pct": 0.0,
+  "projected_year_end_souls": 0,
+  "projected_progress_pct": 0.0,
+  "current_ministry_week": 45,
+  "weeks_remaining": 7
+}
