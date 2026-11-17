@@ -2421,3 +2421,149 @@ html.dark :is(button:disabled, input:disabled, select:disabled, textarea:disable
 }
 
 html.dark ::placeholder { color: #8fa1b8 !important; opacity: 1; }
+
+
+/* ==========================================================
+   FNI THEME CONTRAST AUDIT — November 2026
+   Keep semantic text/status colours readable on both surfaces.
+   These rules intentionally sit after legacy component overrides.
+   ========================================================== */
+:root {
+  color-scheme: light;
+  --fni-surface: #ffffff;
+  --fni-surface-muted: #f4f6fa;
+  --fni-foreground: #202634;
+  --fni-foreground-muted: #586579;
+  --fni-outline: #d8e0eb;
+}
+html:not(.dark) body,
+html:not(.dark) #root {
+  color: var(--fni-foreground);
+}
+html:not(.dark) :is(.text-slate-400,.text-gray-400,.text-zinc-400,.text-neutral-400) {
+  color: #64748b !important;
+}
+html:not(.dark) :is(.text-slate-500,.text-gray-500,.text-zinc-500,.text-neutral-500) {
+  color: #586579 !important;
+}
+html:not(.dark) :is(input,textarea,select) {
+  color: #202634;
+}
+html:not(.dark) :is(input,textarea,select):disabled {
+  color: #64748b;
+  background-color: #eef2f7;
+}
+html:not(.dark) :is(button,a,[role="button"]):focus-visible,
+html:not(.dark) :is(input,textarea,select):focus-visible {
+  outline: 2px solid #245fc4;
+  outline-offset: 2px;
+}
+
+/* Dark theme semantic surfaces and default copy. */
+html.dark {
+  color-scheme: dark;
+  --fni-surface: #111c2d;
+  --fni-surface-muted: #172437;
+  --fni-foreground: #f1f5f9;
+  --fni-foreground-muted: #bdc9d8;
+  --fni-outline: #3a4d64;
+}
+html.dark body,
+html.dark #root,
+html.dark main {
+  color: var(--fni-foreground);
+}
+html.dark :is(p,li,dt,dd,label,legend,figcaption,caption,blockquote) {
+  color: inherit;
+}
+html.dark :is(.text-blue-400,.text-blue-500,.text-blue-600,.text-blue-700,.text-blue-800,.text-blue-900,
+.text-indigo-400,.text-indigo-500,.text-indigo-600,.text-indigo-700,.text-indigo-800,.text-indigo-900,
+.text-sky-400,.text-sky-500,.text-sky-600,.text-sky-700,.text-sky-800,.text-sky-900,
+.text-cyan-400,.text-cyan-500,.text-cyan-600,.text-cyan-700,.text-cyan-800,.text-cyan-900,
+.text-purple-400,.text-purple-500,.text-purple-600,.text-purple-700,.text-purple-800,.text-purple-900,
+.text-violet-400,.text-violet-500,.text-violet-600,.text-violet-700,.text-violet-800,.text-violet-900,
+.text-fuchsia-400,.text-fuchsia-500,.text-fuchsia-600,.text-fuchsia-700,.text-fuchsia-800,.text-fuchsia-900,
+.text-pink-400,.text-pink-500,.text-pink-600,.text-pink-700,.text-pink-800,.text-pink-900,
+.text-rose-400,.text-rose-500,.text-rose-600,.text-rose-700,.text-rose-800,.text-rose-900,
+.text-red-400,.text-red-500,.text-red-600,.text-red-700,.text-red-800,.text-red-900,
+.text-orange-400,.text-orange-500,.text-orange-600,.text-orange-700,.text-orange-800,.text-orange-900,
+.text-amber-400,.text-amber-500,.text-amber-600,.text-amber-700,.text-amber-800,.text-amber-900,
+.text-yellow-400,.text-yellow-500,.text-yellow-600,.text-yellow-700,.text-yellow-800,.text-yellow-900,
+.text-lime-400,.text-lime-500,.text-lime-600,.text-lime-700,.text-lime-800,.text-lime-900,
+.text-green-400,.text-green-500,.text-green-600,.text-green-700,.text-green-800,.text-green-900,
+.text-emerald-400,.text-emerald-500,.text-emerald-600,.text-emerald-700,.text-emerald-800,.text-emerald-900,
+.text-teal-400,.text-teal-500,.text-teal-600,.text-teal-700,.text-teal-800,.text-teal-900) {
+  color: #a9c9ff !important;
+}
+html.dark :is(.text-red-400,.text-red-500,.text-red-600,.text-red-700,.text-red-800,.text-red-900,
+.text-rose-400,.text-rose-500,.text-rose-600,.text-rose-700,.text-rose-800,.text-rose-900) {
+  color: #ff9b9b !important;
+}
+html.dark :is(.text-green-400,.text-green-500,.text-green-600,.text-green-700,.text-green-800,.text-green-900,
+.text-emerald-400,.text-emerald-500,.text-emerald-600,.text-emerald-700,.text-emerald-800,.text-emerald-900,
+.text-teal-400,.text-teal-500,.text-teal-600,.text-teal-700,.text-teal-800,.text-teal-900) {
+  color: #78ddb0 !important;
+}
+html.dark :is(.text-amber-400,.text-amber-500,.text-amber-600,.text-amber-700,.text-amber-800,.text-amber-900,
+.text-yellow-400,.text-yellow-500,.text-yellow-600,.text-yellow-700,.text-yellow-800,.text-yellow-900,
+.text-orange-400,.text-orange-500,.text-orange-600,.text-orange-700,.text-orange-800,.text-orange-900) {
+  color: #f5ca76 !important;
+}
+/* Explicit hex-based status labels used throughout legacy screens. */
+html.dark [class*="text-[#16A34A]"],
+html.dark [class*="text-[#15803D]"],
+html.dark [class*="text-[#22C55E]"] { color: #78ddb0 !important; }
+html.dark [class*="text-[#DC2626]"],
+html.dark [class*="text-[#B91C1C]"],
+html.dark [class*="text-[#EF4444]"] { color: #ff9b9b !important; }
+html.dark [class*="text-[#D97706]"],
+html.dark [class*="text-[#B45309]"],
+html.dark [class*="text-[#F59E0B]"] { color: #f5ca76 !important; }
+
+/* Pale status chips must become deep tinted surfaces in dark mode. */
+html.dark :is(.bg-blue-100,.bg-indigo-100,.bg-sky-100,.bg-cyan-100,
+.bg-purple-100,.bg-violet-100,.bg-pink-100,.bg-rose-100) {
+  background-color: #203653 !important;
+  border-color: #355477 !important;
+}
+html.dark :is(.bg-green-100,.bg-emerald-100,.bg-teal-100,.bg-lime-100) {
+  background-color: #173b30 !important;
+  border-color: #28614d !important;
+}
+html.dark :is(.bg-red-100,.bg-rose-100) {
+  background-color: #48252b !important;
+  border-color: #713640 !important;
+}
+html.dark :is(.bg-amber-100,.bg-yellow-100,.bg-orange-100) {
+  background-color: #44351c !important;
+  border-color: #70562b !important;
+}
+/* Avoid white text on white translucent/light utility surfaces. */
+html.dark :is([class*="bg-white/"],[class*="bg-slate-50/"],[class*="bg-gray-50/"]) {
+  color: #e6edf5;
+}
+html.dark :is([class*="bg-white/5"],[class*="bg-white/10"],[class*="bg-white/20"]) {
+  background-color: rgb(255 255 255 / .07) !important;
+  border-color: #3a4d64 !important;
+}
+html.dark :is(button,a,[role="button"]):focus-visible,
+html.dark :is(input,textarea,select):focus-visible {
+  outline: 2px solid #e7bd59;
+  outline-offset: 2px;
+}
+html.dark :is(input,textarea,select)::placeholder {
+  color: #a8b6c8 !important;
+  opacity: 1;
+}
+html.dark :is(input,textarea,select):disabled {
+  color: #a8b6c8 !important;
+  background-color: #1b293b !important;
+  opacity: 1;
+}
+html.dark :is(th,td) { color: inherit; }
+html.dark :is(.text-white,.text-white\/90,.text-white\/80) { color: #ffffff !important; }
+@media (forced-colors: active) {
+  :is(button,a,input,select,textarea,[role="button"]):focus-visible {
+    outline: 2px solid CanvasText !important;
+  }
+}
