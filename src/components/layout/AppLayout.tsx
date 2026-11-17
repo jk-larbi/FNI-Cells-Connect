@@ -12,6 +12,17 @@ import {
   PlusCircle,
   MessageSquare,
   Bell,
+  MapPin,
+  Users,
+  Archive,
+  ClipboardCheck,
+  Flame,
+  UserCheck,
+  DollarSign,
+  BookOpen,
+  MessagesSquare,
+  BarChart3,
+  Settings,
 } from 'lucide-react';
 import { LocationSharingPanel } from '../location/LocationSharingPanel';
 
@@ -42,7 +53,8 @@ import { TeachingMaterialsView } from '../materials/TeachingMaterialsView';
 import { MessagingView } from '../communication/MessagingView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
-import { LatestAndroidUpdate } from '../common/LatestAndroidUpdate';\nimport { SectionHub } from './SectionHub';
+import { LatestAndroidUpdate } from '../common/LatestAndroidUpdate';
+import { SectionHub } from './SectionHub';\nimport { SectionHub } from './SectionHub';
 
 interface MobileNavItem {
   id: AppNavTab;
