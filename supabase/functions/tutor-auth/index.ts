@@ -94,6 +94,7 @@ Deno.serve(async (req: Request) => {
       if (profileError) {
         await admin.auth.admin.deleteUser(userId);
         console.error("Tutor profile upsert failed:", profileError);
+        if (profileError.code === "23505") return json({ error: "A tutor with that name is already registered under this cell." }, 409);
         return json({ error: "Your profile could not be created. Please try again." }, 500);
       }
 
