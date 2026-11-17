@@ -230,6 +230,15 @@ export class CellService {
     return { cell: newCell, isExistingAssociated: false };
   }
 
+  static async createAdminCell(name: string): Promise<Cell> {
+    const cleanName = name.trim();
+    if (!cleanName) throw new Error('Cell name is required.');
+    const cell = await SupabaseService.createAdminCell(cleanName);
+    const all = await this.getCells();
+    saveStoredCells([cell, ...all.filter(existing => existing.id !== cell.id)]);
+    return cell;
+  }
+
   static async archiveCells(cellIds: string[]): Promise<boolean> {
     if (!cellIds.length) return false;
     const archived = await SupabaseService.archiveCellRegistrations(cellIds);
