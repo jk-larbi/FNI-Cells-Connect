@@ -2567,3 +2567,25 @@ html.dark :is(.text-white,.text-white\/90,.text-white\/80) { color: #ffffff !imp
     outline: 2px solid CanvasText !important;
   }
 }
+
+
+/* Notification center surfaces: use the app's blue-black dark palette. */
+html.dark .fni-notification-center {
+  background-color: #0b1422 !important;
+}
+html.dark .fni-notification-center [class*="bg-white"],
+html.dark .fni-notification-center [class*="!bg-white"],
+html.dark .fni-notification-center [class*="bg-[#F1F4F8]"],
+html.dark .fni-notification-center [class*="bg-[#E2E8F0]"],
+html.dark .fni-notification-center [class*="bg-[#EAF1FA]"],
+html.dark .fni-notification-center [class*="bg-slate-100"],
+html.dark .fni-notification-center [class*="bg-slate-200"] {
+  background-color: #142238 !important;
+}
+html.dark .fni-notification-center [class*="hover:!bg-[#F8FAFC]"]:hover,
+html.dark .fni-notification-center [class*="hover:!bg-[#E1EBF7]"]:hover {
+  background-color: #1b304a !important;
+}
+html.dark .fni-notification-center .custom-scrollbar {
+  scrollbar-color: #526981 transparent;
+}
