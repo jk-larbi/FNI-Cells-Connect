@@ -1884,6 +1884,29 @@ export class SupabaseService {
     }
   }
 
+  static async getCellMembers(cellId: string): Promise<Array<{id:string;cell_id:string;full_name:string;phone_number?:string;status:string;notes?:string;created_at:string}> | null> {
+    if (!this.isAvailable()) return null;
+    const { data, error } = await supabase!.from('cell_members').select('id,cell_id,full_name,phone_number,status,notes,created_at').eq('cell_id', cellId).order('full_name', { ascending: true });
+    if (error || !data) { console.warn('getCellMembers failed:', error?.message); return null; }
+    return data as any;
+  }
+
+  static async saveCellMember(member: {id?:string;cell_id:string;full_name:string;phone_number?:string;status:string;notes?:string;created_by?:string}): Promise<void> {
+    if (!this.isAvailable()) throw new Error('The member directory requires an active connection.');
+    const payload = { ...member, full_name: member.full_name.trim(), phone_number: member.phone_number?.trim() || null, notes: member.notes?.trim() || null };
+    const query = member.id
+      ? supabase!.from('cell_members').update(payload).eq('id', member.id).eq('cell_id', member.cell_id)
+      : supabase!.from('cell_members').insert(payload);
+    const { error } = await query;
+    if (error) throw new Error(error.message || 'Could not save this cell member.');
+  }
+
+  static async deleteCellMember(id: string, cellId: string): Promise<void> {
+    if (!this.isAvailable()) throw new Error('The member directory requires an active connection.');
+    const { error } = await supabase!.from('cell_members').delete().eq('id', id).eq('cell_id', cellId);
+    if (error) throw new Error(error.message || 'Could not remove this cell member.');
+  }
+
   // --- Regions ---
   static async getRegions(): Promise<Region[] | null> {
     if (!this.isAvailable()) return null;
