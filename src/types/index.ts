@@ -453,7 +453,7 @@ export interface TutorRegistrationInput {
   cellId: string;
   username?: string;
   phoneNumber?: string;
-  cellName: string;
+  cellName?: string;
   coLeaderName?: string;
   email?: string;
   password?: string;
