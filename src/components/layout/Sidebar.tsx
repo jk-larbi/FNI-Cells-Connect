@@ -48,22 +48,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { currentUser, logout, isAdmin } = useAuth();
 
-  // Administrator Portal Navigation: Full institutional oversight
-  const adminNavItems = [
-    { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'location-sharing' as AppNavTab, label: 'Cell Location History', icon: MapPin },
-    { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
-    { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users },
-    { id: 'report-review' as AppNavTab, label: 'Accept / Decline Reports', icon: FileCheck },
-    { id: 'received-reports' as AppNavTab, label: 'Received Reports', icon: Archive },
-    { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame },
-    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
-    { id: 'finance' as AppNavTab, label: 'Offering Aggregation', icon: DollarSign },
-    { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
-    { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3 },
-    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
-    { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings },
+  // Administrator navigation is grouped by the work administrators perform.
+  const adminNavSections = [
+    { label: 'Overview', items: [
+      { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
+    ]},
+    { label: 'Cells', items: [
+      { id: 'location-sharing' as AppNavTab, label: 'Cell Location History', icon: MapPin },
+      { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
+      { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users },
+    ]},
+    { label: 'Reports', items: [
+      { id: 'report-review' as AppNavTab, label: 'Review Reports', icon: FileCheck },
+      { id: 'received-reports' as AppNavTab, label: 'Report History', icon: Archive },
+    ]},
+    { label: 'Ministry Operations', items: [
+      { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame },
+      { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
+      { id: 'finance' as AppNavTab, label: 'Offering Aggregation', icon: DollarSign },
+      { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
+      { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
+    ]},
+    { label: 'Insights & Settings', items: [
+      { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3 },
+      { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
+      { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings },
+    ]},
   ];
 
   // Tutor Portal Navigation: Dedicated fellowship tools
@@ -82,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'my-account' as AppNavTab, label: 'My Account', icon: User },
   ];
 
-  const navItems = isAdmin ? adminNavItems : tutorNavItems;
+  const navItems = tutorNavItems;
 
   return (
     <>
@@ -188,34 +198,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Middle Section: Navigation Links (Scrollable if screen height is small) */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 custom-scrollbar">
-          <nav className="space-y-1">
-            {navItems.map(item => {
+          <nav className="space-y-3">
+            {isAdmin ? adminNavSections.map(section => (
+              <section key={section.label} className="space-y-1">
+                <p className="px-3 pt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#98A2B3]">{section.label}</p>
+                {section.items.map(item => {
+                  const Icon = item.icon;
+                  const isActive = currentTab === item.id;
+                  return (
+                    <button key={item.id} type="button" onClick={() => { onSelectTab(item.id); onCloseMobile(); }}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isActive ? 'bg-[#229ED9]/10 text-[#1677A8] border border-[#229ED9]/20 shadow-none' : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
+                      }`}>
+                      <span className="flex items-center gap-2.5 min-w-0">
+                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#229ED9]' : 'text-[#667085]'}`} />
+                        <span className="truncate">{item.label}</span>
+                      </span>
+                      {item.badge && item.badge > 0 ? <span className="px-1.5 py-0.5 rounded-full bg-[#C74646] text-white text-[10px] font-bold">{item.badge}</span> : isActive ? <span className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]" /> : null}
+                    </button>
+                  );
+                })}
+              </section>
+            )) : navItems.map(item => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
               return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onSelectTab(item.id);
-                    onCloseMobile();
-                  }}
+                <button key={item.id} onClick={() => { onSelectTab(item.id); onCloseMobile(); }}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#229ED9]/10 text-[#1677A8] border border-[#229ED9]/20 shadow-none'
-                      : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
-                  }`}
-                >
+                    isActive ? 'bg-[#229ED9]/10 text-[#1677A8] border border-[#229ED9]/20 shadow-none' : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
+                  }`}>
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#229ED9]' : 'text-[#667085]'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
-                  {item.badge && item.badge > 0 ? (
-                    <span className="px-1.5 py-0.5 rounded-full bg-[#C74646] text-white text-[10px] font-bold">
-                      {item.badge}
-                    </span>
-                  ) : isActive ? (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]" />
-                  ) : null}
+                  {item.badge && item.badge > 0 ? <span className="px-1.5 py-0.5 rounded-full bg-[#C74646] text-white text-[10px] font-bold">{item.badge}</span> : isActive ? <span className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]" /> : null}
                 </button>
               );
             })}
