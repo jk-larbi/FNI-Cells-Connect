@@ -29,17 +29,24 @@ const MainContent: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const withPublicTheme = (content: React.ReactNode) => (
+    <>
+      <ThemeToggle placement="floating" />
+      {content}
+    </>
+  );
+
   if (isPasswordRecovery) {
-    return <PasswordRecoveryView onComplete={() => {
+    return withPublicTheme(<PasswordRecoveryView onComplete={() => {
       setIsPasswordRecovery(false);
       setEntryView('login-select');
-    }} />;
+    }} />);
   }
 
   // 1. Unauthenticated Visitor Flow
   if (isLoggedOut || !currentUser || !currentUser.id) {
     if (entryView === 'tutor-signup' || entryView === 'login-select' || entryView === 'tutor-login' || entryView === 'admin-login') {
-      return (
+      return withPublicTheme(
         <AuthView
           initialView={entryView}
           onBackToLanding={() => setEntryView('landing')}
@@ -49,7 +56,7 @@ const MainContent: React.FC = () => {
     }
 
     if (entryView === 'overview-landing') {
-      return (
+      return withPublicTheme(
         <LandingPageView
           onOpenAuth={(mode, tab) => {
             if (mode === 'admin') setEntryView('admin-login');
@@ -63,7 +70,7 @@ const MainContent: React.FC = () => {
 
     // Screen 2: Dedicated Sign Up and Log In page with Logo and Name
     if (entryView === 'landing') {
-      return (
+      return withPublicTheme(
         <SimpleLandingView
           onSignUp={() => setEntryView('tutor-signup')}
           onLogIn={() => setEntryView('login-select')}
@@ -73,7 +80,7 @@ const MainContent: React.FC = () => {
     }
 
     // Screen 1: Strictly Vision Statement, Mission Statement, and Soul-Winning Target (Nothing else)
-    return (
+    return withPublicTheme(
       <MinistryVisionView
         onProceed={() => setEntryView('landing')}
       />
@@ -82,7 +89,7 @@ const MainContent: React.FC = () => {
 
   // 2. Mandatory First-Time Admin Password Change (Cannot be skipped)
   if (mustChangePassword) {
-    return (
+    return withPublicTheme(
       <div className="relative min-h-screen">
         <AuthView initialView="admin-login" onSuccess={() => {}} />
         <ForcePasswordChangeModal />
@@ -99,7 +106,6 @@ export const App: React.FC = () => {
     <ThemeProvider>
       <AuthProvider>
         <NotificationProvider>
-          <ThemeToggle />
           <MainContent />
         </NotificationProvider>
       </AuthProvider>

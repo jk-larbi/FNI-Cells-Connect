@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '../../context/AuthContext';
@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Bell,
 } from 'lucide-react';
+import { LocationSharingPanel } from '../location/LocationSharingPanel';
 
 // Administrator Portal Views
 import { DashboardView } from '../dashboard/DashboardView';
@@ -21,6 +22,7 @@ import { CellLeadersView } from '../admin/CellLeadersView';
 import { CellLocationHistoryView } from '../admin/CellLocationHistoryView';
 import { ReportReviewView } from '../admin/ReportReviewView';
 import { ReportHistoryView } from '../admin/ReportHistoryView';
+import { ReceivedReportsView } from '../admin/ReceivedReportsView';
 import { EvangelismAdminView } from '../admin/EvangelismAdminView';
 import { AnalyticsView } from '../admin/AnalyticsView';
 import { AdminSettingsView } from '../admin/AdminSettingsView';
@@ -44,6 +46,7 @@ import { NotificationCenterModal } from '../notifications/NotificationCenterModa
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
 import { LearningPortalView } from '../learning/LearningPortalView';
 import { LearningPortalSection } from '../../types/learning';
+import { LatestAndroidUpdate } from '../common/LatestAndroidUpdate';
 
 interface MobileNavItem {
   id: AppNavTab;
@@ -64,6 +67,42 @@ export const AppLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+
+  // Lock the page behind the mobile drawer without losing its current scroll
+  // position. This avoids the background jumping when the drawer is swiped.
+  useEffect(() => {
+    if (!isSidebarOpen || typeof window === 'undefined' || window.innerWidth >= 768) return;
+
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+
+    body.classList.add('fni-mobile-menu-open');
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+
+    return () => {
+      body.classList.remove('fni-mobile-menu-open');
+      body.style.position = previous.position;
+      body.style.top = previous.top;
+      body.style.left = previous.left;
+      body.style.right = previous.right;
+      body.style.width = previous.width;
+      body.style.overflow = previous.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isSidebarOpen]);
 
   // Deep-linking target parameters
   const [highlightedReportId, setHighlightedReportId] = useState<string | undefined>(undefined);
@@ -122,9 +161,11 @@ export const AppLayout: React.FC = () => {
   // Fallback guard: if a non-admin is accidentally on an admin tab, redirect to tutor dashboard
   const effectiveTab: AppNavTab = !isAdmin && (
     currentTab === 'dashboard' ||
+    currentTab === 'location-sharing' ||
     currentTab === 'cell-management' ||
     currentTab === 'cell-leaders' ||
     currentTab === 'report-review' ||
+    currentTab === 'received-reports' ||
     currentTab === 'analytics' ||
     currentTab === 'settings' ||
     currentTab === 'finance'
@@ -143,8 +184,8 @@ export const AppLayout: React.FC = () => {
   const isLearningTab = effectiveTab.startsWith('learning-') || effectiveTab === 'learning-portal';
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a111c] flex flex-col text-[#182230] dark:text-slate-100 overflow-x-hidden w-full max-w-full">
-      <div className="flex flex-1 w-full min-w-0">
+    <div className={`fni-app-shell min-h-screen bg-white dark:bg-[#0a111c] flex flex-col text-[#182230] dark:text-slate-100 overflow-x-hidden w-full max-w-full ${effectiveTab === 'messages' ? 'fni-messaging-route' : ''}`}>
+      <div className="fni-app-body flex flex-1 min-h-0 w-full min-w-0">
         {/* Navigation Sidebar */}
         <Sidebar
           currentTab={effectiveTab}
@@ -167,10 +208,12 @@ export const AppLayout: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          <main className="flex-1 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-28 md:pb-8 min-w-0 overflow-x-hidden">
+          <LatestAndroidUpdate />
+          <main className={`fni-app-main flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 overflow-x-hidden ${effectiveTab === 'messages' ? 'fni-messaging-route-main' : ''}`}>
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
+                {effectiveTab === 'location-sharing' && <LocationSharingPanel mode="admin" />}
                 {effectiveTab === 'dashboard' && (
                   <DashboardView
                     onNavigateToTab={tab => navigateToTab(tab)}
@@ -188,6 +231,9 @@ export const AppLayout: React.FC = () => {
                 )}
                 {effectiveTab === 'cell-location-history' && (
                   <CellLocationHistoryView onBack={handleGoBack} />
+                )}
+                {effectiveTab === 'received-reports' && (
+                  <ReportHistoryView onBack={handleGoBack} />
                 )}
                 {effectiveTab === 'report-review' && (
                   <ReportReviewView

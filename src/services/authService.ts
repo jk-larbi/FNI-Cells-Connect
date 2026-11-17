@@ -3,12 +3,12 @@
  * Pure Supabase Authentication & Identity Service (Strict Production Backend)
  * 
  * Strict Security Rules:
- * - 100% Supabase Auth native integration (signUp, signInWithPassword, signOut, resetPassword)
- * - Zero artificial email addresses; requires genuine user email address
+ * - Supabase Auth native sessions with username + password for tutor accounts
+ * - Tutor usernames map to private internal Auth identifiers; no email or phone is collected
  * - Zero local-only account creation or PBKDF2 local password hash storage
  * - Zero client-side administrator bypasses (admin123 and demo role-switching permanently removed)
  * - Strict server-side role verification: self-registration NEVER grants administrative roles (always 'tutor')
- * - Full email verification handling: users without confirmed session cannot access protected sessions
+ * - Tutor credentials are created and verified server-side; administrator email login remains separate
  * - Complete session persistence, automatic token refresh, and lifecycle synchronization
  */
 
@@ -18,6 +18,7 @@ import { ReportService } from './reportService';
 import { CellService, normalizeCellName } from './cellService';
 import { SupabaseService } from './supabaseService';
 import { SyncStateService } from './syncStateService';
+import { isTestProfile } from '../utils/profileVisibility';
 
 const STORAGE_KEYS = {
   CURRENT_PROFILE: 'fni_current_profile_v6_strict',
@@ -30,7 +31,7 @@ export class AuthService {
   static getAllProfiles(): Profile[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.PROFILES_DIRECTORY);
-      if (stored) return JSON.parse(stored);
+      if (stored) return (JSON.parse(stored) as Profile[]).filter(profile => !isTestProfile(profile));
     } catch (e) {
       console.warn('Failed to parse stored profiles', e);
     }
@@ -42,6 +43,21 @@ export class AuthService {
       localStorage.setItem(STORAGE_KEYS.PROFILES_DIRECTORY, JSON.stringify(profiles));
     } catch (e) {
       console.warn('Failed to save profiles to localStorage', e);
+    }
+  }
+
+  static async updateProfileRole(userId: string, role: Profile['role']): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Role updates require an active Supabase connection.' };
+    }
+    try {
+      const { data, error } = await supabase.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', userId).select('id').maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('Member profile was not found or you do not have permission to update it.');
+      return { success: true };
+    } catch (error: any) {
+      console.error('Failed to update member role:', error);
+      return { success: false, error: error?.message || 'Could not update this member role.' };
     }
   }
 
@@ -172,361 +188,204 @@ export class AuthService {
     }
   }
 
-  // --- 1. TUTOR REGISTRATION (STRICT SUPABASE AUTH ONLY) ---
-  static async registerTutor(input: TutorRegistrationInput): Promise<{
-    profile: Profile | null;
-    cell: Cell | null;
-    error: string | null;
-    needsEmailVerification?: boolean;
-    verificationNotice?: string;
-  }> {
-    const cleanName = input.fullName?.trim();
-    const cleanPhone = (input.phoneNumber || '').trim();
-    const cleanCellName = input.cellName?.trim();
-    const cleanCoLeaderName = input.coLeaderName?.trim();
 
-    // Strict validation: Full Name, Phone Number, and Cell Name
-    if (!cleanName || !cleanPhone || !cleanCellName) {
-      return { profile: null, cell: null, error: 'Full name, phone number, and cell name are required.' };
-    }
-
-    // Synthesize valid email & password if not explicitly supplied
-    const phoneDigits = cleanPhone.replace(/[^0-9]/g, '') || cleanPhone;
-    const cleanEmail = input.email?.trim().toLowerCase() || `${phoneDigits}@fnicells.org`;
-    const password = input.password || (phoneDigits.length >= 6 ? phoneDigits : `${phoneDigits}123456`);
-
-    if (input.confirmPassword && password !== input.confirmPassword) {
-      return { profile: null, cell: null, error: 'Passwords do not match.' };
-    }
-
+  // --- SOCIAL AUTHENTICATION (GOOGLE / APPLE) ---
+  static async signInWithProvider(
+    provider: 'google' | 'apple',
+    pendingTutor?: { fullName: string; cellName: string; phoneNumber?: string; coLeaderName?: string }
+  ): Promise<{ error: string | null }> {
     if (!isSupabaseConfigured || !supabase) {
-      return {
-        profile: null,
-        cell: null,
-        error: 'Supabase authentication service is unavailable. Please check backend connection.',
-      };
+      return { error: 'Supabase authentication service is unavailable.' };
     }
-
-    const normalizedCell = normalizeCellName(cleanCellName);
-
-    // Check duplicate cell registration in Supabase
     try {
-      const allCells = await CellService.getCells();
-      const existing = allCells.find(c => {
-        const existingNorm = c.normalized_name || normalizeCellName(c.name);
-        return existingNorm === normalizedCell;
+      if (pendingTutor) {
+        sessionStorage.setItem('fni_pending_oauth_tutor', JSON.stringify(pendingTutor));
+      } else {
+        sessionStorage.removeItem('fni_pending_oauth_tutor');
+      }
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo }
       });
-
-      if (existing) {
-        return {
-          profile: null,
-          cell: null,
-          error: `Cell "${cleanCellName}" is already registered. If this is your cell, please select "Login" instead.`,
-        };
+      if (error) {
+        sessionStorage.removeItem('fni_pending_oauth_tutor');
+        return { error: error.message };
       }
-    } catch (e) {
-      console.warn('Notice checking duplicate cell:', e);
-    }
-
-    // Register user directly in Supabase Auth
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password,
-        options: {
-          data: {
-            full_name: cleanName,
-            phone_number: cleanPhone,
-            cell_name: cleanCellName,
-            co_leader_name: cleanCoLeaderName || undefined,
-            role: 'tutor', // STRICT: Always assign 'tutor' on self-signup
-          },
-        },
-      });
-
-      if (authError) {
-        return { profile: null, cell: null, error: authError.message };
-      }
-
-      if (!authData?.user) {
-        return { profile: null, cell: null, error: 'Failed to create user account in Supabase Auth.' };
-      }
-
-      const uid = authData.user.id;
-      const cellId = `cell-${Date.now()}`;
-      const nowIso = new Date().toISOString();
-
-      // Register Cell Fellowship in Supabase (with optional Co-Leader)
-      const newCell: Cell = {
-        id: cellId,
-        name: cleanCellName,
-        normalized_name: normalizedCell,
-        location: 'Fellowship Center',
-        code: `FNI-CEL-${Date.now().toString().slice(-4)}`,
-        tutorUid: uid,
-        leader_id: uid,
-        leader_name: cleanCoLeaderName ? `${cleanName} & ${cleanCoLeaderName}` : cleanName,
-        co_leader_name: cleanCoLeaderName || undefined,
-        leader_phone: cleanPhone,
-        meeting_day: 'Wednesday',
-        meeting_time: '18:30',
-        venue_address: 'Fellowship Center',
-        target_attendance: 25,
-        status: 'Active',
-        is_active: true,
-        created_at: nowIso,
-      };
-      await CellService.updateCell(newCell);
-
-      // Handle Email Verification Requirement
-      if (!authData.session) {
-        // Supabase has email confirmation enabled; user cannot sign in until email link is verified
-        return {
-          profile: null,
-          cell: newCell,
-          error: null,
-          needsEmailVerification: true,
-          verificationNotice: 'Registration successful! A confirmation email has been sent to your inbox. Please click the link to verify your email before logging in.',
-        };
-      }
-
-      // If active session was returned immediately (autoconfirm enabled or session active)
-      const newProfile: Profile = {
-        id: uid,
-        supabase_user_id: uid,
-        email: cleanEmail,
-        full_name: cleanName,
-        cell_id: cellId,
-        cell_name: cleanCellName,
-        role: 'tutor', // STRICT: Never allow self-elevation to admin
-        is_active: true,
-        is_onboarded: true,
-        must_change_password: false,
-        auth_provider: 'email',
-        created_at: nowIso,
-      };
-
-      await SupabaseService.upsertProfile(newProfile);
-      this.setCurrentProfile(newProfile);
-
-      // Audit log & Notification
-      ReportService.recordAuditLog({
-        action: 'TUTOR_REGISTERED_CELL',
-        entity_type: 'users',
-        entity_id: uid,
-        details: {
-          tutor_name: cleanName,
-          cell_name: cleanCellName,
-        },
-      });
-
-      return {
-        profile: newProfile,
-        cell: newCell,
-        error: null,
-        needsEmailVerification: false,
-      };
-    } catch (err: any) {
-      return {
-        profile: null,
-        cell: null,
-        error: err?.message || 'An unexpected error occurred during registration.',
-      };
+      return { error: null };
+    } catch (error: any) {
+      sessionStorage.removeItem('fni_pending_oauth_tutor');
+      return { error: error?.message || 'Could not start social sign-in.' };
     }
   }
 
-  // --- 2. TUTOR LOGIN (AUTHENTICATE DIRECTLY AGAINST SUPABASE AUTH) ---
-  static async signInTutor(input: TutorLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
-    const rawIdentifier = (input.email || input.fullName || '').trim();
+  static async completeOAuthTutorRegistration(input: {
+    fullName: string; cellName: string; phoneNumber?: string; coLeaderName?: string;
+  }): Promise<Profile> {
+    if (!supabase) throw new Error('Supabase authentication service is unavailable.');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Social sign-in did not return an authenticated user.');
+    const email = user.email || '';
+    if (!email) throw new Error('The selected provider did not return an email address.');
+    const fullName = input.fullName.trim();
+    const cellName = input.cellName.trim();
+    const normalizedCell = normalizeCellName(cellName);
+    const cells = await CellService.getCells();
+    if (cells.some(c => (c.normalized_name || normalizeCellName(c.name)) === normalizedCell && c.tutorUid !== user.id)) {
+      throw new Error(`Cell "${cellName}" is already registered. Please contact FNI support.`);
+    }
+    const now = new Date().toISOString();
+    const cellId = `cell-${user.id}`;
+    const phoneNumber = input.phoneNumber?.trim() || '';
+    const cell: Cell = {
+      id: cellId, name: cellName, normalized_name: normalizedCell,
+      location: 'Fellowship Center', code: `FNI-CEL-${Date.now().toString().slice(-4)}`,
+      tutorUid: user.id, leader_id: user.id,
+      leader_name: input.coLeaderName?.trim() ? `${fullName} & ${input.coLeaderName.trim()}` : fullName,
+      co_leader_name: input.coLeaderName?.trim() || undefined,
+      leader_phone: phoneNumber || undefined, meeting_day: 'Wednesday', meeting_time: '18:30',
+      venue_address: 'Fellowship Center', target_attendance: 25, status: 'Active',
+      is_active: true, created_at: now,
+    };
+    await CellService.updateCell(cell);
+    const profile: Profile = {
+      id: user.id, supabase_user_id: user.id, email,
+      full_name: fullName, phone_number: phoneNumber || undefined,
+      cell_id: cellId, cell_name: cellName, role: 'tutor',
+      is_active: true, is_onboarded: true, must_change_password: false,
+      auth_provider: user.app_metadata?.provider === 'apple' ? 'apple' : 'google',
+      created_at: user.created_at || now,
+    };
+    const saved = await SupabaseService.upsertProfile(profile);
+    if (!saved) throw new Error('Your social account was created, but the FNI tutor profile could not be saved.');
+    ReportService.recordAuditLog({
+      action: 'TUTOR_REGISTERED_CELL', entity_type: 'users', entity_id: user.id,
+      details: { tutor_name: fullName, email, cell_name: cellName, auth_provider: profile.auth_provider },
+    });
+    this.setCurrentProfile(profile);
+    return profile;
+  }
+
+  static async getTutorSignupCells(): Promise<Array<{ id: string; name: string }>> {
+    if (!isSupabaseConfigured || !supabase) return [];
+    const { data, error } = await supabase.functions.invoke('tutor-auth', { body: { action: 'directory' } });
+    if (error) throw new Error(data?.error || error.message || 'Could not load the cell directory.');
+    return (data?.cells || []).map((cell: any) => ({ id: String(cell.id), name: String(cell.name) }));
+  }
+
+  static async getTutorsForCell(cellId: string): Promise<Array<{ id: string; name: string }>> {
+    if (!isSupabaseConfigured || !supabase || !cellId) return [];
+    const { data, error } = await supabase.functions.invoke('tutor-auth', { body: { action: 'directory', cellId } });
+    if (error) throw new Error(data?.error || error.message || 'Could not load registered tutors.');
+    return (data?.tutors || []).map((tutor: any) => ({ id: String(tutor.full_name), name: String(tutor.full_name) }));
+  }
+
+  // --- 1. TUTOR REGISTRATION: join an administrator-created cell ---
+  static async registerTutor(input: TutorRegistrationInput): Promise<{
+    profile: Profile | null; cell: Cell | null; error: string | null;
+    needsEmailVerification?: boolean; verificationNotice?: string;
+  }> {
+    const fullName = input.fullName?.trim().replace(/\\s+/g, ' ');
+    const cellId = input.cellId?.trim();
     const password = input.password || '';
+    if (!fullName || !cellId || !password) return { profile: null, cell: null, error: 'Select your cell, enter your full name, and create a password.' };
+    if (password.length < 6 || password.length > 128) return { profile: null, cell: null, error: 'Password must be between 6 and 128 characters.' };
+    if (password !== input.confirmPassword) return { profile: null, cell: null, error: 'Passwords do not match.' };
+    if (!isSupabaseConfigured || !supabase) return { profile: null, cell: null, error: 'Supabase authentication service is unavailable.' };
 
-    if (!rawIdentifier || !password) {
-      return { profile: null, error: 'Email (or registered name) and password are required.' };
-    }
-
-    if (!isSupabaseConfigured || !supabase) {
-      return { profile: null, error: 'Supabase authentication service is unavailable.' };
-    }
-
-    // 1. Resolve email
-    let targetEmail: string | null = null;
-    let targetFullName = rawIdentifier;
-
-    if (rawIdentifier.includes('@')) {
-      targetEmail = rawIdentifier.toLowerCase();
-    } else {
-      const cleaned = rawIdentifier.replace(/[^0-9]/g, '');
-      if (cleaned.length >= 6) {
-        targetEmail = `${cleaned}@fnicells.org`;
-      }
-      // Look up email by Full Name or Phone in Supabase
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('email, full_name, phone_number')
-          .or(`full_name.ilike.%${rawIdentifier}%,phone_number.ilike.%${rawIdentifier}%`)
-          .limit(1);
-
-        if (!error && data && data.length > 0 && data[0].email) {
-          targetEmail = data[0].email;
-          targetFullName = data[0].full_name;
-        }
-      } catch (e) {
-        console.warn('Supabase profile email lookup notice:', e);
-      }
-    }
-
-    if (!targetEmail) {
-      return { profile: null, error: 'No account found matching this name/email. Please check your credentials or register.' };
-    }
-
-    // 2. Authenticate directly with Supabase Auth
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: targetEmail,
-        password,
+      const { data, error } = await supabase.functions.invoke('tutor-auth', {
+        body: { action: 'register', fullName, cellId, password },
       });
-
-      if (authError) {
-        if (authError.message.includes('Email not confirmed')) {
-          return {
-            profile: null,
-            error: 'Your email address has not been confirmed yet. Please check your inbox for the confirmation link.',
-          };
-        }
-        return { profile: null, error: authError.message || 'Invalid email or password.' };
+      if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
+        return { profile: null, cell: null, error: data?.error || error?.message || 'Account creation failed. Please try again.' };
       }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token, refresh_token: data.session.refresh_token,
+      });
+      if (sessionError) return { profile: null, cell: null, error: 'Your account was created, but sign-in could not be completed. Please log in.' };
 
-      if (!authData?.user) {
-        return { profile: null, error: 'Authentication failed. No user returned by Supabase.' };
+      const profile = await SupabaseService.getProfile(data.user.id);
+      if (!profile || profile.role !== 'tutor' || profile.cell_id !== cellId) {
+        await supabase.auth.signOut();
+        return { profile: null, cell: null, error: 'Your account was created, but its cell assignment could not be verified. Contact FNI support.' };
       }
+      const cell = await CellService.getCellById(cellId);
+      this.setCurrentProfile(profile);
+      ReportService.recordAuditLog({
+        action: 'TUTOR_REGISTERED_UNDER_CELL', entity_type: 'users', entity_id: profile.id,
+        details: { tutor_name: profile.full_name, cell_id: cellId, cell_name: profile.cell_name },
+      });
+      return { profile, cell, error: null, needsEmailVerification: false };
+    } catch (error: any) {
+      return { profile: null, cell: null, error: error?.message || 'Registration failed. Please try again.' };
+    }
+  }
 
-      // Fetch authoritative profile from Supabase
-      let profile = await SupabaseService.getProfile(authData.user.id);
-      if (!profile) {
-        profile = {
-          id: authData.user.id,
-          supabase_user_id: authData.user.id,
-          email: authData.user.email || targetEmail,
-          full_name: authData.user.user_metadata?.full_name || targetFullName,
-          cell_name: authData.user.user_metadata?.cell_name || undefined,
-          role: 'tutor', // STRICT: Fallback to standard tutor role
-          is_active: true,
-          is_onboarded: true,
-          must_change_password: false,
-          created_at: authData.user.created_at || new Date().toISOString(),
-        };
-        await SupabaseService.upsertProfile(profile);
+  // --- 2. TUTOR LOGIN: cell + registered full name + password ---
+  static async signInTutor(input: TutorLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
+    const cellId = input.cellId?.trim() || '';
+    const fullName = input.fullName?.trim() || '';
+    const password = input.password || '';
+    if (!cellId || !fullName || !password) return { profile: null, error: 'Select your cell, select your registered name, and enter your password.' };
+    if (!isSupabaseConfigured || !supabase) return { profile: null, error: 'Supabase authentication service is unavailable.' };
+
+    try {
+      const { data, error } = await supabase.functions.invoke('tutor-auth', {
+        body: { action: 'login', cellId, fullName, password },
+      });
+      if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
+        return { profile: null, error: data?.error || error?.message || 'Could not verify your tutor account.' };
       }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token, refresh_token: data.session.refresh_token,
+      });
+      if (sessionError) return { profile: null, error: 'Could not establish your session. Please try again.' };
 
-      if (!profile.is_active) {
+      const profile = await SupabaseService.getProfile(data.user.id);
+      if (!profile || profile.role !== 'tutor' || !profile.is_active || profile.cell_id !== cellId) {
         await supabase.auth.signOut();
         this.setCurrentProfile(null);
-        return { profile: null, error: 'This account has been deactivated. Please contact church leadership.' };
+        return { profile: null, error: 'This tutor account is inactive or not assigned to the selected cell.' };
       }
-
       this.setCurrentProfile(profile);
       SyncStateService.retryPendingSync().catch(() => {});
       return { profile, error: null };
-    } catch (err: any) {
-      return { profile: null, error: err?.message || 'Login failed unexpectedly.' };
+    } catch (error: any) {
+      return { profile: null, error: error?.message || 'Login failed unexpectedly.' };
     }
   }
 
   // --- 3. ADMINISTRATOR AUTHENTICATION (AUTHENTICATE DIRECTLY AGAINST SUPABASE AUTH) ---
   static async signInAdmin(input: AdminLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
-    let email = input.email?.trim().toLowerCase() || '';
-    if (email && !email.includes('@')) {
-      email = `${email}@gmail.com`;
-    }
+    const identifier = (input.username || input.email || '').trim().toLowerCase().replace(/^@/, '');
     const password = input.password || '';
-
-    if (!email || !password) {
-      return { profile: null, error: 'Administrator email and password are required.' };
-    }
-
-    if (!isSupabaseConfigured || !supabase) {
-      return { profile: null, error: 'Supabase authentication service is unavailable.' };
-    }
+    if (!identifier || !password) return { profile: null, error: 'Administrator username and password are required.' };
+    if (!isSupabaseConfigured || !supabase) return { profile: null, error: 'Supabase authentication service is unavailable.' };
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { data, error } = await supabase.functions.invoke('tutor-auth', {
+        body: { action: 'admin-login', username: identifier, password },
       });
-
-      if (authError) {
-        return { profile: null, error: authError.message || 'Invalid administrator credentials.' };
+      if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
+        return { profile: null, error: data?.error || error?.message || 'Invalid administrator username or password.' };
       }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+      if (sessionError) return { profile: null, error: 'Could not establish your administrator session. Please try again.' };
 
-      if (!authData?.user) {
-        return { profile: null, error: 'Administrator authentication failed.' };
-      }
-
-      // Authoritative profile lookup from Supabase
-      let profile = await SupabaseService.getProfile(authData.user.id);
-
-      // If remote profile query failed due to PostgreSQL function permissions (e.g. 42501)
-      // or trigger error, but the user is the authenticated administrator
-      if (!profile && (email === 'fniadmin@gmail.com' || authData.user.email?.toLowerCase() === 'fniadmin@gmail.com')) {
-        profile = {
-          id: authData.user.id,
-          supabase_user_id: authData.user.id,
-          email: authData.user.email || 'fniadmin@gmail.com',
-          full_name: authData.user.user_metadata?.full_name || 'FNI Administrator',
-          role: 'super_admin',
-          is_active: true,
-          is_onboarded: true,
-          must_change_password: false,
-          created_at: authData.user.created_at || new Date().toISOString(),
-        };
-        // Attempt background persistence
-        SupabaseService.upsertProfile(profile).catch(() => {});
-      }
-
-      if (!profile) {
-        // Robust fallback for authenticated administrator
-        profile = {
-          id: authData.user.id,
-          supabase_user_id: authData.user.id,
-          email: authData.user.email || email || 'fniadmin@gmail.com',
-          full_name: authData.user.user_metadata?.full_name || 'FNI Administrator',
-          role: 'super_admin',
-          is_active: true,
-          is_onboarded: true,
-          must_change_password: false,
-          created_at: authData.user.created_at || new Date().toISOString(),
-        };
-        this.setCurrentProfile(profile);
-      }
-
-      // STRICT: Verify role is genuinely administrative in Supabase PostgreSQL
-      const isAdminRole =
-        profile.role === 'admin' ||
-        profile.role === 'super_admin' ||
-        profile.role === 'national_admin';
-
-      if (!isAdminRole) {
-        // User is authenticated in Supabase, but is not an authorized administrator
+      const profile = await SupabaseService.getProfile(data.user.id);
+      if (!profile || !['admin', 'super_admin', 'national_admin'].includes(profile.role) || !profile.is_active) {
         await supabase.auth.signOut();
         this.setCurrentProfile(null);
-        return {
-          profile: null,
-          error: 'Access denied: This account does not possess administrator privileges.',
-        };
+        return { profile: null, error: 'Access denied: this account is not an active FNI administrator.' };
       }
-
-      if (!profile.is_active) {
-        await supabase.auth.signOut();
-        this.setCurrentProfile(null);
-        return { profile: null, error: 'This administrator account has been deactivated.' };
-      }
-
       this.setCurrentProfile(profile);
-      SyncStateService.retryPendingSync().catch(() => {});
       return { profile, error: null };
-    } catch (err: any) {
-      return { profile: null, error: err?.message || 'Administrator authentication exception.' };
+    } catch (error: any) {
+      return { profile: null, error: error?.message || 'Administrator login failed unexpectedly.' };
     }
   }
 
@@ -645,6 +504,7 @@ export class AuthService {
       leaderName: input.fullName,
       leaderPhone: input.phoneNumber,
       regionId: input.regionId,
+      regionName: input.regionName,
       meetingDay: input.meetingDay,
       meetingTime: input.meetingTime,
       venueAddress: input.venueAddress,
@@ -656,12 +516,69 @@ export class AuthService {
     current.cell_name = res.cell.name;
     current.phone_number = input.phoneNumber;
     current.region_id = input.regionId;
+    current.role = 'tutor';
+    current.is_active = true;
     current.is_onboarded = true;
 
+    // The Supabase registration RPC updates the profile in the same database
+    // transaction as the cell registration. Keep the local session in sync.
     this.setCurrentProfile(current);
-    await SupabaseService.upsertProfile(current);
-
     return { profile: current, isExistingCellAssociated: res.isExistingAssociated };
+  }
+
+  // --- 8. ADMINISTRATOR PROFILE DETAILS ---
+  static async updateAdministratorProfile(userId: string, fullName: string, username: string): Promise<Profile> {
+    if (!isSupabaseConfigured || !supabase) throw new Error('Supabase service is unavailable.');
+    const cleanName = fullName.trim().replace(/\s+/g, ' ');
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+    if (cleanName.length < 2 || cleanName.length > 80) throw new Error('Full name must be between 2 and 80 characters.');
+    if (!/^[a-z0-9_]{3,20}$/.test(cleanUsername)) throw new Error('Username must be 3–20 characters and use only letters, numbers, or underscores.');
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const authUser = authData?.user;
+    if (authError || !authUser || authUser.id !== userId) throw new Error('Your administrator session could not be verified. Sign out and sign in again.');
+
+    const current = this.getCurrentProfile() || await SupabaseService.getProfile(authUser.id);
+    if (!current || current.id !== authUser.id || !['admin', 'super_admin', 'national_admin'].includes(current.role)) {
+      throw new Error('The signed-in account is not recognised as an administrator. Refresh your session and try again.');
+    }
+
+    // Match the Auth UUID against both supported profile identity columns. Check the returned row:
+    // Postgres RLS can return zero updated rows without throwing an error.
+    let update = await supabase.from('profiles')
+      .update({ full_name: cleanName, username: cleanUsername, updated_at: new Date().toISOString() })
+      .eq('id', authUser.id)
+      .select('id, supabase_user_id, full_name, username')
+      .maybeSingle();
+    if (!update.data && !update.error) {
+      update = await supabase.from('profiles')
+        .update({ full_name: cleanName, username: cleanUsername, updated_at: new Date().toISOString() })
+        .eq('supabase_user_id', authUser.id)
+        .select('id, supabase_user_id, full_name, username')
+        .maybeSingle();
+    }
+    if (update.error) {
+      if (update.error.code === '23505') throw new Error('That username is already in use. Please choose another one.');
+      throw new Error(`Profile could not be saved: ${update.error.message}`);
+    }
+    if (!update.data) throw new Error('No administrator profile row was updated. Check your connection and permissions, then try again.');
+
+    // Keep Auth metadata aligned too, but the profiles table remains the source of truth for FNI display.
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: { ...authUser.user_metadata, full_name: cleanName, username: cleanUsername },
+    });
+    if (metadataError) console.warn('Administrator profile saved, but Auth metadata could not be refreshed:', metadataError.message);
+
+    const refreshed = await SupabaseService.getProfile(authUser.id);
+    const updated: Profile = {
+      ...(refreshed || current),
+      id: update.data.id,
+      supabase_user_id: update.data.supabase_user_id || authUser.id,
+      full_name: update.data.full_name || cleanName,
+      username: update.data.username || cleanUsername,
+    };
+    this.setCurrentProfile(updated);
+    return updated;
   }
 
   // --- 8. AVATAR UPLOAD ---
@@ -681,7 +598,45 @@ export class AuthService {
     return current;
   }
 
-  // --- 9. SIGN OUT ---
+
+  // --- ACCOUNT DELETION (SERVER-VERIFIED SELF-SERVICE + ADMIN MANAGEMENT) ---
+  static async deleteUserAccount(targetUserId: string): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Account service is unavailable.' };
+    if (!targetUserId) return { success: false, error: 'Select an account to delete.' };
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-own-account', { body: { confirmation: 'DELETE', targetUserId } });
+      if (error || !data?.success) return { success: false, error: data?.error || error?.message || 'Account deletion failed.' };
+      this.saveProfiles(this.getAllProfiles().filter(profile => profile.id !== targetUserId));
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Account deletion failed. Please try again.' };
+    }
+  }
+
+  // --- ACCOUNT DELETION (SERVER-VERIFIED SELF-SERVICE) ---
+  static async deleteOwnAccount(): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Account service is unavailable.' };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return { success: false, error: 'Please sign in again before deleting your account.' };
+      const { data, error } = await supabase.functions.invoke('delete-own-account', { body: { confirmation: 'DELETE' }, headers: { Authorization: 'Bearer ' + session.access_token } });
+      if (error || !data?.success) return { success: false, error: data?.error || error?.message || 'Account deletion failed.' };
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      setSupabaseAccessToken(null);
+      this.setCurrentProfile(null);
+      try {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROFILE);
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+        const directory = this.getAllProfiles().filter(profile => profile.id !== session.user.id);
+        this.saveProfiles(directory);
+      } catch {}
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Account deletion failed. Please try again.' };
+    }
+  }
+
+  // --- 10. SIGN OUT ---
   static async signOut(): Promise<void> {
     if (isSupabaseConfigured && supabase) {
       try {

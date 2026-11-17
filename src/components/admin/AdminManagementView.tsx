@@ -3,6 +3,8 @@ import { Region, Cell, ReportingPeriod, Profile, UserRole, CellReport } from '..
 import { INITIAL_PROFILES } from '../../services/mockData';
 import { ReportService } from '../../services/reportService';
 import { AuthService } from '../../services/authService';
+import { SupabaseService } from '../../services/supabaseService';
+import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
 import { StatCard, ActionStatCard } from '../dashboard/StatCard';
@@ -23,16 +25,29 @@ import {
   Search,
   FileSpreadsheet,
   Phone,
+  Trash2,
 } from 'lucide-react';
 
 export const AdminManagementView: React.FC = () => {
+  const { currentUser, deleteUserAccount } = useAuth();
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods'>('users');
-  const [users, setUsers] = useState<Profile[]>(() => AuthService.getAllProfiles());
+  const [users, setUsers] = useState<Profile[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'cell' | 'region' | 'period' | 'user'>('user');
+
+  const handleDeleteUser = async (user: Profile) => {
+    if (!window.confirm(`Permanently delete ${user.full_name}'s account and personal profile? They can register again afterwards.`)) return;
+    setDeletingUserId(user.id);
+    const result = await deleteUserAccount(user.id);
+    setDeletingUserId(null);
+    if (!result.success) { window.alert(result.error || 'Account deletion failed.'); return; }
+    setUsers(previous => previous.filter(item => item.id !== user.id));
+    window.alert(`${user.full_name}'s account has been deleted.`);
+  };
 
   // Filter states
   const [nameFilter, setNameFilter] = useState('');
@@ -86,15 +101,16 @@ export const AdminManagementView: React.FC = () => {
 
   useEffect(() => {
     async function loadData() {
-      const [r, c, p] = await Promise.all([
+      const [r, c, p, remoteUsers] = await Promise.all([
         ReportService.getRegions(),
         ReportService.getCells(),
         ReportService.getPeriods(),
+        SupabaseService.getProfiles(),
       ]);
       setRegions(r);
-      setCells(c);
+      setCells(c.filter(cell => !cell.is_archived));
       setPeriods(p);
-      setUsers(AuthService.getAllProfiles());
+      setUsers(remoteUsers || AuthService.getAllProfiles());
       if (r.length > 0) {
         setNewCell(prev => ({ ...prev, region_id: r[0].id }));
       }
@@ -108,12 +124,13 @@ export const AdminManagementView: React.FC = () => {
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  const handleRoleChange = (userId: string, newRole: UserRole) => {
-    setUsers(prev => {
-      const updated = prev.map(u => (u.id === userId ? { ...u, role: newRole } : u));
-      AuthService.saveProfiles(updated);
-      return updated;
-    });
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    const result = await AuthService.updateProfileRole(userId, newRole);
+    if (!result.success) {
+      window.alert(result.error || 'Role update failed.');
+      return;
+    }
+    setUsers(prev => prev.map(user => user.id === userId ? { ...user, role: newRole } : user));
   };
 
   const handleViewCellReports = async (cell: Cell) => {
@@ -213,7 +230,7 @@ export const AdminManagementView: React.FC = () => {
     return matchesName && matchesRole;
   });
 
-  const filteredCells = cells.filter(c => {
+  const filteredCells = cells.filter(c => !c.is_archived).filter(c => {
     const q = cellSearchQuery.toLowerCase();
     const matchesQuery = !cellSearchQuery.trim() || 
       c.name.toLowerCase().includes(q) || 
@@ -410,10 +427,13 @@ export const AdminManagementView: React.FC = () => {
                     </td>
 
                     <td className="py-3.5 px-3 whitespace-nowrap">
-                      {user.cell_name ? (
+                      {user.cell_name && cells.some(cell =>
+                        cell.id === user.cell_id ||
+                        cell.name.toLowerCase() === user.cell_name!.toLowerCase()
+                      ) ? (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gold-50 border border-gold-200/80 text-gold-800 font-bold text-xs">
                           <Building className="w-3 h-3 text-gold-600" />
-                          <span>{user.cell_name}</span>
+                          <span>{cells.find(cell => cell.id === user.cell_id || cell.name.toLowerCase() === user.cell_name!.toLowerCase())?.name}</span>
                         </div>
                       ) : (
                         <span className="text-[11px] font-medium text-slate-400 italic">
@@ -443,7 +463,7 @@ export const AdminManagementView: React.FC = () => {
                       >
                         <option value="super_admin">Super Admin</option>
                         <option value="national_admin">National Admin</option>
-                        <option value="regional_leader">Regional Leader</option>
+                                                <option value="regional_leader">Regional Leader</option>
                         <option value="cell_leader">Cell Leader</option>
                       </select>
                     </td>
@@ -485,6 +505,16 @@ export const AdminManagementView: React.FC = () => {
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                         </button>
+                        {user.id !== currentUser.id && (
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={deletingUserId === user.id}
+                            className="p-1.5 rounded-lg text-rose-500 hover:text-white hover:bg-rose-600 disabled:opacity-50 transition-colors"
+                            title="Permanently delete account"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -745,6 +775,7 @@ export const AdminManagementView: React.FC = () => {
                 onChange={e => setNewUser({ ...newUser, role: e.target.value as UserRole })}
                 className="w-full rounded-xl border border-slate-200 p-2.5 focus:ring-1 focus:ring-navy-600"
               >
+                <option value="regional_leader">Regional Leader</option>
                 <option value="cell_leader">Cell Leader</option>
                 <option value="admin">Administrator</option>
               </select>

@@ -3,6 +3,7 @@ import { UnifiedReportItem, Cell } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { SoulTargetService } from '../../services/soulTargetService';
+import { LocationSharingPanel } from '../location/LocationSharingPanel';
 import {
   Flame,
   Search,
@@ -46,8 +47,10 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
         ReportService.getUnifiedReviewQueue(),
         CellService.getCells(),
       ]);
-      setReports(unifiedQueue);
-      setCells(cList);
+      const activeCells = cList.filter(cell => !cell.is_archived);
+      const activeIds = new Set(activeCells.map(cell => cell.id));
+      setReports(unifiedQueue.filter(report => activeIds.has(report.cellId)));
+      setCells(activeCells);
     } catch (err) {
       console.warn('Error loading evangelism & cell harvest reports:', err);
     } finally {
@@ -242,7 +245,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
         </div>
       </div>
 
-      {/* KPI Cards */}
+      <LocationSharingPanel mode="admin" />\n\n      {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-xs">
           <div className="text-[11px] font-semibold text-[#667085]">Total Conversions</div>

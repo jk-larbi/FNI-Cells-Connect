@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { NotificationItem, NotificationType, NotificationChannel } from '../types';
 import { NotificationService } from '../services/notificationService';
 import { PushNotificationService } from '../services/pushNotificationService';
@@ -30,6 +31,7 @@ interface NotificationContextType {
   activeNavigationTarget: NotificationNavigationTarget | null;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  clearAllNotifications: () => Promise<boolean>;
   dispatchNotification: (
     title: string,
     message: string,
@@ -79,22 +81,29 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const supported = PushNotificationService.isPushSupported();
       if (!cancelled) {
         setIsPushSupported(supported);
-        setPushPermission(PushNotificationService.getPermissionState());
+        setPushPermission(await PushNotificationService.getPermissionStateAsync());
         setIsPushEnabled(false);
       }
       if (!supported) return;
 
       try {
-        await PushNotificationService.registerServiceWorker();
-        await navigator.serviceWorker.ready;
-        if (currentUser?.id && Notification.permission === 'granted') {
-          const active = await PushNotificationService.syncExistingSubscription();
-          if (!cancelled) setIsPushEnabled(active);
+        if (Capacitor.isNativePlatform()) {
+          if (currentUser?.id) {
+            const active = await PushNotificationService.syncExistingSubscription(currentUser.id);
+            if (!cancelled) setIsPushEnabled(active);
+          }
+        } else {
+          await PushNotificationService.registerServiceWorker();
+          await navigator.serviceWorker.ready;
+          if (currentUser?.id && Notification.permission === 'granted') {
+            const active = await PushNotificationService.syncExistingSubscription(currentUser.id);
+            if (!cancelled) setIsPushEnabled(active);
+          }
         }
       } catch (error) {
         console.warn('FNI background notification setup notice:', error);
       }
-      if (!cancelled) setPushPermission(PushNotificationService.getPermissionState());
+      if (!cancelled) setPushPermission(await PushNotificationService.getPermissionStateAsync());
     };
     void initializePush();
     return () => { cancelled = true; };
@@ -143,6 +152,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
     }
+    const handleNativePushClick = (event: Event) => {
+      const data = (event as CustomEvent).detail || {};
+      setActiveNavigationTarget({
+        targetTab: data.targetTab || 'notifications',
+        reportId: data.reportId,
+        conversationId: data.conversationId,
+        materialId: data.materialId,
+      });
+    };
+    window.addEventListener('fni-native-push-click', handleNativePushClick);
 
     return () => {
       unsubscribe();
@@ -150,6 +169,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
       }
+      window.removeEventListener('fni-native-push-click', handleNativePushClick);
     };
   }, [currentUser?.id, currentUser?.role]);
 
@@ -167,6 +187,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const markAsRead = async (id: string) => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
     await NotificationService.markAsRead(id);
+  };
+
+  const clearAllNotifications = async (): Promise<boolean> => {
+    if (!currentUser) return false;
+    const cleared = await NotificationService.clearAllForUser(currentUser.id, currentUser.role);
+    if (cleared) {
+      const key = `fni_notification_dismissals:${currentUser.id}`;
+      try {
+        const ids = new Set<string>(JSON.parse(localStorage.getItem(key) || '[]'));
+        setNotifications(previous => previous.filter(item => !ids.has(item.id)));
+      } catch { setNotifications([]); }
+    }
+    return cleared;
   };
 
   const markAllAsRead = async () => {
@@ -264,7 +297,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       currentUser.id,
       isAdmin ? 'admin' : 'tutor'
     );
-    setPushPermission(PushNotificationService.getPermissionState());
+    setPushPermission(await PushNotificationService.getPermissionStateAsync());
     if (res.success) {
       setIsPushEnabled(true);
     }
@@ -281,6 +314,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Determine target tab and metadata
     const meta = notif.metadata || {};
+    // A location alert can include a server-generated Google Maps universal
+    // link. Open it from this user gesture, then keep the FNI dashboard in sync.
+    if (typeof meta.actionUrl === 'string') {
+      try {
+        const mapsUrl = new URL(meta.actionUrl);
+        if (mapsUrl.hostname === 'www.google.com' && mapsUrl.pathname.startsWith('/maps/')) {
+          if (Capacitor.isNativePlatform()) window.location.href = mapsUrl.toString();
+          else window.open(mapsUrl.toString(), '_blank', 'noopener,noreferrer');
+        }
+      } catch {}
+    }
     let targetTab = meta.targetTab;
 
     if (!targetTab) {
@@ -343,6 +387,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         activeNavigationTarget,
         markAsRead,
         markAllAsRead,
+        clearAllNotifications,
         dispatchNotification,
         sendCellReminder,
         triggerBatchReminders,

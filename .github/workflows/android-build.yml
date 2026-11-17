@@ -1,0 +1,378 @@
+name: Build signed FNI Cells Connect Android release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'public/fni-cells-update.json'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional release version (for example 1.0.2). Leave blank for an automatic version.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fni-cells-android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish signed FNI Cells Connect APK
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF_TYPE}" = "branch" ]; then
+            VERSION="1.0.${GITHUB_RUN_NUMBER}"
+            TAG="v${VERSION}"
+          elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            VERSION="${RELEASE_VERSION:-1.0.${GITHUB_RUN_NUMBER}}"
+            TAG="v${VERSION#v}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must use semantic format such as 1.0.1" >&2
+            exit 1
+          fi
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Locate preinstalled Android SDK
+        run: |
+          test -d "$ANDROID_HOME" || (echo "Android SDK not found at $ANDROID_HOME" && exit 1)
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -n "$SDKMANAGER" || (echo "Android SDK command-line tools were not found" && exit 1)
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+
+      - name: Install Android SDK packages
+        run: |
+          yes | "$SDKMANAGER" --licenses
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install dependencies and Capacitor
+        run: |
+          # Regenerate the lockfile for the newly declared native push plugin,
+          # then use a clean install. The push plugin must be a real app dependency
+          # so Capacitor can discover and register it during native project sync.
+          npm install --package-lock-only --ignore-scripts
+          npm ci
+          npm install --no-save --package-lock=false @capacitor/core@^8 @capacitor/android@^8 @capacitor/cli@^8 @capacitor-community/background-geolocation@1.3.1 @capacitor/local-notifications@^8 @capacitor/filesystem@^8 @capacitor/share@^8
+
+      - name: Build web app for Android
+        run: npm run build
+        env:
+          CAPACITOR_BUILD: 'true'
+          VITE_ANDROID_APP_VERSION: ${{ steps.version.outputs.version }}
+          VITE_SUPABASE_URL: https://cjskjazsrrbfyjepwyxa.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_0nQJMgCvgruw3CXX9YpBIg_Jq2rAx-Q
+
+      - name: Generate Android project and copy Firebase configuration
+        run: |
+          npx cap add android
+          if [ -f firebase/google-services.json ]; then
+            cp firebase/google-services.json android/app/google-services.json
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          config = json.loads(Path("android/app/google-services.json").read_text())
+          packages = [client.get("client_info", {}).get("android_client_info", {}).get("package_name") for client in config.get("client", [])]
+          if "com.forerunnersnetwork.fnicellsconnect" not in packages:
+              raise SystemExit("Firebase config package_name must be com.forerunnersnetwork.fnicellsconnect")
+          print("Firebase Android configuration validated.")
+          PY
+          else
+            echo "::error::Firebase Android config is required. Add firebase/google-services.json before publishing an Android APK."
+            exit 1
+          fi
+          npx cap sync android
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          plugins_file = Path("android/app/src/main/assets/capacitor.plugins.json")
+          if not plugins_file.exists():
+              raise SystemExit("Capacitor plugin registry was not generated.")
+          plugins = json.loads(plugins_file.read_text())
+          names = {plugin.get("pkg") for plugin in plugins}
+          if "@capacitor/push-notifications" not in names:
+              raise SystemExit("Native Android push plugin is missing from the generated APK registry.")
+          print("Native Android push-notifications plugin is registered.")
+          PY
+
+      - name: Apply FNI app name and official launcher icon
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import xml.etree.ElementTree as ET
+
+          root = Path("android/app/src/main")
+          manifest_path = root / "AndroidManifest.xml"
+          manifest = ET.parse(manifest_path)
+          manifest_root = manifest.getroot()
+          android_ns = "http://schemas.android.com/apk/res/android"
+          ET.register_namespace("android", android_ns)
+          existing_permissions = {
+              node.get(f"{{{android_ns}}}name")
+              for node in manifest_root.findall("uses-permission")
+          }
+          for permission in [
+              "android.permission.ACCESS_COARSE_LOCATION",
+              "android.permission.ACCESS_FINE_LOCATION",
+              "android.permission.ACCESS_BACKGROUND_LOCATION",
+              "android.permission.FOREGROUND_SERVICE",
+              "android.permission.FOREGROUND_SERVICE_LOCATION",
+              "android.permission.POST_NOTIFICATIONS",
+              "android.permission.RECORD_AUDIO",
+          ]:
+              if permission not in existing_permissions:
+                  ET.SubElement(manifest_root, "uses-permission", {f"{{{android_ns}}}name": permission})
+
+          # Do not rely on Capacitor's template defaults: explicitly bind both
+          # launcher entry points to the FNI-generated icon resources.
+          application = manifest_root.find("application")
+          if application is None:
+              raise SystemExit("AndroidManifest.xml has no application element")
+          application.set(f"{{{android_ns}}}icon", "@mipmap/ic_launcher")
+          application.set(f"{{{android_ns}}}roundIcon", "@mipmap/ic_launcher_round")
+          manifest.write(manifest_path, encoding="utf-8", xml_declaration=True)
+          logo = Image.open("public/fni-official-logo.jpg").convert("RGBA")
+          # Use the official square artwork edge-to-edge. Do not place it inside
+          # a smaller blue tile: that creates a visible box inside the launcher icon.
+          def make_icon(size):
+              return logo.resize((size, size), Image.Resampling.LANCZOS).convert("RGB")
+
+          for density, size in {
+              "mdpi": 48, "hdpi": 72, "xhdpi": 96,
+              "xxhdpi": 144, "xxxhdpi": 192
+          }.items():
+              folder = root / f"res/mipmap-{density}"
+              folder.mkdir(parents=True, exist_ok=True)
+              icon = make_icon(size)
+              icon.save(folder / "ic_launcher.png", optimize=True)
+              icon.save(folder / "ic_launcher_round.png", optimize=True)
+
+          # Android adaptive icon foreground (transparent) and background.
+          foreground = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
+          mark = logo.copy()
+          mark.thumbnail((250, 250), Image.Resampling.LANCZOS)
+          foreground.alpha_composite(mark, ((432 - mark.width) // 2, (432 - mark.height) // 2))
+          drawable = root / "res/drawable"
+          drawable.mkdir(parents=True, exist_ok=True)
+          foreground.save(drawable / "ic_launcher_foreground.png", optimize=True)
+
+          # Replace Capacitor's default launch/splash artwork wherever the
+          # Android template provides it (portrait, landscape and density variants).
+          splash_targets = list(root.glob("res/drawable*/splash.png"))
+          if not splash_targets:
+              splash_targets = [drawable / "splash.png"]
+          for splash_path in splash_targets:
+              splash_path.parent.mkdir(parents=True, exist_ok=True)
+              try:
+                  with Image.open(splash_path) as existing:
+                      width, height = existing.size
+              except Exception:
+                  width, height = 2732, 2732
+              splash = Image.new("RGBA", (width, height), "#173B8F")
+              splash_mark = logo.copy()
+              max_w, max_h = int(width * 0.52), int(height * 0.52)
+              splash_mark.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+              splash.alpha_composite(
+                  splash_mark,
+                  ((width - splash_mark.width) // 2, (height - splash_mark.height) // 2)
+              )
+              splash.save(splash_path, optimize=True)
+
+          values = root / "res/values"
+          values.mkdir(parents=True, exist_ok=True)
+          # Capacitor's template already defines this color in its own XML.
+          # Remove every generated duplicate before writing the single canonical value.
+          for duplicate in root.glob("res/values*/ic_launcher_background.xml"):
+              duplicate.unlink()
+          colors = values / "colors.xml"
+          colors.write_text('''<?xml version="1.0" encoding="utf-8"?>
+          <resources><color name="ic_launcher_background">#173B8F</color></resources>
+          ''')
+          adaptive = root / "res/mipmap-anydpi-v26"
+          adaptive.mkdir(parents=True, exist_ok=True)
+          (adaptive / "ic_launcher.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/ic_launcher_background"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+          </adaptive-icon>
+          ''')
+          (adaptive / "ic_launcher_round.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/ic_launcher_background"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+          </adaptive-icon>
+          ''')
+
+          # Explicitly set the label shown below the installed app icon.
+          strings = values / "strings.xml"
+          if strings.exists():
+              tree = ET.parse(strings)
+              resources = tree.getroot()
+          else:
+              resources = ET.Element("resources")
+              tree = ET.ElementTree(resources)
+          app_name = resources.find("./string[@name='app_name']")
+          if app_name is None:
+              app_name = ET.SubElement(resources, "string", {"name": "app_name"})
+          app_name.text = "FNI Cells Connect"
+          tree.write(strings, encoding="utf-8", xml_declaration=True)
+
+          # Use the generated full-colour PNG launcher assets on all Android versions.
+          # The adaptive-icon XML can cause some launchers to fall back to the generic
+          # Android/Capacitor robot when the foreground layer is not resolved correctly.
+          # Removing these two v26 XML overrides makes Android use our verified FNI PNGs.
+          for adaptive_icon in [
+              root / "res/mipmap-anydpi-v26/ic_launcher.xml",
+              root / "res/mipmap-anydpi-v26/ic_launcher_round.xml",
+          ]:
+              if adaptive_icon.exists():
+                  adaptive_icon.unlink()
+
+          # Fail the build if any launcher resource or manifest binding is missing.
+          for density in ["mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"]:
+              for filename in ["ic_launcher.png", "ic_launcher_round.png"]:
+                  icon_path = root / f"res/mipmap-{density}" / filename
+                  if not icon_path.is_file() or icon_path.stat().st_size < 100:
+                      raise SystemExit(f"Missing or invalid launcher icon: {icon_path}")
+          for resource in [
+              root / "res/drawable/ic_launcher_foreground.png",
+          ]:
+              if not resource.is_file() or resource.stat().st_size < 50:
+                  raise SystemExit(f"Missing adaptive launcher resource: {resource}")
+          checked = ET.parse(manifest_path).getroot().find("application")
+          if checked.get(f"{{{android_ns}}}icon") != "@mipmap/ic_launcher":
+              raise SystemExit("Manifest is not configured to use the FNI launcher icon")
+          if checked.get(f"{{{android_ns}}}roundIcon") != "@mipmap/ic_launcher_round":
+              raise SystemExit("Manifest is not configured to use the FNI round launcher icon")
+          print("Verified FNI launcher icon files and AndroidManifest icon bindings.")
+          PY
+
+      - name: Configure permanent Android release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FNI_CELLS_ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.FNI_CELLS_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FNI_CELLS_ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.FNI_CELLS_ANDROID_STORE_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || (echo "Missing FNI_CELLS_ANDROID_KEYSTORE_BASE64 repository secret" && exit 1)
+          test -n "$KEY_ALIAS" || (echo "Missing FNI_CELLS_ANDROID_KEY_ALIAS repository secret" && exit 1)
+          test -n "$KEY_PASSWORD" || (echo "Missing FNI_CELLS_ANDROID_KEY_PASSWORD repository secret" && exit 1)
+          test -n "$STORE_PASSWORD" || (echo "Missing FNI_CELLS_ANDROID_STORE_PASSWORD repository secret" && exit 1)
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/fni-cells-release.keystore
+          cat > android/keystore.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=fni-cells-release.keystore
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path("android/app/build.gradle")
+          source = path.read_text()
+          if "signingConfigs {" not in source:
+              source = source.replace(
+                  "android {",
+                  """def keystoreProperties = new Properties()
+          def keystorePropertiesFile = rootProject.file("keystore.properties")
+          if (keystorePropertiesFile.exists()) {
+              keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+          }
+
+          android {""",
+                  1
+              )
+              source = source.replace(
+                  "    buildTypes {",
+                  """    signingConfigs {
+                  release {
+                      keyAlias keystoreProperties['keyAlias']
+                      keyPassword keystoreProperties['keyPassword']
+                      storeFile file(keystoreProperties['storeFile'])
+                      storePassword keystoreProperties['storePassword']
+                  }
+              }
+
+              buildTypes {""",
+                  1
+              )
+              source = re.sub(
+                  r"(buildTypes\s*\{\s*release\s*\{)",
+                  r"\1\n            signingConfig signingConfigs.release",
+                  source,
+                  count=1
+              )
+          source = re.sub(r"versionCode\s+\d+", "versionCode ${{ steps.version.outputs.version_code }}", source, count=1)
+          source = re.sub(r'versionName\s+"[^"]+"', 'versionName "${{ steps.version.outputs.version }}"', source, count=1)
+          path.write_text(source)
+          PY
+          grep -E "versionCode|versionName|signingConfig" android/app/build.gradle
+
+      - name: Build signed release APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Verify packaged APK launcher icon resources
+        run: |
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          test -s "$APK"
+          "$AAPT" dump badging "$APK" | tee /tmp/fni-apk-badging.txt
+          grep -q "application-icon" /tmp/fni-apk-badging.txt
+          "$AAPT" dump resources "$APK" > /tmp/fni-apk-resources.txt
+          grep -q "mipmap/ic_launcher" /tmp/fni-apk-resources.txt
+          grep -q "mipmap/ic_launcher_round" /tmp/fni-apk-resources.txt
+          echo "APK contains both configured FNI launcher icon resources."
+
+      - name: Publish permanent GitHub Release with APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk FNI-Cells-Connect-Android.apk
+          gh release create "${{ steps.version.outputs.tag }}" FNI-Cells-Connect-Android.apk \
+            --title "FNI Cells Connect ${{ steps.version.outputs.version }}" \
+            --notes "FNI Cells Connect Android release ${{ steps.version.outputs.version }}. Download and install the APK to update the app."

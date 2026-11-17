@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Profile, TutorRegistrationInput, TutorLoginInput, AdminLoginInput } from '../types';
 import { AuthService } from '../services/authService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { EmailNotificationService } from '../services/emailNotificationService';
 
 const GUEST_PROFILE: Profile = {
   id: '',
@@ -39,7 +38,10 @@ interface AuthContextType {
   completeOnboarding: (input: any) => Promise<{ success: boolean; isExistingCellAssociated?: boolean; error?: string }>;
   changePassword: (newPass: string) => Promise<{ success: boolean; error?: string }>;
   updateAvatar: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
+  updateProfileDetails: (fullName: string, username: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  deleteOwnAccount: () => Promise<{ success: boolean; error?: string }>;
+  deleteUserAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
   showLoginView: () => void;
   refreshProfile: () => Promise<void>;
   isFirebaseActive: boolean;
@@ -96,6 +98,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!isMounted) return;
 
         if (session?.user) {
+          const pendingOAuth = sessionStorage.getItem('fni_pending_oauth_tutor');
+          if (pendingOAuth) {
+            try {
+              const profile = await AuthService.completeOAuthTutorRegistration(JSON.parse(pendingOAuth));
+              sessionStorage.removeItem('fni_pending_oauth_tutor');
+              setCurrentUser(profile);
+              setIsLoggedOut(false);
+              return;
+            } catch (error) {
+              console.error('FNI social registration could not be completed:', error);
+              sessionStorage.removeItem('fni_pending_oauth_tutor');
+              await supabase.auth.signOut();
+              setCurrentUser(GUEST_PROFILE);
+              setIsLoggedOut(true);
+              return;
+            }
+          }
           const profile = await AuthService.fetchProfileById(session.user.id);
           if (profile && profile.is_active) {
             setCurrentUser(profile);
@@ -126,6 +145,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Re-fetch the signed-in profile when the tutor returns to an already-open portal.
+  // This ensures administrator-side cell unassignments are reflected without requiring a sign-out.
+  useEffect(() => {
+    if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
+    let active = true;
+    const syncProfile = async () => {
+      const updated = await AuthService.fetchProfileById(currentUser.id);
+      if (active && updated) setCurrentUser(updated);
+    };
+    window.addEventListener('focus', syncProfile);
+    document.addEventListener('visibilitychange', syncProfile);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', syncProfile);
+      document.removeEventListener('visibilitychange', syncProfile);
+    };
+  }, [currentUser?.id]);
+
   const showLoginView = () => {
     setIsLoggedOut(true);
   };
@@ -135,7 +172,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (result.profile) {
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
-      void EmailNotificationService.loginSucceeded();
       return { success: true };
     }
     return { success: false, error: result.error || 'Administrator login failed' };
@@ -146,7 +182,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (result.profile) {
       setCurrentUser(result.profile);
       setIsLoggedOut(false);
-      void EmailNotificationService.loginSucceeded();
       return { success: true };
     }
     return { success: false, error: result.error || 'Tutor login failed' };
@@ -194,6 +229,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: false, error: result.error };
   };
 
+  const updateProfileDetails = async (fullName: string, username: string) => {
+    if (!currentUser.id) return { success: false, error: 'Unauthenticated' };
+    try {
+      const updated = await AuthService.updateAdministratorProfile(currentUser.id, fullName, username);
+      setCurrentUser(updated);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to update administrator profile.' };
+    }
+  };
+
+  const deleteOwnAccount = async () => {
+    const result = await AuthService.deleteOwnAccount();
+    if (result.success) {
+      setCurrentUser(GUEST_PROFILE);
+      setIsLoggedOut(true);
+    }
+    return result;
+  };
+
+  const deleteUserAccount = async (userId: string) => AuthService.deleteUserAccount(userId);
+
   const logout = async () => {
     await AuthService.signOut();
     setCurrentUser(GUEST_PROFILE);
@@ -239,7 +296,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         completeOnboarding,
         changePassword,
         updateAvatar,
+        updateProfileDetails,
         logout,
+        deleteOwnAccount,
+        deleteUserAccount,
         showLoginView,
         refreshProfile,
         isFirebaseActive: false,

@@ -8,6 +8,7 @@ import { FollowUpService } from '../../services/followUpService';
 import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact, SoulTargetMetrics } from '../../types';
 import { SoulTargetService } from '../../services/soulTargetService';
+import { LocationSharingPanel } from '../location/LocationSharingPanel';
 import {
   Users,
   Flame,
@@ -31,6 +32,7 @@ import {
   Sun,
   Moon,
   ChevronRight,
+  Wheat,
 } from 'lucide-react';
 
 interface TutorDashboardViewProps {
@@ -51,7 +53,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
 
   // Push Notifications state
-  const { isPushEnabled, requestPushPermission } = useNotifications();
+  const { isPushEnabled, isPushSupported, pushPermission, requestPushPermission } = useNotifications();
   const [pushStatusMsg, setPushStatusMsg] = useState<string | null>(null);
   const [isRequestingPush, setIsRequestingPush] = useState(false);
 
@@ -152,6 +154,18 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
     );
   }
 
+  if (!cell?.id) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-5 text-center space-y-3">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#F5F7FA] border border-[#E3E8EF] flex items-center justify-center">
+          <Users className="w-7 h-7 text-[#667085]" />
+        </div>
+        <h2 className="text-lg font-black text-[#142B4A]">No cell currently assigned</h2>
+        <p className="text-sm text-[#667085] leading-relaxed">Your previous test cell has been cleared. Your tutor account is still active, but it is not linked to a cell. Contact an administrator or complete the cell registration process to continue cell reporting.</p>
+      </div>
+    );
+  }
+
   // Greeting based on time of day in Ghana
   const currentHour = new Date().getHours();
   const greetingIcon =
@@ -229,7 +243,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   return (
     <div className="space-y-6">
       {/* 1. FELLOWSHIP PASTORAL SANCTUARY HEADER */}
-      <div className="bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white rounded-3xl p-6 sm:p-7 shadow-sm relative overflow-hidden border border-[#142B4A]">
+      <div className="fni-tutor-sanctuary-header bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white rounded-3xl p-6 sm:p-7 shadow-sm relative overflow-hidden border border-[#142B4A]">
         {/* Subtle decorative gold glow */}
         <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-[#C6A45A]/10 blur-3xl pointer-events-none" />
         <div className="absolute -left-12 -bottom-12 w-48 h-48 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
@@ -296,6 +310,8 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      <LocationSharingPanel mode="tutor" cellId={cell?.id || null} />
 
       {/* 2. WEEKLY REPORTING CYCLE & CELEBRATION CARD */}
       <div className="bg-white rounded-3xl border border-[#E3E8EF] p-5 sm:p-6 shadow-xs">
@@ -563,7 +579,6 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
         <div className="lg:col-span-5 space-y-6">
           {/* PASTORAL WORD & DEVOTIONAL INSPIRATION */}
           <div className="bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white rounded-3xl p-5 sm:p-6 shadow-xs border border-[#142B4A] relative overflow-hidden">
-            <BookOpen className="w-20 h-20 text-[#C6A45A]/15 absolute -right-2 -bottom-2 pointer-events-none" />
             <div className="flex items-center gap-2 text-[#C6A45A] text-xs font-bold uppercase tracking-wider">
               <span className="p-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4" />
@@ -572,11 +587,12 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             </div>
 
             <div className="mt-3 relative z-10">
+              <h3 className="text-lg sm:text-xl font-black tracking-tight text-white mb-2">Your Labour Is Not in Vain</h3>
               <p className="text-sm sm:text-base font-serif italic text-slate-100 leading-relaxed">
                 &ldquo;For God is not unjust to forget your work and labor of love which you have shown toward His name, in that you have ministered to the saints, and do minister.&rdquo;
               </p>
               <div className="text-right text-xs font-bold text-[#C6A45A] mt-2 flex items-center justify-end gap-1.5">
-                <span className="text-sm">📖</span>
+                <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Hebrews 6:10</span>
               </div>
             </div>
@@ -592,7 +608,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             <div className="flex items-center justify-between pb-3.5 border-b border-[#E3E8EF]">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#C6A45A] flex items-center justify-center border border-amber-100 shrink-0">
-                  <Target className="w-5 h-5 text-[#C6A45A]" />
+                  <Wheat className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
                   <h3 className="text-sm sm:text-base font-black text-[#142B4A]">2026 Kingdom Soul Harvest</h3>
@@ -734,8 +750,12 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
             </div>
             <p className="text-xs sm:text-sm text-[#667085] mt-1 leading-normal">
               {isPushEnabled
-                ? 'Your device receives instant alerts when administrators review your reports or send pastoral announcements.'
-                : 'Turn on device push alerts so you never miss review feedback, corrections, or weekly announcements.'}
+                ? 'Your device receives alerts when administrators review your reports or send pastoral announcements.'
+                : !isPushSupported
+                  ? PushNotificationService.getSupportMessage() || 'System notifications are unavailable here. You can still receive alerts inside FNI while the portal is open.'
+                  : pushPermission === 'denied'
+                    ? 'Notifications are blocked by your browser. Change this site’s notification permission in browser settings, then reload FNI.'
+                    : 'Enable device alerts to receive report feedback, corrections, and weekly announcements even when FNI is not open.'}
             </p>
             {pushStatusMsg && (
               <p className="text-xs text-[#203D63] bg-blue-50 px-2.5 py-1 rounded-md mt-1.5 border border-blue-100">
@@ -755,17 +775,17 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
               <Bell className="w-4 h-4 text-[#C6A45A]" />
               <span>Test Alert</span>
             </button>
-          ) : (
+          ) : isPushSupported && pushPermission !== 'denied' ? (
             <button
               type="button"
               onClick={handleEnablePush}
               disabled={isRequestingPush}
-              className="h-10 px-4 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs sm:text-sm font-bold transition-colors shadow-2xs flex items-center gap-2 cursor-pointer"
+              className="h-10 px-4 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs sm:text-sm font-bold transition-colors shadow-2xs flex items-center gap-2 cursor-pointer disabled:opacity-60"
             >
               <Bell className="w-4 h-4 text-[#C6A45A]" />
               <span>{isRequestingPush ? 'Enabling...' : 'Enable Alerts'}</span>
             </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

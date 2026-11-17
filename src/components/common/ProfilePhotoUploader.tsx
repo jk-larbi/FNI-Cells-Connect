@@ -131,10 +131,11 @@ export const ProfilePhotoUploader: React.FC<ProfilePhotoUploaderProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          capture="user"
+          accept="image/*,.heic,.heif"
           onChange={handleFileChange}
-          className="hidden"
+          // Keep the input visually hidden but focusable/label-activatable.
+          // display:none can prevent the native photo picker from opening in iOS WebViews.
+          className="sr-only"
           disabled={isProcessing}
         />
 
@@ -170,7 +171,7 @@ export const ProfilePhotoUploader: React.FC<ProfilePhotoUploaderProps> = ({
           </div>
 
           <p className="text-[11px] text-[#667085]">
-            Supports JPG, PNG, WEBP. Square cropped automatically for optimal display across reports and leaders list.
+            Choose any picture from your phone gallery or files. The image is square-cropped for reports and the leaders list.
           </p>
         </div>
       </div>

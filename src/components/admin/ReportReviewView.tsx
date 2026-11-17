@@ -1,9 +1,11 @@
+import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect, useMemo } from 'react';
-import { UnifiedReportItem, ReportStatus, Cell } from '../../types';
+import { UnifiedReportItem, ReportStatus, Cell, EvangelismContact } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
+import { FollowUpService } from '../../services/followUpService';
+import { SoulTargetService } from '../../services/soulTargetService';
 import { useAuth } from '../../context/AuthContext';
-import { useNotifications } from '../../context/NotificationContext';
 import { formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
   FileCheck,
@@ -62,7 +64,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   onNavigateToTab,
 }) => {
   const { currentUser } = useAuth();
-  const { dispatchNotification } = useNotifications();
 
   // Data states
   const [reports, setReports] = useState<UnifiedReportItem[]>([]);
@@ -95,10 +96,45 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
   // Single Item Inspection & Review Modal
   const [inspectingItem, setInspectingItem] = useState<UnifiedReportItem | null>(null);
+  const [reportContacts, setReportContacts] = useState<EvangelismContact[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
   const [reviewAction, setReviewAction] = useState<'Approved' | 'Needs Correction' | null>(null);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [quickActionProcessingId, setQuickActionProcessingId] = useState<string | null>(null);
+
+  // Load the individual follow-up contacts linked to the report being inspected.
+  useEffect(() => {
+    let active = true;
+    const loadLinkedContacts = async () => {
+      if (!inspectingItem || inspectingItem.reportType !== 'evangelism') {
+        setReportContacts([]);
+        setContactsLoading(false);
+        return;
+      }
+
+      setContactsLoading(true);
+      try {
+        const allContacts = await FollowUpService.getContacts({
+          cellId: inspectingItem.cellId,
+          tutorUid: inspectingItem.tutorUid,
+        });
+        if (active) {
+          // Only show records explicitly linked to this report. Do not mix
+          // unrelated contacts from the same tutor or cell into this dossier.
+          setReportContacts(allContacts.filter(contact => contact.evangelismReportId === inspectingItem.id));
+        }
+      } catch (error) {
+        console.warn('Could not load contacts linked to this evangelism report:', error);
+        if (active) setReportContacts([]);
+      } finally {
+        if (active) setContactsLoading(false);
+      }
+    };
+
+    void loadLinkedContacts();
+    return () => { active = false; };
+  }, [inspectingItem?.id, inspectingItem?.reportType]);
 
   // Load Reports and Cells from live backend
   const loadData = async (showRefreshIndicator = false) => {
@@ -111,13 +147,26 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         CellService.getCells(),
       ]);
 
-      setReports(queue);
+      // A report belongs in the active approval queue only while its cell
+      // registration still exists and has not been archived. Keep report rows
+      // in storage for historical records; this is only an approval-queue filter.
+      const registeredCellIds = new Set(
+        loadedCells.filter(cell => cell.is_active && !cell.is_archived).map(cell => cell.id)
+      );
+      const activeQueue = queue.filter(report =>
+        Boolean(report.cellId) && registeredCellIds.has(report.cellId)
+      );
+
+      setReports(activeQueue);
       setCells(loadedCells);
       setSelectedIds(new Set());
+      setInspectingItem(current =>
+        current && !activeQueue.some(report => report.id === current.id) ? null : current
+      );
 
       // If initialReportId provided (e.g. from notification deep-link), open it immediately
       if (initialReportId) {
-        const found = queue.find(r => r.id === initialReportId);
+        const found = activeQueue.find(r => r.id === initialReportId);
         if (found) {
           setInspectingItem(found);
         }
@@ -138,7 +187,12 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   }, [initialReportId, reports]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
+    // Reports, cell changes and finance-triggered report updates refresh the queue across devices.
+    const unsubscribe = SoulTargetService.subscribeToLiveSoulTracking(() => {
+      void loadData(true);
+    });
+    return unsubscribe;
   }, [typeFilter]);
 
   // Lookup cell details (phone, venue, etc.)
@@ -273,19 +327,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             currentUser.full_name
           );
 
-          if (item.tutorUid) {
-            dispatchNotification(
-              `Report Approved: ${item.cellName}`,
-              `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been officially approved.`,
-              'report_approved',
-              'in_app'
-            );
-          }
         }
       }
       setIsBulkApproveModalOpen(false);
       setSelectedIds(new Set());
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsBulkProcessing(false);
     }
@@ -312,20 +360,14 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             currentUser.full_name
           );
 
-          if (item.tutorUid) {
-            dispatchNotification(
-              `Report Needs Correction: ${item.cellName}`,
-              `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report requires correction: "${bulkReturnComment.trim()}"`,
-              'revision_requested',
-              'in_app'
-            );
-          }
         }
       }
       setIsBulkReturnModalOpen(false);
       setBulkReturnComment('');
       setSelectedIds(new Set());
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsBulkProcessing(false);
     }
@@ -345,16 +387,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         currentUser.full_name
       );
 
-      if (item.tutorUid) {
-        dispatchNotification(
-          `Report Approved: ${item.cellName}`,
-          `Your ${item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been verified and approved.`,
-          'report_approved',
-          'in_app'
-        );
-      }
 
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setQuickActionProcessingId(null);
     }
@@ -387,23 +423,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         currentUser.full_name
       );
 
-      // Dispatch in-app notification to tutor
-      if (inspectingItem.tutorUid) {
-        dispatchNotification(
-          `Report ${reviewAction}: ${inspectingItem.cellName}`,
-          reviewAction === 'Approved'
-            ? `Your ${inspectingItem.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report has been officially approved.`
-            : `Your ${inspectingItem.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'} report was returned for correction: "${reviewComment}"`,
-          reviewAction === 'Approved' ? 'report_approved' : 'revision_requested',
-          'in_app'
-        );
-      }
-
       setInspectingItem(null);
       setReviewAction(null);
       setReviewComment('');
       if (onClearInitialReportId) onClearInitialReportId();
       await loadData();
+    } catch (error: any) {
+      alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
       setIsSubmittingReview(false);
     }
@@ -431,7 +457,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   };
 
   // Export Filtered Queue to CSV
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (filteredReports.length === 0) return;
 
     const headers = [
@@ -470,17 +496,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute(
-      'download',
-      `FNI_Report_Review_Queue_${new Date().toISOString().split('T')[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows].join('\r\n');
+    await exportCsvFile(`FNI_Report_Review_Queue_${new Date().toISOString().split('T')[0]}.csv`, csvContent);
   };
 
   // Reset all filters
@@ -1596,6 +1613,12 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     </div>
                   </div>
                   <div className="p-3 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
+                    <div className="text-[10px] text-[#667085] font-bold uppercase">Active Members</div>
+                    <div className="text-xl font-black text-[#182230] mt-1">
+                      {(inspectingItem as any).activeMembers ?? '—'}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
                     <div className="text-[10px] text-[#667085] font-bold uppercase">Total Members</div>
                     <div className="text-xl font-black text-[#182230] mt-1">
                       {(inspectingItem as any).members}
@@ -1614,9 +1637,11 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     </div>
                   </div>
                   <div className="p-3 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
-                    <div className="text-[10px] text-[#142B4A] font-bold uppercase">Offering (GHS)</div>
+                    <div className="text-[10px] text-[#142B4A] font-bold uppercase">Offering ({(inspectingItem as any).currency || 'GHS'})</div>
                     <div className="text-base font-black text-[#182230] mt-1">
-                      {(inspectingItem as any).offering ? `GHS ${(inspectingItem as any).offering}` : '—'}
+                      {(inspectingItem as any).offering !== undefined && (inspectingItem as any).offering !== null
+                        ? `${(inspectingItem as any).currency || 'GHS'} ${(inspectingItem as any).offering}`
+                        : '—'}
                     </div>
                   </div>
                   <div className="p-3 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
@@ -1685,6 +1710,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   </div>
                 )}
 
+                {(inspectingItem as any).tutorExperience && (
+                  <div className="p-4 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF]">
+                    <div className="text-[11px] text-[#142B4A] font-extrabold uppercase mb-1">Tutor Experience / Reflection</div>
+                    <p className="text-xs text-[#182230] whitespace-pre-wrap leading-relaxed">{(inspectingItem as any).tutorExperience}</p>
+                  </div>
+                )}
+
                 {/* Testimonies & Experiences */}
                 {(inspectingItem as any).testimonies && (
                   <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200">
@@ -1712,6 +1744,12 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     </div>
                   </div>
                   <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
+                    <div className="text-[10px] text-[#667085] font-bold uppercase">Target</div>
+                    <div className="text-2xl font-black text-[#182230] mt-1">
+                      {(inspectingItem as any).preSetTarget ?? '—'}
+                    </div>
+                  </div>
+                  <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
                     <div className="text-[10px] text-[#667085] font-bold uppercase">People Reached</div>
                     <div className="text-2xl font-black text-[#182230] mt-1">
                       {(inspectingItem as any).peopleSpokenTo}
@@ -1724,9 +1762,21 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     </div>
                   </div>
                   <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
+                    <div className="text-[10px] text-[#23845B] font-bold uppercase">Verified Souls Won</div>
+                    <div className="text-2xl font-black text-[#23845B] mt-1">
+                      {(inspectingItem as any).verifiedSoulsWon ?? (inspectingItem as any).conversions ?? 0}
+                    </div>
+                  </div>
+                  <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
                     <div className="text-[10px] text-[#667085] font-bold uppercase">Interested in Ministry</div>
                     <div className="text-2xl font-black text-[#142B4A] mt-1">
                       {(inspectingItem as any).interestedInMinistry || 0}
+                    </div>
+                  </div>
+                  <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] text-center">
+                    <div className="text-[10px] text-[#D99A32] font-bold uppercase">Potential Follow-ups</div>
+                    <div className="text-2xl font-black text-[#D99A32] mt-1">
+                      {(inspectingItem as any).potentialFollowUps ?? 0}
                     </div>
                   </div>
                 </div>
@@ -1802,6 +1852,57 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     )}
                   </div>
                 )}
+
+                {/* Individual people captured in this specific outreach report */}
+                <div className="p-4 bg-[#FAF6EE] rounded-2xl border border-[#C6A45A]/25 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-[11px] text-[#142B4A] font-extrabold uppercase">Captured Contacts & Follow-up Details</div>
+                      <p className="mt-0.5 text-[10px] text-[#667085]">People records explicitly linked to this evangelism report</p>
+                    </div>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#142B4A]">{reportContacts.length} records</span>
+                  </div>
+                  {contactsLoading ? (
+                    <p className="text-xs text-[#667085]">Loading linked contact records...</p>
+                  ) : reportContacts.length === 0 ? (
+                    <p className="text-xs text-[#667085]">No individual contact records are linked to this report. The contacts-captured total above is still shown as submitted.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {reportContacts.map((contact, index) => (
+                        <div key={contact.id} className="rounded-xl border border-[#E3E8EF] bg-white p-3 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-xs font-extrabold text-[#142B4A]">{contact.contactName || contact.name || `Contact ${index + 1}`}</p>
+                              <p className="text-[10px] text-[#667085]">Captured {contact.dateCaptured || '—'}</p>
+                            </div>
+                            <span className="rounded-full bg-[#F5F7FA] px-2 py-1 text-[10px] font-bold text-[#142B4A]">{contact.followUpStatus || 'Status not recorded'}</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <p className="break-words text-[#182230]">Phone: {contact.phone || contact.contactDetails || '—'}</p>
+                            <p className="break-words text-[#182230]">WhatsApp: {contact.whatsappNumber || '—'}</p>
+                            <p className="break-words text-[#182230]">Email: {contact.email || '—'}</p>
+                            <p className="break-words text-[#182230]">Location: {contact.location || contact.evangelismLocation || '—'}</p>
+                            <p className="break-words text-[#182230]">Assigned to: {contact.assignedToName || contact.tutorName || '—'}</p>
+                            <p className="break-words text-[#182230]">Next follow-up: {contact.nextFollowUpDate || '—'}</p>
+                          </div>
+                          {(contact.followUpNotes || contact.notes) && (
+                            <p className="whitespace-pre-wrap text-xs text-[#182230]">Notes: {contact.followUpNotes || contact.notes}</p>
+                          )}
+                          {contact.history && contact.history.length > 0 && (
+                            <div className="border-t border-[#E3E8EF] pt-2 space-y-1">
+                              <p className="text-[10px] font-bold uppercase text-[#667085]">Follow-up history</p>
+                              {contact.history.map((entry, historyIndex) => (
+                                <p key={historyIndex} className="text-[10px] text-[#667085]">
+                                  {entry.changedAt ? new Date(entry.changedAt).toLocaleString() : 'Date not recorded'} · {entry.status}{entry.note ? ` — ${entry.note}` : ''}{entry.changedBy ? ` · ${entry.changedBy}` : ''}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Field Notes & Summary */}
                 {(inspectingItem as any).notes && (

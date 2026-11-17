@@ -1,4 +1,5 @@
 import { SupabaseService } from './supabaseService';
+import { CellService } from './cellService';
 import { EvangelismContact, FollowUpStatus } from '../types';
 
 const STORAGE_KEY = 'fni_contacts_store_v5_clean';
@@ -34,29 +35,33 @@ export class FollowUpService {
       targetTutorUid = filter.tutorUid;
     }
 
-    // 1. Primary: Load from Supabase
+    const activeCells = await CellService.getActiveCells();
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
+    const requestedCell = activeCells.find(cell =>
+      cell.id === targetCellId || cell.firebase_id === targetCellId || cell.tutorUid === targetTutorUid
+    );
+    const requestedCellIds = requestedCell
+      ? new Set([requestedCell.id, requestedCell.firebase_id].filter((id): id is string => Boolean(id)))
+      : targetCellId ? new Set([targetCellId]) : null;
+    const applyFilters = (contacts: EvangelismContact[]) => contacts
+      .filter(contact => activeCellIds.has(contact.cellId))
+      .filter(contact => !requestedCellIds || requestedCellIds.has(contact.cellId))
+      .filter(contact => !targetTutorUid || contact.tutorUid === targetTutorUid)
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    // Supabase is authoritative even when it returns no contacts; do not resurrect deleted-cell cache.
     try {
-      const supaContacts = await SupabaseService.getEvangelismContacts({ cellId: targetCellId, tutorUid: targetTutorUid });
-      if (supaContacts && supaContacts.length > 0) {
-        saveStoredContacts(supaContacts);
-        return supaContacts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      const supaContacts = await SupabaseService.getEvangelismContacts({ tutorUid: targetTutorUid });
+      if (supaContacts !== null) {
+        const visible = applyFilters(supaContacts);
+        saveStoredContacts(visible);
+        return visible;
       }
     } catch (e) {
       console.warn('Notice querying Supabase contacts:', e);
     }
 
-    // 2. Fallback to locally stored contacts
-    let all: EvangelismContact[] = getStoredContacts();
-
-    if (targetCellId || targetTutorUid) {
-      all = all.filter(c => {
-        const matchCell = targetCellId ? c.cellId === targetCellId : false;
-        const matchTutor = targetTutorUid ? c.tutorUid === targetTutorUid : false;
-        return matchCell || matchTutor;
-      });
-    }
-
-    return all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return applyFilters(getStoredContacts());
   }
 
   static async addContact(

@@ -18,6 +18,7 @@
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { SyncStateService } from './syncStateService';
+import { isTestProfile } from '../utils/profileVisibility';
 
 // Initialize SyncStateService client and online lifecycle listeners if Supabase is configured
 if (isSupabaseConfigured && supabase) {
@@ -71,6 +72,8 @@ function mapCellFromDb(row: any): Cell {
     target_attendance: Number(row.target_attendance || 15),
     status: row.status || 'Active',
     is_active: Boolean(row.is_active ?? true),
+    is_archived: Boolean(row.is_archived ?? false),
+    firebase_id: row.firebase_id || undefined,
     created_at: row.created_at || new Date().toISOString(),
   };
 }
@@ -113,7 +116,7 @@ function mapEvangelismReportFromDb(row: any): EvangelismReport {
     tutorUid: row.tutor_uid,
     cellName: row.cell_name,
     tutorName: row.tutor_name,
-    date: row.date,
+    date: row.report_date,
     location: row.location,
     teamMembers: Array.isArray(row.team_members) ? row.team_members : [],
     preSetTarget: row.pre_set_target !== undefined ? Number(row.pre_set_target) : undefined,
@@ -197,6 +200,11 @@ function mapPrivateMessageFromDb(row: any): PrivateMessage {
     isRead: Boolean(row.is_read),
     readAt: row.read_at,
     replyTo: row.reply_to,
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    reactions: {},
+    isPinned: false,
+    deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+    editedAt: row.edited_at || undefined,
   };
 }
 
@@ -213,6 +221,12 @@ function mapCommunityMessageFromDb(row: any): CommunityMessage {
     replyTo: row.reply_to,
     mentions: Array.isArray(row.mentions) ? row.mentions : [],
     reactions: typeof row.reactions === 'object' && row.reactions !== null ? row.reactions : {},
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+    editedAt: row.edited_at || undefined,
+    isPinned: Boolean(row.is_pinned),
+    pinnedAt: row.pinned_at || undefined,
+    pinnedBy: row.pinned_by || undefined,
   };
 }
 
@@ -275,6 +289,17 @@ export class SupabaseService {
   }
 
   // --- Cells ---
+  static async createAdminCell(name: string): Promise<Cell> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Cell creation cannot be completed safely.');
+    const { data, error } = await supabase!.rpc('admin_create_cell', { p_name: name.trim() });
+    if (error) throw new Error(error.message || 'Cell creation failed.');
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.id) throw new Error('The server did not return the new cell.');
+    const { data: cellRow, error: cellError } = await supabase!.from('cells').select('*').eq('id', row.id).single();
+    if (cellError || !cellRow) throw new Error(cellError?.message || 'The new cell could not be loaded.');
+    return mapCellFromDb(cellRow);
+  }
+
   static async getCells(): Promise<Cell[] | null> {
     if (!this.isAvailable()) return null;
     try {
@@ -290,6 +315,62 @@ export class SupabaseService {
     } catch (err) {
       console.warn('Supabase getCells exception:', err);
       return null;
+    }
+  }
+
+  static async updateCellLeader(cellId: string, newLeaderId: string | null, reason: string): Promise<void> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Leadership was not changed.');
+    const { error } = await supabase!.rpc('admin_update_cell_leader', {
+      p_cell_id: cellId,
+      p_new_leader_id: newLeaderId,
+      p_reason: reason.trim() || null,
+    });
+    if (error) throw new Error(error.message || 'Cell leadership could not be updated.');
+  }
+
+  static async getCellLeadershipHistory(cellId: string): Promise<any[]> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Leadership history cannot be loaded.');
+    const { data, error } = await supabase!
+      .from('cell_leadership_history')
+      .select('*')
+      .eq('cell_id', cellId)
+      .order('changed_at', { ascending: false });
+    if (error) throw new Error(error.message || 'Leadership history could not be loaded.');
+    return data || [];
+  }
+
+  static async archiveCellRegistrations(cellIds: string[]): Promise<boolean> {
+    if (!this.isAvailable() || !cellIds.length) return false;
+    try {
+      const { error } = await supabase!.rpc('admin_archive_cell_registrations', { p_cell_ids: cellIds });
+      if (error) { console.warn('Supabase archiveCellRegistrations error:', error.message); return false; }
+      return true;
+    } catch (err) { console.warn('Supabase archiveCellRegistrations exception:', err); return false; }
+  }
+
+  static async restoreCellRegistrations(cellIds: string[]): Promise<boolean> {
+    if (!this.isAvailable() || !cellIds.length) return false;
+    try {
+      const { error } = await supabase!.rpc('admin_restore_cell_registrations', { p_cell_ids: cellIds });
+      if (error) { console.warn('Supabase restoreCellRegistrations error:', error.message); return false; }
+      return true;
+    } catch (err) { console.warn('Supabase restoreCellRegistrations exception:', err); return false; }
+  }
+
+  static async deleteCellRegistrations(cellIds: string[]): Promise<boolean> {
+    if (!this.isAvailable() || !cellIds.length) return false;
+    try {
+      const { error } = await supabase!.rpc('admin_delete_cell_registrations', {
+        p_cell_ids: cellIds,
+      });
+      if (error) {
+        console.warn('Supabase deleteCellRegistrations error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn('Supabase deleteCellRegistrations exception:', err);
+      return false;
     }
   }
 
@@ -310,6 +391,38 @@ export class SupabaseService {
       console.warn('Supabase getCellById exception:', err);
       return null;
     }
+  }
+
+  static async registerCellAndPromoteTutor(input: {
+    name: string; location: string; tutorUid: string; leaderName: string; leaderPhone: string;
+    regionId?: string; regionName?: string; meetingDay?: string; meetingTime?: string;
+    venueAddress?: string; targetAttendance?: number; fullName?: string;
+  }): Promise<{ cell: Cell; isExistingAssociated: boolean; duplicatesRemoved: number }> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Cell registration cannot be completed safely.');
+    const { data, error } = await supabase!.rpc('register_cell_and_promote_tutor', {
+      p_name: input.name,
+      p_location: input.location || input.venueAddress || '',
+      p_tutor_uid: input.tutorUid,
+      p_leader_name: input.leaderName,
+      p_leader_phone: input.leaderPhone,
+      p_region_id: input.regionId || null,
+      p_region_name: input.regionName || null,
+      p_meeting_day: input.meetingDay || 'Wednesday',
+      p_meeting_time: input.meetingTime || '18:30',
+      p_venue_address: input.venueAddress || input.location || null,
+      p_target_attendance: Number(input.targetAttendance) || 20,
+      p_full_name: input.fullName || input.leaderName,
+    });
+    if (error) throw new Error(error.message || 'Cell registration failed.');
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result?.cell_id) throw new Error('The server did not return the registered cell.');
+    const { data: cellRow, error: cellError } = await supabase!.from('cells').select('*').eq('id', result.cell_id).single();
+    if (cellError || !cellRow) throw new Error(cellError?.message || 'The registered cell could not be loaded.');
+    return {
+      cell: mapCellFromDb(cellRow),
+      isExistingAssociated: Boolean(result.is_existing_associated),
+      duplicatesRemoved: Number(result.duplicates_removed || 0),
+    };
   }
 
   static async upsertCell(cell: Cell): Promise<boolean> {
@@ -334,6 +447,7 @@ export class SupabaseService {
       requiring_follow_up: cell.requiring_follow_up || 0,
       status: cell.status || 'Active',
       is_active: cell.is_active ?? true,
+      is_archived: cell.is_archived ?? false,
       firebase_id: cell.id,
     };
 
@@ -447,7 +561,7 @@ export class SupabaseService {
   static async getEvangelismReports(filters?: { cellId?: string; tutorUid?: string }): Promise<EvangelismReport[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      let query = supabase!.from('evangelism_reports').select('*').order('date', { ascending: false });
+      let query = supabase!.from('evangelism_reports').select('*').order('report_date', { ascending: false });
       if (filters?.cellId) query = query.eq('cell_id', filters.cellId);
       if (filters?.tutorUid) query = query.eq('tutor_uid', filters.tutorUid);
       const { data, error } = await query;
@@ -470,7 +584,7 @@ export class SupabaseService {
       tutor_uid: report.tutorUid,
       cell_name: report.cellName,
       tutor_name: report.tutorName,
-      date: report.date,
+      report_date: report.date,
       location: report.location,
       team_members: report.teamMembers || [],
       pre_set_target: report.preSetTarget || 0,
@@ -715,19 +829,184 @@ export class SupabaseService {
     }
   }
 
+  static async uploadChatAttachment(userUid: string, file: File): Promise<{ name: string; path: string; mimeType: string; size: number }> {
+    if (!this.isAvailable()) throw new Error('Media uploads are unavailable while offline.');
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    const extensionMime: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+      webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', avif: 'image/avif',
+      mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
+      mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', wav: 'audio/wav',
+    };
+    const providedMime = (file.type || '').toLowerCase();
+    const mimeType = providedMime && providedMime !== 'application/octet-stream'
+      ? providedMime
+      : extensionMime[extension] || providedMime || 'application/octet-stream';
+    if (file.size > 50 * 1024 * 1024) throw new Error('Each attachment must be 50 MB or smaller.');
+    // Some iOS photo pickers return a File with an empty MIME type. Re-wrap it
+    // with the extension-derived type so Supabase Storage accepts the upload.
+    const uploadFile = file.type === mimeType ? file : new File([file], file.name, { type: mimeType, lastModified: file.lastModified });
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
+    const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
+    const { error } = await supabase!.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: false });
+    if (error) throw new Error(error.message || 'Could not upload attachment.');
+    return { name: file.name, path, mimeType, size: file.size };
+  }
+
+  static async getChatAttachmentUrl(path: string): Promise<string | null> {
+    if (!this.isAvailable()) return null;
+    const { data, error } = await supabase!.storage.from('fni-chat-media').createSignedUrl(path, 3600);
+    if (error) return null;
+    return data.signedUrl;
+  }
+
+  static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    const rpc = scope === 'private' ? 'fni_delete_private_message_for_everyone' : 'fni_delete_community_message_for_everyone';
+    const { data, error } = await supabase!.rpc(rpc, { p_message_id: messageId });
+    if (error) {
+      console.warn('Delete for everyone failed:', error.message);
+      return false;
+    }
+    return data === true;
+  }
+
   // --- Private Messages ---
-  static async getPrivateMessages(userUid: string): Promise<PrivateMessage[] | null> {
+  static async getPrivateMessages(userUid: string, viewerUid?: string): Promise<PrivateMessage[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      // Fetch every page so long-running private conversations are never truncated.
+      const rows: any[] = [];
+      const pageSize = 500;
+      for (let from = 0; ; from += pageSize) {
+        let query = supabase!.from('private_messages').select('*');
+        // Empty UID is reserved for the administrator inbox; database RLS
+        // limits that unfiltered query to active administrators.
+        if (userUid) query = query.or(`sender_uid.eq.${userUid},recipient_uid.eq.${userUid}`);
+        const { data, error } = await query.order('created_at', { ascending: true }).range(from, from + pageSize - 1);
+        if (error) throw error;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+      }
+
+      const messages = rows.map(mapPrivateMessageFromDb);
+      if (!rows.length) return messages;
+      const messageIds = rows.map(row => row.id);
+      const reactionRows: any[] = [];
+      for (let offset = 0; offset < messageIds.length; offset += 500) {
+        const { data, error } = await supabase!
+          .from('private_message_reactions')
+          .select('message_id,user_id,user_name,emoji')
+          .in('message_id', messageIds.slice(offset, offset + 500));
+        if (error) throw error;
+        reactionRows.push(...(data || []));
+      }
+
+      const grouped = new Map<string, Record<string, string[]>>();
+      reactionRows.forEach(row => {
+        const reactions = grouped.get(row.message_id) || {};
+        reactions[row.emoji] = [...(reactions[row.emoji] || []), row.user_name];
+        grouped.set(row.message_id, reactions);
+      });
+
+      const pinOwner = viewerUid || userUid;
+      const pinnedIds = new Set<string>();
+      if (pinOwner) {
+        for (let offset = 0; offset < messageIds.length; offset += 500) {
+          const { data, error } = await supabase!
+            .from('private_message_pins')
+            .select('message_id')
+            .eq('user_id', pinOwner)
+            .in('message_id', messageIds.slice(offset, offset + 500));
+          if (error) throw error;
+          (data || []).forEach(row => pinnedIds.add(row.message_id));
+        }
+      }
+
+      return messages.map(message => ({
+        ...message,
+        reactions: grouped.get(message.id) || {},
+        isPinned: pinnedIds.has(message.id),
+      }));
+    } catch (err) {
+      console.warn('Private messages could not be loaded:', err);
+      return null;
+    }
+  }
+
+  static async getPrivateChatPreference(
+    userUid: string,
+    conversationId: string
+  ): Promise<{ clearedAt: string | null; deletedAt: string | null } | null> {
     if (!this.isAvailable()) return null;
     try {
       const { data, error } = await supabase!
-        .from('private_messages')
-        .select('*')
-        .or(`sender_uid.eq.${userUid},recipient_uid.eq.${userUid}`)
-        .order('created_at', { ascending: true });
-      if (error) return null;
-      return data ? data.map(mapPrivateMessageFromDb) : [];
-    } catch (err) {
+        .from('private_chat_preferences')
+        .select('cleared_at,deleted_at')
+        .eq('user_id', userUid)
+        .eq('conversation_id', conversationId)
+        .maybeSingle();
+      if (error) throw error;
+      return { clearedAt: data?.cleared_at || null, deletedAt: data?.deleted_at || null };
+    } catch (error) {
+      console.warn('Could not load personal private-chat settings:', error);
       return null;
+    }
+  }
+
+  static async savePrivateChatPreference(
+    userUid: string,
+    conversationId: string,
+    updates: { clearedAt?: string | null; deletedAt?: string | null }
+  ): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    const existing = await this.getPrivateChatPreference(userUid, conversationId);
+    if (!existing) return false;
+    const payload = {
+      user_id: userUid,
+      conversation_id: conversationId,
+      cleared_at: updates.clearedAt !== undefined ? updates.clearedAt : existing.clearedAt,
+      deleted_at: updates.deletedAt !== undefined ? updates.deletedAt : existing.deletedAt,
+      updated_at: new Date().toISOString(),
+    };
+    try {
+      const { error } = await supabase!
+        .from('private_chat_preferences')
+        .upsert(payload, { onConflict: 'user_id,conversation_id' });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Could not save personal private-chat settings:', error);
+      return false;
+    }
+  }
+
+  static async getHiddenPrivateMessageIds(userUid: string): Promise<string[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('private_message_hidden_for_user')
+        .select('message_id')
+        .eq('user_id', userUid);
+      if (error) throw error;
+      return (data || []).map(row => row.message_id);
+    } catch (error) {
+      console.warn('Could not load personal message visibility settings:', error);
+      return null;
+    }
+  }
+
+  static async hidePrivateMessageForUser(userUid: string, messageId: string): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { error } = await supabase!
+        .from('private_message_hidden_for_user')
+        .upsert({ user_id: userUid, message_id: messageId }, { onConflict: 'user_id,message_id' });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Could not hide private message for this user:', error);
+      return false;
     }
   }
 
@@ -746,10 +1025,15 @@ export class SupabaseService {
       is_read: Boolean(msg.isRead),
       read_at: msg.readAt || null,
       reply_to: msg.replyTo || null,
+      attachments: msg.attachments || [],
+      deleted_for_everyone_at: msg.deletedForEveryoneAt || null,
     };
 
     try {
-      const { error } = await supabase!.from('private_messages').upsert(payload, { onConflict: 'id' });
+      // Use a plain INSERT rather than upsert. Upsert requests UPDATE rights
+      // on conflict and can be rejected by private-message RLS policies even
+      // for a brand-new message. Each message receives a unique generated ID.
+      const { error } = await supabase!.from('private_messages').insert(payload);
       if (error) {
         SyncStateService.recordFailedSync({
           table: 'private_messages',
@@ -757,7 +1041,8 @@ export class SupabaseService {
           payload,
           errorMessage: error.message,
         });
-        return false;
+        console.warn('Private message insert failed:', error.message);
+        throw new Error(error.message || 'Private message insert was rejected.');
       }
       SyncStateService.recordSuccessfulSync('private_messages', msg.id);
       return true;
@@ -768,6 +1053,73 @@ export class SupabaseService {
         payload,
         errorMessage: err?.message || String(err),
       });
+      throw new Error(err?.message || 'Private message could not be saved.');
+    }
+  }
+
+  static async togglePrivateMessageReaction(
+    messageId: string,
+    userId: string,
+    userName: string,
+    emoji: string
+  ): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { data: existing, error: lookupError } = await supabase!
+        .from('private_message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', userId)
+        .eq('emoji', emoji)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      if (existing) {
+        const { error } = await supabase!
+          .from('private_message_reactions')
+          .delete()
+          .eq('id', existing.id);
+        if (error) throw error;
+        return true;
+      }
+      const { error } = await supabase!
+        .from('private_message_reactions')
+        .insert({ message_id: messageId, user_id: userId, user_name: userName, emoji });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Private message reaction failed:', error);
+      return false;
+    }
+  }
+
+  static async setPrivateMessagePin(messageId: string, userId: string, pinned: boolean): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      if (pinned) {
+        const { data: existing, error: lookupError } = await supabase!
+          .from('private_message_pins')
+          .select('message_id')
+          .eq('message_id', messageId)
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!existing) {
+          const { error } = await supabase!
+            .from('private_message_pins')
+            .insert({ message_id: messageId, user_id: userId });
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase!
+          .from('private_message_pins')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('user_id', userId);
+        if (error) throw error;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Private message pin failed:', error);
       return false;
     }
   }
@@ -776,13 +1128,45 @@ export class SupabaseService {
   static async getCommunityMessages(): Promise<CommunityMessage[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      const { data, error } = await supabase!
-        .from('community_messages')
-        .select('*')
-        .order('created_at', { ascending: true })
-        .limit(100);
-      if (error) return null;
-      return data ? data.map(mapCommunityMessageFromDb) : [];
+      // Load the complete conversation in pages; a single .limit(100) meant
+      // older messages disappeared even though they still existed in the database.
+      const rows: any[] = [];
+      const pageSize = 500;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase!
+          .from('community_messages')
+          .select('*')
+          .order('created_at', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) return null;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+      }
+      const messages = rows.map(mapCommunityMessageFromDb);
+      if (rows.length === 0) return messages;
+
+      // Fetch reactions in bounded batches to stay within PostgREST URL limits.
+      const reactionRows: any[] = [];
+      for (let offset = 0; offset < rows.length; offset += 500) {
+        const ids = rows.slice(offset, offset + 500).map(row => row.id);
+        const { data, error } = await supabase!
+          .from('community_message_reactions')
+          .select('message_id,user_id,user_name,emoji')
+          .in('message_id', ids);
+        if (error || !data) continue;
+        reactionRows.push(...data);
+      }
+
+      const grouped = new Map<string, Record<string, string[]>>();
+      reactionRows.forEach(row => {
+        const reactions = grouped.get(row.message_id) || {};
+        reactions[row.emoji] = [...(reactions[row.emoji] || []), row.user_name];
+        grouped.set(row.message_id, reactions);
+      });
+      return messages.map(message => ({
+        ...message,
+        reactions: grouped.get(message.id) || message.reactions || {},
+      }));
     } catch (err) {
       return null;
     }
@@ -801,14 +1185,17 @@ export class SupabaseService {
       reply_to: msg.replyTo || null,
       mentions: msg.mentions || [],
       reactions: msg.reactions || {},
+      attachments: msg.attachments || [],
+      deleted_for_everyone_at: msg.deletedForEveryoneAt || null,
     };
 
     try {
-      const { error } = await supabase!.from('community_messages').upsert(payload, { onConflict: 'id' });
+      const { error } = await supabase!.from('community_messages').insert(payload);
       if (error) {
         SyncStateService.recordFailedSync({
           table: 'community_messages',
           id: msg.id,
+          action: 'INSERT',
           payload,
           errorMessage: error.message,
         });
@@ -823,6 +1210,46 @@ export class SupabaseService {
         payload,
         errorMessage: err?.message || String(err),
       });
+      return false;
+    }
+  }
+
+  static async toggleCommunityMessageReaction(
+    messageId: string,
+    userId: string,
+    userName: string,
+    emoji: string
+  ): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { data: existing, error: lookupError } = await supabase!
+        .from('community_message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', userId)
+        .eq('emoji', emoji)
+        .maybeSingle();
+      if (lookupError) return false;
+
+      if (existing) {
+        const { error } = await supabase!
+          .from('community_message_reactions')
+          .delete()
+          .eq('id', existing.id);
+        return !error;
+      }
+
+      const { error } = await supabase!
+        .from('community_message_reactions')
+        .insert({
+          message_id: messageId,
+          user_id: userId,
+          user_name: userName,
+          emoji,
+        });
+      return !error;
+    } catch (err) {
+      console.warn('Community reaction sync notice:', err);
       return false;
     }
   }
@@ -944,34 +1371,20 @@ export class SupabaseService {
   }
 
   // --- Soul Target Config (Dual-Table Reconciliation: 'soul_target_configs' <-> 'soul_targets') ---
+  // --- Soul Target Config (canonical table: soul_target_configs) ---
   static async getSoulTargetConfig(year: number = 2026): Promise<SoulTargetConfig | null> {
     if (!this.isAvailable()) return null;
     try {
-      // 1. Primary Live Table: 'soul_target_configs'
-      const { data: cfgData, error: cfgError } = await supabase!
+      const { data, error } = await supabase!
         .from('soul_target_configs')
         .select('*')
         .eq('year', year)
         .maybeSingle();
 
-      if (!cfgError && cfgData) {
-        return {
-          id: cfgData.id,
-          year: cfgData.year,
-          annualTarget: cfgData.annual_target,
-          auditHistory: Array.isArray(cfgData.audit_history) ? cfgData.audit_history : [],
-          updatedAt: cfgData.updated_at,
-          updatedBy: cfgData.updated_by || 'Administrator',
-        };
+      if (error || !data) {
+        if (error) console.warn('Supabase getSoulTargetConfig error:', error.message);
+        return null;
       }
-
-      // 2. Compatibility Fallback: 'soul_targets'
-      const { data, error } = await supabase!
-        .from('soul_targets')
-        .select('*')
-        .eq('year', year)
-        .maybeSingle();
-      if (error || !data) return null;
       return {
         id: data.id,
         year: data.year,
@@ -981,6 +1394,7 @@ export class SupabaseService {
         updatedBy: data.updated_by || 'Administrator',
       };
     } catch (err) {
+      console.warn('Supabase getSoulTargetConfig exception:', err);
       return null;
     }
   }
@@ -992,36 +1406,23 @@ export class SupabaseService {
       year: config.year,
       annual_target: config.annualTarget,
       audit_history: config.auditHistory || [],
-      description: `National Soul-Winning Milestone Target for ${config.year}`,
       updated_by: config.updatedBy || '',
     };
 
     try {
-      // Upsert to soul_target_configs
-      const { error: cfgErr } = await supabase!.from('soul_target_configs').upsert(payload, { onConflict: 'year' });
-      if (!cfgErr) {
-        SyncStateService.recordSuccessfulSync('soul_target_configs', String(config.year));
-        // Also keep soul_targets synchronized if present
-        try {
-          await supabase!.from('soul_targets').upsert(payload, { onConflict: 'year' });
-        } catch {}
-        return true;
+      const { error } = await supabase!.from('soul_target_configs').upsert(payload, { onConflict: 'year' });
+      if (error) {
+        console.warn('Supabase upsertSoulTargetConfig error:', error.message);
+        SyncStateService.recordFailedSync({
+          table: 'soul_target_configs',
+          id: String(config.year),
+          payload,
+          errorMessage: error.message,
+        });
+        return false;
       }
-
-      // Fallback to soul_targets
-      const { error } = await supabase!.from('soul_targets').upsert(payload, { onConflict: 'year' });
-      if (!error) {
-        SyncStateService.recordSuccessfulSync('soul_targets', String(config.year));
-        return true;
-      }
-
-      SyncStateService.recordFailedSync({
-        table: 'soul_target_configs',
-        id: String(config.year),
-        payload,
-        errorMessage: error.message,
-      });
-      return false;
+      SyncStateService.recordSuccessfulSync('soul_target_configs', String(config.year));
+      return true;
     } catch (err: any) {
       SyncStateService.recordFailedSync({
         table: 'soul_target_configs',
@@ -1034,6 +1435,19 @@ export class SupabaseService {
   }
 
   // --- System Settings ---
+  static subscribeToSystemSettings(callback: (settings: SystemSettings) => void): () => void {
+    if (!this.isAvailable()) return () => {};
+    const channel = supabase!
+      .channel(`system-settings-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings' }, () => {
+        void this.getSystemSettings().then(settings => {
+          if (settings) callback(settings);
+        });
+      })
+      .subscribe();
+    return () => { void supabase!.removeChannel(channel); };
+  }
+
   static async getSystemSettings(): Promise<SystemSettings | null> {
     if (!this.isAvailable()) return null;
     try {
@@ -1047,8 +1461,8 @@ export class SupabaseService {
         id: 'general',
         vision: data.vision || '',
         mission: data.mission || '',
-        annualSoulWinningTarget: data.annual_soul_target || 5000,
-        weeklyDeadline: 'Sunday at 6:00 PM Ghana Time (Africa/Accra, UTC+0)',
+        annualSoulWinningTarget: data.annual_soul_winning_target ?? 5000,
+        weeklyDeadline: data.weekly_deadline || 'Sunday at 6:00 PM Ghana Time (Africa/Accra, UTC+0)',
         updatedAt: data.updated_at || new Date().toISOString(),
         updatedBy: data.updated_by || 'Administrator',
       };
@@ -1061,14 +1475,10 @@ export class SupabaseService {
     if (!this.isAvailable()) return false;
     const payload = {
       id: 'global',
-      ministry_name: 'Forerunners Network International (FNI)',
       vision: settings.vision,
       mission: settings.mission,
-      submission_deadline_day: 'Sunday',
-      submission_deadline_time: '18:00',
-      annual_soul_target: settings.annualSoulWinningTarget,
-      enable_email_notifications: true,
-      enable_whatsapp_notifications: true,
+      weekly_deadline: settings.weeklyDeadline,
+      annual_soul_winning_target: settings.annualSoulWinningTarget,
       updated_by: settings.updatedBy || '',
     };
 
@@ -1140,14 +1550,21 @@ export class SupabaseService {
   static async getNotifications(recipientTarget: string): Promise<NotificationItem[] | null> {
     if (!this.isAvailable()) return null;
     try {
-      const { data, error } = await supabase!
-        .from('notifications')
-        .select('*')
-        .or(`recipient_target.eq.${recipientTarget},recipient_target.eq.all,user_id.eq.${recipientTarget},user_id.eq.all`)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) return null;
-      return data ? data.map(mapNotificationFromDb) : [];
+      // RLS is the recipient filter. Page the complete inbox so Clear All
+      // and the notification centre never silently leave older records behind.
+      const rows: any[] = [];
+      const pageSize = 500;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase!
+          .from('notifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) return null;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+      }
+      return rows.map(mapNotificationFromDb);
     } catch (err) {
       return null;
     }
@@ -1155,21 +1572,16 @@ export class SupabaseService {
 
   static async insertNotification(item: NotificationItem): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    const target = item.user_id || (item as any).recipient_target || 'all';
-    const notifType = (item.type || (item as any).notification_type || 'system_alert') as any;
+    const target = item.user_id || 'all';
     const payload = {
       id: item.id,
       user_id: target,
-      recipient_target: target,
-      sender_id: (item as any).sender_id || (item as any).senderId || null,
-      sender_name: (item as any).sender_name || (item as any).senderName || null,
       title: item.title,
       message: item.message,
-      date: item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-      notification_type: notifType,
-      type: notifType,
-      channel: (item.channel || 'in_app') as any,
-      status: 'delivered',
+      type: item.type || 'system_alert',
+      channel: item.channel || 'in_app',
+      target_tab: item.metadata?.targetTab || null,
+      action_url: item.metadata?.actionUrl || null,
       is_read: Boolean(item.is_read),
       read_at: item.is_read ? new Date().toISOString() : null,
       metadata: item.metadata || {},
@@ -1420,6 +1832,7 @@ export class SupabaseService {
         avatar_url: data.avatar_url || undefined,
         is_active: data.is_active ?? true,
         is_onboarded: data.is_onboarded ?? true,
+        is_test_account: data.is_test_account ?? false,
         must_change_password: Boolean(data.must_change_password),
         auth_provider: data.auth_provider || 'credentials',
         created_at: data.created_at,
@@ -1452,13 +1865,67 @@ export class SupabaseService {
         avatar_url: d.avatar_url || undefined,
         is_active: d.is_active ?? true,
         is_onboarded: d.is_onboarded ?? true,
+        is_test_account: d.is_test_account ?? false,
         must_change_password: Boolean(d.must_change_password),
         auth_provider: d.auth_provider || 'credentials',
         created_at: d.created_at,
-      }));
+      })).filter((profile: Profile) => !isTestProfile(profile));
     } catch {
       return null;
     }
+  }
+
+  // Return only approved public directory fields; never expose email or phone numbers.
+  static async getMemberDirectory(): Promise<Array<{
+    id: string;
+    full_name: string;
+    username?: string;
+    role: string;
+    cell_name?: string;
+    avatar_url?: string;
+  }> | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!.rpc('get_member_directory');
+      if (error || !data) {
+        console.warn('Supabase getMemberDirectory error:', error?.message);
+        return null;
+      }
+      return data.map((row: any) => ({
+        id: row.id,
+        full_name: row.full_name || 'FNI Member',
+        username: row.username || undefined,
+        role: row.role || 'tutor',
+        cell_name: row.cell_name || undefined,
+        avatar_url: row.avatar_url || undefined,
+      }));
+    } catch (error) {
+      console.warn('Supabase getMemberDirectory exception:', error);
+      return null;
+    }
+  }
+
+  static async getCellMembers(cellId: string): Promise<Array<{id:string;cell_id:string;full_name:string;phone_number?:string;status:string;notes?:string;created_at:string}> | null> {
+    if (!this.isAvailable()) return null;
+    const { data, error } = await supabase!.from('cell_members').select('id,cell_id,full_name,phone_number,status,notes,created_at').eq('cell_id', cellId).order('full_name', { ascending: true });
+    if (error || !data) { console.warn('getCellMembers failed:', error?.message); return null; }
+    return data as any;
+  }
+
+  static async saveCellMember(member: {id?:string;cell_id:string;full_name:string;phone_number?:string;status:string;notes?:string;created_by?:string}): Promise<void> {
+    if (!this.isAvailable()) throw new Error('The member directory requires an active connection.');
+    const payload = { ...member, full_name: member.full_name.trim(), phone_number: member.phone_number?.trim() || null, notes: member.notes?.trim() || null };
+    const query = member.id
+      ? supabase!.from('cell_members').update(payload).eq('id', member.id).eq('cell_id', member.cell_id)
+      : supabase!.from('cell_members').insert(payload);
+    const { error } = await query;
+    if (error) throw new Error(error.message || 'Could not save this cell member.');
+  }
+
+  static async deleteCellMember(id: string, cellId: string): Promise<void> {
+    if (!this.isAvailable()) throw new Error('The member directory requires an active connection.');
+    const { error } = await supabase!.from('cell_members').delete().eq('id', id).eq('cell_id', cellId);
+    if (error) throw new Error(error.message || 'Could not remove this cell member.');
   }
 
   // --- Regions ---

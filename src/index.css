@@ -118,12 +118,57 @@ body { overscroll-behavior-x: none; }
 img, video, canvas, svg { max-width: 100%; }
 button, a, input, select, textarea { touch-action: manipulation; }
 .mobile-bottom-nav { padding-bottom: max(0.35rem, env(safe-area-inset-bottom)); }
+/* Mobile scrolling: keep the document vertically stable while allowing
+   deliberate horizontal scrolling only inside wide tables and data regions. */
 @media (max-width: 767px) {
-  #root { overflow-x: clip; }
-  main { min-width: 0; width: 100%; }
+  html {
+    scroll-behavior: auto;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
+  body {
+    min-height: 100%;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #root {
+    min-height: 100%;
+    overflow-x: clip;
+    isolation: isolate;
+  }
+  main {
+    min-width: 0;
+    width: 100%;
+    overflow-x: clip;
+    overscroll-behavior-y: auto;
+  }
   table { min-width: 100%; }
-  .table-scroll-container { max-width: 100%; border-radius: 0.75rem; }
+  .table-scroll-container {
+    max-width: 100%;
+    border-radius: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+  .custom-scrollbar {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
   input, select, textarea { max-width: 100%; }
+  .mobile-bottom-nav {
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Prevent the page behind the mobile drawer from moving on touch devices. */
+body.fni-mobile-menu-open {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 html { color-scheme: light; }
@@ -198,6 +243,7 @@ html.dark [class*="text-[#182230]"],
 html.dark [class*="text-\[#182230\]"],
 html.dark [class*="text-[#142B4A]"],
 html.dark [class*="text-\[#142B4A\]"],
+html.dark [class~="text-[#142B4A]"],
 html.dark [class*="text-[#101828]"],
 html.dark [class*="text-\[#101828\]"],
 html.dark .text-slate-900,
@@ -478,7 +524,7 @@ html.dark .fni-auth-portal input[type="password"] {
 html.dark .fni-auth-portal input::placeholder {
   color: #a9b8ca !important;
 }
-html.dark .fni-auth-portal button:not([class*="bg-[#142B4A]"]) {
+html.dark .fni-auth-portal button:not([class~="bg-[#142B4A]"]) {
   color: #f1f5f9;
 }
 html.dark .fni-auth-portal [class~="border-[#E3E8EF]"] {
@@ -560,4 +606,1236 @@ html.dark .fni-simple-landing [class*="bg-[#142B4A]/5"] {
 }
 html.dark .fni-simple-landing .border-white {
   border-color: #d7e1ef !important;
+}
+
+
+/* Compact, Telegram-inspired message rhythm and safe long-message wrapping. */
+.fni-messaging-view .fni-chat-stream > * + * { margin-top: .55rem !important; }
+.fni-messaging-view .fni-swipe-message { overflow-wrap: anywhere; word-break: normal; }
+.fni-messaging-view .fni-chat-composer textarea { max-height: 35vh; overflow-y: auto; line-height: 1.45; }
+@media (max-width: 639px) {
+  .fni-messaging-view .fni-chat-stream { padding: .75rem !important; }
+  .fni-messaging-view .fni-chat-composer { padding: .55rem !important; }
+}
+
+
+/* Keep each chat in its own Telegram-style scroll viewport. The page itself
+   stays still while users move through long message histories. */
+.fni-messaging-view .fni-chat-panel {
+  height: min(78dvh, 760px);
+  min-height: min(420px, 78dvh);
+  max-height: 78dvh;
+}
+.fni-messaging-view .fni-chat-stream {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+@media (max-width: 639px) {
+  .fni-messaging-view .fni-chat-panel {
+    height: min(78dvh, 760px);
+    min-height: min(390px, 78dvh);
+    max-height: 78dvh;
+  }
+  .fni-messaging-view .fni-chat-stream {
+    padding: .65rem !important;
+  }
+  .fni-messaging-view .fni-chat-composer {
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: .35rem;
+  }
+  .fni-messaging-view .fni-chat-composer > button {
+    flex: 0 0 auto;
+  }
+  .fni-messaging-view .fni-chat-composer textarea {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+
+/* Compact chat composer: keep the action controls on one line on phones. */
+.fni-messaging-view .fni-chat-composer-row {
+  width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+.fni-messaging-view .fni-composer-icon {
+  width: 2rem;
+  min-width: 2rem;
+}
+.fni-messaging-view .fni-composer-input {
+  min-width: 0;
+  overflow: hidden;
+}
+.fni-messaging-view .fni-composer-input textarea {
+  min-width: 0 !important;
+  width: 0 !important;
+  flex: 1 1 0%;
+  max-height: 35vh;
+  min-height: 1.5rem;
+  line-height: 1.4;
+  font-size: 16px !important;
+  overflow-y: auto;
+}
+.fni-messaging-view .fni-composer-input button {
+  min-width: 2rem;
+  min-height: 2rem;
+}
+.fni-messaging-view .fni-chat-composer-row > button[type="submit"] {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+}
+@media (max-width: 380px) {
+  .fni-messaging-view .fni-chat-composer-row { gap: .15rem; }
+  .fni-messaging-view .fni-composer-icon { width: 1.8rem; min-width: 1.8rem; }
+  .fni-messaging-view .fni-composer-input { padding-left: .15rem; padding-right: .15rem; }
+  .fni-messaging-view .fni-composer-input button { width: 1.75rem; min-width: 1.75rem; }
+  .fni-messaging-view .fni-chat-composer-row > button[type="submit"] {
+    width: 2.25rem; min-width: 2.25rem; height: 2.25rem;
+  }
+}
+
+
+/* Community Hub participates in the app's document scroll; only private chats
+   retain a dedicated Telegram-style message viewport. */
+.fni-messaging-view .fni-community-panel {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.fni-messaging-view .fni-community-stream {
+  display: block;
+  flex: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overscroll-behavior: auto;
+}
+.fni-messaging-view .fni-community-stream > * + * {
+  margin-top: .55rem !important;
+}
+
+
+/* Global app scrolling: keep the document as the primary vertical scroll
+   surface on phones and desktops. Avoid nested flex containers clipping
+   long pages or making the Communications Hub unreachable. */
+html, body, #root {
+  height: auto;
+  min-height: 100%;
+}
+body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#root, .fni-app-shell {
+  min-height: 100dvh;
+  height: auto;
+}
+.fni-app-body {
+  min-height: 0;
+  align-items: stretch;
+}
+.fni-app-main {
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+  overscroll-behavior-y: auto;
+}
+@media (max-width: 767px) {
+  .fni-app-shell, .fni-app-body, .fni-app-main {
+    height: auto;
+    min-height: 0;
+    overflow-y: visible;
+  }
+  .fni-app-shell { min-height: 100dvh; }
+}
+
+/* Keep the community message composer reachable while reading a long
+   conversation. It sits above the fixed mobile navigation and remains in
+   normal document flow when the user reaches the end of the thread. */
+.fni-messaging-view .fni-community-panel > .fni-chat-composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 25;
+  padding-bottom: max(.65rem, env(safe-area-inset-bottom));
+  background: var(--fni-page, #fff);
+  box-shadow: 0 -8px 20px rgb(20 43 74 / .07);
+}
+@media (max-width: 767px) {
+  .fni-messaging-view .fni-community-panel > .fni-chat-composer {
+    bottom: calc(3.65rem + env(safe-area-inset-bottom));
+  }
+}
+
+
+/* Unified Telegram-style chat viewport for Community and Private conversations.
+   The page scrolls normally outside chats; inside a chat, only the history moves. */
+.fni-messaging-view .fni-community-panel {
+  display: flex;
+  flex-direction: column;
+  height: min(78dvh, 760px) !important;
+  min-height: min(390px, 78dvh) !important;
+  max-height: 78dvh !important;
+  overflow: hidden !important;
+}
+.fni-messaging-view .fni-community-panel > .fni-community-stream {
+  display: block;
+  flex: 1 1 auto !important;
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scroll-padding-block: .75rem;
+}
+.fni-messaging-view .fni-community-panel > .fni-chat-composer {
+  position: relative !important;
+  inset: auto !important;
+  flex: 0 0 auto;
+  z-index: 25;
+  padding-bottom: max(.65rem, env(safe-area-inset-bottom));
+  background: var(--fni-page, #fff);
+  box-shadow: 0 -8px 20px rgb(20 43 74 / .07);
+}
+.fni-messaging-view .fni-community-panel > :first-child {
+  position: relative !important;
+  top: auto !important;
+  flex: 0 0 auto;
+}
+.fni-messaging-view .fni-chat-panel {
+  min-height: min(390px, 78dvh);
+}
+.fni-messaging-view .fni-chat-panel > :first-child,
+.fni-messaging-view .fni-chat-panel > :nth-child(2),
+.fni-messaging-view .fni-chat-panel > .fni-chat-composer {
+  flex-shrink: 0;
+}
+.fni-messaging-view .fni-chat-panel > .fni-chat-stream {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overscroll-behavior-y: contain;
+  scroll-padding-block: .75rem;
+}
+@media (max-width: 639px) {
+  .fni-messaging-view .fni-community-panel,
+  .fni-messaging-view .fni-chat-panel {
+    height: min(76dvh, 760px) !important;
+    min-height: min(360px, 76dvh) !important;
+    max-height: 76dvh !important;
+    border-radius: 1rem;
+  }
+  .fni-messaging-view .fni-community-panel > .fni-community-stream,
+  .fni-messaging-view .fni-chat-panel > .fni-chat-stream {
+    padding: .65rem !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+
+/* Final phone-fit pass: keep the chat controls and message history inside the
+   visible device area, including compact phones and safe-area insets. */
+.fni-messaging-view,
+.fni-messaging-view * {
+  box-sizing: border-box;
+}
+.fni-messaging-view {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+.fni-messaging-view .fni-chat-panel,
+.fni-messaging-view .fni-community-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.fni-messaging-view .fni-chat-stream,
+.fni-messaging-view .fni-community-stream {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fni-messaging-view .fni-chat-stream > *,
+.fni-messaging-view .fni-community-stream > * {
+  max-width: 100%;
+  min-width: 0;
+}
+.fni-messaging-view .fni-swipe-message {
+  max-width: min(88%, 42rem);
+  min-width: 0;
+}
+.fni-messaging-view .fni-chat-composer,
+.fni-messaging-view .fni-chat-composer-row,
+.fni-messaging-view .fni-composer-input {
+  max-width: 100%;
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  .fni-messaging-view {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .fni-messaging-view .fni-community-panel,
+  .fni-messaging-view .fni-chat-panel {
+    height: min(70dvh, 620px) !important;
+    min-height: min(340px, 60dvh) !important;
+    max-height: 70dvh !important;
+    width: 100%;
+    max-width: 100%;
+    border-radius: .9rem;
+  }
+  .fni-messaging-view .fni-chat-stream,
+  .fni-messaging-view .fni-community-stream {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .fni-messaging-view .fni-swipe-message {
+    max-width: 88%;
+  }
+  .fni-messaging-view .fni-chat-composer {
+    padding: .45rem !important;
+    padding-bottom: max(.45rem, env(safe-area-inset-bottom)) !important;
+  }
+  .fni-messaging-view .fni-chat-composer-row {
+    gap: .2rem;
+  }
+  .fni-messaging-view .fni-chat-composer-row > button,
+  .fni-messaging-view .fni-composer-icon {
+    flex-shrink: 0;
+  }
+  .fni-messaging-view .fni-chat-composer textarea {
+    font-size: 16px !important;
+  }
+}
+@media (max-width: 360px) {
+  .fni-messaging-view .fni-chat-panel,
+  .fni-messaging-view .fni-community-panel {
+    height: min(66dvh, 560px) !important;
+    min-height: min(310px, 58dvh) !important;
+    max-height: 66dvh !important;
+  }
+  .fni-messaging-view .fni-chat-composer-row {
+    gap: .1rem;
+  }
+  .fni-messaging-view .fni-composer-icon,
+  .fni-messaging-view .fni-composer-input button {
+    width: 1.65rem;
+    min-width: 1.65rem;
+  }
+}
+@supports not (height: 100dvh) {
+  .fni-messaging-view .fni-chat-panel,
+  .fni-messaging-view .fni-community-panel {
+    height: min(70vh, 620px) !important;
+    max-height: 70vh !important;
+  }
+}
+
+
+/* Full-screen Telegram-inspired FNI Community conversation.
+   Existing Supabase messages, calls, wallpapers, clear-history and composer actions
+   remain wired to the same handlers; this layer changes presentation only. */
+.fni-messaging-view.fni-community-mode {
+  --fni-chat-bg: #08090f;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+  min-height: 520px;
+  max-height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.fni-community-mode .fni-community-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0 !important;
+  max-height: none !important;
+  border: 0;
+  border-radius: 0;
+  background: var(--fni-chat-bg);
+  box-shadow: none;
+}
+.fni-community-mode .fni-community-topbar {
+  min-height: 68px;
+  padding-top: max(.7rem, env(safe-area-inset-top));
+  background: rgb(14 15 23 / .94);
+  border-bottom: 1px solid rgb(255 255 255 / .08);
+  backdrop-filter: blur(18px);
+}
+.fni-community-mode .fni-community-topbar button {
+  color: #f4f4f8;
+  border-color: rgb(255 255 255 / .12);
+  background: rgb(255 255 255 / .07);
+}
+.fni-community-mode .fni-community-topbar button:hover {
+  background: rgb(255 255 255 / .14);
+}
+.fni-community-mode .fni-community-stream {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 1rem clamp(.65rem, 2.5vw, 1.5rem) 1.2rem !important;
+  background-color: #08090f;
+  background-size: 180px 180px;
+  background-position: center;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / .18) transparent;
+}
+.fni-community-mode .fni-community-stream > * + * { margin-top: .7rem !important; }
+.fni-community-mode .fni-swipe-message {
+  max-width: min(84%, 42rem);
+  padding: .55rem .78rem !important;
+  border: 1px solid rgb(255 255 255 / .055) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / .2) !important;
+  gap: .25rem !important;
+}
+.fni-community-mode .fni-swipe-message.ml-auto {
+  color: #fff !important;
+  background: linear-gradient(135deg, #873ce0 0%, #5558ed 100%) !important;
+  border-color: rgb(255 255 255 / .12) !important;
+  border-top-right-radius: 5px !important;
+}
+.fni-community-mode .fni-swipe-message.mr-auto {
+  color: #f5f3fa !important;
+  background: #25232d !important;
+  border-color: rgb(255 255 255 / .06) !important;
+  border-top-left-radius: 5px !important;
+}
+.fni-community-mode .fni-swipe-message .text-\[\#142B4A\],
+.fni-community-mode .fni-swipe-message .text-\[\#667085\] { color: #d2ccdf !important; }
+.fni-community-mode .fni-swipe-message .bg-\[\#142B4A\] { background: #34303f !important; }
+.fni-community-mode .fni-swipe-message .bg-white { background: #34303f !important; }
+.fni-community-mode .fni-swipe-message .border-\[\#E3E8EF\] { border-color: rgb(255 255 255 / .1) !important; }
+.fni-community-mode .fni-swipe-message button[aria-label="Message options"] { color: rgb(255 255 255 / .7) !important; }
+.fni-community-mode .fni-swipe-message .text-xs,
+.fni-community-mode .fni-swipe-message .text-\[10px\],
+.fni-community-mode .fni-swipe-message .text-\[11px\] { color: rgb(255 255 255 / .62); }
+.fni-community-mode .fni-chat-composer {
+  flex: 0 0 auto;
+  padding: .55rem clamp(.55rem, 2vw, 1rem) max(.65rem, env(safe-area-inset-bottom)) !important;
+  background: rgb(12 13 19 / .98) !important;
+  border-top: 1px solid rgb(255 255 255 / .09) !important;
+  box-shadow: 0 -5px 20px rgb(0 0 0 / .22) !important;
+}
+.fni-community-mode .fni-chat-composer-row { gap: .4rem; }
+.fni-community-mode .fni-composer-icon {
+  width: 2.5rem !important;
+  min-width: 2.5rem !important;
+  height: 2.5rem !important;
+  color: #f2eff8 !important;
+  border: 1px solid rgb(255 255 255 / .12);
+  background: #20212a !important;
+}
+.fni-community-mode .fni-composer-input {
+  min-height: 2.8rem;
+  padding: .2rem .5rem !important;
+  border: 1px solid rgb(255 255 255 / .1) !important;
+  background: #20212a !important;
+  box-shadow: none !important;
+}
+.fni-community-mode .fni-composer-input:focus-within {
+  border-color: rgb(151 103 238 / .65) !important;
+  background: #252631 !important;
+  box-shadow: 0 0 0 2px rgb(139 92 246 / .12) !important;
+}
+.fni-community-mode .fni-composer-input textarea {
+  color: #f7f4fb !important;
+  caret-color: #c5a6ff;
+}
+.fni-community-mode .fni-composer-input textarea::placeholder { color: #9a96a5 !important; }
+.fni-community-mode .fni-composer-input button { color: #bcb5ca !important; }
+.fni-community-mode .fni-chat-composer-row > button[type="submit"] {
+  width: 2.65rem;
+  min-width: 2.65rem;
+  height: 2.65rem;
+  background: linear-gradient(135deg, #8b42e7, #5860ed) !important;
+}
+.fni-community-mode .fni-chat-composer select {
+  color: #c9c4d2 !important;
+  border-color: rgb(255 255 255 / .1) !important;
+  background: #20212a !important;
+}
+.fni-community-mode .fni-chat-composer .bg-amber-50\/80,
+.fni-community-mode .fni-chat-composer .bg-white { background: #20212a !important; color: #f4f0fa !important; }
+.fni-community-mode .fni-chat-composer .text-\[\#142B4A\],
+.fni-community-mode .fni-chat-composer .text-\[\#667085\] { color: #c8c1d2 !important; }
+.fni-community-mode .fni-chat-composer .border-\[\#E3E8EF\] { border-color: rgb(255 255 255 / .1) !important; }
+.fni-community-mode .fni-community-stream .text-\[\#667085\] { color: #aaa4b5 !important; }
+.fni-community-mode .fni-community-stream .text-\[\#182230\] { color: #f3eff8 !important; }
+.fni-community-mode .fni-community-stream .bg-white { background: #25232d !important; }
+.fni-community-mode .fni-community-stream .border-\[\#E3E8EF\] { border-color: rgb(255 255 255 / .1) !important; }
+.fni-community-mode .fni-community-stream .fni-swipe-message .bg-amber-50,
+.fni-community-mode .fni-community-stream .fni-swipe-message .bg-emerald-50,
+.fni-community-mode .fni-community-stream .fni-swipe-message .bg-purple-50 { color: #eee !important; }
+@media (max-width: 767px) {
+  .fni-messaging-view.fni-community-mode {
+    height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+    min-height: 0;
+    max-height: calc(100dvh - var(--fni-mobile-nav-height, 0px));
+  }
+  .fni-community-mode .fni-community-panel { border-radius: 0; }
+  .fni-community-mode .fni-community-topbar { min-height: 62px; padding-inline: .7rem; }
+  .fni-community-mode .fni-community-stream { padding: .7rem .55rem 1rem !important; }
+  .fni-community-mode .fni-swipe-message { max-width: 88%; padding: .48rem .68rem !important; }
+  .fni-community-mode .fni-chat-composer { padding: .45rem .45rem max(.55rem, env(safe-area-inset-bottom)) !important; }
+}
+@supports not (height: 100dvh) {
+  .fni-messaging-view.fni-community-mode { height: 100vh; max-height: 100vh; }
+}
+
+
+/* Community conversations use the document/phone scroll, never a nested message scroller. */
+.fni-messaging-view.fni-community-mode { height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; }
+.fni-messaging-view.fni-community-mode .fni-community-panel { display: flex; flex-direction: column; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; }
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream { flex: none !important; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; overflow-y: visible !important; overscroll-behavior: auto !important; -webkit-overflow-scrolling: auto; }
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer { position: sticky; bottom: calc(var(--fni-mobile-nav-height, 0px) + env(safe-area-inset-bottom)); z-index: 25; }
+.fni-community-pinned-strip { background: linear-gradient(90deg, #171522, #252033); }
+@media (max-width: 767px) { .fni-messaging-view.fni-community-mode { padding-bottom: 1rem; } .fni-messaging-view.fni-community-mode .fni-community-panel { border-radius: 0; } }
+
+
+/* FNI Community mobile correction: the document is the only vertical
+   scroll surface. Do not constrain the message history to a chat viewport. */
+.fni-messaging-view.fni-community-mode {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-panel {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-topbar {
+  position: relative !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: .65rem !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: .8rem .75rem !important;
+  padding-top: .8rem !important;
+  overflow: visible !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-stream,
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream {
+  display: flow-root !important;
+  position: relative !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-y: visible !important;
+  overflow-x: clip !important;
+  overscroll-behavior: auto !important;
+  -webkit-overflow-scrolling: auto !important;
+  scrollbar-width: none !important;
+}
+.fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer {
+  position: relative !important;
+  inset: auto !important;
+  flex: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  z-index: 2 !important;
+}
+.fni-messaging-view.fni-community-mode .fni-chat-panel,
+.fni-messaging-view.fni-community-mode .fni-chat-stream {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+@media (max-width: 767px) {
+  .fni-messaging-view.fni-community-mode .fni-community-topbar {
+    align-items: flex-start !important;
+    padding: .7rem .65rem !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-topbar > :first-child {
+    flex: 1 1 100% !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-topbar > :nth-child(2) {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-topbar > :nth-child(2) > button[aria-label="Change community chat wallpaper"] {
+    display: none !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-swipe-message {
+    max-width: min(92%, 42rem) !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-chat-composer {
+    padding-bottom: max(.75rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+
+/* The Messages route must not inherit the dashboard's viewport-filling flex
+   height. Let the full community history determine page height on phones. */
+.fni-app-shell.fni-messaging-route {
+  min-height: 0 !important;
+  height: auto !important;
+}
+.fni-app-shell.fni-messaging-route > .fni-app-body {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+.fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+@media (max-width: 767px) {
+  .fni-app-shell.fni-messaging-route {
+    min-height: 0 !important;
+  }
+  .fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+    padding-top: .5rem !important;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+
+/* Responsive FNI Community scrolling:
+   desktop web app: scroll inside the app and message history;
+   phones: use the browser's native document scroll, never a nested chat scroller. */
+@media (min-width: 768px) {
+  .fni-app-shell.fni-messaging-route {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+  .fni-messaging-view.fni-community-mode {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    height: min(76dvh, 740px) !important;
+    min-height: 380px !important;
+    max-height: 76dvh !important;
+    overflow: hidden !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-topbar,
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-pinned-strip,
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer {
+    flex: 0 0 auto !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream {
+    display: block !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+}
+@media (max-width: 767px) {
+  .fni-app-shell.fni-messaging-route,
+  .fni-app-shell.fni-messaging-route > .fni-app-body,
+  .fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .fni-app-shell.fni-messaging-route { min-height: 100dvh !important; }
+  .fni-messaging-view.fni-community-mode,
+  .fni-messaging-view.fni-community-mode .fni-community-panel {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream {
+    display: flow-root !important;
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    overscroll-behavior: auto !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer {
+    position: relative !important;
+    inset: auto !important;
+    flex: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+
+/* Telegram Desktop layout: the application frame is fixed to the viewport;
+   only the message history scrolls. Mobile rules below intentionally differ. */
+@media (min-width: 768px) {
+  html:has(.fni-app-shell.fni-messaging-route),
+  body:has(.fni-app-shell.fni-messaging-route),
+  #root:has(.fni-app-shell.fni-messaging-route) {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .fni-app-shell.fni-messaging-route {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body > div:last-child {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 12px 16px 16px !important;
+    overflow: hidden !important;
+  }
+  .fni-messaging-view.fni-community-mode {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-topbar,
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-pinned-strip,
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer {
+    flex: 0 0 auto !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream {
+    display: block !important;
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+}
+
+
+/* Telegram/WhatsApp-style mobile Messages screen:
+   keep the app chrome and conversation controls stationary; only the
+   message history is the vertical touch-scroll surface on phones. */
+@media (max-width: 767px) {
+  html:has(.fni-app-shell.fni-messaging-route),
+  body:has(.fni-app-shell.fni-messaging-route),
+  #root:has(.fni-app-shell.fni-messaging-route) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden !important;
+  }
+  body:has(.fni-app-shell.fni-messaging-route) {
+    position: fixed;
+    inset: 0;
+    overscroll-behavior: none;
+  }
+  .fni-app-shell.fni-messaging-route {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body > div:last-child {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body > div:last-child > header,
+  .fni-app-shell.fni-messaging-route > .fni-app-body > div:last-child > [class*="header"] {
+    flex: 0 0 auto !important;
+  }
+  .fni-app-shell.fni-messaging-route .fni-app-main.fni-messaging-route-main {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: .35rem 0 calc(4.5rem + env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+  }
+  .fni-messaging-view.fni-community-mode {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-topbar,
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-pinned-strip,
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-chat-composer {
+    position: relative !important;
+    inset: auto !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel > .fni-community-stream {
+    display: block !important;
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    scrollbar-width: thin;
+  }
+  .fni-app-shell.fni-messaging-route .mobile-bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    z-index: 60 !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-chat-composer {
+    padding-bottom: max(.45rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+
+/* Native-feeling Telegram-style message action controls. */
+.fni-message-menu-trigger {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms ease;
+}
+.fni-message-menu-trigger:active {
+  transform: scale(.88);
+  opacity: .82;
+}
+.fni-message-menu-popover {
+  transform-origin: top right;
+  animation: fni-message-menu-in 150ms cubic-bezier(.2,.8,.2,1) both;
+}
+.fni-message-menu-popover button {
+  min-height: 40px;
+  border-radius: 11px;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+.fni-message-menu-popover button:active { transform: scale(.985); }
+@keyframes fni-message-menu-in {
+  from { opacity: 0; transform: translateY(-5px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fni-message-menu-trigger, .fni-message-menu-popover, .fni-message-menu-popover button { animation: none; transition: none; }
+}
+
+
+/* Resize the phone chat frame to the visible viewport while the native
+   keyboard is open, keeping the message history and composer accessible. */
+@media (max-width: 767px) {
+  .fni-app-shell.fni-messaging-route {
+    height: var(--fni-visible-viewport-height, 100dvh) !important;
+    max-height: var(--fni-visible-viewport-height, 100dvh) !important;
+    transform: translateY(var(--fni-visual-viewport-offset-top, 0px));
+    will-change: height, transform;
+  }
+  .fni-app-shell.fni-messaging-route > .fni-app-body {
+    min-height: 0 !important;
+    height: 0 !important;
+  }
+  .fni-messaging-view.fni-community-mode .fni-community-panel,
+  .fni-messaging-view.fni-community-mode {
+    min-height: 0 !important;
+  }
+}
+
+
+/* Final dark-theme contrast pass: cover secondary components that use
+   Tailwind gray/zinc/neutral utilities or hard-coded light surfaces. */
+html.dark :is(
+  .text-black, .text-slate-950, .text-gray-950, .text-zinc-950, .text-neutral-950,
+  .text-slate-900, .text-gray-900, .text-zinc-900, .text-neutral-900,
+  .text-slate-800, .text-gray-800, .text-zinc-800, .text-neutral-800
+) { color: #f1f5f9 !important; }
+
+html.dark :is(
+  .text-slate-700, .text-gray-700, .text-zinc-700, .text-neutral-700,
+  .text-slate-600, .text-gray-600, .text-zinc-600, .text-neutral-600,
+  .text-slate-500, .text-gray-500, .text-zinc-500, .text-neutral-500,
+  .text-slate-400, .text-gray-400, .text-zinc-400, .text-neutral-400
+) { color: #b7c5d6 !important; }
+
+/* Light custom hex text is the most common source of invisible labels in
+   older admin/tutor screens. Preserve established brand/status accents. */
+html.dark [class*="text-[#"]:not([class*="text-[#C6A45A]"]):not([class*="text-[#D4AF37]"]):not([class*="text-[#229ED9]"]):not([class*="text-[#16A34A]"]):not([class*="text-[#DC2626]"]):not([class*="text-[#F59E0B]"]):not([class*="text-[#EAB308]"]) {
+  color: #dbe5f1 !important;
+}
+
+html.dark :is(
+  .bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-zinc-50, .bg-zinc-100,
+  .bg-zinc-200, .bg-neutral-50, .bg-neutral-100, .bg-neutral-200,
+  .bg-stone-50, .bg-stone-100, .bg-stone-200,
+) {
+  background-color: #172437 !important;
+  border-color: #30445d !important;
+}
+
+html.dark :is(
+  .border-gray-100, .border-gray-200, .border-gray-300,
+  .border-zinc-100, .border-zinc-200, .border-zinc-300,
+  .border-neutral-100, .border-neutral-200, .border-neutral-300,
+  .border-stone-100, .border-stone-200
+) { border-color: #30445d !important; }
+
+html.dark :is(
+  [role="dialog"], [role="listbox"], [role="menu"], [role="option"],
+  .dropdown-menu, .popover, .modal-content, .tooltip
+) {
+  color: #e6edf5;
+  border-color: #30445d;
+}
+
+html.dark :is(
+  [role="dialog"], [role="listbox"], [role="menu"],
+  .dropdown-menu, .popover, .modal-content
+) { background-color: #111c2d; }
+
+html.dark :is(th, thead, tfoot) {
+  color: #dbe5f1;
+  border-color: #30445d;
+}
+
+html.dark :is(hr, .divide-y > :not([hidden]) ~ :not([hidden])) {
+  border-color: #30445d !important;
+}
+
+html.dark option {
+  color: #e6edf5;
+  background: #152233;
+}
+
+html.dark :is(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  color: #8192a8 !important;
+  opacity: .72;
+}
+
+html.dark ::placeholder { color: #8fa1b8 !important; opacity: 1; }
+
+
+
+
+/* ==========================================================
+   FNI CELLS CONNECT — SINGLE SOURCE THEME SYSTEM
+   Royal blue / deep purple / gold. Keep all theme decisions
+   here so legacy overrides cannot fight one another.
+   ========================================================== */
+:root {
+  color-scheme: light;
+  --fni-brand-blue: #173B8F;
+  --fni-brand-purple: #39216B;
+  --fni-brand-gold: #D9A72E;
+  --fni-page: #F4F6FB;
+  --fni-surface: #FFFFFF;
+  --fni-surface-raised: #F8FAFD;
+  --fni-surface-subtle: #EDF1F7;
+  --fni-text: #182230;
+  --fni-text-secondary: #475467;
+  --fni-text-muted: #667085;
+  --fni-border: #E0E6F0;
+  --fni-divider: #E9EDF4;
+  --fni-focus: #315DB5;
+}
+html.dark {
+  color-scheme: dark;
+  --fni-page: #101827;
+  --fni-surface: #172437;
+  --fni-surface-raised: #1C2B40;
+  --fni-surface-subtle: #24354D;
+  --fni-text: #F3F6FC;
+  --fni-text-secondary: #CBD5E1;
+  --fni-text-muted: #A6B5C8;
+  --fni-border: #354861;
+  --fni-divider: #2A3B52;
+  --fni-focus: #A9C7FF;
+}
+html, body, #root {
+  min-height: 100%;
+  background: var(--fni-page);
+  color: var(--fni-text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+body { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
+
+/* Light theme base: predictable surfaces and readable form controls. */
+html:not(.dark) :is(header,aside,footer,.mobile-bottom-nav) {
+  background-color: var(--fni-surface);
+  border-color: var(--fni-border);
+}
+html:not(.dark) :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+  color: var(--fni-text);
+  background-color: var(--fni-surface);
+  border-color: #D6DDE8;
+}
+html:not(.dark) :is(input,textarea)::placeholder { color: var(--fni-text-muted); opacity: 1; }
+html:not(.dark) :is(.text-slate-400,.text-gray-400,.text-zinc-400,.text-neutral-400) { color: #64748B !important; }
+html:not(.dark) :is(.text-slate-500,.text-gray-500,.text-zinc-500,.text-neutral-500) { color: #586579 !important; }
+
+/* Dark theme page, cards, navigation and floating surfaces. */
+html.dark body, html.dark #root, html.dark main { background-color: var(--fni-page) !important; color: var(--fni-text) !important; }
+html.dark :is(header,aside,footer,nav,.mobile-bottom-nav),
+html.dark :is(.bg-white,.bg-canvas,.bg-slate-50,.bg-gray-50),
+html.dark :is([class*="bg-white/"],[class*="bg-[#F5F7FA]"],[class*="bg-[#F5F7FC]"],[class*="bg-[#F8FAFC]"],[class*="bg-[#F7FAFE]"],[class*="bg-[#FAFAFA]"],[class*="bg-[#F9FAFB]"]) {
+  background-color: var(--fni-surface) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark :is(.bg-slate-100,.bg-slate-200,.bg-gray-100,.bg-gray-200),
+html.dark :is([class*="bg-[#E3E8EF]"],[class*="bg-[#E2E8F0]"]) {
+  background-color: var(--fni-surface-subtle) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark :is([class*="hover:bg-slate-50"],[class*="hover:bg-gray-50"],[class*="hover:bg-[#F5F7FA]"]):hover {
+  background-color: #2B405B !important;
+}
+
+/* Typography: explicit foregrounds for legacy Tailwind and hex utilities. */
+html.dark :is(h1,h2,h3,h4,h5,h6,label,legend,th,td,p,li,dt,dd,figcaption,blockquote) { color: inherit; }
+html.dark :is(.text-slate-950,.text-slate-900,.text-slate-800,.text-gray-900,.text-gray-800,
+[class*="text-[#101828]"],[class*="text-[#182230]"],[class*="text-[#172033]"]) { color: var(--fni-text) !important; }
+html.dark :is(.text-slate-700,.text-slate-600,.text-slate-500,.text-gray-700,.text-gray-600,.text-gray-500,
+[class*="text-[#667085]"],[class*="text-[#475467]"],[class*="text-[#344054]"]) { color: var(--fni-text-secondary) !important; }
+html.dark :is(.text-blue-400,.text-blue-500,.text-blue-600,.text-blue-700,.text-blue-800,.text-blue-900,
+.text-indigo-400,.text-indigo-500,.text-indigo-600,.text-indigo-700,.text-indigo-800,.text-indigo-900,
+[class*="text-[#142B4A]"],[class*="text-navy-800"],[class*="text-navy-900"]) { color: #AFC9FF !important; }
+html.dark :is(.text-purple-400,.text-purple-500,.text-purple-600,.text-purple-700,.text-purple-800,.text-purple-900,
+.text-violet-400,.text-violet-500,.text-violet-600,.text-violet-700,.text-violet-800,.text-violet-900) { color: #D9C5FF !important; }
+html.dark :is(.text-amber-400,.text-amber-500,.text-amber-600,.text-amber-700,.text-amber-800,.text-amber-900,
+.text-yellow-400,.text-yellow-500,.text-yellow-600,.text-yellow-700,.text-yellow-800,.text-yellow-900,
+[class*="text-[#C6A45A]"],[class*="text-gold-"]) { color: #F2CA68 !important; }
+html.dark :is(.text-green-400,.text-green-500,.text-green-600,.text-green-700,.text-green-800,.text-green-900,
+.text-emerald-400,.text-emerald-500,.text-emerald-600,.text-emerald-700,.text-emerald-800,.text-emerald-900,
+[class*="text-[#16A34A]"],[class*="text-[#15803D]"],[class*="text-[#22C55E]"]) { color: #83DDB2 !important; }
+html.dark :is(.text-red-400,.text-red-500,.text-red-600,.text-red-700,.text-red-800,.text-red-900,
+.text-rose-400,.text-rose-500,.text-rose-600,.text-rose-700,.text-rose-800,.text-rose-900,
+[class*="text-[#DC2626]"],[class*="text-[#B91C1C]"],[class*="text-[#EF4444]"]) { color: #FFA0AA !important; }
+
+/* Brand surfaces and status chips retain meaning without low contrast. */
+html.dark :is([class*="bg-[#142B4A]"],[class*="bg-navy-800"],[class*="bg-navy-900"],[class*="bg-navy-950"]) { background-color: #244A91 !important; }
+html.dark :is([class*="bg-purple-"],[class*="bg-violet-"]) { background-color: #30264B !important; }
+html.dark :is([class*="bg-emerald-50"],[class*="bg-green-50"],.bg-green-100,.bg-emerald-100) { background-color: #173B30 !important; border-color: #28614D !important; }
+html.dark :is([class*="bg-amber-50"],[class*="bg-yellow-50"],[class*="bg-orange-50"],.bg-amber-100,.bg-yellow-100) { background-color: #44351C !important; border-color: #70562B !important; }
+html.dark :is([class*="bg-rose-50"],[class*="bg-red-50"],.bg-red-100,.bg-rose-100) { background-color: #48252B !important; border-color: #713640 !important; }
+html.dark :is([class*="bg-blue-50"],[class*="bg-indigo-50"],.bg-blue-100,.bg-indigo-100) { background-color: #203653 !important; border-color: #355477 !important; }
+html.dark :is([class*="border-[#E3E8EF]"],[class*="border-slate-100"],[class*="border-slate-200"],[class*="border-gray-100"],[class*="border-gray-200"],hr,table th,table td) { border-color: var(--fni-divider) !important; }
+
+/* Inputs, selects, date pickers, checkboxes and disabled controls. */
+html.dark :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+  color: var(--fni-text) !important;
+  background-color: #111C2D !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark :is(input,textarea,select)::placeholder { color: var(--fni-text-muted) !important; opacity: 1; }
+html.dark :is(input,textarea,select):disabled { color: var(--fni-text-muted) !important; background-color: #202F45 !important; opacity: 1; }
+html.dark input[type="checkbox"],html.dark input[type="radio"] { accent-color: #86AFFF; }
+
+/* Notification centre intentionally follows the same blue-black palette. */
+html.dark .fni-notification-center {
+  background: #0B1422 !important;
+  color: var(--fni-text) !important;
+}
+html.dark .fni-notification-center :is([class*="bg-white"],[class*="bg-[#F1F4F8]"],[class*="bg-[#E2E8F0]"],[class*="bg-[#EAF1FA]"],[class*="bg-slate-100"],[class*="bg-slate-200"]) {
+  background: #142238 !important;
+  border-color: #354861 !important;
+}
+html.dark .fni-notification-center :is(p,span,button,label) { color: inherit; }
+html.dark .fni-notification-center [class*="bg-[#142B4A]"] { background: #244A91 !important; color: #FFFFFF !important; }
+html.dark .fni-notification-center [class*="bg-[#142B4A]"] * { color: #FFFFFF !important; }
+html.dark .fni-notification-center [class*="hover:!bg-[#F8FAFC]"]:hover,
+html.dark .fni-notification-center [class*="hover:!bg-[#E1EBF7]"]:hover { background: #1B304A !important; }
+
+/* Consistent borders, focus states, selection and motion accessibility. */
+html.dark * { scrollbar-color: #536780 transparent; }
+html:not(.dark) * { scrollbar-color: #CBD5E1 transparent; }
+:where(button,a,input,select,textarea,[role="button"],[tabindex]):focus-visible {
+  outline: 2px solid var(--fni-focus);
+  outline-offset: 2px;
+}
+html.dark :where(button,a,input,select,textarea,[role="button"],[tabindex]):focus-visible { outline-color: #E7BD59; }
+html.dark ::selection { background: #315DB588; color: #FFFFFF; }
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Responsive shell sizing retained from the previous design system. */
+html { font-size: clamp(14px, calc(13.5px + .16vw), 16px); }
+button,input,select,textarea { max-width: 100%; }
+main,main > * { min-width: 0; }
+img,video,canvas { max-width: 100%; }
+.table-scroll-container { max-width: 100%; }
+@media (max-width: 767px) {
+  html { font-size: 15px; }
+  main { padding-left: clamp(.625rem,3vw,1rem); padding-right: clamp(.625rem,3vw,1rem); }
+  main .grid { min-width: 0; }
+  main [class*="min-w-[240px]"] { min-width: 0 !important; width: 100%; }
+  main table { font-size: .78rem; }
+  main button,main a[role="button"] { min-height: 2.5rem; }
+  header { min-height: 3.5rem; position: sticky; top: 0; z-index: 30; }
+  header > div:last-child { min-width: 0; }
+  header > div:last-child > button { flex-shrink: 0; }
+  .mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+}
+@media (max-width: 390px) {
+  html { font-size: 14px; }
+  main { padding-left: .625rem; padding-right: .625rem; }
+  .mobile-bottom-nav button { min-width: 0; }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  html { font-size: 15px; }
+  main { padding-left: 1.25rem; padding-right: 1.25rem; }
+}
+@media (min-width: 768px) {
+  aside[class*="fixed"] { box-shadow: 1px 0 0 var(--fni-border); }
+  header { min-height: 60px; }
 }

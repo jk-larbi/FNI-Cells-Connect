@@ -1,6 +1,7 @@
 import { SupabaseService } from './supabaseService';
 import { OfferingRecord, OfferingAggregation, UserRole } from '../types';
 import { ReportService } from './reportService';
+import { CellService } from './cellService';
 
 const STORAGE_KEY = 'fni_offerings_store_v1';
 
@@ -60,13 +61,8 @@ export class FinanceService {
       status: data.status,
     };
 
-    // Primary write to Supabase
-    try {
-      await SupabaseService.upsertOfferingRecord(record);
-    } catch (err) {
-      console.warn('Supabase offering sync notice:', err);
-    }
-
+    // The database trigger on cell_meeting_reports owns the authoritative finance write.
+    // Tutors intentionally cannot write directly to the admin-only offerings table.
     const localList = getStoredOfferings();
     const existingIndex = localList.findIndex(o => o.reportId === data.reportId);
     if (existingIndex >= 0) {
@@ -97,9 +93,10 @@ export class FinanceService {
     // 2. Query live Supabase offering records
     try {
       const supaRecords = await SupabaseService.getOfferingRecords();
-      if (supaRecords && supaRecords.length > 0) {
+      if (supaRecords !== null) {
+        map.clear();
         supaRecords.forEach(r => map.set(r.reportId, r));
-        setStoredOfferings(Array.from(map.values()));
+        setStoredOfferings(supaRecords);
       }
     } catch (e) {
       console.warn('Notice loading Supabase offerings:', e);
@@ -137,9 +134,21 @@ export class FinanceService {
       (a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime()
     );
 
-    // If caller is tutor, scope to their cell
+    // Never expose financial records belonging to archived/deleted cells in the active portal.
+    const activeCells = await CellService.getActiveCells();
+    const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
+    all = all.filter(record => activeCellIds.has(record.cellId));
+    setStoredOfferings(all);
+
+    // If caller is a tutor, scope by either canonical or legacy cell identifier.
     if (!isAuthorized && cellId) {
-      all = all.filter(o => o.cellId === cellId);
+      const requestedCell = activeCells.find(cell =>
+        cell.id === cellId || cell.firebase_id === cellId || cell.tutorUid === cellId
+      );
+      const requestedCellIds = new Set(requestedCell
+        ? [requestedCell.id, requestedCell.firebase_id].filter((id): id is string => Boolean(id))
+        : [cellId]);
+      all = all.filter(record => requestedCellIds.has(record.cellId));
     }
 
     return all;

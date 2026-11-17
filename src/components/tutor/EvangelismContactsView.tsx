@@ -16,7 +16,8 @@ import {
   Edit2,
   X,
   Save,
-  MessageSquare,
+  Send,
+  PhoneCall,
   ArrowLeft,
 } from 'lucide-react';
 
@@ -372,18 +373,18 @@ export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ 
                               target="_blank"
                               rel="noreferrer"
                               title="Chat on WhatsApp"
-                              className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 inline-flex items-center justify-center transition-colors border border-emerald-200"
+                              className="w-9 h-9 rounded-full bg-[#229ED9]/10 text-[#1677A8] hover:bg-[#229ED9]/20 inline-flex items-center justify-center transition-colors border border-[#229ED9]/20"
                             >
-                              <MessageSquare className="w-4 h-4" />
+                              <Send className="w-4 h-4" />
                             </a>
                           )}
                           {contact.phone && (
                             <a
                               href={`tel:${contact.phone}`}
                               title="Call"
-                              className="w-8 h-8 rounded-xl bg-[#142B4A]/5 text-[#142B4A] hover:bg-[#142B4A]/10 inline-flex items-center justify-center transition-colors border border-[#142B4A]/20"
+                              className="w-9 h-9 rounded-full bg-[#229ED9]/10 text-[#1677A8] hover:bg-[#229ED9]/20 inline-flex items-center justify-center transition-colors border border-[#229ED9]/20"
                             >
-                              <Phone className="w-4 h-4" />
+                              <PhoneCall className="w-4 h-4" />
                             </a>
                           )}
                           <button

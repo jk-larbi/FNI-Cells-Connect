@@ -19,6 +19,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.documentElement.style.colorScheme = theme;
+    document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('fni-theme', theme); } catch { /* Storage may be unavailable. */ }
   }, [theme]);
 

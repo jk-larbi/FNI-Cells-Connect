@@ -1,263 +1,96 @@
-# FNI CELLS CONNECT — Forerunners Network International
+# FNI Cells Connect
+
+<div align="center">
+
+**A digital workspace for cell reporting, coordination and ministry oversight.**
+
+Forerunners Network International (FNI)
+
+</div>
+
+---
+
+## Overview
+
+FNI Cells Connect is a web application concept for helping FNI cell leaders and church administrators coordinate weekly reporting and follow-up in one place.
+
+The project is designed around a clear, role-aware workflow: cell leaders submit reports, authorized leaders review submissions, and administrators monitor reporting activity.
+
+## Core areas
+
+- **Cell leader workspace** — access cell information and submit weekly reports.
+- **Weekly reporting** — record attendance, visitors, outreach and other ministry activity.
+- **Report review** — support submission review, feedback and status tracking.
+- **Administration** — manage cell information and oversee reporting activity.
+- **Reporting visibility** — make submitted information easier to review across the organization.
+
+> Feature availability depends on the current application implementation and configured backend.
+
+## Technology
+
+| Area | Technology |
+|---|---|
+| Frontend | React, TypeScript |
+| Build tooling | Vite |
+| Styling | Tailwind CSS |
+| Backend and database | Supabase (PostgreSQL) |
+| Authentication and data access | Supabase Auth and Row Level Security |
+| Charts and icons | Recharts, Lucide React |
+
+**Backend direction:** Supabase is the intended backend for this project. Firebase is not part of the intended deployment architecture. Do not treat local seed or mock data as live ministry records.
+
+## Getting started
+
+### Requirements
+
+- Node.js (LTS recommended)
+- npm
+- A Supabase project for live authentication and database functionality
+
+### Install and run
+
+```bash
+git clone https://github.com/jk-larbi/FNI-Cells-Connect.git
+cd FNI-Cells-Connect
+npm install
+npm run dev
+```
+
+### Configure Supabase
+
+Create a local `.env` file and provide the project credentials expected by the application. Use the variable names documented in `.env.example`.
+
+Never commit private keys, service-role credentials, passwords or real member information to the repository. The Supabase anon/publishable key may be used in a client application only when database access is correctly protected by Row Level Security policies.
+
+### Build
+
+```bash
+npm run build
+```
+
+## Repository structure
+
+- `src/` — application interface, components and services
+- `supabase/migrations/` — database schema and policy migrations
+- `supabase/seed.sql` — development seed data
+- `.env.example` — environment variable template
+
+## Security notes
+
+- Keep privileged credentials on trusted server-side systems; never expose them in frontend code.
+- Apply and test Row Level Security policies for every table containing protected data.
+- Use real, authorized accounts for production verification.
+- Do not use sample records as evidence of live reporting activity.
+
+## Project
+
+- [Source code](https://github.com/jk-larbi/FNI-Cells-Connect)
+- [Report an issue](https://github.com/jk-larbi/FNI-Cells-Connect/issues)
+
+---
+
+<div align="center">
 
 *Connecting cells. Strengthening fellowship. Advancing the mission.*
 
-A production-grade, centralized digital cell management and reporting platform engineered for **Forerunners Network International (FNI)**.
-
----
-
-## 1. Executive Overview
-
-**FNI CELLS CONNECT** provides an elegant, role-protected platform for Tutors (Cell Leaders) and Church Leadership. It streamlines weekly cell returns, evangelism soul-winning logs, discipleship follow-up pipelines, and executive compliance oversight.
-
-### Core Objectives Delivered in Phase 1:
-- **Centralized Digital Submissions**: Structured 10-area weekly reporting form replacing manual spreadsheets and messaging apps.
-- **Role-Based Access Control (RBAC)**: Strict segregation between Super Administrator, National Administrator, Regional Leader, and Cell Leader.
-- **Transparent Review & Audit Trail**: Real-time review workflow (`Draft` → `Submitted` → `Under Review` → `Approved` / `Needs Revision`) with immutable audit logging.
-- **Executive Analytics**: Real-time KPI dashboards, weekly attendance/visitor trends, and soul-winning velocity charts using Recharts.
-- **Regional Compliance Monitoring**: Automated tracking of compliant vs outstanding cell reports with multi-channel nudge triggers (WhatsApp/Email/In-App).
-- **Dual Persistence Architecture**: Direct Supabase PostgreSQL + Row Level Security (RLS) integration with an automatic fallback local store for zero-config evaluation.
-
----
-
-## 2. Technology Stack & Architecture
-
-| Layer | Technology | Details |
-|---|---|---|
-| **Frontend Framework** | React 18 + TypeScript | Strict typing, modular architecture, reusable components |
-| **Build Tool** | Vite 5 | Fast HMR, optimized production build |
-| **Styling & Theme** | Tailwind CSS 3.4 | Institutional visual identity: Deep Navy (`#0B1B3D`), Restrained Gold (`#C59B27`), Slate surfaces |
-| **Icons & Charts** | Lucide React + Recharts | Responsive SVG charts (attendance, visitors, soul winning) |
-| **Backend & Database** | Supabase (PostgreSQL 15+) | Relational tables, foreign keys, triggers, constraints, indexes |
-| **Security & Auth** | Supabase Auth + RLS | Row Level Security policies on every table |
-| **Hosting Target** | Vercel | Production-ready SPA with route rewrites |
-
----
-
-## 3. Visual Identity Guidelines
-
-Adheres strictly to an organizational management aesthetic:
-- **Primary Background**: White (`#FFFFFF`) and Light Slate (`#F8FAFC`, `#F1F5F9`).
-- **Brand Primary**: Deep Navy Blue (`#0B1B3D`, `#071228`).
-- **Brand Accent**: Restrained Metallic Gold (`#C59B27`, `#E0B84C`).
-- **No Gimmicks**: Avoided excessive gradients, unnecessary animations, and generic AI glassmorphism.
-
----
-
-## 4. Role-Based Access Control (RBAC) Matrix
-
-| Module / Action | Super Administrator | National Administrator | Regional Leader | Cell Leader |
-|---|:---:|:---:|:---:|:---:|
-| **Executive Dashboard** | Global Organization | National Scope | Assigned Region Scope | Assigned Cell Scope |
-| **Submit Cell Report** | Yes | Yes | — | Yes (Own Cell) |
-| **Save Report as Draft** | Yes | Yes | — | Yes |
-| **Review & Approve Reports** | All Regions | National Scope | Assigned Region | — |
-| **Request Revisions & Feedback** | All Regions | National Scope | Assigned Region | — |
-| **Regional Oversight & Directory**| All Regions | All Regions | Assigned Region | — |
-| **User & Role Administration** | Full CRUD | Full CRUD | Read-only | — |
-| **Register Cells & Regions** | Full CRUD | Full CRUD | Region Cells | — |
-| **Configure Reporting Cycles** | Full CRUD | Full CRUD | — | — |
-| **Multi-Channel Reminders** | Dispatch Org-wide | Dispatch National | Dispatch Regional | View Notifications |
-| **Immutable Audit Logs** | Full Visibility | Full Visibility | — | — |
-
----
-
-## 5. Authentication, Cell Registration & Administrator Security
-
-The platform implements enterprise-grade authentication with distinct separation between field ministers and national administration:
-
-### A. Cell Leader Sign-In & Onboarding
-- **OAuth Providers**: Supabase Authentication with **Google Account (Gmail)** and **Apple ID**.
-- **First-Time Registration Wizard**: Non-dismissible modal immediately triggered for newly signed-in cell leaders.
-  - Collects Full Name, Cell Fellowship Name, WhatsApp/Phone Number, Region, Meeting Day/Time, Venue Address, Target Attendance.
-  - **Duplicate Prevention & Association**: Performs case-insensitive, alphanumeric normalization on cell names. If a cell already exists (e.g. `Living Waters` vs `Living Waters Fellowship`), prompts to link to the existing cell without generating duplicate records.
-  - Sets `is_onboarded = true` and persists details in Supabase database.
-- **Returning Cell Leaders**: Automatically recognized; bypasses onboarding and loads their registered cell data directly.
-- **Data Isolation**: Cell leaders are restricted by Row Level Security (RLS) and can only access their own profile, cell details, and reports.
-
-### B. Administrator Access & Hardened Credentials
-- **Separate Admin Sign-In**: Dedicated login portal for system and national administrators.
-- **Initial Setup Credentials**:
-  - Username: `admin`
-  - Temporary Password: `admin123`
-- **Mandatory First-Login Password Change**:
-  - Immediately locks the screen with `ForcePasswordChangeModal`.
-  - Administrator cannot skip, dismiss, or bypass this step.
-  - Password strength validation: Minimum 8 characters, alphanumeric, cannot equal `admin123`.
-  - Disables the temporary `admin123` credentials permanently once configured.
-  - Administrator can update their password later via **Account Settings**.
-- **Role Elevation Protection**: Ordinary cell leaders registering via OAuth cannot assign themselves administrative privileges.
-
-### C. Administrator Privileges
-- **Cell Leaders Directory**: View all registered leaders with full names, phone numbers, and associated cell names.
-- **Cell Search & Filtering**: Search cells by name, code, or leader, with region filters.
-- **Direct Report Inspection**: One-click preview of weekly returns submitted by each individual cell fellowship.
-
----
-
-## 6. Database Schema & RLS Architecture
-
-The initial schema migration is stored in `supabase/migrations/20261107_initial_schema.sql`.
-
-### Relational Tables
-1. `profiles`: Extends Supabase `auth.users`, storing user role, contact info, region, and cell assignment.
-2. `regions`: Ecclesiastical boundaries (e.g., Lagos Central, Abuja Capital, London Diaspora, Accra Hub).
-3. `cells`: Fellowship units with leader assignment, meeting schedule, and venue address.
-4. `reporting_periods`: Weekly reporting windows with open/closed flags and strict submission deadlines.
-5. `cell_reports`: Core 10-area reporting data with auto-calculated total attendance, numerical metrics, and pastoral remarks.
-6. `report_reviews`: Reviewer notes, status transitions, and timestamps.
-7. `notifications`: Multi-channel alerts (In-App, Email, WhatsApp) for submission confirmations and reminders.
-8. `audit_logs`: Immutable audit trail of administrative and review mutations.
-
-### Row Level Security (RLS)
-- **Cell Leaders**: Can only view their own cell's reports and insert/update reports for their assigned fellowship unit.
-- **Regional Leaders**: Can only view and review reports belonging to cells within their assigned regional jurisdiction.
-- **National & Super Admins**: Organization-wide visibility and administrative authority.
-
----
-
-## 6. Project Directory Structure
-
-```
-fni-reporting-system/
-├── public/
-│   └── logo.svg                     # Official FNI brand vector mark
-├── src/
-│   ├── components/
-│   │   ├── admin/
-│   │   │   ├── AdminManagementView.tsx  # User, cell, region, period admin
-│   │   │   └── AuditTrailView.tsx       # Immutable system audit trail
-│   │   ├── auth/
-│   │   │   └── AuthView.tsx             # Supabase Auth & role switch evaluator
-│   │   ├── common/
-│   │   │   ├── Badge.tsx                # Status and role indicator badges
-│   │   │   ├── Button.tsx               # Standardized institutional buttons
-│   │   │   ├── Card.tsx                 # Consistent surface container
-│   │   │   ├── EmptyState.tsx           # Fallback empty states
-│   │   │   ├── LoadingSpinner.tsx       # Async operation indicator
-│   │   │   └── Modal.tsx                # Accessible backdrop modal dialog
-│   │   ├── dashboard/
-│   │   │   ├── ComplianceTracker.tsx    # Regional submission compliance bars
-│   │   │   ├── DashboardView.tsx        # Role-tailored master dashboard
-│   │   │   ├── RecentReportsTable.tsx   # Submissions table with quick review
-│   │   │   ├── SoulsWonChart.tsx        # Evangelism harvest trend chart
-│   │   │   ├── StatCard.tsx             # Metric KPI summary cards
-│   │   │   └── WeeklyPerformanceChart.tsx # Attendance vs visitors dual chart
-│   │   ├── layout/
-│   │   │   ├── AppLayout.tsx            # App container & tab navigation
-│   │   │   ├── Header.tsx               # Breadcrumbs, active cycle, alerts
-│   │   │   ├── RoleSwitcherBanner.tsx   # Immediate RBAC evaluator bar
-│   │   │   └── Sidebar.tsx              # Responsive navigation drawer
-│   │   ├── notifications/
-│   │   │   └── NotificationCenterModal.tsx # Multi-channel dispatch hub
-│   │   └── reports/
-│   │       ├── CellReportForm.tsx       # 10-area structured weekly form
-│   │       ├── ReportDetailModal.tsx    # Review sheet, feedback, status update
-│   │       └── ReportHistoryTable.tsx   # Search, multi-filter, CSV export
-│   ├── context/
-│   │   ├── AuthContext.tsx              # Session state, role permissions
-│   │   └── NotificationContext.tsx      # In-app alerts, reminder dispatch
-│   ├── lib/
-│   │   └── supabase.ts                  # Supabase client initialization
-│   ├── services/
-│   │   ├── analyticsService.ts          # KPI & trend aggregation engine
-│   │   ├── authService.ts              # Supabase auth + local storage fallback
-│   │   ├── mockData.ts                  # Realistic ministry seed data
-│   │   └── reportService.ts             # CRUD, review workflow, audit logger
-│   ├── types/
-│   │   └── index.ts                     # TypeScript domain models & enums
-│   ├── App.tsx                          # Root application component
-│   ├── index.css                        # Tailwind directives & typography
-│   ├── main.tsx                         # React 18 DOM mount point
-│   └── vite-env.d.ts                    # Vite client types & environment interface
-├── supabase/
-│   ├── migrations/
-│   │   └── 20261107_initial_schema.sql  # Complete DDL, RLS policies, triggers
-│   └── seed.sql                         # Initial regions and reporting periods
-├── .env.example                         # Environment variable definitions
-├── index.html                           # Single-page application entry point
-├── package.json                         # Dependencies and npm build scripts
-├── postcss.config.js                    # PostCSS processor config
-├── tailwind.config.js                   # Custom FNI color system & tokens
-├── tsconfig.json                        # TypeScript compiler config
-├── vercel.json                          # Vercel SPA routing configuration
-└── vite.config.ts                       # Vite bundler configuration
-```
-
----
-
-## 7. Setup & Installation
-
-### Prerequisites
-- Node.js `v18+` or `v20+` (tested on Node v24)
-- npm or pnpm
-
-### Local Development Setup
-```bash
-# 1. Clone repository & enter directory
-cd fni-reporting-system
-
-# 2. Install dependencies
-npm install
-
-# 3. Configure environment variables (Optional for demo mode)
-cp .env.example .env
-
-# 4. Start local Vite development server
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 8. Supabase Backend Integration
-
-1. Create a new project in [Supabase](https://supabase.com).
-2. Navigate to **SQL Editor** in the Supabase Dashboard.
-3. Open and run `supabase/migrations/20261107_initial_schema.sql`.
-4. Open and run `supabase/seed.sql` to populate initial regions and periods.
-5. In **Project Settings** > **API**, copy:
-   - `Project URL`
-   - `Project API Key (anon/public)`
-6. Update your `.env` file:
-   ```env
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6...
-   ```
-7. Rebuild or restart `npm run dev`. The system automatically detects Supabase credentials and switches to live PostgreSQL storage with Row Level Security.
-
----
-
-## 9. Vercel Production Deployment
-
-The project is preconfigured for zero-friction deployment to Vercel:
-
-1. Push the code repository to GitHub, GitLab, or Bitbucket.
-2. In Vercel, import the repository as a **Vite** project.
-3. Set the Root Directory to the project folder (or repository root).
-4. In **Environment Variables**, add:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_EMAIL_NOTIFICATION_ENABLED=true`
-   - `VITE_WHATSAPP_NOTIFICATION_ENABLED=true`
-5. Click **Deploy**. Vercel will run `tsc && vite build` and serve the application via edge CDN with full SPA routing handled by `vercel.json`.
-
----
-
-## 10. Verification & Testing Instructions
-
-1. **Cell Leader Access & Registration**:
-   - On the sign-in screen, select **Cell Leader Access**.
-   - Enter your email address or click **Continue with Google** / **Continue with Apple ID**.
-   - As a first-time cell leader, the **Cell Leader Registration & Onboarding** wizard appears.
-   - Enter your full name, cell fellowship name, phone number, and meeting details.
-   - Upon completion, you enter your Cell Leader Dashboard with your registered cell name and clean 0-based records.
-   - Click **Submit Report** to file your first weekly return.
-
-2. **Administrator Access & Setup**:
-   - On the sign-in screen, select **Administrator Sign-In**.
-   - Enter initial setup credentials: Username `admin`, Password `admin123`.
-   - The system immediately requires you to create a secure personal administrator password.
-   - Once updated, you access the full **Admin Panel**.
-   - View registered cell leaders, monitor real-time submissions, filter cells, and review cell reports.
-   - The temporary initial credentials (`admin123`) are permanently disabled.
+</div>

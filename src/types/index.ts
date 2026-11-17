@@ -54,6 +54,7 @@ export interface Profile {
   avatar_url?: string;
   is_active: boolean;
   is_onboarded: boolean;
+  is_test_account?: boolean;
   must_change_password?: boolean;
   auth_provider?: 'google' | 'apple' | 'email' | 'credentials';
   created_at: string;
@@ -75,6 +76,7 @@ export interface Region {
 export interface Cell {
   id: string;
   name: string;
+  firebase_id?: string;
   normalized_name?: string;
   location?: string;
   meeting_location?: string;
@@ -96,6 +98,7 @@ export interface Cell {
   target_attendance?: number;
   status?: 'Active' | 'Suspended' | 'Deactivated';
   is_active: boolean;
+  is_archived?: boolean;
   created_at: string;
   createdAt?: unknown;
 }
@@ -285,6 +288,13 @@ export interface MessageReply {
   content: string;
 }
 
+export interface ChatAttachment {
+  name: string;
+  path: string;
+  mimeType: string;
+  size: number;
+}
+
 export interface PrivateMessage {
   id: string;
   senderUid: string;
@@ -299,6 +309,11 @@ export interface PrivateMessage {
   isRead: boolean;
   readAt?: string;
   replyTo?: MessageReply;
+  attachments?: ChatAttachment[];
+  reactions?: { [emoji: string]: string[] };
+  isPinned?: boolean;
+  deletedForEveryoneAt?: string;
+  editedAt?: string;
 }
 
 export interface CommunityMessage {
@@ -313,6 +328,12 @@ export interface CommunityMessage {
   replyTo?: MessageReply;
   mentions?: string[];
   reactions?: { [emoji: string]: string[] };
+  attachments?: ChatAttachment[];
+  deletedForEveryoneAt?: string;
+  editedAt?: string;
+  isPinned?: boolean;
+  pinnedAt?: string;
+  pinnedBy?: string;
 }
 
 export interface InvitationCode {
@@ -371,6 +392,8 @@ export interface SoulTargetMetrics {
   percentageAchieved: number;
   soulsFromEvangelism: number;
   soulsFromCells: number;
+  firstTimersFromCells: number;
+  pendingSouls: number;
   weeklyProgress: Array<{ week: string; souls: number }>;
   monthlyProgress: Array<{ month: string; souls: number }>;
   quarterlyProgress: Array<{ quarter: string; souls: number }>;
@@ -427,16 +450,18 @@ export interface AuditLog {
 
 export interface TutorRegistrationInput {
   fullName: string;
-  phoneNumber?: string;
-  cellName: string;
-  coLeaderName?: string;
+  cellId: string;
   username?: string;
+  phoneNumber?: string;
+  cellName?: string;
+  coLeaderName?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
 }
 
 export interface TutorLoginInput {
+  cellId?: string;
   username?: string;
   email?: string;
   fullName?: string;
@@ -445,7 +470,8 @@ export interface TutorLoginInput {
 }
 
 export interface AdminLoginInput {
-  email: string;
+  username?: string;
+  email?: string;
   password: string;
 }
 
@@ -532,11 +558,13 @@ export interface CellLocationRecord {
 
 export type AdminNavTab =
   | 'dashboard'
+  | 'location-sharing'
   | 'cell-management'
   | 'cell-leaders'
   | 'cell-location-history'
   | 'report-review'
   | 'report-history'
+  | 'received-reports'
   | 'learning-portal'
   | 'learning-assignments'
   | 'learning-quizzes'

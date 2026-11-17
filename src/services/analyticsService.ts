@@ -15,7 +15,7 @@ export class AnalyticsService {
       role === 'admin' || role === 'super_admin' || role === 'national_admin' || role === 'regional_leader';
 
     const [allCells, meetingReports, evangelismReports, contacts, settings, allProfiles] = await Promise.all([
-      CellService.getCells(),
+      CellService.getActiveCells(),
       ReportService.getCellMeetingReports(),
       ReportService.getEvangelismReports(),
       FollowUpService.getContacts(),
@@ -23,21 +23,34 @@ export class AnalyticsService {
       Promise.resolve(AuthService.getAllProfiles()),
     ]);
 
-    // Filter scope by user cell if tutor
+    // Only data linked to a currently registered, non-archived cell is active.
+    const activeCellIds = new Set(allCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
     let scopedCells = allCells;
-    let scopedMeetings = meetingReports;
-    let scopedEvang = evangelismReports;
-    let scopedContacts = contacts;
+    let scopedMeetings = meetingReports.filter(report => activeCellIds.has(report.cellId));
+    let scopedEvang = evangelismReports.filter(report => activeCellIds.has(report.cellId));
+    let scopedContacts = contacts.filter(contact => activeCellIds.has(contact.cellId));
 
     if (!isAdmin && userCellId) {
-      scopedCells = allCells.filter(c => c.id === userCellId);
-      scopedMeetings = meetingReports.filter(m => m.cellId === userCellId);
-      scopedEvang = evangelismReports.filter(e => e.cellId === userCellId);
-      scopedContacts = contacts.filter(c => c.cellId === userCellId);
+      scopedCells = allCells.filter(cell =>
+        cell.id === userCellId || cell.firebase_id === userCellId || cell.tutorUid === userCellId
+      );
+      const memberCellKeys = new Set(scopedCells.flatMap(cell =>
+        [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))
+      ));
+      scopedMeetings = meetingReports.filter(report => memberCellKeys.has(report.cellId));
+      scopedEvang = evangelismReports.filter(report => memberCellKeys.has(report.cellId));
+      scopedContacts = contacts.filter(contact => memberCellKeys.has(contact.cellId));
     }
 
     const totalCells = scopedCells.length;
-    const registeredTutors = allProfiles.filter(p => p.role === 'tutor' || p.role === 'cell_leader');
+    const registeredTutors = allProfiles.filter(profile =>
+      (profile.role === 'tutor' || profile.role === 'cell_leader') &&
+      scopedCells.some(cell =>
+        cell.id === profile.cell_id ||
+        cell.tutorUid === profile.id ||
+        (profile.cell_name && cell.name.toLowerCase() === profile.cell_name.toLowerCase())
+      )
+    );
     const activeCellLeaders = isAdmin ? registeredTutors.length : (scopedCells.filter(c => c.is_active && c.tutorUid).length || 1);
 
     // Meeting and Evangelism counts
@@ -65,7 +78,9 @@ export class AnalyticsService {
     const missingCellsCount = scopedCells.filter(c => c.is_active && !submittedCellIds.has(c.id)).length;
 
     // Evangelism numbers
-    const soulsWon = scopedEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+    const soulsWon = scopedEvang
+      .filter(report => report.status === 'Approved' || report.status === 'approved')
+      .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
     const peopleReached = scopedEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
     const contactsCaptured = scopedContacts.length;
     const interestedInMinistry = scopedEvang.reduce((sum, e) => sum + (Number(e.interestedInMinistry) || 0), 0);
@@ -118,19 +133,36 @@ export class AnalyticsService {
       ReportService.getEvangelismReports(),
     ]);
 
-    let fMeetings = meetings;
-    let fEvang = evang;
+    const activeCells = await CellService.getActiveCells();
+    const activeIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
+    let fMeetings = meetings.filter(report => activeIds.has(report.cellId));
+    let fEvang = evang.filter(report => activeIds.has(report.cellId));
     if (!isAdmin && userCellId) {
-      fMeetings = meetings.filter(m => m.cellId === userCellId);
-      fEvang = evang.filter(e => e.cellId === userCellId);
+      const memberCell = activeCells.find(cell =>
+        cell.id === userCellId || cell.firebase_id === userCellId || cell.tutorUid === userCellId
+      );
+      const memberCellKeys = new Set(memberCell
+        ? [memberCell.id, memberCell.firebase_id].filter((id): id is string => Boolean(id))
+        : [userCellId]);
+      fMeetings = meetings.filter(report => memberCellKeys.has(report.cellId));
+      fEvang = evang.filter(report => memberCellKeys.has(report.cellId));
     }
 
     const periods = await ReportService.getPeriods();
 
     return periods.map(p => {
-      const attendance = fMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
-      const peopleReached = fEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
-      const soulsWon = fEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+      const inPeriod = (value?: string) => {
+        if (!value) return false;
+        const day = value.slice(0, 10);
+        return day >= p.start_date && day <= p.end_date;
+      };
+      const periodMeetings = fMeetings.filter(report => inPeriod(report.meetingDate || report.submittedAt));
+      const periodEvang = fEvang.filter(report => inPeriod(report.date || report.submittedAt));
+      const attendance = periodMeetings.reduce((sum, report) => sum + (Number(report.attendance) || 0), 0);
+      const peopleReached = periodEvang.reduce((sum, report) => sum + (Number(report.peopleSpokenTo) || 0), 0);
+      const soulsWon = periodEvang
+        .filter(report => report.status === 'Approved' || report.status === 'approved')
+        .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
 
       return {
         week: p.name.replace('2026 - ', ''),
@@ -147,19 +179,20 @@ export class AnalyticsService {
    */
   static async getCellPerformance(): Promise<CellPerformanceRecord[]> {
     const [cells, meetings, evang, allProfiles] = await Promise.all([
-      CellService.getCells(),
+      CellService.getActiveCells(),
       ReportService.getCellMeetingReports(),
       ReportService.getEvangelismReports(),
       Promise.resolve(AuthService.getAllProfiles()),
     ]);
 
     return cells.map(cell => {
-      const cellMeetings = meetings.filter(m => m.cellId === cell.id);
-      const cellEvang = evang.filter(e => e.cellId === cell.id);
+      const cellKeys = new Set([cell.id, cell.firebase_id].filter((id): id is string => Boolean(id)));
+      const cellMeetings = meetings.filter(report => cellKeys.has(report.cellId));
+      const cellEvang = evang.filter(report => cellKeys.has(report.cellId));
 
       // Identify assigned tutor / leader
       const tutorProfile = allProfiles.find(
-        p => p.cell_id === cell.id || p.id === cell.tutorUid || p.full_name.toLowerCase() === (cell.leader_name || '').toLowerCase()
+        p => p.cell_id === cell.id || p.cell_id === cell.firebase_id || p.id === cell.tutorUid || p.full_name.toLowerCase() === (cell.leader_name || '').toLowerCase()
       );
       const leaderName = cell.leader_name || tutorProfile?.full_name || 'Assigned Tutor';
       const leaderPhone = cell.leader_phone || tutorProfile?.phone_number || '';
@@ -167,10 +200,12 @@ export class AnalyticsService {
       // Attendance
       const totalAttendance = cellMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
 
-      // Souls won: outreach conversions + cell meeting new converts/members
-      const soulsFromEvang = cellEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
-      const soulsFromCell = cellMeetings.reduce((sum, m) => sum + (Number(m.newMembers) || 0), 0);
-      const soulsWon = soulsFromEvang + soulsFromCell;
+      // Verified conversions match the annual soul target definition.
+      // New cell members/first-timers are tracked separately and are not counted as conversions.
+      const soulsFromEvang = cellEvang
+        .filter(report => report.status === 'Approved' || report.status === 'approved')
+        .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
+      const soulsWon = soulsFromEvang;
 
       // People reached through evangelism
       const peopleReached = cellEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
@@ -267,7 +302,7 @@ export class AnalyticsService {
 
   static async exportAnalyticsCsv(): Promise<string> {
     const [cells, meetings, evang, contacts] = await Promise.all([
-      CellService.getCells(),
+      CellService.getActiveCells(),
       ReportService.getCellMeetingReports(),
       ReportService.getEvangelismReports(),
       FollowUpService.getContacts(),
@@ -284,7 +319,9 @@ export class AnalyticsService {
 
       const totalAttendance = cellMeetings.reduce((sum, m) => sum + (Number(m.attendance) || 0), 0);
       const peopleReached = cellEvang.reduce((sum, e) => sum + (Number(e.peopleSpokenTo) || 0), 0);
-      const soulsWon = cellEvang.reduce((sum, e) => sum + (Number(e.conversions) || 0), 0);
+      const soulsWon = cellEvang
+        .filter(report => report.status === 'Approved' || report.status === 'approved')
+        .reduce((sum, report) => sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0);
       const completedFollowUps = cellContacts.filter(c => c.followUpStatus === 'Joined Ministry' || c.followUpStatus === 'Completed').length;
 
       rows.push([

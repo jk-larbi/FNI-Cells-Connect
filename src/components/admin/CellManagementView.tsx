@@ -3,6 +3,9 @@ import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact } from '..
 import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
+import { CellMembersPanel } from '../CellMembersPanel';
+import { CellLeadershipPanel } from './CellLeadershipPanel';
+import { supabase } from '../../lib/supabase';
 import {
   Building,
   Search,
@@ -23,6 +26,7 @@ import {
   Flame,
   UserCheck,
   ArrowLeft,
+  Archive,
 } from 'lucide-react';
 
 interface CellManagementViewProps {
@@ -34,6 +38,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Suspended' | 'Deactivated'>('All');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCellIds, setSelectedCellIds] = useState<string[]>([]);
+  const [isDeletingCells, setIsDeletingCells] = useState(false);
 
   // Profile Drawer / Modal state
   const [selectedCell, setSelectedCell] = useState<Cell | null>(null);
@@ -50,7 +56,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     try {
       setIsLoading(true);
       const list = await CellService.getCells();
-      setCells(list);
+      setCells(list.filter(cell => !cell.is_archived));
     } finally {
       setIsLoading(false);
     }
@@ -92,44 +98,75 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
   const handleSaveCell = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCell.name || !editingCell.location) return;
+    const name = editingCell.name?.trim();
+    if (!name) return;
 
-    if (editingCell.id) {
-      // Update
-      const full = cells.find(c => c.id === editingCell.id);
-      if (full) {
-        const merged: Cell = {
-          ...full,
-          ...editingCell,
-          name: editingCell.name!,
-          location: editingCell.location!,
-        };
-        await CellService.updateCell(merged);
-        setCells(prev => prev.map(c => (c.id === merged.id ? merged : c)));
-        if (selectedCell?.id === merged.id) setSelectedCell(merged);
+    try {
+      if (editingCell.id) {
+        const full = cells.find(c => c.id === editingCell.id);
+        if (full) {
+          const updated = { ...full, name, normalized_name: name.toLowerCase().replace(/[^a-z0-9]/g, '') };
+          await CellService.updateCell(updated);
+          setCells(prev => prev.map(c => c.id === updated.id ? updated : c));
+          if (selectedCell?.id === updated.id) setSelectedCell(updated);
+        }
+      } else {
+        const cell = await CellService.createAdminCell(name);
+        setCells(prev => [cell, ...prev.filter(existing => existing.id !== cell.id)]);
       }
-    } else {
-      // Create new cell
-      const { cell } = await CellService.registerCell({
-        name: editingCell.name!,
-        location: editingCell.location!,
-        tutorUid: editingCell.tutorUid || 'admin-created',
-        leaderName: editingCell.leader_name || 'Assigned Leader',
-        leaderPhone: editingCell.leader_phone || '',
-        meetingDay: editingCell.meeting_day || 'Wednesday',
-        meetingTime: editingCell.meeting_time || '18:30',
-        venueAddress: editingCell.venue_address || editingCell.location,
-        targetAttendance: editingCell.target_attendance || 20,
-      });
-      setCells(prev => [cell, ...prev]);
+      setIsEditModalOpen(false);
+      setEditingCell({});
+    } catch (error: any) {
+      console.error('Cell registration/update failed:', error);
+      window.alert(error?.message || 'The cell could not be saved. Please check the details and try again.');
     }
+  };
 
-    setIsEditModalOpen(false);
-    setEditingCell({});
+  const handleArchiveCells = async (ids: string[], label: string) => {
+    if (!ids.length || isDeletingCells) return;
+    const confirmed = window.confirm('Clear ' + label + ' from the active FNI directory? The cell and its linked information will no longer appear anywhere in the Admin Portal. Historical records remain stored for record-keeping.');
+    if (!confirmed) return;
+    try {
+      setIsDeletingCells(true);
+      const success = await CellService.archiveCells(ids);
+      if (!success) { window.alert('The cells could not be cleared. Check administrator permissions and try again.'); return; }
+      const archived = new Set(ids);
+      setCells(prev => prev.filter(cell => !archived.has(cell.id)));
+      setSelectedCellIds([]);
+      if (selectedCell && archived.has(selectedCell.id)) setSelectedCell(null);
+      window.alert(ids.length + ' cell registration(s) cleared from the directory. Their data and leader assignments were preserved.');
+    } catch (error) { console.error('Cell archive failed:', error); window.alert('Could not clear the cells.'); }
+    finally { setIsDeletingCells(false); }
+  };
+
+  const handleDeleteCells = async (ids: string[], label: string) => {
+    if (!ids.length || isDeletingCells) return;
+    const confirmed = window.confirm(
+      `Permanently delete ${ids.length} ${label}? This also removes their meeting and evangelism reports, follow-up contacts, follow-up history, and offering records. Cell leader accounts and the audit trail will be retained. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+    try {
+      setIsDeletingCells(true);
+      const success = await CellService.deleteCells(ids);
+      if (!success) {
+        window.alert('The cells could not be deleted. Check the database migration and administrator permissions, then try again.');
+        return;
+      }
+      const removed = new Set(ids);
+      setCells(prev => prev.filter(cell => !removed.has(cell.id)));
+      setSelectedCellIds([]);
+      if (selectedCell && removed.has(selectedCell.id)) setSelectedCell(null);
+      window.alert(`${ids.length} cell registration(s) and their associated records were deleted.`);
+    } catch (error) {
+      console.error('Cell deletion failed:', error);
+      window.alert('Cell deletion failed. No success was reported.');
+    } finally {
+      setIsDeletingCells(false);
+    }
   };
 
   // Filter cells
-  const filteredCells = cells.filter(cell => {
+  const filteredCells = cells.filter(cell => !cell.is_archived).filter(cell => {
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       !q ||
@@ -166,7 +203,18 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedCellIds.length > 0 && (
+            <button
+              type="button"
+              disabled={isDeletingCells}
+              onClick={() => handleDeleteCells(selectedCellIds, 'selected cell registration(s)')}
+              className="px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold hover:bg-rose-100 disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete Selected ({selectedCellIds.length})
+            </button>
+          )}
+          <button type="button" disabled={!cells.length || isDeletingCells} onClick={() => handleArchiveCells(cells.map(cell => cell.id), 'all registered cells')} className="px-3 py-2 rounded-xl border border-amber-200 text-amber-800 text-xs font-bold hover:bg-amber-50 disabled:opacity-50"><Archive className="w-3.5 h-3.5 inline mr-1" /> Clear All (Keep Records)</button>
           <button
             onClick={() => {
               setEditingCell({
@@ -221,7 +269,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             Registered Cells ({filteredCells.length})
           </h2>
           <span className="text-xs text-[#667085]">
-            Auto-populated from tutor registrations & admin additions
+            Auto-populated from active tutor registrations & admin additions
           </span>
         </div>
 
@@ -230,7 +278,16 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
                 <th className="py-3 px-5 w-12 text-center">
-                  <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                  <input
+                    type="checkbox"
+                    aria-label="Select all visible cells"
+                    checked={filteredCells.length > 0 && filteredCells.every(cell => selectedCellIds.includes(cell.id))}
+                    onChange={event => setSelectedCellIds(prev => event.target.checked
+                      ? Array.from(new Set([...prev, ...filteredCells.map(cell => cell.id)]))
+                      : prev.filter(id => !filteredCells.some(cell => cell.id === id)))}
+                    onClick={event => event.stopPropagation()}
+                    className="h-4 w-4 accent-[#142B4A]"
+                  />
                 </th>
                 <th className="py-3 px-4">CELL NAME & LOCATION</th>
                 <th className="py-3 px-4">ASSIGNED LEADER</th>
@@ -266,8 +323,16 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                           : 'hover:bg-[#F5F7FA]'
                       }`}
                     >
-                      <td className="py-4 px-5 text-center">
-                        <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
+                      <td className="py-4 px-5 text-center" onClick={event => event.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${cell.name}`}
+                          checked={selectedCellIds.includes(cell.id)}
+                          onChange={event => setSelectedCellIds(prev => event.target.checked
+                            ? [...prev, cell.id]
+                            : prev.filter(id => id !== cell.id))}
+                          className="h-4 w-4 accent-[#142B4A]"
+                        />
                       </td>
 
                       <td className="py-4 px-4 whitespace-nowrap">
@@ -354,6 +419,18 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                             title="View History"
                           >
                             <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isDeletingCells}
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDeleteCells([cell.id], 'cell registration');
+                            }}
+                            className="w-8 h-8 rounded-full text-rose-600 hover:bg-rose-50 inline-flex items-center justify-center transition-colors disabled:opacity-50"
+                            title="Permanently Delete Cell and Its Records"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -459,6 +536,17 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               </div>
             </div>
 
+            <CellMembersPanel cellId={selectedCell.id} canEdit={false} />
+
+            <CellLeadershipPanel
+              cell={selectedCell}
+              onUpdated={async () => {
+                await loadCells();
+                const refreshed = await CellService.getCellById(selectedCell.id);
+                if (refreshed) setSelectedCell(refreshed);
+              }}
+            />
+
             {/* Meeting Reports History */}
             <div>
               <h4 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -542,7 +630,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               </button>
             </div>
 
-            <form onSubmit={handleSaveCell} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveCell} className="space-y-4 text-xs">
               <div>
                 <label className="block font-bold text-[#182230] mb-1">Cell Name</label>
                 <input
@@ -550,98 +638,15 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   value={editingCell.name || ''}
                   onChange={e => setEditingCell({ ...editingCell, name: e.target.value })}
                   required
-                  placeholder="e.g. Dominion Cell"
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  maxLength={120}
+                  placeholder="e.g. Agape Cell"
+                  className="w-full p-3 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                 />
+                <p className="mt-2 text-[11px] text-[#667085]">Admin creates the official cell name only. Tutors select this cell when they register; their accounts automatically become cell leaders.</p>
               </div>
-
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">Location or Campus</label>
-                <input
-                  type="text"
-                  value={editingCell.location || ''}
-                  onChange={e => setEditingCell({ ...editingCell, location: e.target.value })}
-                  required
-                  placeholder="e.g. Legon Campus, Hostels"
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Leader Name</label>
-                  <input
-                    type="text"
-                    value={editingCell.leader_name || ''}
-                    onChange={e => setEditingCell({ ...editingCell, leader_name: e.target.value })}
-                    placeholder="Leader Full Name"
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Leader Phone</label>
-                  <input
-                    type="text"
-                    value={editingCell.leader_phone || ''}
-                    onChange={e => setEditingCell({ ...editingCell, leader_phone: e.target.value })}
-                    placeholder="+233 24 123 4567"
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Meeting Day</label>
-                  <select
-                    value={editingCell.meeting_day || 'Wednesday'}
-                    onChange={e => setEditingCell({ ...editingCell, meeting_day: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-white"
-                  >
-                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Meeting Time</label>
-                  <input
-                    type="text"
-                    value={editingCell.meeting_time || '18:30'}
-                    onChange={e => setEditingCell({ ...editingCell, meeting_time: e.target.value })}
-                    placeholder="18:30"
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">Target Attendance</label>
-                <input
-                  type="number"
-                  value={editingCell.target_attendance ?? 20}
-                  onChange={e => setEditingCell({ ...editingCell, target_attendance: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value) || 1) })}
-                  onBlur={() => { if (!editingCell.target_attendance) setEditingCell({ ...editingCell, target_attendance: 20 }); }}
-                  min={1}
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-[#667085] hover:bg-[#F5F7FA]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63]"
-                >
-                  Save Cell
-                </button>
-              </div>
+              <button type="submit" className="w-full rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold py-3">
+                {editingCell.id ? 'Save Cell Name' : 'Create Cell'}
+              </button>
             </form>
           </div>
         </div>

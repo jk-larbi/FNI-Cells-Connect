@@ -2,9 +2,14 @@ import React from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
-export const ThemeToggle: React.FC = () => {
+interface ThemeToggleProps {
+  placement?: 'inline' | 'floating';
+}
+
+export const ThemeToggle: React.FC<ThemeToggleProps> = ({ placement = 'floating' }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
+
   return (
     <button
       type="button"
@@ -12,9 +17,12 @@ export const ThemeToggle: React.FC = () => {
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       aria-pressed={isDark}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="fixed z-[60] top-20 right-4 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#C6A45A]/50 bg-white text-[#142B4A] shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:bg-[#142B4A] dark:text-[#E9D9B2]"
+      className={placement === 'inline'
+        ? 'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#E3E8EF] bg-[#F5F7FA] text-[#142B4A] transition-colors hover:bg-[#EAF0F8] dark:border-[#414958] dark:bg-[#252B37] dark:text-[#E7BD59] dark:hover:bg-[#30394A]'
+        : 'fixed z-[45] top-2 right-3 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#C6A45A]/50 bg-white/95 text-[#142B4A] shadow-md backdrop-blur-sm transition-colors hover:bg-[#F5F7FA] dark:border-[#52647A] dark:bg-[#1C202A]/95 dark:text-[#E7BD59] dark:hover:bg-[#252B37]'}
     >
-      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      <span className="sr-only">{isDark ? 'Light mode' : 'Dark mode'}</span>
     </button>
   );
 };

@@ -14,6 +14,7 @@
     "test:firebase": "node scripts/test-firebase.mjs"
   },
   "dependencies": {
+    "@capacitor/push-notifications": "^8.0.0",
     "@supabase/supabase-js": "^2.46.1",
     "firebase": "^13.2.0",
     "lucide-react": "^0.460.0",

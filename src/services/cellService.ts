@@ -36,23 +36,42 @@ export class CellService {
   static async getCells(): Promise<Cell[]> {
     // 1. Primary: Supabase
     const supaCells = await SupabaseService.getCells();
-    if (supaCells && supaCells.length > 0) {
+    if (supaCells !== null) {
+      // A successful empty Supabase response is authoritative. Clear stale
+      // offline data instead of resurrecting deleted cell registrations.
       saveStoredCells(supaCells);
-      return supaCells;
+      return supaCells.filter(cell => !cell.is_archived);
     }
 
-    // 2. Offline / LocalStorage cache
-    return getStoredCells();
+    // Only use the offline cache when Supabase is unavailable or the request failed.
+    return getStoredCells().filter(cell => !cell.is_archived);
+  }
+
+  static async getActiveCells(): Promise<Cell[]> {
+    const cells = await this.getCells();
+    return cells.filter(cell => cell.is_active && !cell.is_archived);
+  }
+
+  static getCachedActiveCellIds(): Set<string> {
+    const active = getStoredCells().filter(cell => cell.is_active && !cell.is_archived);
+    return new Set(active.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
+  }
+
+  static getCachedActiveCellNames(): Set<string> {
+    return new Set(getStoredCells()
+      .filter(cell => cell.is_active && !cell.is_archived)
+      .map(cell => cell.name.trim().toLowerCase())
+      .filter(Boolean));
   }
 
   static async getCellById(cellId: string): Promise<Cell | null> {
     // 1. Primary: Supabase
     const supaCell = await SupabaseService.getCellById(cellId);
-    if (supaCell) return supaCell;
+    if (supaCell && !supaCell.is_archived) return supaCell;
 
     // 2. Cache
     const all = getStoredCells();
-    return all.find(c => c.id === cellId) || null;
+    return all.find(c => (c.id === cellId || c.firebase_id === cellId) && !c.is_archived) || null;
   }
 
   /**
@@ -65,7 +84,7 @@ export class CellService {
     cell_name?: string;
     full_name?: string;
   }): Promise<Cell> {
-    const allCells = await this.getCells();
+    const allCells = await this.getActiveCells();
 
     // 1. Try resolving by explicit cell_id
     if (user.cell_id) {
@@ -90,32 +109,27 @@ export class CellService {
       if (byTutor) return byTutor;
     }
 
-    // 4. Automatically create and persist cell with the exact registered fellowship name
-    const cleanCellName = (user.cell_name || 'Fellowship Cell').trim();
-    const cellId = user.cell_id || `cell-${Date.now()}`;
-    const syntheticCell: Cell = {
-      id: cellId,
-      name: cleanCellName,
-      normalized_name: normalizeCellName(cleanCellName),
-      location: 'Central Campus',
-      code: `FNI-CEL-${(allCells.length + 1).toString().padStart(3, '0')}`,
-      tutorUid: user.id || 'tutor',
-      leader_id: user.id || 'tutor',
+    // Do not recreate a deleted or unassigned cell from stale profile/cache data.
+    // Cell registration must happen only through the explicit onboarding flow.
+    return {
+      id: '',
+      name: 'No cell assigned',
+      normalized_name: '',
+      location: '',
+      code: '',
+      tutorUid: user.id || '',
+      leader_id: user.id || '',
       leader_name: user.full_name || 'Cell Leader',
-      meeting_day: 'Wednesday',
-      meeting_time: '18:30',
-      venue_address: 'Fellowship Center',
-      target_attendance: 25,
-      total_members: 10,
-      active_members: 8,
-      new_members: 2,
-      status: 'Active',
-      is_active: true,
-      created_at: new Date().toISOString(),
+      meeting_day: '',
+      meeting_time: '',
+      venue_address: '',
+      target_attendance: 0,
+      total_members: 0,
+      active_members: 0,
+      new_members: 0,
+      is_active: false,
+      created_at: '',
     };
-
-    await this.updateCell(syntheticCell);
-    return syntheticCell;
   }
 
   static async registerCell(data: {
@@ -134,7 +148,24 @@ export class CellService {
     const rawName = data.name.trim();
     const normalized = normalizeCellName(rawName);
 
-    // 1. Fetch current cells from Supabase or local cache
+    // Supabase registration is handled transactionally: normalize, deduplicate,
+    // preserve historical references, and promote the registering leader to tutor.
+    if (SupabaseService.isAvailable()) {
+      const result = await SupabaseService.registerCellAndPromoteTutor({
+        ...data,
+        fullName: data.leaderName,
+      });
+      const all = await this.getCells();
+      const canonicalNorm = normalizeCellName(result.cell.name);
+      const updated = [result.cell, ...all.filter(cell =>
+        cell.id !== result.cell.id &&
+        normalizeCellName(cell.normalized_name || cell.name) !== canonicalNorm
+      )];
+      saveStoredCells(updated);
+      return { cell: result.cell, isExistingAssociated: result.isExistingAssociated };
+    }
+
+    // Offline-only fallback for environments without Supabase.
     const allCells = await this.getCells();
 
     // 2. Strong duplicate detection via normalized string comparison
@@ -199,10 +230,50 @@ export class CellService {
     return { cell: newCell, isExistingAssociated: false };
   }
 
+  static async createAdminCell(name: string): Promise<Cell> {
+    const cleanName = name.trim();
+    if (!cleanName) throw new Error('Cell name is required.');
+    const cell = await SupabaseService.createAdminCell(cleanName);
+    const all = await this.getCells();
+    saveStoredCells([cell, ...all.filter(existing => existing.id !== cell.id)]);
+    return cell;
+  }
+
+  static async archiveCells(cellIds: string[]): Promise<boolean> {
+    if (!cellIds.length) return false;
+    const archived = await SupabaseService.archiveCellRegistrations(cellIds);
+    if (!archived) return false;
+    const ids = new Set(cellIds);
+    saveStoredCells(getStoredCells().map(cell => ids.has(cell.id) ? { ...cell, is_archived: true } : cell));
+    return true;
+  }
+
+  static async restoreCells(cellIds: string[]): Promise<boolean> {
+    if (!cellIds.length) return false;
+    const restored = await SupabaseService.restoreCellRegistrations(cellIds);
+    if (!restored) return false;
+    const ids = new Set(cellIds);
+    saveStoredCells(getStoredCells().map(cell => ids.has(cell.id) ? { ...cell, is_archived: false } : cell));
+    return true;
+  }
+
+  static async deleteCells(cellIds: string[]): Promise<boolean> {
+    if (!cellIds.length) return false;
+    const deleted = await SupabaseService.deleteCellRegistrations(cellIds);
+    if (!deleted) return false;
+    const removed = new Set(cellIds);
+    saveStoredCells(getStoredCells().filter(cell => !removed.has(cell.id)));
+    return true;
+  }
+
   static async updateCell(cell: Cell): Promise<void> {
-    await SupabaseService.upsertCell(cell);
+    const normalizedCell = { ...cell, normalized_name: normalizeCellName(cell.name) };
+    const saved = await SupabaseService.upsertCell(normalizedCell);
+    if (SupabaseService.isAvailable() && !saved) {
+      throw new Error('Cell changes could not be saved. Check whether another cell already uses this name.');
+    }
     const all = getStoredCells();
-    const updated = all.map(c => (c.id === cell.id ? cell : c));
+    const updated = all.map(c => (c.id === normalizedCell.id ? normalizedCell : c));
     saveStoredCells(updated);
   }
 }

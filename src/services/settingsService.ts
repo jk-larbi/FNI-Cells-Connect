@@ -13,16 +13,24 @@ export const DEFAULT_SETTINGS: SystemSettings = {
 };
 
 export class SettingsService {
+  static subscribeToSettings(callback: (settings: SystemSettings) => void): () => void {
+    return SupabaseService.subscribeToSystemSettings(callback);
+  }
+
   static async getSettings(): Promise<SystemSettings> {
-    // 1. Primary: Try Supabase
-    try {
-      const supaSettings = await SupabaseService.getSystemSettings();
-      if (supaSettings) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(supaSettings));
-        return supaSettings;
+    // Supabase is authoritative when configured, including an empty settings table.
+    if (SupabaseService.isAvailable()) {
+      try {
+        const supaSettings = await SupabaseService.getSystemSettings();
+        if (supaSettings) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(supaSettings));
+          return supaSettings;
+        }
+        return DEFAULT_SETTINGS;
+      } catch (e) {
+        console.warn('Notice loading Supabase system settings:', e);
+        throw e;
       }
-    } catch (e) {
-      console.warn('Notice loading Supabase system settings:', e);
     }
 
     try {
@@ -42,11 +50,16 @@ export class SettingsService {
       updatedBy: updatedBy || current.updatedBy,
     };
 
-    // Primary write to Supabase
+    // Persist ministry-wide settings to Supabase so every device and the public
+    // ministry overview sees the same Vision, Mission, and annual soul target.
     try {
-      await SupabaseService.upsertSystemSettings(updated);
+      const saved = await SupabaseService.upsertSystemSettings(updated);
+      if (!saved) {
+        throw new Error('Supabase could not save the ministry settings. Please check your connection and administrator permissions, then try again.');
+      }
     } catch (err) {
       console.warn('Supabase settings sync notice:', err);
+      throw err;
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));

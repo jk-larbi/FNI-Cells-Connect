@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Flame, Target, Eye, Compass } from 'lucide-react';
+import { ArrowRight, BookOpen, Megaphone, Footprints, TrendingUp, UsersRound } from 'lucide-react';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { SoulTargetMetrics } from '../../types';
+import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 
 interface MinistryVisionViewProps {
   onProceed: () => void;
@@ -10,15 +11,25 @@ interface MinistryVisionViewProps {
 export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProceed }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState<SoulTargetMetrics | null>(null);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
   useEffect(() => {
+    let active = true;
     const timer = setTimeout(() => setIsLoaded(true), 80);
-    const unsub = SoulTargetService.subscribeToLiveSoulTracking(m => {
-      setMetrics(m);
+    SettingsService.getSettings()
+      .then(value => { if (active) setSettings(value); })
+      .catch(error => console.warn('Could not load FNI public ministry settings:', error));
+    const unsubSettings = SettingsService.subscribeToSettings(value => {
+      if (active) setSettings(value);
+    });
+    const unsubMetrics = SoulTargetService.subscribeToLiveSoulTracking(m => {
+      if (active) setMetrics(m);
     });
     return () => {
+      active = false;
       clearTimeout(timer);
-      unsub();
+      unsubSettings();
+      unsubMetrics();
     };
   }, []);
 
@@ -109,14 +120,14 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
-                <Eye className="w-4 h-4" />
+                <BookOpen className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </div>
               <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Vision
               </span>
             </div>
             <p className="text-xs sm:text-sm md:text-base text-[#182230] font-serif italic leading-relaxed pl-1">
-              “To raise a global army of consecrated believers equipped with apostolic and prophetic depth, establishing the reign of Christ across all spheres of society.”
+              “{settings.vision}”
             </p>
           </div>
 
@@ -127,18 +138,18 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 rounded-xl bg-[#142B4A] text-[#C6A45A]">
-                <Compass className="w-4 h-4" />
+                <Megaphone className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </div>
               <span className="vision-card-heading text-xs font-black uppercase tracking-wider text-[#142B4A]">
                 Our Mission
               </span>
             </div>
             <p className="text-xs sm:text-sm md:text-base text-[#182230] font-serif italic leading-relaxed pl-1">
-              “Mobilizing territorial cell fellowships, rigorous discipleship training, dynamic evangelism outreaches, and systematic pastoral care to transform lives and communities.”
+              “{settings.mission}”
             </p>
           </div>
 
-          {/* 3. SOUL-WINNING TARGET WITH LIVE HARVEST TRACKING */}
+          {/* 3. SOUL-WINNING TARGET */}
           <div
             className={`p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white border border-[#142B4A] shadow-xl relative overflow-hidden transition-all duration-700 delay-600 transform ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
@@ -147,28 +158,29 @@ export const MinistryVisionView: React.FC<MinistryVisionViewProps> = ({ onProcee
             <div className="flex items-center justify-between gap-3 mb-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-xl bg-[#C6A45A] text-[#142B4A]">
-                  <Target className="w-4 h-4" />
+                  <Footprints className="w-[18px] h-[18px]" strokeWidth={1.8} />
                 </div>
                 <span className="text-xs font-black uppercase tracking-wider text-[#C6A45A]">
                   Annual Soul-Winning Target
                 </span>
               </div>
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-white bg-[#C6A45A]/25 px-2.5 py-0.5 rounded-full border border-[#C6A45A]/50 tracking-wider uppercase">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Live Tracking
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-white/80 bg-white/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <TrendingUp className="w-3.5 h-3.5" strokeWidth={1.8} />
+                Current Progress
               </span>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mt-2 mb-1">
-              <div className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : '3,000 Souls'}
+              <div className="inline-flex items-center gap-2 text-2xl sm:text-3xl font-black tracking-tight text-white">
+                <UsersRound className="w-5 h-5 text-[#C6A45A]" strokeWidth={1.8} />
+                {metrics ? `${metrics.annualTarget.toLocaleString()} Souls` : `${settings.annualSoulWinningTarget.toLocaleString()} Souls`}
               </div>
               <div className="text-xs sm:text-sm font-bold text-[#C6A45A]">
-                {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Live Harvest Stream'}
+                {metrics ? `${metrics.verifiedSoulsWon} Won (${metrics.percentageAchieved}%)` : 'Progress recorded'}
               </div>
             </div>
 
-            {/* Live Progress Bar */}
+            {/* Soul-winning progress bar */}
             <div className="w-full bg-black/30 rounded-full h-2.5 my-3 overflow-hidden border border-white/10">
               <div
                 className="bg-gradient-to-r from-[#C6A45A] to-emerald-400 h-full rounded-full transition-all duration-700 shadow-sm"

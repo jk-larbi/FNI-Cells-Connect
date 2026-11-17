@@ -33,6 +33,16 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   const data = event.notification.data || {};
   event.waitUntil((async () => {
+    // Location alerts carry a Google Maps universal link built by the trusted
+    // push function from the latest active tutor coordinates.
+    if (typeof data.actionUrl === 'string') {
+      try {
+        const mapsUrl = new URL(data.actionUrl);
+        if (mapsUrl.hostname === 'www.google.com' && mapsUrl.pathname.startsWith('/maps/')) {
+          return self.clients.openWindow(mapsUrl.toString());
+        }
+      } catch {}
+    }
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of windows) {
       if ('focus' in client && client.url.startsWith(self.location.origin)) {

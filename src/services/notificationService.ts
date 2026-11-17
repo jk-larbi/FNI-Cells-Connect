@@ -2,8 +2,16 @@ import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { NotificationItem, NotificationType, NotificationChannel, UserRole } from '../types';
 import { PushNotificationService } from './pushNotificationService';
+import { CellService } from './cellService';
 const STORAGE_KEY = 'fni_notifications_store_v2';
 const SUBSCRIBERS = new Set<(notifs: NotificationItem[]) => void>();
+const dismissedKey = (userId: string) => `fni_notification_dismissals:${userId}`;
+function getLocalDismissedIds(userId: string): Set<string> {
+  try { return new Set<string>(JSON.parse(localStorage.getItem(dismissedKey(userId)) || '[]')); } catch { return new Set(); }
+}
+function saveLocalDismissedIds(userId: string, ids: Set<string>) {
+  try { localStorage.setItem(dismissedKey(userId), JSON.stringify([...ids])); } catch {}
+}
 
 function notifySubscribersLocally(items: NotificationItem[]) {
   SUBSCRIBERS.forEach(cb => {
@@ -44,7 +52,15 @@ export class NotificationService {
   ): NotificationItem[] {
     const isAdmin = role === 'admin' || role === 'super_admin' || role === 'national_admin';
 
+    const activeCellIds = CellService.getCachedActiveCellIds();
+    const activeCellNames = CellService.getCachedActiveCellNames();
+
     return notifications.filter(n => {
+      const cellId = n.metadata?.cellId || n.metadata?.cell_id;
+      const cellName = n.metadata?.cellName || n.metadata?.cell_name;
+      if (cellId && activeCellIds.size > 0 && !activeCellIds.has(String(cellId))) return false;
+      if (cellName && activeCellNames.size > 0 && !activeCellNames.has(String(cellName).trim().toLowerCase())) return false;
+
       // 1. Broadcast to all users
       if (n.user_id === 'all') return true;
 
@@ -53,14 +69,9 @@ export class NotificationService {
         return true;
       }
 
-      // 3. Tutor Community messages
-      if (!isAdmin && n.user_id === 'tutor_community') {
-        // Exclude sender from their own community notification
-        if (n.metadata?.senderUid === userId) return false;
-        return true;
-      }
-
-      // 4. Exact recipient match
+      // Community messages are fanned out by the database into one
+      // notification per active recipient, so read state remains per-user.
+      // 3. Exact recipient match
       return n.user_id === userId;
     });
   }
@@ -114,7 +125,7 @@ export class NotificationService {
     // In-app notifications remain available if push is not configured or a device has not opted in.
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase.functions.invoke('fni-web-push', {
+        const { data: delivery, error } = await supabase.functions.invoke('fni-web-push', {
           body: {
             action: 'send_notification',
             notification: {
@@ -128,7 +139,17 @@ export class NotificationService {
             },
           },
         });
-        if (error) console.warn('FNI browser push delivery notice:', error.message);
+        if (error) {
+          console.warn('FNI push delivery failed; the in-app notification is retained:', error.message);
+        } else if (Number(delivery?.sent || 0) === 0) {
+          console.info('FNI notification saved, but no push reached a registered device:', {
+            recipient: newNotif.user_id,
+            failed: Number(delivery?.failed || 0),
+            reason: delivery?.message || 'The recipient may need to enable notifications on this device.',
+          });
+        } else if (Number(delivery?.failed || 0) > 0) {
+          console.warn('FNI push reached some devices but not all:', delivery);
+        }
       } catch (pushError) {
         console.warn('FNI browser push is unavailable; in-app notification is retained:', pushError);
       }
@@ -293,12 +314,13 @@ export class NotificationService {
     cellName?: string;
     content: string;
   }): Promise<void> {
-    const isFromTutor = params.senderRole !== 'admin';
-    const targetUserId = isFromTutor ? 'admin' : params.recipientUid;
+    const isLeadership = ['admin', 'super_admin', 'national_admin'].includes(params.senderRole);
+    const isTutorDirectMessage = !isLeadership && params.recipientUid !== 'admin';
+    const targetUserId = isLeadership || isTutorDirectMessage ? params.recipientUid : 'admin';
 
-    const title = isFromTutor
-      ? `Message from ${params.senderName} (${params.cellName || 'Cell Leader'})`
-      : `Leadership Message from ${params.senderName}`;
+    const title = isLeadership
+      ? `Leadership Message from ${params.senderName}`
+      : isTutorDirectMessage ? `Private message from ${params.senderName}` : `Message from ${params.senderName} (${params.cellName || 'Cell Leader'})`;
 
     const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
     const idempotencyKey = `notif-pmsg-${params.messageId}`;
@@ -313,12 +335,12 @@ export class NotificationService {
       channel: 'in_app',
       metadata: {
         messageId: params.messageId,
-        conversationId: isFromTutor ? params.senderUid : params.recipientUid,
+        conversationId: isLeadership ? params.recipientUid : params.senderUid,
         senderUid: params.senderUid,
         senderName: params.senderName,
         category: 'messages',
         targetTab: 'messages',
-        recipientRole: isFromTutor ? 'admin' : 'tutor',
+        recipientRole: isLeadership || isTutorDirectMessage ? 'tutor' : 'admin',
       },
     });
   }
@@ -334,26 +356,35 @@ export class NotificationService {
     content: string;
     category?: string;
   }): Promise<void> {
-    const title = `${params.senderName} (${params.cellName || 'Fellowship Leader'})`;
+    const title = `Community Chat: ${params.senderName} (${params.cellName || 'Fellowship Leader'})`;
     const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
     const idempotencyKey = `notif-cmsg-${params.messageId}`;
 
-    await this.createNotification({
-      id: idempotencyKey,
-      idempotencyKey,
-      userId: 'tutor_community',
-      title: `Community Chat: ${title}`,
-      message: preview,
-      type: 'community_message',
-      channel: 'in_app',
-      metadata: {
-        messageId: params.messageId,
-        senderUid: params.senderUid,
-        senderName: params.senderName,
-        category: 'messages',
-        targetTab: 'messages',
+    // The database trigger creates a separate in-app notification for each
+    // recipient, allowing every tutor to maintain an independent read state.
+    // This request handles background push fan-out to registered tutor devices.
+    if (!isSupabaseConfigured || !supabase) return;
+    const { error } = await supabase.functions.invoke('fni-web-push', {
+      body: {
+        action: 'send_notification',
+        notification: {
+          id: idempotencyKey,
+          user_id: 'tutor_community',
+          title,
+          message: preview,
+          type: 'community_message',
+          metadata: {
+            messageId: params.messageId,
+            senderUid: params.senderUid,
+            senderName: params.senderName,
+            category: 'messages',
+            targetTab: 'messages',
+          },
+          created_at: new Date().toISOString(),
+        },
       },
     });
+    if (error) console.warn('Community chat push delivery notice:', error.message);
   }
 
   /**
@@ -415,11 +446,58 @@ export class NotificationService {
         await supabase
           .from('notifications')
           .update({ is_read: true })
-          .or(`user_id.eq.${userId},recipient_target.eq.${userId},recipient_target.eq.all`);
+          .in('id', Array.from(userIdsToMark));
       } catch (e) {
         console.warn('Supabase markAllAsRead note:', e);
       }
     }
+  }
+
+  /** Dismiss all notifications visible to one signed-in user without deleting shared broadcasts. */
+  static async clearAllForUser(userId: string, role: string): Promise<boolean> {
+    const current = getStoredNotifications();
+    let visible = this.filterForUser(current, userId, role);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const remote = await SupabaseService.getNotifications(userId);
+        if (remote === null) return false;
+        visible = this.filterForUser(remote, userId, role);
+        const rows = visible.map(item => ({ user_id: userId, notification_id: item.id }));
+        if (rows.length) {
+          const { data: existingRows, error: readError } = await supabase
+            .from('notification_dismissals')
+            .select('notification_id')
+            .eq('user_id', userId)
+            .in('notification_id', rows.map(row => row.notification_id));
+          if (readError) throw readError;
+          const existingIds = new Set((existingRows || []).map((row: any) => row.notification_id));
+          const newRows = rows.filter(row => !existingIds.has(row.notification_id));
+          if (newRows.length) {
+            const { error } = await supabase.from('notification_dismissals').insert(newRows);
+            if (error) throw error;
+          }
+        }
+      } catch (error) {
+        console.warn('Unable to clear notification history:', error);
+        return false;
+      }
+    }
+    const dismissed = getLocalDismissedIds(userId);
+    visible.forEach(item => dismissed.add(item.id));
+    saveLocalDismissedIds(userId, dismissed);
+    const filtered = current.filter(item => !dismissed.has(item.id));
+    setStoredNotifications(filtered);
+    return true;
+  }
+
+  private static async loadDismissedIds(userId: string): Promise<Set<string>> {
+    const ids = getLocalDismissedIds(userId);
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('notification_dismissals').select('notification_id').eq('user_id', userId);
+      if (!error && data) data.forEach((row: any) => ids.add(row.notification_id));
+      saveLocalDismissedIds(userId, ids);
+    }
+    return ids;
   }
 
   /**
@@ -431,24 +509,22 @@ export class NotificationService {
     callback: (notifs: NotificationItem[]) => void
   ): () => void {
     // 1. Initial emission from local storage
-    callback(this.filterForUser(getStoredNotifications(), userId, role));
+    const emitVisible = (items: NotificationItem[], dismissed = getLocalDismissedIds(userId)) => callback(this.filterForUser(items, userId, role).filter(item => !dismissed.has(item.id)));
+    emitVisible(getStoredNotifications());
 
     // 2. Fetch from Supabase
     if (isSupabaseConfigured && supabase) {
       SupabaseService.getNotifications(userId)
-        .then(remoteItems => {
-          if (remoteItems && remoteItems.length > 0) {
-            const local = getStoredNotifications();
-            const map = new Map<string, NotificationItem>();
-            remoteItems.forEach(item => map.set(item.id, item));
-            local.forEach(item => {
-              if (!map.has(item.id)) map.set(item.id, item);
-            });
-            const merged = Array.from(map.values()).sort(
+        .then(async remoteItems => {
+          // A successful empty response is authoritative: do not resurrect stale
+          // messages or notifications from this browser's local cache.
+          if (remoteItems !== null) {
+            const authoritative = [...remoteItems].sort(
               (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
-            setStoredNotifications(merged);
-            callback(this.filterForUser(merged, userId, role));
+            setStoredNotifications(authoritative);
+            const dismissed = await this.loadDismissedIds(userId);
+            emitVisible(authoritative, dismissed);
           }
         })
         .catch(err => {
@@ -458,7 +534,7 @@ export class NotificationService {
 
     // 3. Register local broadcast subscriber
     const localCallback = (all: NotificationItem[]) => {
-      callback(this.filterForUser(all, userId, role));
+      emitVisible(all);
     };
     SUBSCRIBERS.add(localCallback);
 
@@ -467,7 +543,7 @@ export class NotificationService {
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          callback(this.filterForUser(parsed, userId, role));
+          emitVisible(parsed);
         } catch {}
       }
     };
@@ -504,7 +580,7 @@ export class NotificationService {
                   (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                 );
                 setStoredNotifications(updated);
-                callback(this.filterForUser(updated, userId, role));
+                emitVisible(updated);
               }
             }
           )

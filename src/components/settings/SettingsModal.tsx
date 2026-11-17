@@ -23,6 +23,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [weeklyDeadline, setWeeklyDeadline] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -45,6 +46,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     try {
       setIsSaving(true);
+      setSaveError('');
       const updated = await SettingsService.updateSettings(
         {
           vision,
@@ -63,6 +65,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         setSavedSuccess(false);
         onClose();
       }, 1200);
+    } catch (error: any) {
+      setSaveError(error?.message || 'Could not save ministry settings. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -94,6 +98,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <form onSubmit={handleSave} className="p-6 space-y-5">
+          {saveError && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">{saveError}</div>}
           {savedSuccess && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
