@@ -35,6 +35,7 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import {
   Quiz,
   QuizQuestion,
@@ -139,6 +140,33 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
   // Tutor attempts cache for buttons
   const [tutorAttempts, setTutorAttempts] = useState<QuizAttempt[]>([]);
+
+  // Intercept back actions for active quiz runner, quiz builder modal, grading, and preview modals
+  useBackHandler(() => {
+    if (isPreviewReviewOpen) {
+      setIsPreviewReviewOpen(false);
+      return true;
+    }
+    if (gradingAttempt) {
+      setGradingAttempt(null);
+      return true;
+    }
+    if (viewingAttempt) {
+      setViewingAttempt(null);
+      return true;
+    }
+    if (isQuizFormOpen) {
+      setIsQuizFormOpen(false);
+      return true;
+    }
+    if (activeQuizForTest) {
+      if (window.confirm('Are you sure you want to exit the quiz? Any unsaved answers may be lost.')) {
+        setActiveQuizForTest(null);
+      }
+      return true;
+    }
+    return false;
+  }, Boolean(isPreviewReviewOpen || gradingAttempt || viewingAttempt || isQuizFormOpen || activeQuizForTest));
 
   // Load Tutor Attempts
   useEffect(() => {

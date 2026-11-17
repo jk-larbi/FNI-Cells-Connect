@@ -39,6 +39,9 @@ interface AuthContextType {
   changePassword: (newPass: string) => Promise<{ success: boolean; error?: string }>;
   updateAvatar: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
   updateProfileDetails: (fullName: string, username: string) => Promise<{ success: boolean; error?: string }>;
+  updateUserProfile: (data: { full_name?: string; phone_number?: string; email?: string }) => Promise<{ success: boolean; error?: string }>;
+  signOutOtherDevices: () => Promise<{ success: boolean; error?: string }>;
+  requestAccountDeactivation: (reason: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   deleteOwnAccount: () => Promise<{ success: boolean; error?: string }>;
   deleteUserAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
@@ -240,6 +243,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUserProfile = async (data: { full_name?: string; phone_number?: string; email?: string }) => {
+    if (!currentUser.id) return { success: false, error: 'Unauthenticated.' };
+    const res = await AuthService.updateUserProfile(currentUser.id, data);
+    if (res.success && res.profile) {
+      setCurrentUser(res.profile);
+    }
+    return res;
+  };
+
+  const signOutOtherDevices = async () => {
+    return AuthService.signOutOtherDevices();
+  };
+
+  const requestAccountDeactivation = async (reason: string) => {
+    if (!currentUser.id) return { success: false, error: 'Unauthenticated.' };
+    return AuthService.requestAccountDeactivation(currentUser.id, reason);
+  };
+
   const deleteOwnAccount = async () => {
     const result = await AuthService.deleteOwnAccount();
     if (result.success) {
@@ -297,6 +318,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         changePassword,
         updateAvatar,
         updateProfileDetails,
+        updateUserProfile,
+        signOutOtherDevices,
+        requestAccountDeactivation,
         logout,
         deleteOwnAccount,
         deleteUserAccount,

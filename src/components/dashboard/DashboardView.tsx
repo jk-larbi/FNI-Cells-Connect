@@ -40,6 +40,8 @@ import {
   Wheat,
   Cross,
 } from 'lucide-react';
+import { useBackHandler } from '../../hooks/useBackHandler';
+import { SoulTargetSettingsModal } from '../admin/SoulTargetSettingsModal';
 
 interface DashboardViewProps {
   onNavigateToTab: (tab: any) => void;
@@ -57,6 +59,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [cellPerformance, setCellPerformance] = useState<CellPerformanceRecord[]>([]);
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
   const [showSoulModal, setShowSoulModal] = useState(false);
+  const [showTargetConfigModal, setShowTargetConfigModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [soulMetricsUpdatedAt, setSoulMetricsUpdatedAt] = useState<Date | null>(null);
   const [liveTicker, setLiveTicker] = useState(Date.now());
@@ -104,6 +107,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [editVision, setEditVision] = useState('');
   const [editMission, setEditMission] = useState('');
   const [editTarget, setEditTarget] = useState(5000);
+
+  // Back navigation interceptor: closes active dashboard modals before leaving view
+  useBackHandler(() => {
+    if (showTargetConfigModal) {
+      setShowTargetConfigModal(false);
+      return true;
+    }
+    if (showSoulModal) {
+      setShowSoulModal(false);
+      return true;
+    }
+    if (isEditingSettings) {
+      setIsEditingSettings(false);
+      return true;
+    }
+    return false;
+  }, showTargetConfigModal || showSoulModal || isEditingSettings);
 
   const loadData = async (showLoader = true) => {
     try {
@@ -226,9 +246,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm relative">
           <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
             <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-[#C6A45A]" aria-label="FNI Kingdom Vision and Mission" strokeWidth={2} />
+              <Compass className="w-4 h-4 text-[#C6A45A]" aria-label="FNI Vision and Mission" strokeWidth={2} />
               <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">
-                FNI Kingdom Vision & Mission
+                FNI Vision & Mission
               </h2>
             </div>
             <button
@@ -471,7 +491,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           Ministry Systems & Operational Hubs
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* Finance / Offering Aggregation */}
+          {/* Finance / Offering */}
           <div
             onClick={() => onNavigateToTab('finance')}
             className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
@@ -482,7 +502,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <div>
                 <div className="font-bold text-[#142B4A] text-xs group-hover:text-gold-700 transition-colors">
-                  Offering Aggregation
+                  Offering
                 </div>
                 <div className="text-[11px] text-[#667085]">
                   Weekly & Annual Ministry Totals
@@ -1193,12 +1213,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <p className="text-[11px] text-slate-500">Real-time audited contributions by fellowship cell & timeframe</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowSoulModal(false)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-navy-950 flex items-center justify-center text-xs"
-              >
-                &times;
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTargetConfigModal(true)}
+                  className="px-2.5 py-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] hover:bg-[#C6A45A]/25 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Configure Targets</span>
+                </button>
+                <button
+                  onClick={() => setShowSoulModal(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-navy-950 flex items-center justify-center text-xs"
+                >
+                  &times;
+                </button>
+              </div>
             </div>
 
             {/* Overall Progress Summary */}
@@ -1262,7 +1292,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Contribution by Fellowship Cell / Team
               </h4>
               <div className="space-y-2 max-h-44 overflow-y-auto">
-                {soulMetrics && soulMetrics.cellContributions.length > 0 ? (
+                {soulMetrics?.cellTargetProgress && soulMetrics.cellTargetProgress.length > 0 ? (
+                  soulMetrics.cellTargetProgress.map(c => (
+                    <div key={c.cellId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-navy-950 block">{c.cellName}</span>
+                          {c.status === 'achieved' ? (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                              Achieved
+                            </span>
+                          ) : c.status === 'on_track' ? (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-800">
+                              On Track
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
+                              Behind
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-500">
+                          {c.tutorName ? `Leader: ${c.tutorName} • ` : ''}Target: {c.target} souls
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-navy-900">+{c.achieved} won</span>
+                        <span className="text-[10px] text-gold-700 bg-gold-50 px-1.5 py-0.5 rounded font-bold">
+                          {c.percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : soulMetrics && soulMetrics.cellContributions.length > 0 ? (
                   soulMetrics.cellContributions.map(c => (
                     <div key={c.cellId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
                       <div>
@@ -1300,78 +1362,120 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Inline Modal for Editing Vision, Mission & Annual Target */}
+      {/* Modal for Editing FNI Vision, Mission & Annual Target */}
       {isEditingSettings && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-[#E3E8EF] space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF]">
-              <h3 className="text-base font-bold text-[#142B4A]">
-                Update FNI Vision, Mission & Target
-              </h3>
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#E3E8EF] dark:border-navy-700 space-y-4 my-8">
+            <div className="flex items-center justify-between pb-3.5 border-b border-[#E3E8EF] dark:border-navy-700">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#C6A45A]/15 text-[#C6A45A] flex items-center justify-center">
+                  <Compass className="w-5 h-5 text-[#C6A45A]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#142B4A] dark:text-white">
+                    FNI Vision & Mission
+                  </h3>
+                  <p className="text-[11px] text-[#667085] dark:text-slate-400">
+                    Apostolic mandate, vision statement, and ministry harvest target
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setIsEditingSettings(false)}
-                className="text-xs text-[#667085] hover:text-[#182230]"
+                className="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-navy-800 flex items-center justify-center text-slate-400 cursor-pointer"
               >
-                Cancel
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">FNI Vision</label>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-[#182230] dark:text-slate-200">FNI Vision Statement</label>
+                  <span className="text-[10px] text-slate-400">{editVision.length} chars</span>
+                </div>
                 <textarea
                   rows={3}
                   value={editVision}
                   onChange={e => setEditVision(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  placeholder="Enter church vision statement..."
+                  className="w-full p-3 rounded-xl border border-[#E3E8EF] dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-[#182230] dark:text-white focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">FNI Mission</label>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-[#182230] dark:text-slate-200">FNI Mission Statement</label>
+                  <span className="text-[10px] text-slate-400">{editMission.length} chars</span>
+                </div>
                 <textarea
                   rows={3}
                   value={editMission}
                   onChange={e => setEditMission(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  placeholder="Enter church mission statement..."
+                  className="w-full p-3 rounded-xl border border-[#E3E8EF] dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-[#182230] dark:text-white focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">
-                  Annual Soul-Winning Target
-                </label>
+              <div className="p-3.5 bg-slate-50 dark:bg-navy-950 rounded-2xl border border-slate-200 dark:border-navy-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-[#182230] dark:text-slate-200 flex items-center gap-1.5">
+                    <Wheat className="w-4 h-4 text-[#C6A45A]" />
+                    <span>Annual Soul-Winning Target</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingSettings(false);
+                      setShowTargetConfigModal(true);
+                    }}
+                    className="text-[11px] text-[#C6A45A] hover:underline font-bold"
+                  >
+                    Configure 16 Cells →
+                  </button>
+                </div>
                 <input
                   type="number"
                   value={editTarget}
                   onChange={e => setEditTarget(Number(e.target.value))}
                   min={1}
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-[#182230] dark:text-white font-bold text-sm focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                   required
                 />
+                <span className="text-[10px] text-slate-400 block">
+                  Synchronizes with all 16 cells in the ministry.
+                </span>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-navy-800">
                 <button
                   type="button"
                   onClick={() => setIsEditingSettings(false)}
-                  className="px-4 py-2 rounded-xl text-[#667085] hover:bg-[#F5F7FA]"
+                  className="px-4 py-2 rounded-xl text-[#667085] hover:bg-[#F5F7FA] dark:hover:bg-navy-800 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63]"
+                  className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63] cursor-pointer shadow-sm flex items-center gap-1.5"
                 >
-                  Save Changes
+                  <Check className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <span>Save Vision & Mission</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Admin Soul Target Settings Modal */}
+      <SoulTargetSettingsModal
+        isOpen={showTargetConfigModal}
+        onClose={() => setShowTargetConfigModal(false)}
+        onUpdated={() => { void loadData(false); }}
+      />
 
     </div>
   );

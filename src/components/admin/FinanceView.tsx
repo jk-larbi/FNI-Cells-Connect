@@ -132,10 +132,10 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             FNI Financial Stewardship
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-navy-950 tracking-tight">
-            Cell Offering Aggregations & Stewardship
+            Cell Offering & Financial Stewardship
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time verified financial aggregation from cell meeting returns with duplicate prevention.
+            Real-time verified financial records from cell meeting returns with duplicate prevention.
           </p>
         </div>
 

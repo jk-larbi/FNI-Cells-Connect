@@ -40,7 +40,9 @@ import {
   HeartHandshake,
   Navigation,
   Globe2,
+  Target,
 } from 'lucide-react';
+import { SoulTargetSettingsModal } from './SoulTargetSettingsModal';
 import {
   BarChart,
   Bar,
@@ -118,6 +120,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
   // Right sidebar tab: 'activities' or 'tutors'
   const [sidebarTab, setSidebarTab] = useState<'activities' | 'tutors'>('activities');
+  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
 
   // Live updates & animation state
   const [liveActivities, setLiveActivities] = useState<TutorActivityItem[]>([]);
@@ -929,6 +932,16 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     </span>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsTargetModalOpen(true)}
+                  className="px-2.5 py-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] hover:bg-[#C6A45A]/25 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Configure Soul Targets for 16 Cells"
+                >
+                  <Target className="w-3 h-3" />
+                  <span>Target Settings</span>
+                </button>
               </div>
 
               <div className="mt-4">
@@ -1614,6 +1627,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
           </table>
         </div>
       </div>
+
+      {/* Admin Soul Target Settings Modal */}
+      <SoulTargetSettingsModal
+        isOpen={isTargetModalOpen}
+        onClose={() => setIsTargetModalOpen(false)}
+        onUpdated={() => { void loadData(false); }}
+      />
     </div>
   );
 };

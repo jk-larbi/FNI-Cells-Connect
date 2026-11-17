@@ -5,6 +5,8 @@ import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsServic
 import { ReportService } from '../../services/reportService';
 import { SystemSettings, AuditLog } from '../../types';
 import { supabase } from '../../lib/supabase';
+import { useBackHandler } from '../../hooks/useBackHandler';
+import { SoulTargetSettingsModal } from './SoulTargetSettingsModal';
 import {
   Settings,
   Shield,
@@ -22,6 +24,9 @@ import {
   History,
   ArrowLeft,
   User,
+  Wheat,
+  Sparkles,
+  Sliders,
 } from 'lucide-react';
 
 interface AdminSettingsViewProps {
@@ -58,6 +63,24 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   const [profileUsername, setProfileUsername] = useState(currentUser?.username || '');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveNotice, setProfileSaveNotice] = useState<{ text: string; isError: boolean } | null>(null);
+  const [showTargetConfigModal, setShowTargetConfigModal] = useState(false);
+
+  // Back handler navigation interception for Admin Settings
+  useBackHandler(() => {
+    if (showTargetConfigModal) {
+      setShowTargetConfigModal(false);
+      return true;
+    }
+    if (activeTab !== 'system') {
+      setActiveTab('system');
+      return true;
+    }
+    if (onBack) {
+      onBack();
+      return true;
+    }
+    return false;
+  }, Boolean(showTargetConfigModal || activeTab !== 'system' || onBack));
 
   useEffect(() => {
     async function load() {
@@ -237,84 +260,170 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
             </form>
           </div>
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm max-w-2xl">
-          <form onSubmit={handleSaveSystemSettings} className="space-y-4 text-xs">
-            {systemSaveNotice && (
-              <div className="p-3 bg-emerald-50 border-l-4 border-[#23845B] text-[#23845B] rounded-xl font-semibold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>{systemSaveNotice}</span>
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
+            {/* Header Banner */}
+            <div className="p-6 bg-gradient-to-r from-[#142B4A]/5 via-white to-[#C6A45A]/5 border-b border-[#E3E8EF]">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white flex items-center justify-center shrink-0 shadow-sm ring-4 ring-[#142B4A]/10">
+                    <Compass className="w-5 h-5 text-[#C6A45A]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-bold text-[#142B4A]">FNI Vision & Mission</h2>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#C6A45A] bg-[#C6A45A]/10 px-2 py-0.5 rounded-full border border-[#C6A45A]/20">
+                        <Sparkles className="w-3 h-3" /> Core Foundation
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#667085] mt-0.5">
+                      Apostolic mandate, spiritual vision, mission statement, and ministry harvest targets
+                    </p>
+                  </div>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-[#475467] text-[11px] font-medium border border-slate-200 self-start sm:self-auto">
+                  <span className="text-[#C6A45A] font-bold">Habakkuk 2:2</span>
+                  <span>• Write the vision plainly</span>
+                </div>
               </div>
-            )}
-
-            <div>
-              <label className="block font-bold text-[#182230] mb-1">
-                FNI Kingdom Vision
-              </label>
-              <textarea
-                rows={3}
-                value={vision}
-                onChange={e => setVision(e.target.value)}
-                required
-                className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-              />
             </div>
 
-            <div>
-              <label className="block font-bold text-[#182230] mb-1">
-                FNI Mission Statement
-              </label>
-              <textarea
-                rows={3}
-                value={mission}
-                onChange={e => setMission(e.target.value)}
-                required
-                className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-              />
-            </div>
+            <form onSubmit={handleSaveSystemSettings} className="p-6 space-y-6 text-xs">
+              {systemSaveNotice && (
+                <div className="p-3.5 bg-emerald-50 border-l-4 border-[#23845B] text-[#23845B] rounded-xl font-semibold flex items-center gap-2.5 animate-fadeIn">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{systemSaveNotice}</span>
+                </div>
+              )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">
-                  Annual Soul-Winning Target
-                </label>
-                <input
-                  type="number"
-                  value={target}
-                  onChange={e => setTarget(Number(e.target.value))}
-                  min={1}
+              {/* FNI Vision */}
+              <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-2 focus-within:border-[#142B4A] focus-within:ring-2 focus-within:ring-[#142B4A]/10 transition-all">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 font-bold text-[#142B4A]">
+                    <div className="w-6 h-6 rounded-lg bg-[#142B4A]/10 flex items-center justify-center text-[#142B4A]">
+                      <Compass className="w-3.5 h-3.5" />
+                    </div>
+                    <span>FNI Vision</span>
+                  </div>
+                  <span className="text-[10px] font-medium text-[#667085] tabular-nums">
+                    {vision.length} characters
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#667085]">
+                  The spiritual directive and long-term kingdom mandate revealed for Forerunners Network International.
+                </p>
+                <textarea
+                  rows={3}
+                  value={vision}
+                  onChange={e => setVision(e.target.value)}
+                  placeholder="Enter the FNI Vision..."
                   required
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  className="w-full p-3 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs leading-relaxed placeholder:text-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none transition-all shadow-sm"
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">
-                  Reporting Cutoff Deadline
-                </label>
-                <input
-                  type="text"
-                  value={deadline}
-                  onChange={e => setDeadline(e.target.value)}
+              {/* FNI Mission Statement */}
+              <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-2 focus-within:border-[#142B4A] focus-within:ring-2 focus-within:ring-[#142B4A]/10 transition-all">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 font-bold text-[#142B4A]">
+                    <div className="w-6 h-6 rounded-lg bg-[#23845B]/10 flex items-center justify-center text-[#23845B]">
+                      <Target className="w-3.5 h-3.5" />
+                    </div>
+                    <span>FNI Mission Statement</span>
+                  </div>
+                  <span className="text-[10px] font-medium text-[#667085] tabular-nums">
+                    {mission.length} characters
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#667085]">
+                  How the vision is practically deployed across cells, discipleship, evangelism, and leadership nurture.
+                </p>
+                <textarea
+                  rows={3}
+                  value={mission}
+                  onChange={e => setMission(e.target.value)}
+                  placeholder="Enter the FNI Mission Statement..."
                   required
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  className="w-full p-3 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs leading-relaxed placeholder:text-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none transition-all shadow-sm"
                 />
-                <span className="text-[10px] text-[#667085] mt-0.5 block">
-                  Default: Sunday 6:00 PM Ghana Time (Africa/Accra)
+              </div>
+
+              {/* Target & Deadline Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Annual Soul-Winning Target */}
+                <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 font-bold text-[#142B4A]">
+                      <div className="w-6 h-6 rounded-lg bg-[#C6A45A]/15 flex items-center justify-center text-[#C6A45A]">
+                        <Wheat className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Annual Soul-Winning Target</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#C6A45A] bg-[#C6A45A]/10 px-2 py-0.5 rounded-full border border-[#C6A45A]/20 tabular-nums">
+                      {Number(target || 0).toLocaleString()} Souls
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    value={target}
+                    onChange={e => setTarget(Number(e.target.value))}
+                    min={1}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs font-semibold tabular-nums focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none shadow-sm"
+                  />
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowTargetConfigModal(true)}
+                      className="w-full py-2 px-3 rounded-lg border border-[#C6A45A]/30 bg-white hover:bg-[#C6A45A]/5 text-[#142B4A] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                    >
+                      <Sliders className="w-3 h-3 text-[#C6A45A]" />
+                      <span>Configure 16 Cells Target Breakdown</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reporting Cutoff Deadline */}
+                <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 font-bold text-[#142B4A]">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <Clock className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Reporting Cutoff Deadline</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      GMT (Africa/Accra)
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={deadline}
+                    onChange={e => setDeadline(e.target.value)}
+                    required
+                    placeholder="e.g. Sunday at 6:00 PM Ghana Time"
+                    className="w-full p-2.5 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs font-semibold focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none shadow-sm"
+                  />
+                  <p className="text-[10px] text-[#667085] leading-relaxed">
+                    Standard: Sunday 6:00 PM Ghana Time. After this deadline, cell reports are marked as late.
+                  </p>
+                </div>
+              </div>
+
+              {/* Form Action */}
+              <div className="pt-2 flex items-center justify-between border-t border-[#E3E8EF]">
+                <span className="text-[11px] text-[#667085]">
+                  Updates take effect across all tutor dashboards and reports immediately.
                 </span>
+                <button
+                  type="submit"
+                  disabled={isSavingSystem}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#142B4A] to-[#203D63] text-white text-xs font-bold hover:shadow-md transition-all shadow-sm flex items-center gap-2 disabled:opacity-60 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <span>{isSavingSystem ? 'Saving Settings...' : 'Save FNI Settings'}</span>
+                </button>
               </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isSavingSystem}
-                className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-2"
-              >
-                <Save className="w-3.5 h-3.5 text-[#C6A45A]" />
-                <span>{isSavingSystem ? 'Saving...' : 'Save System Settings'}</span>
-              </button>
-            </div>
-          </form>
+            </form>
           </div>
         </div>
       )}
@@ -485,6 +594,16 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           </div>
         </div>
       )}
+
+      {/* Soul Target Configuration Modal */}
+      <SoulTargetSettingsModal
+        isOpen={showTargetConfigModal}
+        onClose={() => setShowTargetConfigModal(false)}
+        onUpdated={async () => {
+          const s = await SettingsService.getSettings();
+          setTarget(s.annualSoulWinningTarget);
+        }}
+      />
     </div>
   );
 };

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useBackHandler } from '../../hooks/useBackHandler';
+import { useCall } from '../../context/CallContext';
 import { Cell, CellMeetingReport, EvangelismReport, EvangelismContact } from '../../types';
 import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
@@ -27,6 +29,7 @@ import {
   UserCheck,
   ArrowLeft,
   Archive,
+  Video,
 } from 'lucide-react';
 
 interface CellManagementViewProps {
@@ -34,6 +37,7 @@ interface CellManagementViewProps {
 }
 
 export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }) => {
+  const { startCellMeeting } = useCall();
   const [cells, setCells] = useState<Cell[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Suspended' | 'Deactivated'>('All');
@@ -51,6 +55,29 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   // Edit / Add Cell modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCell, setEditingCell] = useState<Partial<Cell>>({});
+
+  // Back navigation interceptor: closes detail drawer or modal before leaving page
+  useBackHandler(() => {
+    if (selectedCell) {
+      setSelectedCell(null);
+      return true;
+    }
+    if (isEditModalOpen) {
+      setIsEditModalOpen(false);
+      return true;
+    }
+    return false;
+  }, Boolean(selectedCell || isEditModalOpen));
+
+  const handleBackNavigation = () => {
+    if (selectedCell) {
+      setSelectedCell(null);
+    } else if (isEditModalOpen) {
+      setIsEditModalOpen(false);
+    } else if (onBack) {
+      onBack();
+    }
+  };
 
   const loadCells = async () => {
     try {
@@ -188,7 +215,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
           {onBack && (
             <button
               type="button"
-              onClick={onBack}
+              onClick={handleBackNavigation}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
             >
               <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
@@ -399,6 +426,21 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
                       <td className="py-4 px-5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              startCellMeeting({
+                                cellId: cell.id,
+                                cellName: cell.name,
+                                callType: 'video',
+                              });
+                            }}
+                            className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                            title="Start Cell Video Meeting"
+                          >
+                            <Video className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             onClick={e => {
                               e.stopPropagation();

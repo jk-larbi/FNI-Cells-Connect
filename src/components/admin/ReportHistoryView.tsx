@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import {
   FileText,
   Flame,
@@ -16,6 +17,7 @@ import {
   Archive,
   BookOpen,
   HeartHandshake,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   UnifiedReportItem,
@@ -50,6 +52,23 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
 
   // Report Detail Modal
   const [inspectingReport, setInspectingReport] = useState<UnifiedReportItem | null>(null);
+
+  // Back navigation interceptor: closes report details before navigating away
+  useBackHandler(() => {
+    if (inspectingReport) {
+      setInspectingReport(null);
+      return true;
+    }
+    return false;
+  }, Boolean(inspectingReport));
+
+  const handleBackNavigation = () => {
+    if (inspectingReport) {
+      setInspectingReport(null);
+    } else if (onBack) {
+      onBack();
+    }
+  };
 
   useEffect(() => {
     loadHistoricalData();
@@ -194,6 +213,16 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
       {/* 1. Header Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          {onBack && (
+            <button
+              type="button"
+              onClick={handleBackNavigation}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-navy-900 dark:hover:text-white mb-2 cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 text-gold-500 group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Previous</span>
+            </button>
+          )}
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-[#142B4A] text-white flex items-center justify-center shadow-xs">
               <Archive className="w-5 h-5 text-[#C6A45A]" />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { CallProvider } from './context/CallContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { MinistryVisionView } from './components/landing/MinistryVisionView';
 import { SimpleLandingView } from './components/landing/SimpleLandingView';
@@ -106,7 +107,9 @@ export const App: React.FC = () => {
     <ThemeProvider>
       <AuthProvider>
         <NotificationProvider>
-          <MainContent />
+          <CallProvider>
+            <MainContent />
+          </CallProvider>
         </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>

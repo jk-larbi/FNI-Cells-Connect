@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import { useAuth } from '../../context/AuthContext';
 import { ReportService } from '../../services/reportService';
 import { UnifiedReportItem, CellMeetingReport, EvangelismReport } from '../../types';
@@ -41,6 +42,25 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [inspectingItem, setInspectingItem] = useState<UnifiedReportItem | null>(null);
+
+  // Back navigation interceptor: closes detail modal before leaving view
+  useBackHandler(() => {
+    if (inspectingItem) {
+      setInspectingItem(null);
+      if (onClearInitialReportId) onClearInitialReportId();
+      return true;
+    }
+    return false;
+  }, Boolean(inspectingItem));
+
+  const handleBackNavigation = () => {
+    if (inspectingItem) {
+      setInspectingItem(null);
+      if (onClearInitialReportId) onClearInitialReportId();
+    } else if (onBack) {
+      onBack();
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -105,7 +125,7 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
           {onBack && (
             <button
               type="button"
-              onClick={onBack}
+              onClick={handleBackNavigation}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
             >
               <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />

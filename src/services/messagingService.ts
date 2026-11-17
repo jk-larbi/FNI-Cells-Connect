@@ -46,12 +46,91 @@ export class MessagingService {
   }
 
   static async editMessage(messageId: string, scope: 'private' | 'community', content: string): Promise<boolean> {
-    if (!supabase || !isSupabaseConfigured || !content.trim()) return false;
-    const { data, error } = await supabase.rpc('fni_edit_chat_message', {
-      p_message_id: messageId, p_scope: scope, p_content: content.trim(),
-    });
-    if (error) { console.warn('Message edit failed:', error.message); return false; }
-    return data === true;
+    if (!content.trim()) return false;
+    if (supabase && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.rpc('fni_edit_chat_message', {
+          p_message_id: messageId, p_scope: scope, p_content: content.trim(),
+        });
+        if (!error && data === true) return true;
+      } catch {}
+
+      try {
+        const table = scope === 'private' ? 'private_messages' : 'community_messages';
+        const { error: directError } = await supabase
+          .from(table)
+          .update({ content: content.trim(), edited_at: new Date().toISOString() })
+          .eq('id', messageId);
+        if (!directError) return true;
+      } catch {}
+    }
+    // Update local storage fallback
+    const key = scope === 'private' ? STORAGE_KEYS.PRIVATE : STORAGE_KEYS.COMMUNITY;
+    const local = getStored<any[]>(key, []);
+    const idx = local.findIndex(m => m.id === messageId);
+    if (idx !== -1) {
+      local[idx].content = content.trim();
+      local[idx].editedAt = new Date().toISOString();
+      setStored(key, local);
+      return true;
+    }
+    return false;
+  }
+
+  static async votePoll(
+    messageId: string,
+    scope: 'private' | 'community',
+    optionId: string,
+    userId: string,
+    currentContent: string
+  ): Promise<string | null> {
+    const POLL_PREFIX = '[[FNI_POLL:';
+    if (!currentContent.startsWith(POLL_PREFIX)) return null;
+    try {
+      const jsonStr = currentContent.slice(POLL_PREFIX.length, -2);
+      const poll: any = JSON.parse(jsonStr);
+      if (poll.isClosed) return null;
+
+      let changed = false;
+      const updatedOptions = (poll.options || []).map((opt: any) => {
+        const voters = new Set(opt.voterUids || []);
+        if (opt.id === optionId) {
+          if (voters.has(userId)) {
+            voters.delete(userId);
+            changed = true;
+          } else {
+            voters.add(userId);
+            changed = true;
+          }
+        } else if (!poll.allowsMultipleAnswers) {
+          if (voters.has(userId)) {
+            voters.delete(userId);
+            changed = true;
+          }
+        }
+        return {
+          ...opt,
+          votes: voters.size,
+          voterUids: Array.from(voters),
+        };
+      });
+
+      if (!changed) return null;
+
+      const totalVotes = updatedOptions.reduce((acc: number, opt: any) => acc + opt.votes, 0);
+      const updatedPoll = {
+        ...poll,
+        options: updatedOptions,
+        totalVotes,
+      };
+
+      const newContent = `${POLL_PREFIX}${JSON.stringify(updatedPoll)}]]`;
+      await this.editMessage(messageId, scope, newContent);
+      return newContent;
+    } catch (e) {
+      console.warn('Poll voting exception:', e);
+      return null;
+    }
   }
 
   static async clearAllPrivateChats(viewerUid: string): Promise<boolean> {
@@ -98,9 +177,7 @@ export class MessagingService {
     if (data.recipientUid !== 'admin') {
       const directory = await SupabaseService.getMemberDirectory();
       const recipient = directory?.find(member => member.id === data.recipientUid);
-      const allowedRoles = data.senderRole === 'admin' || data.senderRole === 'super_admin' || data.senderRole === 'national_admin'
-        ? ['tutor']
-        : ['tutor', 'admin', 'super_admin', 'national_admin'];
+      const allowedRoles = ['tutor', 'cell_leader', 'admin', 'super_admin', 'national_admin'];
       if (!recipient || !allowedRoles.includes(recipient.role)) {
         throw new Error('This member account is no longer active. Refresh the member list and select an active member.');
       }

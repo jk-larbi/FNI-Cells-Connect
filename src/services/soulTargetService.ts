@@ -1,6 +1,6 @@
 import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { SoulTargetConfig, SoulTargetMetrics } from '../types';
+import { SoulTargetConfig, SoulTargetMetrics, SoulTargetPeriod, CellTargetProgress } from '../types';
 import { ReportService } from './reportService';
 import { CellService } from './cellService';
 import { SettingsService } from './settingsService';
@@ -11,6 +11,9 @@ const DEFAULT_CONFIG: SoulTargetConfig = {
   id: 'target-2026',
   year: 2026,
   annualTarget: 5000,
+  targetPeriod: 'yearly',
+  ministryTarget: 5000,
+  cellTargets: {},
   updatedAt: '2026-01-01T00:00:00Z',
   updatedBy: 'System Administrator',
   auditHistory: [
@@ -20,6 +23,7 @@ const DEFAULT_CONFIG: SoulTargetConfig = {
       changedBy: 'General Overseer',
       reason: 'Territorial kingdom expansion across cell fellowships and harvest outreaches',
       timestamp: '2026-01-01T00:00:00Z',
+      period: 'yearly',
     },
   ],
 };
@@ -94,6 +98,50 @@ export class SoulTargetService {
     return updated;
   }
 
+  static async updateTargetSettings(params: {
+    ministryTarget: number;
+    targetPeriod: SoulTargetPeriod;
+    cellTargets: Record<string, number>;
+    changedBy: string;
+    reason: string;
+  }): Promise<SoulTargetConfig> {
+    const current = await this.getConfig();
+    const nowIso = new Date().toISOString();
+
+    const auditEntry = {
+      previousTarget: current.annualTarget,
+      newTarget: Number(params.ministryTarget),
+      changedBy: params.changedBy,
+      reason: params.reason.trim() || 'Target recalibration across 16 cells',
+      timestamp: nowIso,
+      period: params.targetPeriod,
+      cellTargets: params.cellTargets,
+    };
+
+    const updated: SoulTargetConfig = {
+      ...current,
+      annualTarget: Number(params.ministryTarget),
+      ministryTarget: Number(params.ministryTarget),
+      targetPeriod: params.targetPeriod,
+      cellTargets: params.cellTargets,
+      updatedAt: nowIso,
+      updatedBy: params.changedBy,
+      auditHistory: [auditEntry, ...(current.auditHistory || [])],
+    };
+
+    setStoredConfig(updated);
+
+    // Primary write to Supabase
+    try {
+      await SupabaseService.upsertSoulTargetConfig(updated);
+    } catch (e) {
+      console.warn('Supabase save target notice:', e);
+    }
+
+    this.notifySubscribers();
+    return updated;
+  }
+
   /**
    * Calculates real-time progress metrics against the configured annual target.
    * Both weekly cell meeting returns (new members & converts) and evangelism outreach returns contribute live.
@@ -164,13 +212,41 @@ export class SoulTargetService {
     })).sort((a, b) => b.souls - a.souls);
     const teamContributions = Array.from(teamMap.entries()).map(([leaderName, data]) => ({ leaderName, souls: data.souls, outings: data.outings })).sort((a, b) => b.souls - a.souls);
 
+    const targetPeriod = config.targetPeriod || 'yearly';
+    const cellTargetProgress: CellTargetProgress[] = cells.map(cell => {
+      const canonicalId = cell.id;
+      const data = cellMap.get(canonicalId) || { cellName: cell.name, souls: 0, fromEvangelism: 0 };
+      const explicitTarget = config.cellTargets?.[cell.id] ?? config.cellTargets?.[cell.name];
+      const target = Number(explicitTarget) > 0
+        ? Number(explicitTarget)
+        : Math.round(annualTarget / Math.max(1, cells.length));
+      const achieved = data.souls;
+      const remaining = Math.max(0, target - achieved);
+      const percentage = target > 0 ? Math.min(100, Math.round((achieved / target) * 100)) : 0;
+      const status: 'achieved' | 'on_track' | 'behind' =
+        achieved >= target ? 'achieved' : percentage >= 70 ? 'on_track' : 'behind';
+
+      return {
+        cellId: cell.id,
+        cellName: cell.name,
+        tutorName: cell.leader_name || 'Tutor',
+        target,
+        achieved,
+        remaining,
+        percentage,
+        status,
+        fromEvangelism: data.fromEvangelism,
+        fromCells: 0,
+      };
+    }).sort((a, b) => b.achieved - a.achieved);
+
     return {
-      annualTarget, year, verifiedSoulsWon, remainingSouls, percentageAchieved,
+      annualTarget, year, targetPeriod, verifiedSoulsWon, remainingSouls, percentageAchieved,
       soulsFromEvangelism, soulsFromCells: 0, firstTimersFromCells, pendingSouls,
       weeklyProgress: Array.from(weeklyMap.entries()).map(([week, souls]) => ({ week, souls })),
       monthlyProgress: Array.from(monthlyMap.entries()).map(([month, souls]) => ({ month, souls })),
       quarterlyProgress: Array.from(quarterlyMap.entries()).map(([quarter, souls]) => ({ quarter, souls })),
-      cellContributions, teamContributions,
+      cellContributions, cellTargetProgress, teamContributions,
     };
   }
 

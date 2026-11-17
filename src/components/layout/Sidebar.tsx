@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { AppNavTab } from '../../types';
 import {
@@ -7,12 +7,12 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   FileCheck2,
   Library,
   Building,
   Users,
   FileCheck,
-  Archive,
   Flame,
   UserCheck,
   BarChart3,
@@ -24,23 +24,24 @@ import {
   User,
   History,
   MapPin,
-  Shield,
-  Send,
   DollarSign,
   BookOpen,
   MessagesSquare,
-  ContactRound,
   X,
+  MessageCircle,
+  Phone,
 } from 'lucide-react';
 
 interface SidebarProps {
   currentTab: AppNavTab;
   onSelectTab: (tab: AppNavTab) => void;
-  isOpen: boolean;
+  isOpen: boolean; // mobile drawer state
   onCloseMobile: () => void;
   unreadCount?: number;
   onOpenNotifications?: () => void;
   onOpenAccountSettings?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -51,39 +52,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
   unreadCount = 0,
   onOpenNotifications,
   onOpenAccountSettings,
+  isCollapsed = false,
+  onToggleCollapse,
 }) => {
   const { currentUser, logout, isAdmin } = useAuth();
-  const [isLearningExpanded, setIsLearningExpanded] = React.useState<boolean>(() => {
+
+  const [isLearningExpanded, setIsLearningExpanded] = useState<boolean>(() => {
     return currentTab.startsWith('learning-') || currentTab === 'learning-portal';
   });
 
-  const [isCellsExpanded, setIsCellsExpanded] = React.useState<boolean>(() => {
+  const [isCellsExpanded, setIsCellsExpanded] = useState<boolean>(() => {
     return currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history';
   });
 
-  const [isReportsExpanded, setIsReportsExpanded] = React.useState<boolean>(() => {
-    return currentTab === 'report-review' || currentTab === 'report-history';
+  const [isReportsExpanded, setIsReportsExpanded] = useState<boolean>(() => {
+    return currentTab === 'report-review' || currentTab === 'report-history' || currentTab === 'report-deadlines';
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentTab.startsWith('learning-') || currentTab === 'learning-portal') {
       setIsLearningExpanded(true);
     }
   }, [currentTab]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history') {
       setIsCellsExpanded(true);
     }
   }, [currentTab]);
 
-  React.useEffect(() => {
-    if (currentTab === 'report-review' || currentTab === 'report-history') {
+  useEffect(() => {
+    if (currentTab === 'report-review' || currentTab === 'report-history' || currentTab === 'report-deadlines') {
       setIsReportsExpanded(true);
     }
   }, [currentTab]);
 
-  // Administrator Portal Navigation: Full institutional oversight
+  // Administrator Navigation
   const adminNavItems = [
     { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'cells-dropdown' as any, label: 'Cells', icon: Building, isExpandable: true },
@@ -91,15 +95,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true },
     { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame },
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
-    { id: 'finance' as AppNavTab, label: 'Offering Aggregation', icon: DollarSign },
+    { id: 'finance' as AppNavTab, label: 'Offering', icon: DollarSign },
     { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
     { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
+    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone },
     { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3 },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings },
   ];
 
-  // Tutor Portal Navigation: Dedicated fellowship tools
+  // Tutor Navigation
   const tutorNavItems = [
     { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: LayoutDashboard },
     { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building },
@@ -111,79 +116,83 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
     { id: 'materials' as AppNavTab, label: 'Teaching Outlines', icon: BookOpen },
     { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
+    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone },
     { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: History },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'my-account' as AppNavTab, label: 'My Account', icon: User },
   ];
 
-  // Cells Sub-modules
+  // Submodules
   const cellsSubItems = [
     { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
     { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users },
     { id: 'cell-location-history' as AppNavTab, label: 'Cell Location History', icon: MapPin },
   ];
 
-  // Reports Sub-modules (Review & Report History)
   const reportsSubItems = [
     { id: 'report-review' as AppNavTab, label: 'Review', icon: FileCheck },
     { id: 'report-history' as AppNavTab, label: 'Report History', icon: History },
+    { id: 'report-deadlines' as AppNavTab, label: 'Deadline Settings', icon: Clock },
   ];
 
-  // Learning Portal Sub-modules
   const learningSubItems = [
     { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: LayoutDashboard },
     { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: BookOpen },
     { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: FileCheck2 },
     { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: Users },
     { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: BarChart3 },
-    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: Calendar || History },
-    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: Library || BookOpen },
+    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: Calendar },
+    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: Library },
   ];
 
   const navItems = isAdmin ? adminNavItems : tutorNavItems;
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Mobile Drawer Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-[#142B4A]/50 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-[#142B4A]/60 backdrop-blur-sm md:hidden transition-opacity"
           onClick={onCloseMobile}
         />
       )}
 
-      {/* Sidebar Container: Fixed to the left on all devices */}
+      {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-[280px] sm:w-64 max-w-[85vw] bg-white dark:bg-[#0d1624] text-[#182230] dark:text-slate-200 flex flex-col justify-between transition-transform duration-200 ease-in-out md:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } border-r border-[#E3E8EF] dark:border-[#1e2d42] shadow-lg md:shadow-xs`}
+        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col justify-between transition-all duration-300 ease-in-out fni-glass-sidebar ${
+          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } ${
+          isCollapsed ? 'w-[76px]' : 'w-[280px] sm:w-64 max-w-[85vw]'
+        }`}
       >
-        {/* Top Section: Brand Header & User Profile (Fixed at top) */}
-        <div className="p-4 pb-3 border-b border-[#E3E8EF] dark:border-[#1e2d42] shrink-0 bg-white dark:bg-[#0d1624]">
-          {/* Brand Row */}
-          <div className="flex items-center justify-between gap-2 mb-3.5">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl overflow-hidden border border-[#E3E8EF] dark:border-[#26384d] bg-[#142B4A] flex items-center justify-center shadow-xs shrink-0">
-                <img
-                  src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
-                  alt="FNI Official Logo"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs sm:text-sm font-black tracking-tight text-[#142B4A] dark:text-white truncate">
-                  FNI CELLS CONNECT
-                </span>
-                <span className="text-[9px] font-bold text-[#667085] dark:text-slate-400 uppercase tracking-wider truncate">
-                  {isAdmin ? 'ADMINISTRATOR PORTAL' : 'TUTOR PORTAL'}
-                </span>
-              </div>
+        {/* Top Section: Window Controls, Brand Header & Collapse Toggle */}
+        <div className={`p-4 border-b border-slate-200/80 dark:border-white/10 shrink-0 ${isCollapsed ? 'px-2 py-3.5 flex flex-col items-center' : ''}`}>
+          {/* macOS Window Controls + Collapse Pill */}
+          <div className={`flex items-center justify-between gap-2 mb-3.5 ${isCollapsed ? 'flex-col gap-3 mb-2' : ''}`}>
+            {/* macOS 3 Dots */}
+            <div className="flex items-center gap-1.5 shrink-0" title="FNI Cells Connect">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 shadow-2xs" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 shadow-2xs" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 shadow-2xs" />
             </div>
 
-            {/* Close Button on Mobile */}
+            {/* Desktop Collapse / Expand Toggle Button */}
+            {onToggleCollapse && (
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="hidden md:flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 transition-transform active:scale-95 cursor-pointer shadow-2xs"
+                title={isCollapsed ? 'Expand navigation' : 'Collapse navigation rail'}
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              </button>
+            )}
+
+            {/* Mobile Close Button */}
             <button
               onClick={onCloseMobile}
-              className="md:hidden p-1.5 rounded-lg text-[#667085] hover:text-[#142B4A] dark:text-slate-400 dark:hover:text-white hover:bg-[#F5F7FA] dark:hover:bg-[#152238] transition-colors shrink-0"
+              className="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-[#142B4A] dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
               aria-label="Close navigation menu"
               title="Close menu"
             >
@@ -191,61 +200,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* User Profile Banner with Quick Logout */}
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#F5F7FA] dark:bg-[#152238] border border-[#E3E8EF] dark:border-[#26384d]">
-            <div
-              onClick={onOpenAccountSettings}
-              className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group"
-              title="Account Information"
-            >
-              <div className="relative shrink-0">
-                <div className="w-8 h-8 rounded-full bg-[#142B4A] border-2 border-white shadow-xs flex items-center justify-center text-xs font-bold text-[#C6A45A] overflow-hidden">
-                  {currentUser?.avatar_url ? (
-                    <img
-                      src={currentUser.avatar_url}
-                      alt={currentUser.full_name || 'Profile'}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : currentUser?.full_name ? (
-                    currentUser.full_name
-                      .split(' ')
-                      .map(n => n[0])
-                      .slice(0, 2)
-                      .join('')
-                  ) : (
-                    'FN'
-                  )}
-                </div>
-                <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[#23845B] border border-white" />
+          {/* Brand Header */}
+          {!isCollapsed ? (
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-white/10 bg-[#142B4A] flex items-center justify-center shadow-xs shrink-0">
+                <img
+                  src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
+                  alt="FNI Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-[#182230] dark:text-white truncate group-hover:text-[#142B4A]">
-                  {currentUser?.full_name}
-                </div>
-                <div className="text-[10px] font-medium text-[#667085] truncate">
-                  {isAdmin
-                    ? 'Church Leadership'
-                    : currentUser?.cell_name
-                    ? currentUser.cell_name
-                    : 'Cell Leader'}
-                </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-extrabold tracking-tight text-[#142B4A] dark:text-white truncate">
+                  FNI CELLS CONNECT
+                </span>
+                <span className="text-[10px] font-bold text-[#667085] dark:text-slate-400 uppercase tracking-wider truncate">
+                  {isAdmin ? 'Administrator Portal' : 'Tutor Portal'}
+                </span>
               </div>
             </div>
-
-            {/* Quick Logout Button in Profile Card */}
-            <button
-              onClick={logout}
-              className="p-1.5 rounded-lg bg-[#FFF5F5] hover:bg-[#FEE4E2] text-[#C74646] hover:text-[#B42318] border border-[#FECDCA] transition-colors cursor-pointer shrink-0"
-              title="Sign Out / Logout"
-              aria-label="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+          ) : (
+            <div className="w-10 h-10 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-white/10 bg-[#142B4A] flex items-center justify-center shadow-xs shrink-0" title="FNI Cells Connect">
+              <img
+                src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
+                alt="FNI Logo"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
         </div>
 
-        {/* Middle Section: Navigation Links (Scrollable if screen height is small) */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 custom-scrollbar">
+        {/* Middle Navigation Section */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 custom-scrollbar space-y-4">
+          {/* MENU Category Header */}
+          <div className="px-1">
+            <span className={`text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500 block ${isCollapsed ? 'text-center' : ''}`}>
+              MENU
+            </span>
+          </div>
+
+          {/* Navigation Links */}
           <nav className="space-y-1">
             {navItems.map(item => {
               const Icon = item.icon;
@@ -256,18 +250,58 @@ export const Sidebar: React.FC<SidebarProps> = ({
               const isCellsActive = currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history';
 
               const isReports = item.id === 'reports-dropdown';
-              const isReportsActive = currentTab === 'report-review' || currentTab === 'report-history';
+              const isReportsActive = currentTab === 'report-review' || currentTab === 'report-history' || currentTab === 'report-deadlines';
 
               const isActive = isLearning ? isLearningActive : isCells ? isCellsActive : isReports ? isReportsActive : currentTab === item.id;
 
+              // Collapsed Slim Rail Item
+              if (isCollapsed) {
+                return (
+                  <div key={item.id} className="relative group flex justify-center py-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isCells) onSelectTab('cell-management');
+                        else if (isReports) onSelectTab('report-review');
+                        else if (isLearning) onSelectTab('learning-portal');
+                        else onSelectTab(item.id);
+                        onCloseMobile();
+                      }}
+                      className={`relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-150 cursor-pointer ${
+                        isActive
+                          ? 'bg-[#142B4A] text-white shadow-md shadow-navy-900/20'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5'
+                      }`}
+                      aria-label={item.label}
+                    >
+                      <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-[#C6A45A]' : ''}`} />
+                      {item.badge && item.badge > 0 ? (
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#C74646] ring-2 ring-white dark:ring-[#0d1624]" />
+                      ) : null}
+                    </button>
+
+                    {/* Reference Floating Blue Tooltip Pill */}
+                    <div className="fni-sidebar-tooltip bg-[#142B4A] dark:bg-blue-600 text-white font-bold text-xs py-1.5 px-3 rounded-xl shadow-2xl border border-white/10 flex items-center gap-1.5">
+                      <span>{item.label}</span>
+                      {item.badge && item.badge > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-[#C74646] text-white text-[10px] font-extrabold">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Expanded State: Cells Dropdown
               if (isCells) {
                 return (
                   <div key={item.id} className="space-y-1">
                     <div
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                         isCellsActive
                           ? 'bg-[#142B4A] text-white shadow-sm'
-                          : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5'
                       }`}
                     >
                       <button
@@ -279,8 +313,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
                       >
-                        <Building className={`w-4 h-4 shrink-0 ${isCellsActive ? 'text-[#C6A45A]' : 'text-[#667085]'}`} />
-                        <span className="truncate font-bold">Cells</span>
+                        <Building className={`w-4 h-4 shrink-0 ${isCellsActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span className="truncate">Cells</span>
                       </button>
 
                       <button
@@ -300,9 +334,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
 
-                    {/* Expandable Sub-items */}
                     {isCellsExpanded && (
-                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/30 ml-3.5 my-1 animate-fade-in">
+                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/40 ml-3.5 my-1 animate-fade-in">
                         {cellsSubItems.map(sub => {
                           const SubIcon = sub.icon;
                           const isSubActive = currentTab === sub.id;
@@ -314,13 +347,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 onSelectTab(sub.id);
                                 onCloseMobile();
                               }}
-                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
                                 isSubActive
                                   ? 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-white/10 dark:text-white font-bold'
-                                  : 'text-[#667085] hover:text-[#182230] dark:hover:text-white hover:bg-[#F5F7FA] dark:hover:bg-[#172437]'
+                                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                               }`}
                             >
-                              <SubIcon className={`w-3 h-3 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
+                              <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
                               <span className="truncate">{sub.label}</span>
                             </button>
                           );
@@ -331,14 +364,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 );
               }
 
+              // Expanded State: Reports Dropdown
               if (isReports) {
                 return (
                   <div key={item.id} className="space-y-1">
                     <div
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                         isReportsActive
                           ? 'bg-[#142B4A] text-white shadow-sm'
-                          : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5'
                       }`}
                     >
                       <button
@@ -350,8 +384,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
                       >
-                        <FileCheck className={`w-4 h-4 shrink-0 ${isReportsActive ? 'text-[#C6A45A]' : 'text-[#667085]'}`} />
-                        <span className="truncate font-bold">Reports</span>
+                        <FileCheck className={`w-4 h-4 shrink-0 ${isReportsActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span className="truncate">Reports</span>
                       </button>
 
                       <button
@@ -371,9 +405,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
 
-                    {/* Expandable Sub-items */}
                     {isReportsExpanded && (
-                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/30 ml-3.5 my-1 animate-fade-in">
+                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/40 ml-3.5 my-1 animate-fade-in">
                         {reportsSubItems.map(sub => {
                           const SubIcon = sub.icon;
                           const isSubActive = currentTab === sub.id;
@@ -385,13 +418,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 onSelectTab(sub.id);
                                 onCloseMobile();
                               }}
-                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
                                 isSubActive
                                   ? 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-white/10 dark:text-white font-bold'
-                                  : 'text-[#667085] hover:text-[#182230] dark:hover:text-white hover:bg-[#F5F7FA] dark:hover:bg-[#172437]'
+                                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                               }`}
                             >
-                              <SubIcon className={`w-3 h-3 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
+                              <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
                               <span className="truncate">{sub.label}</span>
                             </button>
                           );
@@ -402,14 +435,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 );
               }
 
+              // Expanded State: Learning Portal Dropdown
               if (isLearning) {
                 return (
                   <div key={item.id} className="space-y-1">
                     <div
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                         isLearningActive
                           ? 'bg-[#142B4A] text-white shadow-sm'
-                          : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5'
                       }`}
                     >
                       <button
@@ -421,8 +455,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
                       >
-                        <GraduationCap className={`w-4 h-4 shrink-0 ${isLearningActive ? 'text-[#C6A45A]' : 'text-[#667085]'}`} />
-                        <span className="truncate font-bold">Learning Portal</span>
+                        <GraduationCap className={`w-4 h-4 shrink-0 ${isLearningActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span className="truncate">Learning Portal</span>
                       </button>
 
                       <button
@@ -442,9 +476,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
 
-                    {/* Expandable Sub-items */}
                     {isLearningExpanded && (
-                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/30 ml-3.5 my-1 animate-fade-in">
+                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/40 ml-3.5 my-1 animate-fade-in">
                         {learningSubItems.map(sub => {
                           const SubIcon = sub.icon;
                           const isSubActive = currentTab === sub.id;
@@ -456,13 +489,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 onSelectTab(sub.id);
                                 onCloseMobile();
                               }}
-                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
                                 isSubActive
                                   ? 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-white/10 dark:text-white font-bold'
-                                  : 'text-[#667085] hover:text-[#182230] dark:hover:text-white hover:bg-[#F5F7FA] dark:hover:bg-[#172437]'
+                                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                               }`}
                             >
-                              <SubIcon className={`w-3 h-3 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
+                              <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
                               <span className="truncate">{sub.label}</span>
                             </button>
                           );
@@ -473,45 +506,134 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 );
               }
 
+              // Standard Expanded Menu Item
               return (
-                <button key={item.id} onClick={() => { onSelectTab(item.id); onCloseMobile(); }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isActive ? 'bg-[#229ED9]/10 text-[#1677A8] border border-[#229ED9]/20 shadow-none' : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
-                  }`}>
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    onSelectTab(item.id);
+                    onCloseMobile();
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#142B4A] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5'
+                  }`}
+                >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#229ED9]' : 'text-[#667085]'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
-                  {item.badge && item.badge > 0 ? <span className="px-1.5 py-0.5 rounded-full bg-[#C74646] text-white text-[10px] font-bold">{item.badge}</span> : isActive ? <span className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]" /> : null}
+                  {item.badge && item.badge > 0 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-[#C74646] text-white text-[10px] font-extrabold shadow-2xs">
+                      {item.badge}
+                    </span>
+                  ) : isActive ? (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]" />
+                  ) : null}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Bottom Section: Sunday Deadline & Prominent Big Red Logout Button (Always pinned and visible) */}
-        <div className="p-3 border-t border-[#E3E8EF] dark:border-[#1e2d42] shrink-0 bg-white dark:bg-[#0d1624] space-y-2">
-          <div className="p-2.5 bg-[#F5F7FA] dark:bg-[#152238] border border-[#E3E8EF] dark:border-[#26384d] rounded-xl text-[11px] text-[#667085] dark:text-slate-400">
-            <div className="flex items-center gap-1.5 text-[#142B4A] dark:text-white font-bold">
-              <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
-              <span>Reporting Deadline</span>
-            </div>
-            <div className="text-[#182230] dark:text-slate-200 font-semibold mt-0.5">
-              Sunday 6:00 PM GMT
-            </div>
-            <div className="text-[10px] text-[#667085] dark:text-slate-400">
-              Timezone: Africa/Accra
-            </div>
-          </div>
+        {/* Bottom Section: Profile & Reporting Deadline */}
+        <div className={`p-3 border-t border-slate-200/80 dark:border-white/10 shrink-0 ${isCollapsed ? 'px-2 py-3 flex flex-col items-center' : 'space-y-2.5'}`}>
+          {!isCollapsed ? (
+            <>
+              {/* Profile Card */}
+              <div className="flex items-center justify-between p-2 rounded-2xl fni-glass-panel border border-slate-200/80 dark:border-white/10">
+                <div
+                  onClick={onOpenAccountSettings}
+                  className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group"
+                  title="Profile Settings"
+                >
+                  <div className="relative shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[#142B4A] border border-white shadow-xs flex items-center justify-center text-xs font-bold text-[#C6A45A] overflow-hidden">
+                      {currentUser?.avatar_url ? (
+                        <img
+                          src={currentUser.avatar_url}
+                          alt={currentUser.full_name || 'Profile'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : currentUser?.full_name ? (
+                        currentUser.full_name
+                          .split(' ')
+                          .map(n => n[0])
+                          .slice(0, 2)
+                          .join('')
+                      ) : (
+                        'FN'
+                      )}
+                    </div>
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#23845B] border-2 border-white dark:border-[#0d1624]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600">
+                      {currentUser?.full_name}
+                    </div>
+                    <div className="text-[10px] font-medium text-slate-500 truncate">
+                      {isAdmin ? 'Church Leadership' : currentUser?.cell_name || 'Cell Leader'}
+                    </div>
+                  </div>
+                </div>
 
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold text-[#C74646] hover:text-[#B42318] bg-[#FFF5F5] dark:bg-rose-950/30 hover:bg-[#FEE4E2] border border-[#FECDCA] dark:border-rose-900/40 rounded-xl transition-all cursor-pointer shadow-2xs"
-            title="Sign Out of FNI Cells Connect"
-          >
-            <LogOut className="w-4 h-4 text-[#C74646]" />
-            <span>Sign Out / Logout</span>
-          </button>
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 transition-colors cursor-pointer shrink-0"
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Sunday Reporting Deadline Card */}
+              <div className="p-2.5 fni-glass-panel border border-slate-200/80 dark:border-white/10 rounded-2xl text-[11px] text-slate-600 dark:text-slate-400">
+                <div className="flex items-center gap-1.5 text-[#142B4A] dark:text-white font-bold">
+                  <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <span>Reporting Deadline</span>
+                </div>
+                <div className="text-slate-900 dark:text-slate-200 font-semibold mt-0.5">
+                  Sunday 6:00 PM GMT
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                  Timezone: Africa/Accra
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Collapsed Mode: Single Profile Avatar with Tooltip */
+            <div className="relative group flex justify-center py-1">
+              <button
+                type="button"
+                onClick={onOpenAccountSettings}
+                className="relative w-10 h-10 rounded-full bg-[#142B4A] border-2 border-white dark:border-[#0d1624] shadow-xs flex items-center justify-center text-xs font-bold text-[#C6A45A] overflow-hidden cursor-pointer"
+                title={currentUser?.full_name || 'My Profile'}
+              >
+                {currentUser?.avatar_url ? (
+                  <img
+                    src={currentUser.avatar_url}
+                    alt={currentUser.full_name || 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : currentUser?.full_name ? (
+                  currentUser.full_name
+                    .split(' ')
+                    .map(n => n[0])
+                    .slice(0, 2)
+                    .join('')
+                ) : (
+                  'FN'
+                )}
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#23845B] border-2 border-white dark:border-[#0d1624]" />
+              </button>
+
+              <div className="fni-sidebar-tooltip bg-[#142B4A] dark:bg-blue-600 text-white font-bold text-xs py-1.5 px-3 rounded-xl shadow-xl flex items-center gap-1.5">
+                <span>{currentUser?.full_name}</span>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
     </>

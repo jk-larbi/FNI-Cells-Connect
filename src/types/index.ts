@@ -11,9 +11,14 @@ export type ReportStatus =
   | 'needs_revision';
 
 export type FollowUpStatus =
+  | 'Uncontacted'
+  | 'Contacted'
+  | 'Requiring Follow-up'
+  | 'Active Discipleship'
+  | 'Completed / Joined'
+  | 'Established in Church'
   | 'Not contacted'
   | 'Follow-up required'
-  | 'Contacted'
   | 'Interested'
   | 'Joined a cell'
   | 'Completed'
@@ -24,20 +29,126 @@ export type FollowUpStatus =
 
 export type NotificationChannel = 'in_app' | 'email' | 'whatsapp';
 
+export type NotificationPriority = 'urgent' | 'important' | 'general';
+
+export type NotificationCategory =
+  | 'reports'
+  | 'assignments'
+  | 'quizzes'
+  | 'learning'
+  | 'cells'
+  | 'leadership'
+  | 'meetings'
+  | 'communication'
+  | 'system';
+
 export type NotificationType =
+  // Reports
   | 'report_submitted'
   | 'report_approved'
   | 'revision_requested'
   | 'report_rejected'
-  | 'direct_message'
-  | 'community_message'
-  | 'teaching_notes'
-  | 'announcement'
+  | 'report_overdue'
   | 'deadline_reminder'
   | 'overdue_notice'
+  // Assignments
+  | 'assignment_new'
+  | 'assignment_submitted'
+  | 'assignment_deadline'
+  | 'assignment_overdue'
+  | 'assignment_graded'
+  | 'assignment_feedback'
+  // Quizzes
+  | 'quiz_new'
+  | 'quiz_deadline'
+  | 'quiz_submitted'
+  | 'quiz_graded'
+  | 'quiz_results'
+  // Learning Portal
+  | 'learning_material_new'
+  | 'learning_event_new'
+  | 'learning_announcement'
+  | 'teaching_notes'
+  // Cells
+  | 'cell_member_added'
+  | 'cell_member_removed'
+  | 'cell_info_updated'
+  // Leadership
+  | 'leadership_assigned'
+  | 'leadership_changed'
+  | 'leadership_dismissed'
+  // Meetings
+  | 'meeting_upcoming'
+  | 'meeting_reminder'
+  | 'meeting_started'
+  | 'meeting_cancelled'
+  // Communication
+  | 'direct_message'
+  | 'community_message'
+  | 'message_reply'
+  | 'message_mention'
+  | 'broadcast'
+  | 'announcement'
+  | 'incoming_call'
+  | 'missed_call'
+  // System & Security
+  | 'password_changed'
+  | 'new_device_login'
+  | 'security_alert'
+  | 'system_maintenance'
   | 'system_alert'
+  // Follow-ups
   | 'follow_up_assigned'
   | 'follow_up_reminder';
+
+export interface UserNotificationPreferences {
+  inAppNotifications: boolean;
+  devicePushNotifications?: boolean;
+  reports?: boolean;
+  assignments?: boolean;
+  quizzes?: boolean;
+  learningMaterials?: boolean;
+  meetings?: boolean;
+  cellAnnouncements?: boolean;
+  messages?: boolean;
+  adminBroadcasts?: boolean;
+  // Backward compatibility fields
+  assignmentNotifications?: boolean;
+  quizNotifications?: boolean;
+  reportDeadlineReminders?: boolean;
+  cellMeetingReminders?: boolean;
+  privateMessages?: boolean;
+}
+
+export interface AdminBroadcastRecord {
+  id: string;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  broadcastType: 'announcement' | 'alert';
+  targetType: 'all' | 'cells' | 'individual';
+  targetDetails?: {
+    cellIds?: string[];
+    cellNames?: string[];
+    tutorId?: string;
+    tutorName?: string;
+  };
+  recipientCount: number;
+  sentBy: {
+    uid: string;
+    name: string;
+    role: string;
+  };
+  sentAt: string;
+}
+
+export interface UserGeneralPreferences {
+  language: 'en-UK' | 'en-GH';
+  timeFormat: '12h' | '24h';
+  dateFormat: 'DD/MM/YYYY' | 'YYYY-MM-DD' | 'MM/DD/YYYY';
+  defaultDashboard?: string;
+  timezone: string; // 'Africa/Accra'
+}
 
 export interface Profile {
   id: string;
@@ -245,6 +356,11 @@ export interface EvangelismContact {
   followUpStatus: FollowUpStatus;
   followUpNotes?: string;
   notes?: string;
+  leadSource?: string;
+  contactAttempts?: number;
+  discipleshipProgress?: string | number;
+  establishedDate?: string;
+  completionDate?: string;
   lastFollowUpDate?: string;
   nextFollowUpDate?: string;
   history?: Array<{
@@ -295,6 +411,26 @@ export interface ChatAttachment {
   size: number;
 }
 
+export interface ChatPollOption {
+  id: string;
+  text: string;
+  votes: number;
+  voterUids?: string[];
+}
+
+export interface ChatPoll {
+  id: string;
+  question: string;
+  options: ChatPollOption[];
+  isAnonymous?: boolean;
+  allowsMultipleAnswers?: boolean;
+  isClosed?: boolean;
+  totalVotes: number;
+  createdByUid: string;
+  createdByName: string;
+  createdAt: string;
+}
+
 export interface PrivateMessage {
   id: string;
   senderUid: string;
@@ -314,6 +450,7 @@ export interface PrivateMessage {
   isPinned?: boolean;
   deletedForEveryoneAt?: string;
   editedAt?: string;
+  poll?: ChatPoll;
 }
 
 export interface CommunityMessage {
@@ -334,6 +471,7 @@ export interface CommunityMessage {
   isPinned?: boolean;
   pinnedAt?: string;
   pinnedBy?: string;
+  poll?: ChatPoll;
 }
 
 export interface InvitationCode {
@@ -369,10 +507,28 @@ export interface TeachingMaterial {
 }
 
 // Soul Target Tracking
+export type SoulTargetPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface CellTargetProgress {
+  cellId: string;
+  cellName: string;
+  tutorName?: string;
+  target: number;
+  achieved: number;
+  remaining: number;
+  percentage: number;
+  status: 'achieved' | 'on_track' | 'behind';
+  fromEvangelism: number;
+  fromCells: number;
+}
+
 export interface SoulTargetConfig {
   id: string;
   year: number;
   annualTarget: number;
+  targetPeriod?: SoulTargetPeriod;
+  ministryTarget?: number;
+  cellTargets?: Record<string, number>;
   updatedAt: string;
   updatedBy: string;
   auditHistory: Array<{
@@ -381,11 +537,14 @@ export interface SoulTargetConfig {
     changedBy: string;
     reason: string;
     timestamp: string;
+    period?: SoulTargetPeriod;
+    cellTargets?: Record<string, number>;
   }>;
 }
 
 export interface SoulTargetMetrics {
   annualTarget: number;
+  targetPeriod?: SoulTargetPeriod;
   year: number;
   verifiedSoulsWon: number;
   remainingSouls: number;
@@ -398,6 +557,7 @@ export interface SoulTargetMetrics {
   monthlyProgress: Array<{ month: string; souls: number }>;
   quarterlyProgress: Array<{ quarter: string; souls: number }>;
   cellContributions: Array<{ cellId: string; cellName: string; souls: number; percentage: number; fromEvangelism?: number; fromCells?: number }>;
+  cellTargetProgress?: CellTargetProgress[];
   teamContributions: Array<{ leaderName: string; souls: number; outings: number }>;
 }
 
@@ -431,6 +591,8 @@ export interface NotificationItem {
   message: string;
   type: NotificationType;
   channel: NotificationChannel;
+  priority?: NotificationPriority;
+  category?: NotificationCategory;
   is_read: boolean;
   metadata?: Record<string, any>;
   created_at: string;
@@ -565,6 +727,7 @@ export type AdminNavTab =
   | 'report-review'
   | 'report-history'
   | 'received-reports'
+  | 'report-deadlines'
   | 'learning-portal'
   | 'learning-assignments'
   | 'learning-quizzes'
@@ -577,6 +740,7 @@ export type AdminNavTab =
   | 'finance'
   | 'materials'
   | 'messages'
+  | 'call-history'
   | 'analytics'
   | 'notifications'
   | 'settings';
@@ -598,8 +762,11 @@ export type TutorNavTab =
   | 'follow-ups'
   | 'materials'
   | 'messages'
+  | 'call-history'
   | 'cell-activity-history'
   | 'notifications'
   | 'my-account';
 
 export type AppNavTab = AdminNavTab | TutorNavTab;
+
+export * from './calling';

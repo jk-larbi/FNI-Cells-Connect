@@ -1,11 +1,97 @@
 import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { NotificationItem, NotificationType, NotificationChannel, UserRole } from '../types';
+import {
+  NotificationItem,
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationCategory,
+  UserRole,
+  UserNotificationPreferences,
+  AdminBroadcastRecord,
+} from '../types';
 import { PushNotificationService } from './pushNotificationService';
 import { CellService } from './cellService';
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: UserNotificationPreferences = {
+  inAppNotifications: true,
+  devicePushNotifications: true,
+  reports: true,
+  assignments: true,
+  quizzes: true,
+  learningMaterials: true,
+  meetings: true,
+  cellAnnouncements: true,
+  messages: true,
+  adminBroadcasts: true,
+  // Backward compatibility keys
+  assignmentNotifications: true,
+  quizNotifications: true,
+  reportDeadlineReminders: true,
+  cellMeetingReminders: true,
+  privateMessages: true,
+};
+
+export function getNotificationPriority(item: NotificationItem | { type?: string; metadata?: Record<string, any>; priority?: string }): NotificationPriority {
+  if (item.priority === 'urgent' || item.priority === 'important' || item.priority === 'general') {
+    return item.priority;
+  }
+  if (item.metadata?.priority === 'urgent' || item.metadata?.priority === 'important' || item.metadata?.priority === 'general') {
+    return item.metadata.priority as NotificationPriority;
+  }
+  const type = String(item.type || '');
+  if (
+    type === 'security_alert' ||
+    type === 'password_changed' ||
+    type === 'new_device_login' ||
+    type === 'overdue_notice' ||
+    type === 'report_overdue' ||
+    type === 'assignment_overdue' ||
+    type === 'report_rejected' ||
+    type === 'leadership_dismissed'
+  ) {
+    return 'urgent';
+  }
+  if (
+    type === 'assignment_new' ||
+    type === 'quiz_new' ||
+    type === 'deadline_reminder' ||
+    type === 'assignment_deadline' ||
+    type === 'quiz_deadline' ||
+    type === 'meeting_upcoming' ||
+    type === 'meeting_reminder' ||
+    type === 'meeting_cancelled' ||
+    type === 'report_submitted' ||
+    type === 'revision_requested' ||
+    type === 'assignment_feedback' ||
+    type === 'assignment_graded' ||
+    type === 'quiz_results'
+  ) {
+    return 'important';
+  }
+  return 'general';
+}
+
+export function getNotificationCategory(item: NotificationItem | { type?: string; metadata?: Record<string, any>; category?: string }): NotificationCategory {
+  if (item.category) return item.category as NotificationCategory;
+  if (item.metadata?.category) return item.metadata.category as NotificationCategory;
+  const type = String(item.type || '');
+  if (type.startsWith('report_') || type === 'deadline_reminder' || type === 'overdue_notice' || type === 'report_overdue') return 'reports';
+  if (type.startsWith('assignment_')) return 'assignments';
+  if (type.startsWith('quiz_')) return 'quizzes';
+  if (type.startsWith('learning_') || type === 'teaching_notes') return 'learning';
+  if (type.startsWith('cell_')) return 'cells';
+  if (type.startsWith('leadership_')) return 'leadership';
+  if (type.startsWith('meeting_')) return 'meetings';
+  if (type === 'direct_message' || type === 'community_message' || type === 'message_reply' || type === 'message_mention' || type === 'broadcast' || type === 'announcement') return 'communication';
+  if (type === 'password_changed' || type === 'new_device_login' || type === 'security_alert' || type === 'system_maintenance' || type === 'system_alert') return 'system';
+  return 'reports';
+}
+
 const STORAGE_KEY = 'fni_notifications_store_v2';
 const SUBSCRIBERS = new Set<(notifs: NotificationItem[]) => void>();
 const dismissedKey = (userId: string) => `fni_notification_dismissals:${userId}`;
+const userPrefsKey = (userId: string) => `fni_user_notification_prefs:${userId}`;
 function getLocalDismissedIds(userId: string): Set<string> {
   try { return new Set<string>(JSON.parse(localStorage.getItem(dismissedKey(userId)) || '[]')); } catch { return new Set(); }
 }
@@ -43,7 +129,33 @@ function setStoredNotifications(items: NotificationItem[]): void {
 
 export class NotificationService {
   /**
-   * Filter notifications relevant to a given user and their role
+   * Get user notification preferences
+   */
+  static getUserNotificationPreferences(userId: string): UserNotificationPreferences {
+    if (!userId) return DEFAULT_NOTIFICATION_PREFERENCES;
+    try {
+      const raw = localStorage.getItem(userPrefsKey(userId));
+      return raw ? { ...DEFAULT_NOTIFICATION_PREFERENCES, ...JSON.parse(raw) } : DEFAULT_NOTIFICATION_PREFERENCES;
+    } catch {
+      return DEFAULT_NOTIFICATION_PREFERENCES;
+    }
+  }
+
+  /**
+   * Save user notification preferences persistently
+   */
+  static saveUserNotificationPreferences(userId: string, prefs: UserNotificationPreferences): void {
+    if (!userId) return;
+    try {
+      localStorage.setItem(userPrefsKey(userId), JSON.stringify(prefs));
+    } catch (e) {
+      console.warn('Failed to save notification preferences', e);
+    }
+  }
+
+  /**
+   * Filter notifications relevant to a given user and their role,
+   * respecting their individual category notification preferences.
    */
   static filterForUser(
     notifications: NotificationItem[],
@@ -51,11 +163,48 @@ export class NotificationService {
     role: UserRole | string
   ): NotificationItem[] {
     const isAdmin = role === 'admin' || role === 'super_admin' || role === 'national_admin';
+    const prefs = userId ? this.getUserNotificationPreferences(userId) : DEFAULT_NOTIFICATION_PREFERENCES;
 
     const activeCellIds = CellService.getCachedActiveCellIds();
     const activeCellNames = CellService.getCachedActiveCellNames();
 
     return notifications.filter(n => {
+      const category = getNotificationCategory(n);
+      const isSecurityAlert =
+        n.type === 'security_alert' ||
+        n.type === 'password_changed' ||
+        n.type === 'new_device_login';
+
+      // Critical security alerts are never silenced (Requirement 8)
+      if (!isSecurityAlert) {
+        // If master in-app notifications are toggled off by user
+        if (prefs.inAppNotifications === false) {
+          return false;
+        }
+
+        // Category-specific preference filtering
+        if (category === 'reports') {
+          if (prefs.reports === false || prefs.reportDeadlineReminders === false) return false;
+        }
+        if (category === 'assignments') {
+          if (prefs.assignments === false || prefs.assignmentNotifications === false) return false;
+        }
+        if (category === 'quizzes') {
+          if (prefs.quizzes === false || prefs.quizNotifications === false) return false;
+        }
+        if (category === 'learning') {
+          if (prefs.learningMaterials === false) return false;
+        }
+        if (category === 'meetings') {
+          if (prefs.meetings === false || prefs.cellMeetingReminders === false) return false;
+        }
+        if (category === 'communication') {
+          if (n.type === 'direct_message' && (prefs.messages === false || prefs.privateMessages === false)) return false;
+          if ((n.type === 'announcement' || n.type === 'teaching_notes') && (prefs.cellAnnouncements === false)) return false;
+          if (n.type === 'broadcast' && prefs.adminBroadcasts === false) return false;
+        }
+      }
+
       const cellId = n.metadata?.cellId || n.metadata?.cell_id;
       const cellName = n.metadata?.cellName || n.metadata?.cell_name;
       if (cellId && activeCellIds.size > 0 && !activeCellIds.has(String(cellId))) return false;
@@ -99,6 +248,9 @@ export class NotificationService {
       return existing;
     }
 
+    const priority = getNotificationPriority({ type: item.type, metadata: item.metadata });
+    const category = getNotificationCategory({ type: item.type, metadata: item.metadata });
+
     const newNotif: NotificationItem = {
       id,
       user_id: item.userId,
@@ -106,10 +258,14 @@ export class NotificationService {
       message: item.message,
       type: item.type,
       channel: item.channel || 'in_app',
+      priority,
+      category,
       is_read: false,
       metadata: {
         ...item.metadata,
         idempotencyKey: item.idempotencyKey || id,
+        priority,
+        category,
       },
       created_at: nowIso,
     };
@@ -423,10 +579,241 @@ export class NotificationService {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+        await supabase.from('notifications').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', id);
       } catch (e) {
         console.warn('Supabase markAsRead note:', e);
       }
+    }
+  }
+
+  /**
+   * Mark an individual notification as unread
+   */
+  static async markAsUnread(id: string): Promise<void> {
+    const current = getStoredNotifications();
+    const updated = current.map(n => (n.id === id ? { ...n, is_read: false } : n));
+    setStoredNotifications(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('notifications').update({ is_read: false, read_at: null }).eq('id', id);
+      } catch (e) {
+        console.warn('Supabase markAsUnread note:', e);
+      }
+    }
+  }
+
+  /**
+   * Toggle read/unread state of an individual notification
+   */
+  static async toggleRead(id: string): Promise<boolean> {
+    const current = getStoredNotifications();
+    const target = current.find(n => n.id === id);
+    if (!target) return false;
+    const nextRead = !target.is_read;
+    if (nextRead) {
+      await this.markAsRead(id);
+    } else {
+      await this.markAsUnread(id);
+    }
+    return nextRead;
+  }
+
+  /**
+   * Delete or dismiss an individual notification for the specified user
+   */
+  static async deleteNotificationForUser(userId: string, id: string): Promise<boolean> {
+    if (!userId || !id) return false;
+
+    // 1. Record dismissal locally
+    const dismissed = getLocalDismissedIds(userId);
+    dismissed.add(id);
+    saveLocalDismissedIds(userId, dismissed);
+
+    // 2. Record dismissal in Supabase
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('notification_dismissals').upsert({
+          user_id: userId,
+          notification_id: id,
+          dismissed_at: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn('Supabase deleteNotificationForUser notice:', err);
+      }
+    }
+
+    // 3. Update memory store
+    const current = getStoredNotifications();
+    const updated = current.filter(item => item.id !== id);
+    setStoredNotifications(updated);
+    return true;
+  }
+
+  /**
+   * Clear only read notifications for the current user
+   */
+  static async clearReadForUser(userId: string, role: string): Promise<boolean> {
+    const current = getStoredNotifications();
+    const visible = this.filterForUser(current, userId, role);
+    const readItems = visible.filter(n => n.is_read);
+    if (readItems.length === 0) return true;
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const rows = readItems.map(item => ({ user_id: userId, notification_id: item.id }));
+        if (rows.length) {
+          await supabase.from('notification_dismissals').upsert(rows);
+        }
+      } catch (err) {
+        console.warn('Supabase clearReadForUser notice:', err);
+      }
+    }
+
+    const dismissed = getLocalDismissedIds(userId);
+    readItems.forEach(item => dismissed.add(item.id));
+    saveLocalDismissedIds(userId, dismissed);
+    const filtered = current.filter(item => !dismissed.has(item.id));
+    setStoredNotifications(filtered);
+    return true;
+  }
+
+  /**
+   * Send an official Administrator broadcast to all tutors, selected cells, or an individual tutor
+   */
+  static async sendAdminBroadcast(params: {
+    title: string;
+    message: string;
+    priority: NotificationPriority;
+    broadcastType: 'announcement' | 'alert';
+    targetType: 'all' | 'cells' | 'individual';
+    targetCellIds?: string[];
+    targetCellNames?: string[];
+    targetTutorUid?: string;
+    targetTutorName?: string;
+    sender: { uid: string; name: string; role: string };
+  }): Promise<{ success: boolean; recipientCount: number; record: AdminBroadcastRecord }> {
+    const broadcastId = `bcast-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const nowIso = new Date().toISOString();
+    let recipientCount = 0;
+
+    const notifType: NotificationType = params.broadcastType === 'alert' ? 'security_alert' : 'announcement';
+
+    if (params.targetType === 'all') {
+      recipientCount = 1;
+      await this.createNotification({
+        id: `notif-${broadcastId}`,
+        idempotencyKey: `notif-${broadcastId}`,
+        userId: 'all',
+        title: params.title,
+        message: params.message,
+        type: notifType,
+        channel: 'in_app',
+        metadata: {
+          broadcastId,
+          broadcastType: params.broadcastType,
+          priority: params.priority,
+          targetType: 'all',
+          senderUid: params.sender.uid,
+          senderName: params.sender.name,
+          category: 'communication',
+          targetTab: 'messages',
+        },
+      });
+    } else if (params.targetType === 'individual' && params.targetTutorUid) {
+      recipientCount = 1;
+      await this.createNotification({
+        id: `notif-${broadcastId}-${params.targetTutorUid}`,
+        idempotencyKey: `notif-${broadcastId}-${params.targetTutorUid}`,
+        userId: params.targetTutorUid,
+        title: params.title,
+        message: params.message,
+        type: notifType,
+        channel: 'in_app',
+        metadata: {
+          broadcastId,
+          broadcastType: params.broadcastType,
+          priority: params.priority,
+          targetType: 'individual',
+          tutorName: params.targetTutorName,
+          senderUid: params.sender.uid,
+          senderName: params.sender.name,
+          category: 'communication',
+          targetTab: 'messages',
+        },
+      });
+    } else if (params.targetType === 'cells' && params.targetCellIds && params.targetCellIds.length > 0) {
+      const members = (await SupabaseService.getMemberDirectory()) || [];
+      const cellNameSet = new Set((params.targetCellNames || []).map(c => c.trim().toLowerCase()));
+
+      const targetedTutors = members.filter(m => {
+        if (m.role === 'admin' || m.role === 'super_admin' || m.role === 'national_admin') return false;
+        if (m.cell_name && cellNameSet.has(m.cell_name.trim().toLowerCase())) return true;
+        return false;
+      });
+
+      recipientCount = targetedTutors.length;
+      for (const tutor of targetedTutors) {
+        await this.createNotification({
+          id: `notif-${broadcastId}-${tutor.id}`,
+          idempotencyKey: `notif-${broadcastId}-${tutor.id}`,
+          userId: tutor.id,
+          title: params.title,
+          message: params.message,
+          type: notifType,
+          channel: 'in_app',
+          metadata: {
+            broadcastId,
+            broadcastType: params.broadcastType,
+            priority: params.priority,
+            targetType: 'cells',
+            cellName: tutor.cell_name,
+            senderUid: params.sender.uid,
+            senderName: params.sender.name,
+            category: 'communication',
+            targetTab: 'messages',
+          },
+        });
+      }
+    }
+
+    const record: AdminBroadcastRecord = {
+      id: broadcastId,
+      title: params.title,
+      message: params.message,
+      priority: params.priority,
+      broadcastType: params.broadcastType,
+      targetType: params.targetType,
+      targetDetails: {
+        cellIds: params.targetCellIds,
+        cellNames: params.targetCellNames,
+        tutorId: params.targetTutorUid,
+        tutorName: params.targetTutorName,
+      },
+      recipientCount,
+      sentBy: params.sender,
+      sentAt: nowIso,
+    };
+
+    try {
+      const history = this.getBroadcastHistory();
+      localStorage.setItem('fni_admin_broadcast_history', JSON.stringify([record, ...history]));
+    } catch (e) {
+      console.warn('Failed to persist broadcast history', e);
+    }
+
+    return { success: true, recipientCount, record };
+  }
+
+  /**
+   * Get past broadcast history
+   */
+  static getBroadcastHistory(): AdminBroadcastRecord[] {
+    try {
+      const raw = localStorage.getItem('fni_admin_broadcast_history');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
     }
   }
 

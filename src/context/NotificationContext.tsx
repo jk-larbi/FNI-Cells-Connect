@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { NotificationItem, NotificationType, NotificationChannel } from '../types';
+import {
+  NotificationItem,
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+  AdminBroadcastRecord,
+} from '../types';
 import { NotificationService } from '../services/notificationService';
 import { PushNotificationService } from '../services/pushNotificationService';
 import { useAuth } from './AuthContext';
@@ -19,6 +25,9 @@ export interface NotificationNavigationTarget {
   reportId?: string;
   conversationId?: string;
   materialId?: string;
+  assignmentId?: string;
+  quizId?: string;
+  eventId?: string;
 }
 
 interface NotificationContextType {
@@ -29,8 +38,12 @@ interface NotificationContextType {
   isPushSupported: boolean;
   isPushEnabled: boolean;
   activeNavigationTarget: NotificationNavigationTarget | null;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
+  markAsRead: (id: string) => Promise<void>;
+  markAsUnread: (id: string) => Promise<void>;
+  toggleRead: (id: string) => Promise<boolean>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<boolean>;
+  clearReadNotifications: () => Promise<boolean>;
   clearAllNotifications: () => Promise<boolean>;
   dispatchNotification: (
     title: string,
@@ -39,6 +52,18 @@ interface NotificationContextType {
     channel?: NotificationChannel,
     metadata?: Record<string, any>
   ) => Promise<void>;
+  sendAdminBroadcast: (params: {
+    title: string;
+    message: string;
+    priority: NotificationPriority;
+    broadcastType: 'announcement' | 'alert';
+    targetType: 'all' | 'cells' | 'individual';
+    targetCellIds?: string[];
+    targetCellNames?: string[];
+    targetTutorUid?: string;
+    targetTutorName?: string;
+  }) => Promise<{ success: boolean; recipientCount: number; record: AdminBroadcastRecord }>;
+  getBroadcastHistory: () => AdminBroadcastRecord[];
   sendCellReminder: (
     cellId: string,
     cellName: string,
@@ -187,6 +212,62 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const markAsRead = async (id: string) => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
     await NotificationService.markAsRead(id);
+  };
+
+  const markAsUnread = async (id: string) => {
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: false } : n)));
+    await NotificationService.markAsUnread(id);
+  };
+
+  const toggleRead = async (id: string): Promise<boolean> => {
+    const target = notifications.find(n => n.id === id);
+    const next = !target?.is_read;
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: next } : n)));
+    if (next) {
+      await NotificationService.markAsRead(id);
+    } else {
+      await NotificationService.markAsUnread(id);
+    }
+    return next;
+  };
+
+  const deleteNotification = async (id: string): Promise<boolean> => {
+    if (!currentUser) return false;
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    return NotificationService.deleteNotificationForUser(currentUser.id, id);
+  };
+
+  const clearReadNotifications = async (): Promise<boolean> => {
+    if (!currentUser) return false;
+    const readIds = new Set(notifications.filter(n => n.is_read).map(n => n.id));
+    setNotifications(prev => prev.filter(n => !readIds.has(n.id)));
+    return NotificationService.clearReadForUser(currentUser.id, currentUser.role);
+  };
+
+  const sendAdminBroadcast = async (params: {
+    title: string;
+    message: string;
+    priority: NotificationPriority;
+    broadcastType: 'announcement' | 'alert';
+    targetType: 'all' | 'cells' | 'individual';
+    targetCellIds?: string[];
+    targetCellNames?: string[];
+    targetTutorUid?: string;
+    targetTutorName?: string;
+  }) => {
+    if (!currentUser) throw new Error('Must be authenticated to send broadcast');
+    return NotificationService.sendAdminBroadcast({
+      ...params,
+      sender: {
+        uid: currentUser.id,
+        name: currentUser.full_name || currentUser.username || 'FNI Leadership',
+        role: currentUser.role,
+      },
+    });
+  };
+
+  const getBroadcastHistory = (): AdminBroadcastRecord[] => {
+    return NotificationService.getBroadcastHistory();
   };
 
   const clearAllNotifications = async (): Promise<boolean> => {
@@ -347,7 +428,44 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           break;
         case 'deadline_reminder':
         case 'overdue_notice':
+        case 'report_overdue':
           targetTab = isAdmin ? 'report-review' : 'submit-cell-meeting-report';
+          break;
+        case 'assignment_new':
+        case 'assignment_submitted':
+        case 'assignment_deadline':
+        case 'assignment_overdue':
+        case 'assignment_graded':
+        case 'assignment_feedback':
+          targetTab = 'assignments';
+          break;
+        case 'quiz_new':
+        case 'quiz_deadline':
+        case 'quiz_submitted':
+        case 'quiz_graded':
+        case 'quiz_results':
+          targetTab = 'quizzes';
+          break;
+        case 'learning_material_new':
+        case 'learning_announcement':
+          targetTab = 'materials';
+          break;
+        case 'learning_event_new':
+          targetTab = 'events';
+          break;
+        case 'cell_member_added':
+        case 'cell_member_removed':
+        case 'cell_info_updated':
+        case 'leadership_assigned':
+        case 'leadership_changed':
+        case 'leadership_dismissed':
+          targetTab = isAdmin ? 'cell-management' : 'my-cell';
+          break;
+        case 'password_changed':
+        case 'new_device_login':
+        case 'security_alert':
+        case 'system_maintenance':
+          targetTab = 'account-settings';
           break;
         case 'follow_up_assigned':
         case 'follow_up_reminder':
@@ -386,9 +504,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         isPushEnabled,
         activeNavigationTarget,
         markAsRead,
+        markAsUnread,
+        toggleRead,
         markAllAsRead,
+        deleteNotification,
+        clearReadNotifications,
         clearAllNotifications,
         dispatchNotification,
+        sendAdminBroadcast,
+        getBroadcastHistory,
         sendCellReminder,
         triggerBatchReminders,
         requestPushPermission,

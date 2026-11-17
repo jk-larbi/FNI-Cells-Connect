@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Region, Cell, ReportingPeriod, Profile, UserRole, CellReport } from '../../types';
-import { INITIAL_PROFILES } from '../../services/mockData';
 import { ReportService } from '../../services/reportService';
 import { AuthService } from '../../services/authService';
 import { SupabaseService } from '../../services/supabaseService';

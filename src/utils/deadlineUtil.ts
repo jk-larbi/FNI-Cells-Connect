@@ -1,3 +1,5 @@
+import { DeadlineService } from '../services/deadlineService';
+
 /**
  * FNI Digital Reporting System - Ghana Time & Weekly Reporting Deadline Utility
  *
@@ -41,44 +43,37 @@ export function getIsoWeekNumber(d: Date): number {
 }
 
 /**
- * Calculate the exact deadline (Sunday 18:00:00Z) for a specific year and week number
+ * Calculate the exact deadline for a specific year and week number based on configured settings
  */
-export function getGhanaDeadlineForWeek(year: number, weekNumber: number): {
+export function getGhanaDeadlineForWeek(
+  year: number,
+  weekNumber: number,
+  reportType: 'meeting' | 'evangelism' = 'meeting'
+): {
   startDate: string;
   endDate: string;
   deadlineIso: string;
 } {
-  // Approximate the target week's Monday
-  const simple = new Date(Date.UTC(year, 0, 1 + (weekNumber - 1) * 7));
-  const dayOfWeek = simple.getUTCDay();
-  const ISOweekStart = new Date(simple);
-  if (dayOfWeek <= 4) {
-    ISOweekStart.setUTCDate(simple.getUTCDate() - simple.getUTCDay() + 1);
-  } else {
-    ISOweekStart.setUTCDate(simple.getUTCDate() + 8 - simple.getUTCDay());
-  }
-
-  // Sunday of that week
-  const sunday = new Date(ISOweekStart);
-  sunday.setUTCDate(ISOweekStart.getUTCDate() + 6);
-  sunday.setUTCHours(18, 0, 0, 0); // Exactly 6:00 PM Ghana time (18:00 UTC)
-
-  const startDateStr = ISOweekStart.toISOString().split('T')[0];
-  const endDateStr = sunday.toISOString().split('T')[0];
-  const deadlineIso = sunday.toISOString();
-
+  const calculated = DeadlineService.calculateDeadlineForWeek(reportType, year, weekNumber);
   return {
-    startDate: startDateStr,
-    endDate: endDateStr,
-    deadlineIso,
+    startDate: calculated.startDate,
+    endDate: calculated.endDate,
+    deadlineIso: calculated.deadlineIso,
   };
 }
 
 /**
  * Get active deadline info for the current cycle
  */
-export function getCurrentDeadlineInfo(activeWeekNumber = 45, year = 2026): DeadlineInfo {
-  const { startDate, endDate, deadlineIso } = getGhanaDeadlineForWeek(year, activeWeekNumber);
+export function getCurrentDeadlineInfo(
+  activeWeekNumber = 45,
+  year = 2026,
+  reportType: 'meeting' | 'evangelism' = 'meeting'
+): DeadlineInfo {
+  const calculated = DeadlineService.calculateDeadlineForWeek(reportType, year, activeWeekNumber);
+  const startDate = calculated.startDate;
+  const endDate = calculated.endDate;
+  const deadlineIso = calculated.deadlineIso;
   const deadlineDate = new Date(deadlineIso);
   const now = new Date();
   const timeRemainingMs = deadlineDate.getTime() - now.getTime();
@@ -120,7 +115,7 @@ export function getCurrentDeadlineInfo(activeWeekNumber = 45, year = 2026): Dead
     startDateIso: startDate,
     endDateIso: endDate,
     deadlineIso,
-    deadlineFormatted: `Sunday 6:00 PM Ghana Time (${deadlineFormatted})`,
+    deadlineFormatted: `${calculated.formatted} (${deadlineFormatted})`,
     isPastDeadline,
     timeRemainingMs,
     timeRemainingText,

@@ -1,5 +1,6 @@
 import { exportCsvFile } from '../../utils/mobileExport';
 import React, { useState, useEffect, useMemo } from 'react';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import { UnifiedReportItem, ReportStatus, Cell, EvangelismContact } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
@@ -96,6 +97,25 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
   // Single Item Inspection & Review Modal
   const [inspectingItem, setInspectingItem] = useState<UnifiedReportItem | null>(null);
+
+  // Back navigation interceptor: closes report inspection dossier before leaving view
+  useBackHandler(() => {
+    if (inspectingItem) {
+      setInspectingItem(null);
+      if (onClearInitialReportId) onClearInitialReportId();
+      return true;
+    }
+    return false;
+  }, Boolean(inspectingItem));
+
+  const handleBackNavigation = () => {
+    if (inspectingItem) {
+      setInspectingItem(null);
+      if (onClearInitialReportId) onClearInitialReportId();
+    } else if (onBack) {
+      onBack();
+    }
+  };
   const [reportContacts, setReportContacts] = useState<EvangelismContact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [reviewAction, setReviewAction] = useState<'Approved' | 'Needs Correction' | null>(null);
@@ -524,7 +544,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           {onBack && (
             <button
               type="button"
-              onClick={onBack}
+              onClick={handleBackNavigation}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
             >
               <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />

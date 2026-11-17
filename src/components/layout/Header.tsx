@@ -27,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   const deadlineInfo = getCurrentDeadlineInfo();
 
   return (
-    <header className="sticky top-0 z-30 min-h-14 sm:h-16 flex items-center justify-between gap-2 px-2.5 sm:px-6 bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-md border-b border-[#E3E8EF] dark:border-[#1e2d42] transition-all safe-top">
+    <header className="sticky top-0 z-30 min-h-14 sm:h-16 flex items-center justify-between gap-2 px-2.5 sm:px-6 fni-glass-header transition-all safe-top shadow-xs">
       {/* Left: Mobile toggle & Back button & Deadline badge */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
         <button

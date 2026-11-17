@@ -1466,7 +1466,13 @@ export class LearningService {
       this.getQuizAttempts(),
     ]);
 
-    const activeTutors = allProfiles.filter(p => p.role === 'cell_leader' || p.role === 'tutor' || p.role !== 'admin');
+    const activeTutors = allProfiles.filter(
+      p =>
+        (p.role === 'cell_leader' || p.role === 'tutor' || p.role !== 'admin') &&
+        p.status !== 'inactive' &&
+        p.status !== 'deactivated' &&
+        !p.is_deactivated
+    );
 
     const metrics: TutorParticipationMetric[] = activeTutors.map(tutor => {
       const tutorSubs = submissions.filter(s => s.tutor_id === tutor.id);

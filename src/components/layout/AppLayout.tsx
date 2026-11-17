@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { NavigationService } from '../../services/navigationService';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import { AppNavTab } from '../../types';
 import {
   ArrowLeft,
@@ -12,6 +14,7 @@ import {
   PlusCircle,
   MessageSquare,
   Bell,
+  GraduationCap,
 } from 'lucide-react';
 import { LocationSharingPanel } from '../location/LocationSharingPanel';
 
@@ -23,6 +26,7 @@ import { CellLocationHistoryView } from '../admin/CellLocationHistoryView';
 import { ReportReviewView } from '../admin/ReportReviewView';
 import { ReportHistoryView } from '../admin/ReportHistoryView';
 import { ReceivedReportsView } from '../admin/ReceivedReportsView';
+import { ReportDeadlineSettingsView } from '../admin/ReportDeadlineSettingsView';
 import { EvangelismAdminView } from '../admin/EvangelismAdminView';
 import { AnalyticsView } from '../admin/AnalyticsView';
 import { AdminSettingsView } from '../admin/AdminSettingsView';
@@ -42,6 +46,8 @@ import { MyAccountView } from '../tutor/MyAccountView';
 import { FollowUpManagementView } from '../followups/FollowUpManagementView';
 import { TeachingMaterialsView } from '../materials/TeachingMaterialsView';
 import { MessagingView } from '../communication/MessagingView';
+import { CallOverlay } from '../calling/CallOverlay';
+import { CallHistoryView } from '../calling/CallHistoryView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
 import { LearningPortalView } from '../learning/LearningPortalView';
@@ -67,6 +73,23 @@ export const AppLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('fni_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCollapse = () => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('fni_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // Lock the page behind the mobile drawer without losing its current scroll
   // position. This avoids the background jumping when the drawer is swiped.
@@ -109,29 +132,128 @@ export const AppLayout: React.FC = () => {
   const [targetConversationId, setTargetConversationId] = useState<string | undefined>(undefined);
   const [editingMeetingReport, setEditingMeetingReport] = useState<any | null>(null);
 
+  // Register initial tab into NavigationService
+  useEffect(() => {
+    NavigationService.pushTab(currentTab);
+  }, []);
+
+  // Back interceptors for top-level modals and drawer
+  useBackHandler(() => {
+    if (isNotifModalOpen) {
+      setIsNotifModalOpen(false);
+      return true;
+    }
+    return false;
+  }, isNotifModalOpen);
+
+  useBackHandler(() => {
+    if (isAccountSettingsOpen) {
+      setIsAccountSettingsOpen(false);
+      return true;
+    }
+    return false;
+  }, isAccountSettingsOpen);
+
+  useBackHandler(() => {
+    if (isSidebarOpen) {
+      setIsSidebarOpen(false);
+      return true;
+    }
+    return false;
+  }, isSidebarOpen);
+
+  // Synchronize browser history and support hardware / browser Back & Forward navigation
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // 1. If an active modal, drawer, or sub-view interceptor handles the back event, consume it!
+      const intercepted = NavigationService.triggerInterceptor();
+      if (intercepted) {
+        // Re-align URL hash and push state so user stays on current tab
+        try {
+          window.history.pushState(
+            { fniNav: true, tab: currentTab, index: NavigationService.getHistoryLength() },
+            '',
+            `#${currentTab}`
+          );
+        } catch {}
+        return;
+      }
+
+      // 2. Transition back to previous tab
+      if (event.state?.tab) {
+        const targetTab = event.state.tab as AppNavTab;
+        setCurrentTab(targetTab);
+        setNavHistory(prev => (prev.length > 0 ? prev.slice(0, prev.length - 1) : []));
+      } else {
+        const popped = NavigationService.popTab();
+        if (popped) {
+          setCurrentTab(popped.tab);
+          setNavHistory(prev => (prev.length > 0 ? prev.slice(0, prev.length - 1) : []));
+        } else {
+          // Fallback to parent section or role home
+          const parentTab = NavigationService.getParentTab(currentTab, isAdmin);
+          if (parentTab !== currentTab) {
+            setCurrentTab(parentTab);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentTab, isAdmin]);
+
   // Navigation with history tracking
   const navigateToTab = (newTab: AppNavTab, replace = false) => {
     if (newTab === currentTab) return;
     if (!replace) {
       setNavHistory(prev => [...prev, currentTab]);
+      NavigationService.pushTab(newTab);
     }
     setCurrentTab(newTab);
   };
 
-  const handleGoBack = () => {
-    if (navHistory.length > 0) {
-      const prevTab = navHistory[navHistory.length - 1];
-      setNavHistory(prev => prev.slice(0, prev.length - 1));
-      setCurrentTab(prevTab);
+  const handleGoBack = useCallback(() => {
+    // 1. Check if an active modal/drawer interceptor is open and consumes the action
+    const intercepted = NavigationService.triggerInterceptor();
+    if (intercepted) {
+      return;
+    }
+
+    // 2. Step back through the user's actual navigation history one step at a time
+    if (NavigationService.getHistoryLength() > 1 || navHistory.length > 0) {
+      const popped = NavigationService.popTab();
+      if (popped) {
+        setNavHistory(prev => (prev.length > 0 ? prev.slice(0, prev.length - 1) : []));
+        setCurrentTab(popped.tab);
+        try {
+          window.history.back();
+        } catch {}
+        return;
+      }
+    }
+
+    // 3. If no prior in-app history (e.g. direct load/refresh), fallback to sensible parent section
+    const parentTab = NavigationService.getParentTab(currentTab, isAdmin);
+    if (parentTab !== currentTab) {
+      setCurrentTab(parentTab);
+      NavigationService.pushTab(parentTab);
     } else {
       const homeTab: AppNavTab = isAdmin ? 'dashboard' : 'my-dashboard';
       if (currentTab !== homeTab) {
         setCurrentTab(homeTab);
+        NavigationService.pushTab(homeTab);
       }
     }
-  };
+  }, [currentTab, isAdmin, navHistory]);
 
-  const canGoBack = navHistory.length > 0 || currentTab !== (isAdmin ? 'dashboard' : 'my-dashboard');
+  const canGoBack =
+    NavigationService.getHistoryLength() > 1 ||
+    navHistory.length > 0 ||
+    isNotifModalOpen ||
+    isAccountSettingsOpen ||
+    isSidebarOpen ||
+    currentTab !== (isAdmin ? 'dashboard' : 'my-dashboard');
 
   // Handle external / service worker notification click targets
   React.useEffect(() => {
@@ -195,10 +317,12 @@ export const AppLayout: React.FC = () => {
           unreadCount={unreadCount}
           onOpenNotifications={() => setIsNotifModalOpen(true)}
           onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleToggleCollapse}
         />
 
         {/* Main Application Area */}
-        <div className="flex-1 flex flex-col md:pl-64 min-w-0 w-full overflow-x-hidden">
+        <div className={`flex-1 flex flex-col ${isSidebarCollapsed ? 'md:pl-[76px]' : 'md:pl-64'} min-w-0 w-full overflow-x-hidden transition-all duration-300 ease-in-out`}>
           <Header
             onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
             onOpenNotifications={() => setIsNotifModalOpen(true)}
@@ -249,6 +373,9 @@ export const AppLayout: React.FC = () => {
                     onNavigateToTab={(tab: string) => navigateToTab(tab as any)}
                   />
                 )}
+                {effectiveTab === 'report-deadlines' && (
+                  <ReportDeadlineSettingsView onBack={handleGoBack} />
+                )}
                 {effectiveTab === 'evangelism' && (
                   <EvangelismAdminView onBack={handleGoBack} />
                 )}
@@ -266,6 +393,9 @@ export const AppLayout: React.FC = () => {
                     initialConversationId={targetConversationId}
                     onBack={handleGoBack}
                   />
+                )}
+                {effectiveTab === 'call-history' && (
+                  <CallHistoryView onBack={handleGoBack} />
                 )}
                 {effectiveTab === 'analytics' && (
                   <AnalyticsView onBack={handleGoBack} />
@@ -348,6 +478,9 @@ export const AppLayout: React.FC = () => {
                     onBack={handleGoBack}
                   />
                 )}
+                {effectiveTab === 'call-history' && (
+                  <CallHistoryView onBack={handleGoBack} />
+                )}
                 {effectiveTab === 'cell-activity-history' && (
                   <CellActivityHistoryView onBack={handleGoBack} />
                 )}
@@ -403,18 +536,18 @@ export const AppLayout: React.FC = () => {
               { id: 'cell-management' as AppNavTab, label: 'Cells', icon: Building },
               { id: 'report-review' as AppNavTab, label: 'Reports', icon: FileCheck },
               { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
-              { id: 'notifications' as AppNavTab, label: 'Alerts', icon: Bell },
+              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap },
             ]
           : [
               { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard },
               { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building },
               { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Report', icon: PlusCircle },
               { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
-              { id: 'notifications' as AppNavTab, label: 'Alerts', icon: Bell },
+              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap },
             ]
         ).map(item => {
           const Icon = item.icon;
-          const active = effectiveTab === item.id;
+          const active = effectiveTab === item.id || (item.id === 'learning-portal' && effectiveTab.startsWith('learning-'));
           return (
             <button
               key={item.id}
@@ -429,11 +562,6 @@ export const AppLayout: React.FC = () => {
                 active ? 'bg-[#142B4A]/[0.08] dark:bg-white/10' : ''
               }`}>
                 <Icon className={`h-5 w-5 ${active ? 'text-[#C6A45A]' : ''}`} />
-                {item.id === 'notifications' && unreadCount > 0 && (
-                  <span className="absolute top-1 right-[calc(50%-18px)] min-w-4 h-4 px-1 rounded-full bg-[#C74646] text-white text-[9px] leading-4">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
               </span>
               <span className="truncate max-w-[56px] text-center">{item.label}</span>
               {active && <span className="absolute bottom-0.5 h-0.5 w-7 rounded-full bg-[#C6A45A]" />}
@@ -453,6 +581,9 @@ export const AppLayout: React.FC = () => {
         isOpen={isAccountSettingsOpen}
         onClose={() => setIsAccountSettingsOpen(false)}
       />
+
+      {/* Global In-App Voice & Video Call Overlay */}
+      <CallOverlay />
     </div>
   );
 };

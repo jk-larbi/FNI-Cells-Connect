@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import {
   GraduationCap,
   BookOpen,
@@ -42,6 +43,23 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const [activeSection, setActiveSection] = useState<LearningPortalSection>(initialSection);
+
+  // Back navigation interceptor: return to Overview from any sub-section
+  useBackHandler(() => {
+    if (activeSection !== 'overview') {
+      setActiveSection('overview');
+      return true;
+    }
+    return false;
+  }, activeSection !== 'overview');
+
+  const handleBackNavigation = () => {
+    if (activeSection !== 'overview') {
+      setActiveSection('overview');
+    } else if (onBack) {
+      onBack();
+    }
+  };
 
   // Global state across portal
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -107,9 +125,9 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
           {onBack && (
             <button
               type="button"
-              onClick={onBack}
+              onClick={handleBackNavigation}
               className="p-2 rounded-xl bg-[#F5F7FA] dark:bg-[#172437] hover:bg-[#E3E8EF] text-[#142B4A] dark:text-slate-200 transition-colors cursor-pointer group"
-              title="Return to main dashboard"
+              title="Return to previous section"
             >
               <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
             </button>

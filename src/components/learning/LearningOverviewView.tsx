@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   FileCheck2,
@@ -11,21 +11,30 @@ import {
   Search,
   MapPin,
   Video,
-  User,
-  MessageCircle,
-  Image as ImageIcon,
-  DollarSign,
+  Award,
+  AlertCircle,
+  CheckCircle2,
   Bell,
-  Menu,
-  ArrowLeft,
-  X,
-  ExternalLink,
+  ArrowRight,
   GraduationCap,
-  CalendarCheck,
+  Sparkles,
+  Inbox,
+  Send,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { LearningPortalSection, Assignment, Quiz, LearningEvent } from '../../types/learning';
+import {
+  LearningPortalSection,
+  Assignment,
+  Quiz,
+  LearningEvent,
+  AssignmentSubmission,
+  QuizAttempt,
+  LearningResource,
+} from '../../types/learning';
+import { LearningService } from '../../services/learningService';
+import { MessagingService } from '../../services/messagingService';
 
 interface LearningOverviewViewProps {
   onNavigateSection: (section: LearningPortalSection) => void;
@@ -56,24 +65,53 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [selectedGalleryCategory, setSelectedGalleryCategory] = useState<string>('all');
+
+  // Real Database Submissions, Quiz Attempts & Resources
+  const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
+  const [resources, setResources] = useState<LearningResource[]>([]);
+  const [activeTutorsCount, setActiveTutorsCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const firstName = currentUser?.full_name ? currentUser.full_name.split(' ')[0] : 'Leader';
-  const userInitials = currentUser?.full_name
-    ? currentUser.full_name
-        .split(' ')
-        .map(n => n[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'FN';
 
-  const activeAssignments = assignments.filter(a => a.status === 'published');
-  const activeQuizzes = quizzes.filter(q => q.status === 'published');
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const [subs, atts, res, members] = await Promise.all([
+          LearningService.getSubmissions(undefined, isAdmin ? undefined : currentUser?.id),
+          LearningService.getQuizAttempts(undefined, isAdmin ? undefined : currentUser?.id),
+          LearningService.getResources(isAdmin),
+          MessagingService.getMemberDirectory(),
+        ]);
+        if (!isMounted) return;
+        setSubmissions(subs || []);
+        setQuizAttempts(atts || []);
+        setResources(res || []);
+        if (members) {
+          const tutorMembers = members.filter(m => m.role === 'tutor' || m.role === 'cell_leader');
+          setActiveTutorsCount(tutorMembers.length || members.length);
+        }
+      } catch (e) {
+        console.warn('Overview load notice:', e);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAdmin, currentUser]);
 
-  // Format date chip (e.g., "MAY", "24", "Fri")
+  // Published Activities
+  const publishedAssignments = assignments.filter(a => a.status === 'published');
+  const publishedQuizzes = quizzes.filter(q => q.status === 'published');
+  const upcomingEvents = events.filter(e => e.status === 'upcoming');
+
+  // Format date chip
   const formatDateChip = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
@@ -86,365 +124,404 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
     }
   };
 
-  // Default events if Supabase events are empty, to demonstrate the schedule fidelity
-  const displayEvents: LearningEvent[] = events.length > 0
-    ? events.filter(e => e.status === 'upcoming').slice(0, 4)
-    : [
-        {
-          id: 'evt-1',
-          title: 'Cell Leadership Summit & Training',
-          description: 'Quarterly training seminar for all cell leaders and tutors.',
-          event_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-          start_time: '10:00 AM',
-          end_time: '01:00 PM',
-          location_or_link: 'Main Sanctuary / Fellowship Hall',
-          meeting_type: 'in_person',
-          status: 'upcoming',
-          created_by: 'system',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 'evt-2',
-          title: 'Ministry Evangelism & Discipleship Class',
-          description: 'Special discipleship cohort and strategy session.',
-          event_date: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
-          start_time: '02:00 PM',
-          end_time: '04:00 PM',
-          location_or_link: 'Room 204 / Zoom Room A',
-          meeting_type: 'online',
-          status: 'upcoming',
-          created_by: 'system',
-          created_at: new Date().toISOString(),
-        },
-      ];
+  // ---------------------------------------------------------------------------
+  // ADMIN METRICS (Strictly Real Data)
+  // ---------------------------------------------------------------------------
+  const assignmentsCreated = assignments.length;
+  const assignmentsSubmittedCount = submissions.length;
+  const assignmentsPendingGrading = submissions.filter(
+    s => s.status === 'submitted' || s.status === 'submitted_late' || s.status === 'awaiting_grading'
+  ).length;
 
-  // 12 Quick Access cards matching the exact screenshot layout (3x4)
-  const allQuickAccessItems = [
-    {
-      id: 'profile',
-      title: 'Profile',
-      subtitle: 'View & edit profile',
-      icon: User,
-      iconBg: 'bg-[#7F56D9] text-white',
-      cardStyle: 'bg-[#F9F5FF] border-[#E9D7FE] dark:bg-[#1E1638] dark:border-[#382663]',
-      onClick: () => {
-        if (onOpenAccountSettings) onOpenAccountSettings();
-        else if (onNavigateAppTab) onNavigateAppTab('my-account');
-      },
-    },
-    {
-      id: 'events',
-      title: 'Events',
-      subtitle: 'School events',
-      icon: Calendar,
-      iconBg: 'bg-[#F79009] text-white',
-      cardStyle: 'bg-[#FFF9F5] border-[#FEDF89] dark:bg-[#2C1C0F] dark:border-[#4B2F17]',
-      onClick: () => onNavigateSection('events'),
-    },
-    {
-      id: 'staffs',
-      title: 'Staffs',
-      subtitle: 'Faculty directory',
-      icon: Users,
-      iconBg: 'bg-[#2E90FA] text-white',
-      cardStyle: 'bg-[#EFF8FF] border-[#B2DDFF] dark:bg-[#0F223A] dark:border-[#17375B]',
-      onClick: () => {
-        if (onNavigateAppTab) onNavigateAppTab('cell-leaders');
-        else onNavigateSection('participation');
-      },
-    },
-    {
-      id: 'attendance',
-      title: 'Attendance',
-      subtitle: 'Check attendance',
-      icon: CalendarCheck,
-      iconBg: 'bg-[#12B76A] text-white',
-      cardStyle: 'bg-[#ECFDF3] border-[#A6F4C5] dark:bg-[#0D261C] dark:border-[#144431]',
-      onClick: () => onNavigateSection('participation'),
-    },
-    {
-      id: 'chatbox',
-      title: 'Chatbox',
-      subtitle: 'Message & support',
-      icon: MessageCircle,
-      iconBg: 'bg-[#F63D68] text-white',
-      cardStyle: 'bg-[#FFF0F4] border-[#FECDCA] dark:bg-[#2D1219] dark:border-[#4C1B29]',
-      onClick: () => {
-        if (onNavigateAppTab) onNavigateAppTab('messages');
-      },
-    },
-    {
-      id: 'gradesheet',
-      title: 'GradeSheet',
-      subtitle: 'View your grades',
-      icon: BarChart3,
-      iconBg: 'bg-[#EAAA08] text-white',
-      cardStyle: 'bg-[#FEFDF0] border-[#FEDF89] dark:bg-[#28210C] dark:border-[#453613]',
-      onClick: () => onNavigateSection('grades'),
-    },
-    {
-      id: 'gallery',
-      title: 'Gallery',
-      subtitle: 'Photos & albums',
-      icon: ImageIcon,
-      iconBg: 'bg-[#0BA5EC] text-white',
-      cardStyle: 'bg-[#F0F9FF] border-[#B9E6FE] dark:bg-[#0E2333] dark:border-[#163B54]',
-      onClick: () => setIsGalleryOpen(true),
-    },
-    {
-      id: 'fees',
-      title: 'Fees Details',
-      subtitle: 'Payments & history',
-      icon: DollarSign,
-      iconBg: 'bg-[#0E9384] text-white',
-      cardStyle: 'bg-[#F0FDF9] border-[#A6F4C5] dark:bg-[#0D2721] dark:border-[#144237]',
-      onClick: () => {
-        if (onNavigateAppTab) {
-          onNavigateAppTab(isAdmin ? 'report-history' : 'my-reports');
-        }
-      },
-    },
-    {
-      id: 'notices',
-      title: 'Notices',
-      subtitle: 'Latest updates',
-      icon: Bell,
-      iconBg: 'bg-[#7F56D9] text-white',
-      cardStyle: 'bg-[#F9F5FF] border-[#E9D7FE] dark:bg-[#1E1638] dark:border-[#382663]',
-      hasNewBadge: true,
-      onClick: () => {
-        if (onOpenNotifications) onOpenNotifications();
-        else if (onNavigateAppTab) onNavigateAppTab('notifications');
-      },
-    },
-    {
-      id: 'assignments',
-      title: 'Assignments',
-      subtitle: 'Tasks & submissions',
-      icon: BookOpen,
-      iconBg: 'bg-[#FF692E] text-white',
-      cardStyle: 'bg-[#FFF6ED] border-[#FDC4B3] dark:bg-[#2E1810] dark:border-[#4E2416]',
-      onClick: () => onNavigateSection('assignments'),
-    },
-    {
-      id: 'exams',
-      title: 'Exams',
-      subtitle: 'Schedule & results',
-      icon: FileCheck2,
-      iconBg: 'bg-[#16B364] text-white',
-      cardStyle: 'bg-[#F6FEF9] border-[#A6F4C5] dark:bg-[#0D251C] dark:border-[#154231]',
-      onClick: () => onNavigateSection('quizzes'),
-    },
-    {
-      id: 'library',
-      title: 'Library',
-      subtitle: 'Books & resources',
-      icon: Library,
-      iconBg: 'bg-[#0299BA] text-white',
-      cardStyle: 'bg-[#F0F9FF] border-[#BAE6FD] dark:bg-[#0E2434] dark:border-[#153C56]',
-      onClick: () => onNavigateSection('materials'),
-    },
-  ];
+  const quizzesPublishedCount = publishedQuizzes.length;
+  const uniqueQuizTutors = new Set(quizAttempts.map(a => a.tutor_id)).size;
+  const quizParticipationRate =
+    activeTutorsCount > 0 ? Math.round((uniqueQuizTutors / activeTutorsCount) * 100) : 0;
 
-  // Search filter
-  const filteredQuickAccess = searchQuery.trim()
-    ? allQuickAccessItems.filter(
-        item =>
-          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : allQuickAccessItems;
+  // Average Scores across graded assignments and quizzes
+  const allGradedAssignmentScores = submissions
+    .filter(s => s.grade !== undefined && s.grade !== null)
+    .map(s => {
+      const asg = assignments.find(a => a.id === s.assignment_id);
+      const total = asg?.total_marks || 100;
+      return Math.round(((s.grade || 0) / total) * 100);
+    });
+  const allQuizScores = quizAttempts.map(a => a.percentage || 0);
+  const combinedScores = [...allGradedAssignmentScores, ...allQuizScores];
+  const averageScore =
+    combinedScores.length > 0
+      ? Math.round(combinedScores.reduce((a, b) => a + b, 0) / combinedScores.length)
+      : 0;
 
-  const filteredEvents = searchQuery.trim()
-    ? displayEvents.filter(
-        e =>
-          e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.location_or_link.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : displayEvents;
+  // Tutors Awaiting Grading
+  const tutorsAwaitingAssignmentGrading = new Set(
+    submissions
+      .filter(s => s.status === 'submitted' || s.status === 'submitted_late' || s.status === 'awaiting_grading')
+      .map(s => s.tutor_id)
+  );
+  const tutorsAwaitingQuizGrading = new Set(
+    quizAttempts
+      .filter(a => a.status === 'awaiting_grading' || (a.question_grades && Object.values(a.question_grades).some(q => q.is_manual_review_needed)))
+      .map(a => a.tutor_id)
+  );
+  const totalTutorsAwaitingGrading = new Set([
+    ...Array.from(tutorsAwaitingAssignmentGrading),
+    ...Array.from(tutorsAwaitingQuizGrading),
+  ]).size;
 
-  // Mock photo albums for the interactive gallery modal
-  const galleryItems = [
-    { id: 1, title: 'Annual Cell Leaders Summit 2026', category: 'leadership', count: '48 Photos', cover: 'bg-gradient-to-br from-[#142B4A] to-[#203D63]' },
-    { id: 2, title: 'Evangelism & Harvest Outreach', category: 'outreach', count: '64 Photos', cover: 'bg-gradient-to-br from-amber-600 to-yellow-500' },
-    { id: 3, title: 'Youth & Academic Fellowships', category: 'fellowship', count: '32 Photos', cover: 'bg-gradient-to-br from-indigo-600 to-purple-600' },
-    { id: 4, title: 'Regional Tutors Orientation', category: 'leadership', count: '29 Photos', cover: 'bg-gradient-to-br from-teal-600 to-emerald-600' },
-    { id: 5, title: 'Quarterly Holy Communion & Prayer', category: 'fellowship', count: '52 Photos', cover: 'bg-gradient-to-br from-rose-600 to-pink-600' },
-    { id: 6, title: 'New Convert Discipleship Cohort', category: 'outreach', count: '41 Photos', cover: 'bg-gradient-to-br from-blue-600 to-cyan-600' },
-  ];
+  // ---------------------------------------------------------------------------
+  // TUTOR METRICS (Personal Real Data)
+  // ---------------------------------------------------------------------------
+  const tutorSubmittedAssignmentIds = new Set(submissions.map(s => s.assignment_id));
+  const tutorCompletedQuizIds = new Set(quizAttempts.map(a => a.quiz_id));
 
-  const filteredGallery = selectedGalleryCategory === 'all'
-    ? galleryItems
-    : galleryItems.filter(g => g.category === selectedGalleryCategory);
+  const availableAssignmentsCount = publishedAssignments.length;
+  const pendingAssignmentsList = publishedAssignments.filter(
+    a => !tutorSubmittedAssignmentIds.has(a.id)
+  );
+  const pendingAssignmentsCount = pendingAssignmentsList.length;
+
+  const availableQuizzesCount = publishedQuizzes.length;
+  const pendingQuizzesList = publishedQuizzes.filter(
+    q => !tutorCompletedQuizIds.has(q.id)
+  );
+
+  // Upcoming Deadlines (Assignments and Quizzes)
+  const now = new Date();
+  const upcomingDeadlines = [
+    ...publishedAssignments
+      .filter(a => new Date(a.due_date) >= now)
+      .map(a => ({
+        id: a.id,
+        type: 'assignment' as const,
+        title: a.title,
+        dueDate: a.due_date,
+        totalMarks: a.total_marks,
+      })),
+    ...publishedQuizzes
+      .filter(q => q.due_date && new Date(q.due_date) >= now)
+      .map(q => ({
+        id: q.id,
+        type: 'quiz' as const,
+        title: q.title,
+        dueDate: q.due_date,
+        totalMarks: q.total_points,
+      })),
+  ].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+  // Personal Progress
+  const totalAvailableTasks = availableAssignmentsCount + availableQuizzesCount;
+  const totalCompletedTasks = tutorSubmittedAssignmentIds.size + tutorCompletedQuizIds.size;
+  const personalProgressRate =
+    totalAvailableTasks > 0 ? Math.round((totalCompletedTasks / totalAvailableTasks) * 100) : 100;
+
+  // Recent Quiz Results for Tutor (Only released or graded)
+  const tutorRecentQuizResults = quizAttempts
+    .filter(a => a.results_released || a.status === 'graded')
+    .slice(0, 3);
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-      {/* 1. Header Banner matching reference design */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#4F46E5] text-white p-5 sm:p-7 shadow-lg">
-        {/* Ambient decorative glowing circles */}
+      {/* 1. Frosted Hero Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-[#142B4A] bg-gradient-to-br from-[#142B4A] via-[#1E3A8A] to-[#2563EB] text-white p-6 sm:p-8 shadow-xl border border-blue-900/40">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 rounded-full bg-[#C6A45A]/20 blur-xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 rounded-full bg-[#C6A45A]/25 blur-xl pointer-events-none" />
 
-        {/* Top bar with Navigation, Title, Notifications & Avatar */}
-        <div className="relative z-10 flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            {onToggleSidebar ? (
-              <button
-                type="button"
-                onClick={onToggleSidebar}
-                className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all cursor-pointer"
-                title="Open menu"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-            ) : onBack ? (
-              <button
-                type="button"
-                onClick={onBack}
-                className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all cursor-pointer"
-                title="Go back"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            ) : null}
-
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white leading-tight">
-                Student Portal
-              </h1>
-              <div className="text-[10px] sm:text-[11px] font-semibold text-blue-100/90 tracking-wide uppercase">
-                {isAdmin ? 'Admin Directorate' : 'Tutor Academy'}
-              </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-3 py-1 rounded-full bg-[#C6A45A] text-[#142B4A] text-xs font-black uppercase tracking-wider shadow-xs">
+                {isAdmin ? 'ADMIN TEACHER DIRECTORATE' : 'TUTOR FELLOWSHIP ACADEMY'}
+              </span>
+              <span className="text-blue-100 text-xs font-bold">
+                • Institutional Learning Environment
+              </span>
             </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Welcome, {firstName}
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100 mt-1 max-w-xl">
+              {isAdmin
+                ? 'Oversee pastoral teaching, publish assignments, monitor quiz engagement, and grade tutor submissions in real-time.'
+                : 'Access your fellowship curriculum, complete ministerial assignments, test your pastoral knowledge, and review evaluated grades.'}
+            </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Notification Bell with Badge */}
+          <div className="flex items-center gap-3 self-start md:self-auto">
             <button
               type="button"
-              onClick={onOpenNotifications || (() => onNavigateAppTab && onNavigateAppTab('notifications'))}
-              className="relative p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all cursor-pointer"
-              title="Notifications"
+              onClick={() => onNavigateSection('assignments')}
+              className="px-4 py-2.5 rounded-2xl bg-white text-[#142B4A] hover:bg-blue-50 text-xs font-bold shadow-sm transition-transform active:scale-95 cursor-pointer flex items-center gap-2"
             >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 ? (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EF4444] text-white text-[10px] font-extrabold flex items-center justify-center shadow-xs">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              ) : (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EF4444] text-white text-[10px] font-extrabold flex items-center justify-center shadow-xs">
-                  3
-                </span>
-              )}
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              <span>{isAdmin ? 'Create Assignment' : 'My Assignments'}</span>
             </button>
-
-            {/* Profile Avatar circle */}
             <button
               type="button"
-              onClick={onOpenAccountSettings || (() => onNavigateAppTab && onNavigateAppTab('my-account'))}
-              className="w-10 h-10 rounded-full border-2 border-white/60 bg-white/20 flex items-center justify-center text-white font-black text-xs shadow-xs hover:scale-105 transition-transform cursor-pointer"
-              title="My Account"
+              onClick={() => onNavigateSection('quizzes')}
+              className="px-4 py-2.5 rounded-2xl bg-[#C6A45A] hover:bg-[#b89547] text-[#142B4A] text-xs font-bold shadow-sm transition-transform active:scale-95 cursor-pointer flex items-center gap-2"
             >
-              {currentUser?.avatar_url ? (
-                <img
-                  src={currentUser.avatar_url}
-                  alt={currentUser.full_name}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <span>{userInitials}</span>
-              )}
+              <FileCheck2 className="w-4 h-4 text-[#142B4A]" />
+              <span>{isAdmin ? 'Publish Quiz' : 'Active Quizzes'}</span>
             </button>
-          </div>
-        </div>
-
-        {/* Greeting line */}
-        <div className="relative z-10 my-3">
-          <div className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            Hello, {firstName} 👋
-          </div>
-          <p className="text-xs sm:text-sm text-blue-100 mt-0.5">
-            Have a great day ahead!
-          </p>
-        </div>
-
-        {/* Search bar inside banner pill */}
-        <div className="relative z-10 mt-4">
-          <div className="relative flex items-center bg-white text-[#182230] rounded-full shadow-md px-3.5 py-2.5 sm:py-3 transition-all focus-within:ring-2 focus-within:ring-[#C6A45A]">
-            <Search className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search anything..."
-              className="w-full text-xs sm:text-sm bg-transparent placeholder-slate-400 text-[#182230] focus:outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
           </div>
         </div>
       </div>
 
-      {/* 2. Quick Access Grid (3 Columns on Mobile, 3x4 Layout matching Reference Image) */}
-      <div>
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="text-base sm:text-lg font-bold text-[#182230] dark:text-white">
-            Quick Access
-          </h2>
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            className="text-xs font-semibold text-[#7F56D9] dark:text-[#B692F6] hover:underline cursor-pointer"
-          >
-            View All
-          </button>
-        </div>
+      {/* 2. Dual-Role Overview KPI Metrics Cards */}
+      {isAdmin ? (
+        /* ======================== ADMIN OVERVIEW METRICS ======================== */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-base sm:text-lg font-bold text-[#182230] dark:text-white">
+              Institutional Teaching Metrics
+            </h2>
+            <span className="text-xs font-semibold text-slate-500">Live database metrics</span>
+          </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
-          {filteredQuickAccess.map(item => {
-            const Icon = item.icon;
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            {/* Active Tutors */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Active Tutors
+                </span>
+                <Users className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="text-2xl font-black text-[#142B4A] dark:text-white mt-1.5">
+                {activeTutorsCount}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                Registered fellowship leaders
+              </span>
+            </div>
+
+            {/* Assignments Created */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Assignments
+                </span>
+                <BookOpen className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div className="text-2xl font-black text-[#142B4A] dark:text-white mt-1.5">
+                {assignmentsCreated}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                {publishedAssignments.length} published • {assignmentsCreated - publishedAssignments.length} draft
+              </span>
+            </div>
+
+            {/* Submissions & Pending Grading */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Submissions
+                </span>
+                <Send className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-2xl font-black text-emerald-600 mt-1.5">
+                {assignmentsSubmittedCount}
+              </div>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1 block">
+                {assignmentsPendingGrading} awaiting grading
+              </span>
+            </div>
+
+            {/* Quizzes Published */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Quizzes
+                </span>
+                <FileCheck2 className="w-4 h-4 text-[#C6A45A]" />
+              </div>
+              <div className="text-2xl font-black text-[#142B4A] dark:text-white mt-1.5">
+                {quizzesPublishedCount}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                {quizAttempts.length} total attempts
+              </span>
+            </div>
+
+            {/* Quiz Participation */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Quiz Participation
+                </span>
+                <BarChart3 className="w-4 h-4 text-cyan-600" />
+              </div>
+              <div className="text-2xl font-black text-cyan-600 mt-1.5">
+                {quizParticipationRate}%
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                {uniqueQuizTutors} of {activeTutorsCount} tutors tested
+              </span>
+            </div>
+
+            {/* Average Scores */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Average Score
+                </span>
+                <Award className="w-4 h-4 text-purple-600" />
+              </div>
+              <div className="text-2xl font-black text-purple-600 mt-1.5">
+                {averageScore}%
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                Across assignments & quizzes
+              </span>
+            </div>
+
+            {/* Tutors Awaiting Grading */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Needs Grading
+                </span>
+                <AlertCircle className="w-4 h-4 text-rose-600" />
+              </div>
+              <div className="text-2xl font-black text-rose-600 mt-1.5">
+                {totalTutorsAwaitingGrading}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                Tutors awaiting evaluation
+              </span>
+            </div>
+
+            {/* Upcoming Activities */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Events Scheduled
+                </span>
+                <Calendar className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="text-2xl font-black text-amber-600 mt-1.5">
+                {upcomingEvents.length}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                Upcoming teaching events
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ======================== TUTOR OVERVIEW METRICS ======================== */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-base sm:text-lg font-bold text-[#182230] dark:text-white">
+              My Learning Summary
+            </h2>
+            <span className="text-xs font-semibold text-slate-500">Personal performance tracking</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            {/* Available Assignments */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Available Assignments
+                </span>
+                <BookOpen className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="text-2xl font-black text-[#142B4A] dark:text-white mt-1.5">
+                {availableAssignmentsCount}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                {tutorSubmittedAssignmentIds.size} completed
+              </span>
+            </div>
+
+            {/* Pending Assignments */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Pending Assignments
+                </span>
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className={`text-2xl font-black mt-1.5 ${pendingAssignmentsCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                {pendingAssignmentsCount}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                {pendingAssignmentsCount > 0 ? 'Awaiting your submission' : 'All caught up!'}
+              </span>
+            </div>
+
+            {/* Available Quizzes */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Available Quizzes
+                </span>
+                <FileCheck2 className="w-4 h-4 text-[#C6A45A]" />
+              </div>
+              <div className="text-2xl font-black text-[#142B4A] dark:text-white mt-1.5">
+                {availableQuizzesCount}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                {tutorCompletedQuizIds.size} quizzes taken
+              </span>
+            </div>
+
+            {/* Personal Progress */}
+            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  Personal Progress
+                </span>
+                <Award className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-2xl font-black text-emerald-600 mt-1.5">
+                {personalProgressRate}%
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 block">
+                {totalCompletedTasks} of {totalAvailableTasks} tasks completed
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Quick Section Access Hub (The 7 Portal Sections) */}
+      <div className="space-y-3">
+        <h2 className="text-base sm:text-lg font-bold text-[#182230] dark:text-white px-1">
+          Explore Learning Sections
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          {[
+            { id: 'assignments' as LearningPortalSection, title: 'Assignments', count: publishedAssignments.length, icon: BookOpen, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40' },
+            { id: 'quizzes' as LearningPortalSection, title: 'Quizzes', count: publishedQuizzes.length, icon: FileCheck2, color: 'text-[#C6A45A] bg-amber-50 dark:bg-amber-950/40' },
+            { id: 'participation' as LearningPortalSection, title: 'Participation', count: activeTutorsCount, icon: Users, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40' },
+            { id: 'grades' as LearningPortalSection, title: 'Grades & Scores', count: submissions.length, icon: BarChart3, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40' },
+            { id: 'events' as LearningPortalSection, title: 'Upcoming Events', count: upcomingEvents.length, icon: Calendar, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40' },
+            { id: 'materials' as LearningPortalSection, title: 'Materials Library', count: resources.length, icon: Library, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40' },
+          ].map(sec => {
+            const Icon = sec.icon;
             return (
               <button
-                key={item.id}
+                key={sec.id}
                 type="button"
-                onClick={item.onClick}
-                className={`relative p-2.5 sm:p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group shadow-2xs hover:shadow-sm active:scale-98 ${item.cardStyle}`}
+                onClick={() => onNavigateSection(sec.id)}
+                className="p-3.5 rounded-3xl fni-glass-panel border border-slate-200/80 dark:border-white/10 hover:border-blue-500 transition-all text-left group cursor-pointer flex flex-col justify-between shadow-xs active:scale-98"
               >
-                {/* NEW Badge on Notices card */}
-                {item.hasNewBadge && (
-                  <span className="absolute top-2 right-2 px-1.5 py-0.2 rounded-full bg-[#7F56D9] text-white text-[8px] sm:text-[9px] font-black uppercase tracking-wider shadow-xs">
-                    NEW
-                  </span>
-                )}
-
-                {/* Circular Icon Container */}
-                <div className="flex items-start justify-between">
-                  <div
-                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-xs shrink-0 ${item.iconBg}`}
-                  >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
+                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${sec.color} mb-3 shadow-2xs`}>
+                  <Icon className="w-5 h-5" />
                 </div>
-
-                {/* Card Title, Subtitle and Chevron */}
-                <div className="mt-2.5 sm:mt-3 min-w-0">
+                <div>
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[11px] sm:text-xs md:text-sm text-[#182230] dark:text-white truncate">
-                      {item.title}
+                    <span className="font-bold text-xs text-[#182230] dark:text-white truncate">
+                      {sec.title}
                     </span>
-                    <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#98A2B3] dark:text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-0.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition-transform" />
                   </div>
-                  <p className="text-[9px] sm:text-[10px] md:text-[11px] text-[#667085] dark:text-slate-300 mt-0.5 truncate leading-tight">
-                    {item.subtitle}
-                  </p>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5 block">
+                    {sec.count} record{sec.count === 1 ? '' : 's'}
+                  </span>
                 </div>
               </button>
             );
@@ -452,179 +529,216 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Upcoming Events Section matching reference design */}
-      <div className="bg-white dark:bg-[#111c2d] rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] p-4 sm:p-5 shadow-2xs">
-        <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[#E3E8EF] dark:border-[#26384d]">
-          <h3 className="font-bold text-sm sm:text-base text-[#182230] dark:text-white">
-            Upcoming Events
-          </h3>
-          <button
-            type="button"
-            onClick={() => onNavigateSection('events')}
-            className="text-xs font-semibold text-[#7F56D9] dark:text-[#B692F6] hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            <span>View Calendar</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {filteredEvents.length === 0 ? (
-          <div className="py-8 text-center text-xs text-[#667085] dark:text-slate-400">
-            No events match your search.
+      {/* 4. Split Grid: Upcoming Deadlines & Upcoming Events */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Card: Upcoming Deadlines / Activities */}
+        <div className="fni-glass-card bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-200/80 dark:border-white/10 p-5 shadow-card">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-white/10">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <h3 className="font-bold text-sm text-[#142B4A] dark:text-white">
+                Upcoming Academic Deadlines
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigateSection('assignments')}
+              className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>View All</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-        ) : (
-          <div className="space-y-2.5">
-            {filteredEvents.map(evt => {
-              const chip = formatDateChip(evt.event_date);
-              return (
-                <div
-                  key={evt.id}
-                  onClick={() => onNavigateSection('events')}
-                  className="flex items-center justify-between p-3 rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] bg-[#F5F7FA] dark:bg-[#172437] hover:border-[#7F56D9]/40 dark:hover:border-[#7F56D9]/50 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
-                    {/* Lavender Date Box with Month, Day, Weekday */}
-                    <div className="w-12 h-14 sm:w-14 sm:h-16 rounded-2xl bg-[#F4F0FF] dark:bg-[#251B42] text-[#7F56D9] dark:text-[#D6BBFB] border border-[#E9D7FE] dark:border-[#3E2C68] flex flex-col items-center justify-center shrink-0 shadow-2xs py-1">
-                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider leading-none">
-                        {chip.month}
-                      </span>
-                      <span className="text-base sm:text-lg font-black leading-tight my-0.5">
-                        {chip.day}
-                      </span>
-                      <span className="text-[9px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-300 leading-none">
-                        {chip.weekday}
-                      </span>
-                    </div>
 
-                    {/* Event Info */}
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-xs sm:text-sm text-[#182230] dark:text-white truncate group-hover:text-[#7F56D9] dark:group-hover:text-[#B692F6] transition-colors">
-                        {evt.title}
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-[10px] sm:text-[11px] text-[#667085] dark:text-slate-300 mt-1">
-                        <span className="flex items-center gap-1 shrink-0">
-                          <Clock className="w-3 h-3 text-[#7F56D9] dark:text-[#B692F6]" />
-                          <span>{evt.start_time} - {evt.end_time}</span>
-                        </span>
-                        <span className="flex items-center gap-1 truncate max-w-[200px] sm:max-w-none">
-                          {evt.meeting_type === 'online' ? (
-                            <Video className="w-3 h-3 text-blue-500 shrink-0" />
-                          ) : (
-                            <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
-                          )}
-                          <span className="truncate">{evt.location_or_link}</span>
-                        </span>
-                      </div>
+          {upcomingDeadlines.length === 0 ? (
+            <div className="py-10 text-center text-slate-500 dark:text-slate-400 space-y-2">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+              <p className="text-xs font-semibold">No pending upcoming deadlines!</p>
+              <p className="text-[11px] text-slate-400">All published assignments and quizzes are up to date.</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {upcomingDeadlines.slice(0, 4).map(item => (
+                <div
+                  key={`${item.type}-${item.id}`}
+                  onClick={() => onNavigateSection(item.type === 'assignment' ? 'assignments' : 'quizzes')}
+                  className="flex items-center justify-between p-3 rounded-2xl fni-glass-panel border border-slate-200/70 dark:border-white/10 hover:border-blue-500 transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${item.type === 'assignment' ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300' : 'bg-amber-50 text-[#C6A45A] dark:bg-amber-950/40'}`}>
+                      {item.type === 'assignment' ? <BookOpen className="w-4 h-4" /> : <FileCheck2 className="w-4 h-4" />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600">
+                        {item.title}
+                      </p>
+                      <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span>Due: {new Date(item.dueDate).toLocaleDateString()}</span>
+                        <span>• {item.totalMarks} marks</span>
+                      </p>
                     </div>
                   </div>
-
-                  {/* Upcoming Status Pill Badge */}
-                  <span className="px-2.5 py-1 rounded-full bg-[#F4F0FF] text-[#7F56D9] dark:bg-[#251B42] dark:text-[#D6BBFB] border border-[#E9D7FE] dark:border-[#3E2C68] text-[10px] font-bold shrink-0 ml-2">
-                    Upcoming
+                  <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900 text-[10px] font-bold shrink-0">
+                    {item.type === 'assignment' ? 'Assignment' : 'Quiz'}
                   </span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* View All Events centered link */}
-        <div className="mt-4 pt-3 border-t border-[#E3E8EF] dark:border-[#26384d] text-center">
-          <button
-            type="button"
-            onClick={() => onNavigateSection('events')}
-            className="text-xs font-bold text-[#7F56D9] dark:text-[#B692F6] hover:underline inline-flex items-center gap-1 cursor-pointer"
-          >
-            <span>View All Events</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+        {/* Right Card: Upcoming Learning Events */}
+        <div className="fni-glass-card bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-200/80 dark:border-white/10 p-5 shadow-card">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-white/10">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-amber-600" />
+              <h3 className="font-bold text-sm text-[#142B4A] dark:text-white">
+                Upcoming Learning Events
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigateSection('events')}
+              className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>View Events</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {upcomingEvents.length === 0 ? (
+            <div className="py-10 text-center text-slate-500 dark:text-slate-400 space-y-2">
+              <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
+              <p className="text-xs font-semibold">No upcoming events scheduled</p>
+              <p className="text-[11px] text-slate-400">Pastoral sessions and fellowship workshops will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {upcomingEvents.slice(0, 4).map(evt => {
+                const chip = formatDateChip(evt.event_date);
+                return (
+                  <div
+                    key={evt.id}
+                    onClick={() => onNavigateSection('events')}
+                    className="flex items-center justify-between p-3 rounded-2xl fni-glass-panel border border-slate-200/70 dark:border-white/10 hover:border-blue-500 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Lavender Date Capsule */}
+                      <div className="w-11 h-13 rounded-2xl bg-[#F4F0FF] dark:bg-[#251B42] text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/40 flex flex-col items-center justify-center shrink-0 py-1">
+                        <span className="text-[8px] font-black uppercase leading-none">{chip.month}</span>
+                        <span className="text-sm font-black leading-tight my-0.5">{chip.day}</span>
+                        <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 leading-none">{chip.weekday}</span>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600">
+                          {evt.title}
+                        </p>
+                        <p className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {evt.start_time} - {evt.end_time}
+                          </span>
+                          <span className="truncate flex items-center gap-1">
+                            {evt.meeting_type === 'online' ? <Video className="w-3 h-3 text-blue-500" /> : <MapPin className="w-3 h-3 text-rose-500" />}
+                            {evt.location_or_link}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold shrink-0">
+                      Upcoming
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Interactive Ministry Gallery Modal */}
-      {isGalleryOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF] dark:border-[#26384d]">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#0BA5EC] text-white flex items-center justify-center">
-                  <ImageIcon className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-[#182230] dark:text-white">
-                    Ministry Photos & Albums
-                  </h3>
-                  <p className="text-[11px] text-[#667085] dark:text-slate-400">
-                    FNI Cells Connect media repository
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsGalleryOpen(false)}
-                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* 5. Recent Submissions & Activity Feed (Admin: Recent Submissions / Tutor: Recent Results) */}
+      <div className="fni-glass-card bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-200/80 dark:border-white/10 p-5 shadow-card">
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-white/10">
+          <div className="flex items-center gap-2">
+            <Award className="w-4 h-4 text-purple-600" />
+            <h3 className="font-bold text-sm text-[#142B4A] dark:text-white">
+              {isAdmin ? 'Recent Submissions & Activity Feed' : 'Recent Quiz & Assignment Results'}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigateSection('grades')}
+            className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>View Full Gradebook</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {[
-                { id: 'all', label: 'All Albums' },
-                { id: 'leadership', label: 'Leadership' },
-                { id: 'outreach', label: 'Outreach & Harvest' },
-                { id: 'fellowship', label: 'Fellowship' },
-              ].map(cat => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setSelectedGalleryCategory(cat.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
-                    selectedGalleryCategory === cat.id
-                      ? 'bg-[#7F56D9] text-white'
-                      : 'bg-[#F5F7FA] dark:bg-[#172437] text-[#667085] dark:text-slate-300 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
+        {isAdmin ? (
+          /* Admin View: Recent submissions list */
+          submissions.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              No assignment submissions recorded in the database yet.
             </div>
-
-            {/* Albums Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto p-1 custom-scrollbar">
-              {filteredGallery.map(album => (
-                <div
-                  key={album.id}
-                  className="rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] overflow-hidden group hover:shadow-md transition-all cursor-pointer bg-white dark:bg-[#172437]"
-                >
-                  <div className={`h-24 sm:h-28 ${album.cover} flex items-center justify-center text-white/40 group-hover:scale-105 transition-transform`}>
-                    <ImageIcon className="w-8 h-8" />
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-white/5">
+              {submissions.slice(0, 5).map(sub => {
+                const asg = assignments.find(a => a.id === sub.assignment_id);
+                return (
+                  <div key={sub.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-white truncate">
+                        {sub.tutor_name} • <span className="text-slate-500">{sub.cell_name || 'Cell Leader'}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        Submitted: {asg?.title || 'Assignment'} (Attempt #{sub.attempt_number}) on {new Date(sub.submitted_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 ${
+                      sub.status === 'graded'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}>
+                      {sub.status === 'graded' ? `Graded: ${sub.grade} pts` : 'Awaiting Grading'}
+                    </span>
                   </div>
-                  <div className="p-2.5">
-                    <h4 className="text-xs font-bold text-[#182230] dark:text-white truncate">
-                      {album.title}
-                    </h4>
-                    <p className="text-[10px] text-[#667085] dark:text-slate-400 mt-0.5">
-                      {album.count}
+                );
+              })}
+            </div>
+          )
+        ) : (
+          /* Tutor View: Recent Results */
+          tutorRecentQuizResults.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              No evaluated quiz results available yet. Complete active quizzes to see results.
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-white/5">
+              {tutorRecentQuizResults.map(att => (
+                <div key={att.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-900 dark:text-white truncate">
+                      {att.quiz_title || 'Pastoral Quiz'}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Completed on {new Date(att.completed_at).toLocaleDateString()} • Score: {att.score}/{att.total_possible}
                     </p>
                   </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 ${
+                    att.passed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}>
+                    {att.percentage}% ({att.passed ? 'Passed' : 'Needs Review'})
+                  </span>
                 </div>
               ))}
             </div>
-
-            <div className="pt-2 text-right">
-              <button
-                type="button"
-                onClick={() => setIsGalleryOpen(false)}
-                className="px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors cursor-pointer"
-              >
-                Close Gallery
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          )
+        )}
+      </div>
     </div>
   );
 };

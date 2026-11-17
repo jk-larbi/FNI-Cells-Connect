@@ -598,6 +598,124 @@ export class AuthService {
     return current;
   }
 
+  // --- 8B. UNIFIED PROFILE UPDATE (TUTOR & ADMIN) ---
+  static async updateUserProfile(
+    userId: string,
+    data: { full_name?: string; phone_number?: string; email?: string }
+  ): Promise<{ success: boolean; profile?: Profile; error?: string }> {
+    const current = this.getCurrentProfile();
+    if (!current || !userId) return { success: false, error: 'Unauthenticated.' };
+
+    const cleanName = data.full_name ? data.full_name.trim().replace(/\s+/g, ' ') : current.full_name;
+    const cleanPhone = data.phone_number !== undefined ? data.phone_number.trim() : current.phone_number;
+    const cleanEmail = data.email ? data.email.trim().toLowerCase() : current.email;
+
+    if (!cleanName || cleanName.length < 2) {
+      return { success: false, error: 'Please enter a valid full name (minimum 2 characters).' };
+    }
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { success: false, error: 'Please enter a valid email address.' };
+    }
+
+    const updatedProfile: Profile = {
+      ...current,
+      full_name: cleanName,
+      phone_number: cleanPhone || undefined,
+      email: cleanEmail,
+    };
+
+    // Keep local session aligned
+    this.setCurrentProfile(updatedProfile);
+
+    // Save to Supabase profiles table
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const updatePayload: Record<string, any> = {
+          full_name: cleanName,
+          phone_number: cleanPhone || null,
+          email: cleanEmail,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from('profiles')
+          .update(updatePayload)
+          .eq('id', userId);
+
+        if (error) {
+          console.warn('Supabase profile update warning:', error.message);
+        }
+
+        // If email changed, update in GoTrue Auth
+        if (cleanEmail && cleanEmail !== current.email) {
+          await supabase.auth.updateUser({ email: cleanEmail }).catch(() => {});
+        }
+      } catch (e: any) {
+        console.warn('Supabase profile update exception:', e);
+      }
+    }
+
+    return { success: true, profile: updatedProfile };
+  }
+
+  // --- 8C. SIGN OUT OF OTHER DEVICES ---
+  static async signOutOtherDevices(): Promise<{ success: boolean; error?: string }> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.signOut({ scope: 'others' });
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || 'Could not sign out other devices.' };
+      }
+    }
+    return { success: true };
+  }
+
+  // --- 8D. REQUEST ACCOUNT DEACTIVATION (ADMIN REVIEW QUEUE) ---
+  static async requestAccountDeactivation(
+    userId: string,
+    reason: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const current = this.getCurrentProfile();
+    const requestId = `deact-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const nowIso = new Date().toISOString();
+
+    const deactivationRecord = {
+      id: requestId,
+      user_id: userId,
+      user_name: current?.full_name || 'User',
+      cell_name: current?.cell_name || 'Unassigned',
+      role: current?.role || 'tutor',
+      reason: reason.trim() || 'No reason provided',
+      requested_at: nowIso,
+      status: 'pending_admin_review',
+    };
+
+    // Save request to persistent storage
+    try {
+      const existing = JSON.parse(localStorage.getItem('fni_deactivation_requests') || '[]');
+      localStorage.setItem('fni_deactivation_requests', JSON.stringify([deactivationRecord, ...existing]));
+    } catch {}
+
+    // Dispatch notification to Admin
+    try {
+      const { NotificationService } = await import('./notificationService');
+      await NotificationService.createNotification({
+        userId: 'admin',
+        title: 'Account Deactivation Requested',
+        message: `${deactivationRecord.user_name} (${deactivationRecord.cell_name}) requested account deactivation: "${deactivationRecord.reason}".`,
+        type: 'system_alert',
+        metadata: {
+          category: 'deactivation_request',
+          requestId,
+          deactivationRecord,
+        },
+      });
+    } catch {}
+
+    return { success: true };
+  }
+
 
   // --- ACCOUNT DELETION (SERVER-VERIFIED SELF-SERVICE + ADMIN MANAGEMENT) ---
   static async deleteUserAccount(targetUserId: string): Promise<{ success: boolean; error?: string }> {

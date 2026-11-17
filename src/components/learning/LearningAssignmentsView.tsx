@@ -22,6 +22,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useBackHandler } from '../../hooks/useBackHandler';
 import { WordLikeAssignmentEditor } from './WordLikeAssignmentEditor';
 import {
   Assignment,
@@ -88,6 +89,31 @@ export const LearningAssignmentsView: React.FC<LearningAssignmentsViewProps> = (
 
   // Tutor submissions cache to show badges on cards
   const [tutorSubmissions, setTutorSubmissions] = useState<AssignmentSubmission[]>([]);
+
+  // Intercept back actions for open modals, word editor, and inspection drawer
+  useBackHandler(() => {
+    if (gradingSubmission) {
+      setGradingSubmission(null);
+      return true;
+    }
+    if (submittingAssignment) {
+      setSubmittingAssignment(null);
+      return true;
+    }
+    if (isWordEditorOpen) {
+      setIsWordEditorOpen(false);
+      return true;
+    }
+    if (isFormModalOpen) {
+      setIsFormModalOpen(false);
+      return true;
+    }
+    if (inspectingAssignment) {
+      setInspectingAssignment(null);
+      return true;
+    }
+    return false;
+  }, Boolean(gradingSubmission || submittingAssignment || isWordEditorOpen || isFormModalOpen || inspectingAssignment));
 
   useEffect(() => {
     if (!isAdmin && currentUser?.id) {

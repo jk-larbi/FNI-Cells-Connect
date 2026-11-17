@@ -74,6 +74,7 @@ export class FollowUpService {
     const effectiveWA = data.whatsappNumber || effectivePhone;
     const effectiveLoc = data.location || data.evangelismLocation || 'Territory';
     const effectiveNotes = data.notes || data.followUpNotes || 'Contact initially captured';
+    const initialStatus = data.followUpStatus || 'Uncontacted';
 
     const newContact: EvangelismContact = {
       ...data,
@@ -89,9 +90,15 @@ export class FollowUpService {
       assignedToName: data.assignedToName || data.tutorName || 'Tutor',
       notes: effectiveNotes,
       followUpNotes: effectiveNotes,
+      leadSource: data.leadSource || 'Evangelism Outing',
+      contactAttempts: data.contactAttempts ?? 0,
+      discipleshipProgress: data.discipleshipProgress || 'Stage 1: New Convert / Welcome',
+      establishedDate: data.establishedDate,
+      completionDate: data.completionDate,
+      followUpStatus: initialStatus,
       history: [
         {
-          status: data.followUpStatus || 'Not contacted',
+          status: initialStatus,
           note: effectiveNotes,
           changedAt: nowIso,
           changedBy: data.tutorName || data.assignedToName || 'Tutor',
@@ -185,6 +192,10 @@ export class FollowUpService {
 
   static async getSummary(cellId?: string): Promise<{
     totalContacts: number;
+    underPastoralCare: number;
+    activeDiscipleship: number;
+    establishedInChurch: number;
+    uncontactedLeads: number;
     notContacted: number;
     followUpRequired: number;
     contacted: number;
@@ -198,27 +209,49 @@ export class FollowUpService {
     const contacts = await this.getContacts(cellId);
     const totalContacts = contacts.length;
 
-    const notContacted = contacts.filter(
-      c => c.followUpStatus === 'Not contacted' || c.followUpStatus === 'New Contact'
+    const uncontactedLeads = contacts.filter(
+      c => c.followUpStatus === 'Uncontacted' || c.followUpStatus === 'Not contacted' || c.followUpStatus === 'New Contact'
     ).length;
 
-    const followUpRequired = contacts.filter(
-      c => c.followUpStatus === 'Follow-up required' || c.followUpStatus === 'Follow-up Pending'
+    const underPastoralCare = contacts.filter(
+      c => c.followUpStatus === 'Requiring Follow-up' ||
+        c.followUpStatus === 'Follow-up required' ||
+        c.followUpStatus === 'Follow-up Pending' ||
+        c.followUpStatus === 'Contacted' ||
+        c.followUpStatus === 'Interested'
     ).length;
 
+    const activeDiscipleship = contacts.filter(
+      c => c.followUpStatus === 'Active Discipleship' ||
+        c.followUpStatus === 'Completed / Joined' ||
+        c.followUpStatus === 'Joined a cell' ||
+        c.followUpStatus === 'Joined Ministry' ||
+        c.followUpStatus === 'Completed'
+    ).length;
+
+    const establishedInChurch = contacts.filter(
+      c => c.followUpStatus === 'Established in Church' || Boolean(c.establishedDate)
+    ).length;
+
+    const notContacted = uncontactedLeads;
+    const followUpRequired = underPastoralCare;
     const contacted = contacts.filter(c => c.followUpStatus === 'Contacted').length;
     const interested = contacts.filter(c => c.followUpStatus === 'Interested').length;
     const joinedCell = contacts.filter(
       c => c.followUpStatus === 'Joined a cell' || c.followUpStatus === 'Joined Ministry'
     ).length;
-    const completed = contacts.filter(c => c.followUpStatus === 'Completed').length;
+    const completed = activeDiscipleship;
     const unreachable = contacts.filter(c => c.followUpStatus === 'Unreachable').length;
 
-    const outstanding = notContacted + followUpRequired + contacted + interested;
-    const requiringFollowUp = followUpRequired + notContacted;
+    const outstanding = uncontactedLeads;
+    const requiringFollowUp = underPastoralCare;
 
     return {
       totalContacts,
+      underPastoralCare,
+      activeDiscipleship,
+      establishedInChurch,
+      uncontactedLeads,
       notContacted,
       followUpRequired,
       contacted,

@@ -1,30 +1,84 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark';
+export type ThemePreference = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark';
+
 interface ThemeContextValue {
   theme: Theme;
+  themePreference: ThemePreference;
+  setThemePreference: (pref: ThemePreference) => void;
   toggleTheme: () => void;
 }
+
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
     try {
-      return localStorage.getItem('fni-theme') === 'dark' ? 'dark' : 'light';
+      const saved = localStorage.getItem('fni-theme-preference');
+      if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
+      const legacy = localStorage.getItem('fni-theme');
+      if (legacy === 'dark' || legacy === 'light') return legacy;
+      return 'system';
     } catch {
-      return 'light';
+      return 'system';
     }
   });
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    document.documentElement.style.colorScheme = theme;
-    document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem('fni-theme', theme); } catch { /* Storage may be unavailable. */ }
-  }, [theme]);
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
 
-  const toggleTheme = () => setTheme(current => current === 'dark' ? 'light' : 'dark');
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  // Listen to system theme changes dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const activeTheme: Theme =
+    themePreference === 'system' ? (systemIsDark ? 'dark' : 'light') : themePreference;
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', activeTheme === 'dark');
+    document.documentElement.style.colorScheme = activeTheme;
+    document.documentElement.dataset.theme = activeTheme;
+    try {
+      localStorage.setItem('fni-theme-preference', themePreference);
+      localStorage.setItem('fni-theme', activeTheme);
+    } catch {
+      /* Storage may be unavailable */
+    }
+  }, [themePreference, activeTheme]);
+
+  const setThemePreference = (pref: ThemePreference) => {
+    setThemePreferenceState(pref);
+  };
+
+  const toggleTheme = () => {
+    setThemePreferenceState(current => {
+      const effective = current === 'system' ? (systemIsDark ? 'dark' : 'light') : current;
+      return effective === 'dark' ? 'light' : 'dark';
+    });
+  };
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        theme: activeTheme,
+        themePreference,
+        setThemePreference,
+        toggleTheme,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
 export const useTheme = () => {
