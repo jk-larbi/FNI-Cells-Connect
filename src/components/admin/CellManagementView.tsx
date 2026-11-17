@@ -4,6 +4,7 @@ import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
 import { CellMembersPanel } from '../CellMembersPanel';
+import { CellLeadershipPanel } from './CellLeadershipPanel';
 import { supabase } from '../../lib/supabase';
 import {
   Building,
@@ -536,6 +537,15 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             </div>
 
             <CellMembersPanel cellId={selectedCell.id} canEdit={false} />
+
+            <CellLeadershipPanel
+              cell={selectedCell}
+              onUpdated={async () => {
+                await loadCells();
+                const refreshed = await CellService.getCellById(selectedCell.id);
+                if (refreshed) setSelectedCell(refreshed);
+              }}
+            />
 
             {/* Meeting Reports History */}
             <div>
