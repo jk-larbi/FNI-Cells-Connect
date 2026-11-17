@@ -54,7 +54,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "register") {
-      const fullName = String(body.fullName || "").trim().replace(/\\s+/g, " ");
+      const fullName = String(body.fullName || "").trim().replace(/\s+/g, " ");
       const cellId = String(body.cellId || "").trim();
       if (!fullName || fullName.length > 120 || !cellId) {
         return json({ error: "Select an official cell and enter your full name." }, 400);
@@ -132,7 +132,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "login") {
       const cellId = String(body.cellId || "").trim();
-      const fullName = String(body.fullName || "").trim().replace(/\\s+/g, " ");
+      const fullName = String(body.fullName || "").trim().replace(/\s+/g, " ");
       if (!cellId || !fullName || fullName.length > 120) {
         return json({ error: "Select your cell, your registered name, and enter your password." }, 400);
       }
