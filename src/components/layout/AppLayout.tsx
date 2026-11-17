@@ -54,7 +54,7 @@ import { MessagingView } from '../communication/MessagingView';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { AccountSettingsModal } from '../auth/AccountSettingsModal';
 import { LatestAndroidUpdate } from '../common/LatestAndroidUpdate';
-import { SectionHub } from './SectionHub';\nimport { SectionHub } from './SectionHub';
+import { SectionHub } from './SectionHub';
 
 interface MobileNavItem {
   id: AppNavTab;
