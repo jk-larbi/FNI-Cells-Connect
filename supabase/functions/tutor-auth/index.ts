@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
       if (cellError) throw cellError;
       if (!cell) return json({ tutors: [] });
       const { data, error } = await admin.from("profiles")
-        .select("id,full_name").eq("cell_id", cellId).eq("role", "tutor")
+        .select("full_name").eq("cell_id", cellId).eq("role", "tutor")
         .eq("is_active", true).order("full_name");
       if (error) throw error;
       return json({ tutors: data || [] });
