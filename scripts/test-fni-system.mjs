@@ -108,25 +108,31 @@ assert.strictEqual(reportState.status, 'Approved');
 assert.strictEqual(reportState.reviews.length, 2);
 console.log('  ✅ Review lifecycle transition logs reviewer UID, comments, and previous/new status.');
 
-// 5. Tutor Registration and 2-Field Login (Full Name & Password ONLY)
-console.log('\nTEST 5: Tutor Registration and Login (Full Name & Password ONLY)...');
+// 5. Cell-Based Tutor Registration and 3-Field Login
+console.log('\nTEST 5: Cell-Based Tutor Registration and Login (Cell + Registered Name + Password)...');
 const registeredTutors = [
   { fullName: 'Samuel Mensah', cellName: 'Grace Central Cell', pass: 'secret123' },
+  { fullName: 'Mary Asante', cellName: 'Grace Central Cell', pass: 'marysecret' },
   { fullName: 'Kwame Asante', cellName: 'Dominion Fellowship', pass: 'fellowship2026' }
 ];
 
-function loginTutor2Fields(fullName, password) {
-  const match = registeredTutors.find(t => t.fullName.toLowerCase() === fullName.trim().toLowerCase());
-  if (!match) return { success: false, error: 'Tutor not found' };
+function loginTutorByCell(cellName, fullName, password) {
+  const match = registeredTutors.find(t =>
+    t.cellName.toLowerCase() === cellName.trim().toLowerCase() &&
+    t.fullName.toLowerCase() === fullName.trim().toLowerCase()
+  );
+  if (!match) return { success: false, error: 'Tutor not found in selected cell' };
   if (match.pass !== password) return { success: false, error: 'Invalid password' };
   return { success: true, tutor: { fullName: match.fullName, cellName: match.cellName } };
 }
 
-assert.strictEqual(loginTutor2Fields('Samuel Mensah', 'secret123').success, true, 'Samuel Mensah login failed with 2 fields');
-assert.strictEqual(loginTutor2Fields('samuel mensah', 'secret123').tutor.cellName, 'Grace Central Cell', 'Case insensitive name match failed');
-assert.strictEqual(loginTutor2Fields('Samuel Mensah', 'wrongpass').success, false, 'Invalid password should fail');
-assert.strictEqual(loginTutor2Fields('NonExistent Leader', 'secret123').success, false, 'Unknown tutor should fail');
-console.log('  ✅ Tutor login requires ONLY Full Name and Password (no cell name required on sign-in).');
+assert.strictEqual(loginTutorByCell('Grace Central Cell', 'Samuel Mensah', 'secret123').success, true, 'Samuel Mensah login failed');
+assert.strictEqual(loginTutorByCell('Grace Central Cell', 'Mary Asante', 'marysecret').success, true, 'Second tutor in the same cell could not log in');
+assert.strictEqual(loginTutorByCell('Dominion Fellowship', 'Kwame Asante', 'fellowship2026').success, true, 'Kwame Asante login failed');
+assert.strictEqual(loginTutorByCell('Dominion Fellowship', 'Samuel Mensah', 'secret123').success, false, 'Tutor must not authenticate under a different cell');
+assert.strictEqual(loginTutorByCell('Grace Central Cell', 'Samuel Mensah', 'wrongpass').success, false, 'Invalid password should fail');
+assert.strictEqual(loginTutorByCell('Grace Central Cell', 'NonExistent Leader', 'secret123').success, false, 'Unknown tutor should fail');
+console.log('  ✅ Multiple tutors can belong to one cell; login requires the matching cell, registered name, and personal password.');
 
 // 6. Cell-Level Isolation & Privacy (Never expose one cell's records to another)
 console.log('\nTEST 6: Cell-Level Privacy & Record Isolation...');
