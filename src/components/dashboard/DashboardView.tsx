@@ -1276,7 +1276,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {/* Time Breakdown Cards */}
-            <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 text-center text-xs">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase">This Week</span>
                 <div className="text-lg font-black text-navy-950 mt-1">

@@ -22,6 +22,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { WordLikeAssignmentEditor } from './WordLikeAssignmentEditor';
 import {
   Assignment,
   AssignmentSubmission,
@@ -46,7 +47,8 @@ export const LearningAssignmentsView: React.FC<LearningAssignmentsViewProps> = (
   const [activeTabFilter, setActiveTabFilter] = useState<'all' | 'pending' | 'submitted' | 'graded'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Admin Modal: Create / Edit Assignment
+  // Admin Modal: Create / Edit Assignment (Word-like Studio)
+  const [isWordEditorOpen, setIsWordEditorOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [formTitle, setFormTitle] = useState('');
@@ -95,44 +97,10 @@ export const LearningAssignmentsView: React.FC<LearningAssignmentsViewProps> = (
     }
   }, [isAdmin, currentUser, assignments]);
 
-  // Open Edit Form Modal
+  // Open Edit Form Modal (Switches to Microsoft Word-like Document Studio)
   const handleOpenCreateModal = (asg?: Assignment) => {
-    if (asg) {
-      setEditingAssignment(asg);
-      setFormTitle(asg.title);
-      setFormDescription(asg.description);
-      setFormInstructions(asg.instructions || '');
-      setFormTotalMarks(String(asg.total_marks));
-      setFormDueDate(asg.due_date ? asg.due_date.split('T')[0] : '');
-      setFormLatePolicy(asg.late_policy);
-      setFormFormat(asg.submission_format);
-      setFormMaxAttempts(asg.max_attempts);
-      setFormStatus(asg.status === 'archived' ? 'draft' : asg.status);
-      if (asg.attachments && asg.attachments[0]) {
-        setFormAttachmentName(asg.attachments[0].name);
-        setFormAttachmentUrl(asg.attachments[0].url);
-        setFormAttachmentSize(asg.attachments[0].size || '1.5 MB');
-      } else {
-        setFormAttachmentName('');
-        setFormAttachmentUrl('');
-      }
-    } else {
-      setEditingAssignment(null);
-      setFormTitle('');
-      setFormDescription('');
-      setFormInstructions('');
-      setFormTotalMarks('100');
-      // default 7 days from now
-      const d = new Date(Date.now() + 7 * 86400000);
-      setFormDueDate(d.toISOString().split('T')[0]);
-      setFormLatePolicy('allow_with_penalty');
-      setFormFormat('both');
-      setFormMaxAttempts(1);
-      setFormStatus('published');
-      setFormAttachmentName('');
-      setFormAttachmentUrl('');
-    }
-    setIsFormModalOpen(true);
+    setEditingAssignment(asg || null);
+    setIsWordEditorOpen(true);
   };
 
   // Save Assignment (Admin)
@@ -309,6 +277,37 @@ export const LearningAssignmentsView: React.FC<LearningAssignmentsViewProps> = (
       return true;
     }
   });
+
+  // When Word-like Document Studio is active (Admin mode)
+  if (isWordEditorOpen) {
+    return (
+      <WordLikeAssignmentEditor
+        initialAssignment={editingAssignment}
+        onSave={async (assignmentData, status) => {
+          setIsSubmittingForm(true);
+          try {
+            await LearningService.saveAssignment(
+              { ...assignmentData, status },
+              { id: currentUser.id, name: currentUser.full_name || 'Admin Leader' }
+            );
+            setIsWordEditorOpen(false);
+            setEditingAssignment(null);
+            onRefresh();
+          } catch (err: any) {
+            console.error('Failed to save assignment:', err);
+            alert(err.message || 'Failed to save assignment.');
+          } finally {
+            setIsSubmittingForm(false);
+          }
+        }}
+        onCancel={() => {
+          setIsWordEditorOpen(false);
+          setEditingAssignment(null);
+        }}
+        isSaving={isSubmittingForm}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -859,8 +858,8 @@ export const LearningAssignmentsView: React.FC<LearningAssignmentsViewProps> = (
       {/* 5. TUTOR SUBMISSION MODAL (With attempt limit enforcement & history)      */}
       {/* ========================================================================= */}
       {submittingAssignment && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-2xl w-full p-4 sm:p-6 lg:p-8 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-4 sm:my-8 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between pb-4 border-b border-[#E3E8EF] dark:border-[#26384d]">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider">
@@ -878,11 +877,71 @@ export const LearningAssignmentsView: React.FC<LearningAssignmentsViewProps> = (
               </button>
             </div>
 
+            {/* Read-Only Assignment Document Brief */}
+            <div className="mt-4 p-5 rounded-2xl bg-[#F8FAFC] dark:bg-[#152238] border border-[#E2E8F0] dark:border-[#26384d] space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#C6A45A]" />
+                  <span className="font-bold text-[#142B4A] dark:text-white uppercase tracking-wider text-[11px]">
+                    Assignment Document
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-300 font-black text-[10px]">
+                    {submittingAssignment.total_marks} Marks
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px]">
+                    Due: {new Date(submittingAssignment.due_date).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <h4 className="text-sm font-bold text-[#142B4A] dark:text-white">
+                {submittingAssignment.title}
+              </h4>
+
+              {submittingAssignment.description && (
+                <p className="text-xs text-[#475467] dark:text-slate-300 leading-relaxed">
+                  {submittingAssignment.description}
+                </p>
+              )}
+
+              {submittingAssignment.instructions && (
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-xs text-[#182230] dark:text-slate-200 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-3"
+                  dangerouslySetInnerHTML={{ __html: submittingAssignment.instructions }}
+                />
+              )}
+
+              {submittingAssignment.attachments && submittingAssignment.attachments.length > 0 && (
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                    Reference Attachments
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {submittingAssignment.attachments.map((att, i) => (
+                      <a
+                        key={i}
+                        href={att.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[#111c2d] border border-slate-200 dark:border-slate-700 text-xs font-bold text-[#142B4A] dark:text-white hover:border-[#C6A45A] transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5 text-[#C6A45A]" />
+                        <span>{att.name}</span>
+                        {att.size && <span className="text-[10px] text-slate-400">({att.size})</span>}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Attempt Limit Banner */}
             <div className="mt-4 p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 text-xs">
               <div className="font-bold text-[#142B4A] dark:text-white flex items-center justify-between">
-                <span>{submittingAssignment.title}</span>
-                <span className="text-amber-800 dark:text-amber-300">
+                <span>Attempt Status</span>
+                <span className="text-amber-800 dark:text-amber-300 font-black">
                   {attemptStatus?.remainingAttempts === 'Unlimited'
                     ? 'Unlimited Attempts'
                     : `${attemptStatus?.remainingAttempts} Attempt(s) Remaining`}
@@ -982,8 +1041,8 @@ export const LearningAssignmentsView: React.FC<LearningAssignmentsViewProps> = (
       {/* 6. INSPECTION / SUBMISSION HISTORY DRAWER                                  */}
       {/* ========================================================================= */}
       {inspectingAssignment && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-8 max-h-[90vh] overflow-y-auto custom-scrollbar space-y-4">
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-3xl w-full p-4 sm:p-6 lg:p-8 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-4 sm:my-8 max-h-[92vh] overflow-y-auto custom-scrollbar space-y-4">
             <div className="flex items-center justify-between pb-4 border-b border-[#E3E8EF] dark:border-[#26384d]">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider">

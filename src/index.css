@@ -17,7 +17,7 @@
   @media screen and (max-width: 768px) {
     input[type="text"], input[type="password"], input[type="email"],
     input[type="number"], input[type="tel"], input[type="date"],
-    select, textarea { font-size: 16px !important; }
+    input[type="datetime-local"], select, textarea { font-size: 16px !important; }
   }
 }
 

@@ -500,7 +500,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
                   {/* True / False */}
                   {q.question_type === 'true_false' && (
-                    <div className="grid grid-cols-2 gap-3 pt-1 pl-8">
+                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1 pl-2 sm:pl-8">
                       {['True', 'False'].map((lbl, idx) => {
                         const isSelected = userAnswers[q.id] === idx;
                         return (

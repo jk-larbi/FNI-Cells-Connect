@@ -21,272 +21,40 @@ import {
 } from '../types/learning';
 import { NotificationService } from './notificationService';
 
-// Storage Keys for Offline Resilience
+// Storage Keys for Offline Resilience (Real Data Only)
 const KEYS = {
-  ASSIGNMENTS: 'fni_learning_assignments_v1',
-  SUBMISSIONS: 'fni_learning_submissions_v1',
-  QUIZZES: 'fni_learning_quizzes_v1',
-  QUESTIONS: 'fni_learning_quiz_questions_v1',
-  ATTEMPTS: 'fni_learning_quiz_attempts_v1',
-  EVENTS: 'fni_learning_events_v1',
-  RESOURCES: 'fni_learning_resources_v1',
+  ASSIGNMENTS: 'fni_learning_assignments_v2',
+  SUBMISSIONS: 'fni_learning_submissions_v2',
+  QUIZZES: 'fni_learning_quizzes_v2',
+  QUESTIONS: 'fni_learning_quiz_questions_v2',
+  ATTEMPTS: 'fni_learning_quiz_attempts_v2',
+  EVENTS: 'fni_learning_events_v2',
+  RESOURCES: 'fni_learning_resources_v2',
 };
 
-// Seed initial realistic items if completely empty so the portal is lively from day 1
-const DEFAULT_ASSIGNMENTS: Assignment[] = [
-  {
-    id: 'asg-fni-101',
-    title: 'Cell Discipleship Strategy & Multiplication Plan',
-    description: 'Comprehensive outreach blueprint for reaching unchurched youth and building 5-person cell discipleship clusters.',
-    instructions: '1. Review the FNI Cell Multiplication Handbook.\n2. Write out your cell specific outreach calendar for the upcoming cycle.\n3. Identify at least 3 apprentice cell leaders undergoing training.\n4. Attach your discipleship tracking sheet.',
-    attachments: [
-      {
-        name: 'FNI_Cell_Multiplication_Framework_2026.pdf',
-        url: '#',
-        size: '2.4 MB',
-        type: 'application/pdf',
-      },
-      {
-        name: 'Weekly_Discipleship_Log_Template.xlsx',
-        url: '#',
-        size: '420 KB',
-        type: 'application/vnd.ms-excel',
-      },
-    ],
-    total_marks: 100,
-    published_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    due_date: new Date(Date.now() + 5 * 86400000).toISOString(),
-    late_policy: 'allow_with_penalty',
-    submission_format: 'both',
-    max_attempts: 3,
-    status: 'published',
-    created_by: 'admin',
-    created_by_name: 'FNI Leadership Directorate',
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  },
-  {
-    id: 'asg-fni-102',
-    title: 'Gospel Presentation & Soul-Winning Apologetics',
-    description: 'Practical ministry assignment testing personal testimony formulation and responding to modern worldview inquiries in outreach.',
-    instructions: 'Provide a written synopsis of your 3-minute salvation testimony and submit your evangelistic outreach log for the previous weekend.',
-    attachments: [
-      {
-        name: 'FNI_SoulWinning_Apologetics_Guide.pdf',
-        url: '#',
-        size: '1.8 MB',
-        type: 'application/pdf',
-      },
-    ],
-    total_marks: 50,
-    published_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    due_date: new Date(Date.now() + 8 * 86400000).toISOString(),
-    late_policy: 'allow_no_penalty',
-    submission_format: 'both',
-    max_attempts: 2,
-    status: 'published',
-    created_by: 'admin',
-    created_by_name: 'FNI Leadership Directorate',
-    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-  },
-];
+// Purge any legacy mockup caches if present in client localStorage
+try {
+  [
+    'fni_learning_assignments_v1',
+    'fni_learning_submissions_v1',
+    'fni_learning_quizzes_v1',
+    'fni_learning_quiz_questions_v1',
+    'fni_learning_quiz_attempts_v1',
+    'fni_learning_events_v1',
+    'fni_learning_resources_v1',
+  ].forEach(k => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(k);
+    }
+  });
+} catch {}
 
-const DEFAULT_QUIZZES: Quiz[] = [
-  {
-    id: 'quiz-fni-201',
-    title: 'FNI Kingdom Vision, Core Doctrine & Cell Governance',
-    description: 'Knowledge assessment covering the 5,000 Soul Target mandate, cell reporting protocols, and pastoral accountability.',
-    instructions: 'Answer all 5 questions. Objective questions are graded automatically upon submission. Minimum passing score is 70%.',
-    time_limit_minutes: 20,
-    passing_score: 70,
-    total_points: 50,
-    published_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    due_date: new Date(Date.now() + 6 * 86400000).toISOString(),
-    status: 'published',
-    results_released: true,
-    created_by: 'admin',
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-];
-
-const DEFAULT_QUESTIONS: QuizQuestion[] = [
-  {
-    id: 'q-1',
-    quiz_id: 'quiz-fni-201',
-    question_text: 'What is the annual verified harvest target for FNI Fellowship Cells in the current cycle?',
-    question_type: 'multiple_choice',
-    options: ['1,000 Souls', '2,500 Souls', '5,000 Souls', '10,000 Souls'],
-    correct_answer: 2, // 5,000 Souls (index 2)
-    points: 10,
-    explanation: 'The FNI Kingdom Vision sets an annual target of 5,000 verified souls won for Christ across all fellowship cells.',
-  },
-  {
-    id: 'q-2',
-    quiz_id: 'quiz-fni-201',
-    question_text: 'What is the weekly deadline for submitting fellowship meeting reports to church administration?',
-    question_type: 'multiple_choice',
-    options: ['Saturday 11:59 PM', 'Sunday 6:00 PM GMT', 'Sunday 11:59 PM', 'Monday Morning 8:00 AM'],
-    correct_answer: 1, // Sunday 6:00 PM GMT
-    points: 10,
-    explanation: 'Sunday 6:00 PM GMT (Africa/Accra timezone) is the official cutoff for timely meeting returns.',
-  },
-  {
-    id: 'q-3',
-    quiz_id: 'quiz-fni-201',
-    question_text: 'Every evangelism return must be filed separately from weekly cell meeting reports.',
-    question_type: 'true_false',
-    options: ['True', 'False'],
-    correct_answer: 0, // True
-    points: 10,
-    explanation: 'Evangelism outreach records and cell meeting returns have dedicated separate tracking directorates in FNI Cells Connect.',
-  },
-  {
-    id: 'q-4',
-    quiz_id: 'quiz-fni-201',
-    question_text: 'What is the primary biblical role of a Fellowship Cell Tutor in Forerunners Network?',
-    question_type: 'multiple_choice',
-    options: [
-      'Managing church finance only',
-      'Pastoral care, discipleship, and evangelistic leadership of the cell fellowship',
-      'Event security coordinator',
-      'General Sunday morning ushering',
-    ],
-    correct_answer: 1,
-    points: 10,
-    explanation: 'Cell Tutors lead the flock at the grassroots level through Bible teaching, pastoral visitation, discipleship, and evangelism.',
-  },
-  {
-    id: 'q-5',
-    quiz_id: 'quiz-fni-201',
-    question_text: 'When a new convert is won during cell evangelism, what is the mandatory immediate next step?',
-    question_type: 'multiple_choice',
-    options: [
-      'Ignore until they show up on Sunday',
-      'Record contact details and initiate follow-up within 24 to 48 hours',
-      'Assign them to lead a cell immediately',
-      'Wait for the annual convention',
-    ],
-    correct_answer: 1,
-    points: 10,
-    explanation: 'Prompt follow-up within 24 to 48 hours is critical for convert retention and spiritual integration.',
-  },
-];
-
-const DEFAULT_EVENTS: LearningEvent[] = [
-  {
-    id: 'evt-301',
-    title: 'National Cell Leaders & Tutors Leadership Masterclass',
-    description: 'Equipping session with Senior Pastoral Leadership on cell multiplication dynamics, dynamic Holy Ghost ministry in small groups, and harvest management.',
-    event_date: new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0],
-    start_time: '18:30',
-    end_time: '20:30',
-    location_or_link: 'FNI Ministry Headquarters Auditorium & Live Zoom Webinar',
-    meeting_type: 'hybrid',
-    speaker: 'Apostolic Leadership Directorate',
-    materials_link: '#',
-    status: 'upcoming',
-    created_by: 'admin',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'evt-302',
-    title: 'Mid-Cycle Evangelism Strategy & Soul Retention Workshop',
-    description: 'Hands-on practical training for street evangelism, campus outreach, and systematic discipleship follow-up pipelines.',
-    event_date: new Date(Date.now() + 11 * 86400000).toISOString().split('T')[0],
-    start_time: '10:00',
-    end_time: '12:30',
-    location_or_link: 'Online Conference Stream (Link will be dispatched)',
-    meeting_type: 'online',
-    speaker: 'Evangelism & Harvest Directorate',
-    materials_link: '#',
-    status: 'upcoming',
-    created_by: 'admin',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'evt-303',
-    title: 'Quarterly Pastoral Review & All-Tutors Assembly',
-    description: 'High-level review of cell returns, outstanding awards for top soul-winning cells, and strategic calendar unveiling.',
-    event_date: new Date(Date.now() + 25 * 86400000).toISOString().split('T')[0],
-    start_time: '16:00',
-    end_time: '19:00',
-    location_or_link: 'FNI Cathedral Annex, Accra',
-    meeting_type: 'in_person',
-    speaker: 'General Overseer & Executive Council',
-    status: 'upcoming',
-    created_by: 'admin',
-    created_at: new Date().toISOString(),
-  },
-];
-
-const DEFAULT_RESOURCES: LearningResource[] = [
-  {
-    id: 'res-401',
-    title: 'The Blueprint for Cell Church Multiplication',
-    description: 'Core manual on cell anatomy, ice-breakers, leading impactful discussions, and multiplying from 8 to 15 members in 6 months.',
-    category: 'cell_operations',
-    file_name: 'FNI_Cell_Multiplication_Blueprint.pdf',
-    file_url: '#',
-    file_size: '3.1 MB',
-    file_type: 'application/pdf',
-    reading_time_minutes: 25,
-    status: 'published',
-    published_at: new Date().toISOString(),
-    uploaded_by: 'admin',
-    uploaded_by_name: 'Church Administration',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'res-402',
-    title: 'Soul Winning & Discipleship Foundations: Volume 1',
-    description: 'Scriptural foundations for evangelism, overcoming fear of sharing the Gospel, and nurturing baby Christians into maturity.',
-    category: 'evangelism',
-    file_name: 'Soul_Winning_Discipleship_Vol1.pdf',
-    file_url: '#',
-    file_size: '2.5 MB',
-    file_type: 'application/pdf',
-    reading_time_minutes: 20,
-    status: 'published',
-    published_at: new Date().toISOString(),
-    uploaded_by: 'admin',
-    uploaded_by_name: 'Church Administration',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'res-403',
-    title: 'Shepherding with Love: The Heart of a Cell Tutor',
-    description: 'Pastoral counseling basics, identifying struggling brethren, handling confidentiality, and building deep relational fellowship.',
-    category: 'leadership',
-    file_name: 'Shepherding_With_Love_Tutor_Manual.pdf',
-    file_url: '#',
-    file_size: '1.9 MB',
-    file_type: 'application/pdf',
-    reading_time_minutes: 15,
-    status: 'published',
-    published_at: new Date().toISOString(),
-    uploaded_by: 'admin',
-    uploaded_by_name: 'Church Administration',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'res-404',
-    title: 'Kingdom Stewardship & Cell Offering Sanctity',
-    description: 'Guidance on proper accounting, remittance transparency, and fostering generous hearts in the cell setting.',
-    category: 'theology',
-    file_name: 'Kingdom_Stewardship_Guidelines.pdf',
-    file_url: '#',
-    file_size: '1.4 MB',
-    file_type: 'application/pdf',
-    reading_time_minutes: 12,
-    status: 'published',
-    published_at: new Date().toISOString(),
-    uploaded_by: 'admin',
-    uploaded_by_name: 'Church Administration',
-    created_at: new Date().toISOString(),
-  },
-];
+// Real initial state starts completely clean without mock items
+const INITIAL_ASSIGNMENTS: Assignment[] = [];
+const INITIAL_QUIZZES: Quiz[] = [];
+const INITIAL_QUESTIONS: QuizQuestion[] = [];
+const INITIAL_EVENTS: LearningEvent[] = [];
+const INITIAL_RESOURCES: LearningResource[] = [];
 
 // Helper: safe local storage reader & writer
 function readLocal<T>(key: string, fallback: T): T {
@@ -319,7 +87,7 @@ export class LearningService {
           query = query.eq('status', 'published');
         }
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const mapped: Assignment[] = data.map((d: any) => ({
             id: d.id,
             title: d.title,
@@ -347,7 +115,7 @@ export class LearningService {
     }
 
     // 2. Local Fallback
-    const local = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    const local = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, INITIAL_ASSIGNMENTS);
     return isAdmin ? local : local.filter(a => a.status === 'published');
   }
 
@@ -409,7 +177,7 @@ export class LearningService {
     }
 
     // 2. Local update
-    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, INITIAL_ASSIGNMENTS);
     const index = current.findIndex(a => a.id === id);
     if (index >= 0) {
       current[index] = record;
@@ -450,7 +218,7 @@ export class LearningService {
     } catch (e) {
       console.warn('Notice archiving assignment in Supabase:', e);
     }
-    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, INITIAL_ASSIGNMENTS);
     const updated = current.map(a => a.id === id ? { ...a, status: 'archived' as const } : a);
     writeLocal(KEYS.ASSIGNMENTS, updated);
   }
@@ -463,7 +231,7 @@ export class LearningService {
     } catch (e) {
       console.warn('Notice deleting assignment in Supabase:', e);
     }
-    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, DEFAULT_ASSIGNMENTS);
+    const current = readLocal<Assignment[]>(KEYS.ASSIGNMENTS, INITIAL_ASSIGNMENTS);
     writeLocal(KEYS.ASSIGNMENTS, current.filter(a => a.id !== id));
   }
 
@@ -764,7 +532,7 @@ export class LearningService {
           query = query.eq('status', 'published');
         }
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const mapped: Quiz[] = data.map((d: any) => ({
             id: d.id,
             title: d.title,
@@ -789,7 +557,7 @@ export class LearningService {
       console.warn('Notice loading Supabase quizzes, using local data:', e);
     }
 
-    const local = readLocal<Quiz[]>(KEYS.QUIZZES, DEFAULT_QUIZZES);
+    const local = readLocal<Quiz[]>(KEYS.QUIZZES, INITIAL_QUIZZES);
     return isAdmin ? local : local.filter(q => q.status === 'published');
   }
 
@@ -802,7 +570,7 @@ export class LearningService {
           .eq('quiz_id', quizId)
           .order('created_at', { ascending: true });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const mapped: QuizQuestion[] = data.map((d: any) => ({
             id: d.id,
             quiz_id: d.quiz_id,
@@ -820,7 +588,7 @@ export class LearningService {
       console.warn('Notice loading quiz questions from Supabase:', e);
     }
 
-    const all = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, DEFAULT_QUESTIONS);
+    const all = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, INITIAL_QUESTIONS);
     return all.filter(q => q.quiz_id === quizId);
   }
 
@@ -890,14 +658,14 @@ export class LearningService {
     }
 
     // 2. Local update
-    const current = readLocal<Quiz[]>(KEYS.QUIZZES, DEFAULT_QUIZZES);
+    const current = readLocal<Quiz[]>(KEYS.QUIZZES, INITIAL_QUIZZES);
     const index = current.findIndex(q => q.id === id);
     if (index >= 0) current[index] = record;
     else current.unshift(record);
     writeLocal(KEYS.QUIZZES, current);
 
     // Save questions locally
-    const existingQuestions = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, DEFAULT_QUESTIONS);
+    const existingQuestions = readLocal<QuizQuestion[]>(KEYS.QUESTIONS, INITIAL_QUESTIONS);
     const filteredQuestions = existingQuestions.filter(q => q.quiz_id !== id);
     const preparedQuestions: QuizQuestion[] = questions.map((q, idx) => ({
       id: q.id || `q-${id}-${idx + 1}`,
@@ -1079,7 +847,7 @@ export class LearningService {
           .select('*')
           .order('event_date', { ascending: true });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const mapped: LearningEvent[] = data.map((d: any) => ({
             id: d.id,
             title: d.title,
@@ -1103,7 +871,7 @@ export class LearningService {
       console.warn('Notice loading learning events from Supabase:', e);
     }
 
-    return readLocal<LearningEvent[]>(KEYS.EVENTS, DEFAULT_EVENTS);
+    return readLocal<LearningEvent[]>(KEYS.EVENTS, INITIAL_EVENTS);
   }
 
   static async saveEvent(
@@ -1148,7 +916,7 @@ export class LearningService {
       console.warn('Notice saving event to Supabase:', e);
     }
 
-    const all = readLocal<LearningEvent[]>(KEYS.EVENTS, DEFAULT_EVENTS);
+    const all = readLocal<LearningEvent[]>(KEYS.EVENTS, INITIAL_EVENTS);
     const index = all.findIndex(e => e.id === id);
     if (index >= 0) all[index] = record;
     else all.push(record);
@@ -1184,7 +952,7 @@ export class LearningService {
     } catch (e) {
       console.warn('Notice deleting event from Supabase:', e);
     }
-    const all = readLocal<LearningEvent[]>(KEYS.EVENTS, DEFAULT_EVENTS);
+    const all = readLocal<LearningEvent[]>(KEYS.EVENTS, INITIAL_EVENTS);
     writeLocal(KEYS.EVENTS, all.filter(e => e.id !== id));
   }
 
@@ -1199,7 +967,7 @@ export class LearningService {
           query = query.eq('status', 'published');
         }
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const mapped: LearningResource[] = data.map((d: any) => ({
             id: d.id,
             title: d.title,
@@ -1224,7 +992,7 @@ export class LearningService {
       console.warn('Notice loading learning resources from Supabase:', e);
     }
 
-    const local = readLocal<LearningResource[]>(KEYS.RESOURCES, DEFAULT_RESOURCES);
+    const local = readLocal<LearningResource[]>(KEYS.RESOURCES, INITIAL_RESOURCES);
     return isAdmin ? local : local.filter(r => r.status === 'published');
   }
 
@@ -1274,7 +1042,7 @@ export class LearningService {
       console.warn('Notice saving resource to Supabase:', e);
     }
 
-    const all = readLocal<LearningResource[]>(KEYS.RESOURCES, DEFAULT_RESOURCES);
+    const all = readLocal<LearningResource[]>(KEYS.RESOURCES, INITIAL_RESOURCES);
     const index = all.findIndex(r => r.id === id);
     if (index >= 0) all[index] = record;
     else all.unshift(record);
@@ -1312,7 +1080,7 @@ export class LearningService {
     } catch (e) {
       console.warn('Notice deleting resource from Supabase:', e);
     }
-    const all = readLocal<LearningResource[]>(KEYS.RESOURCES, DEFAULT_RESOURCES);
+    const all = readLocal<LearningResource[]>(KEYS.RESOURCES, INITIAL_RESOURCES);
     writeLocal(KEYS.RESOURCES, all.filter(r => r.id !== id));
   }
 

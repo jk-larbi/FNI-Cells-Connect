@@ -112,7 +112,6 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
       bgTint: 'bg-indigo-50/70 border-indigo-200/70 hover:bg-indigo-100/60 dark:bg-indigo-950/20 dark:border-indigo-800/40',
       iconBg: 'bg-indigo-600 text-white',
       icon: Library,
-      badge: 'NEW',
     },
   ];
 
@@ -180,18 +179,18 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
           </span>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
           {quickAccessItems.map(item => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigateSection(item.id)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group shadow-2xs hover:shadow-sm ${item.bgTint}`}
+                className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group shadow-2xs hover:shadow-sm ${item.bgTint}`}
               >
                 <div className="flex items-start justify-between">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-xs ${item.iconBg}`}>
-                    <Icon className="w-5 h-5" />
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xs ${item.iconBg}`}>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   {item.badge && (
                     <span className="px-2 py-0.5 rounded-full bg-[#142B4A] text-white text-[10px] font-black">
@@ -200,14 +199,14 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
                   )}
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-[#182230] dark:text-white group-hover:text-[#142B4A]">
+                    <span className="font-bold text-xs sm:text-sm text-[#182230] dark:text-white group-hover:text-[#142B4A] truncate">
                       {item.title}
                     </span>
-                    <ChevronRight className="w-4 h-4 text-[#667085] group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#667085] group-hover:translate-x-1 transition-transform shrink-0 ml-1" />
                   </div>
-                  <p className="text-[11px] text-[#667085] dark:text-slate-400 mt-0.5 truncate">
+                  <p className="text-[10px] sm:text-[11px] text-[#667085] dark:text-slate-400 mt-0.5 truncate">
                     {item.subtitle}
                   </p>
                 </div>
@@ -251,11 +250,11 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     {/* Date Chip */}
-                    <div className="w-12 h-13 rounded-xl bg-white dark:bg-[#111c2d] border border-[#E3E8EF] dark:border-[#26384d] flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#111c2d] border border-[#E3E8EF] dark:border-[#26384d] flex flex-col items-center justify-center shrink-0 shadow-2xs py-0.5">
                       <span className="text-[9px] font-black uppercase text-[#C74646]">
                         {chip.month}
                       </span>
-                      <span className="text-base font-black text-[#142B4A] dark:text-white leading-none">
+                      <span className="text-sm sm:text-base font-black text-[#142B4A] dark:text-white leading-none">
                         {chip.day}
                       </span>
                       <span className="text-[9px] font-semibold text-[#667085]">
@@ -264,20 +263,20 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
                     </div>
 
                     {/* Event Info */}
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="font-bold text-xs sm:text-sm text-[#182230] dark:text-white truncate group-hover:text-[#142B4A]">
                         {evt.title}
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] text-[#667085] dark:text-slate-400 mt-1">
-                        <span className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] sm:text-[11px] text-[#667085] dark:text-slate-400 mt-1">
+                        <span className="flex items-center gap-1 shrink-0">
                           <Clock className="w-3 h-3 text-[#C6A45A]" />
                           {evt.start_time} - {evt.end_time}
                         </span>
-                        <span className="flex items-center gap-1 truncate">
+                        <span className="flex items-center gap-1 truncate max-w-[180px] sm:max-w-none">
                           {evt.meeting_type === 'online' ? (
-                            <Video className="w-3 h-3 text-blue-500" />
+                            <Video className="w-3 h-3 text-blue-500 shrink-0" />
                           ) : (
-                            <MapPin className="w-3 h-3 text-emerald-500" />
+                            <MapPin className="w-3 h-3 text-emerald-500 shrink-0" />
                           )}
                           <span className="truncate">{evt.location_or_link}</span>
                         </span>
@@ -315,26 +314,32 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
           </div>
 
           <div className="space-y-2.5">
-            {activeAssignments.slice(0, 2).map(asg => (
-              <div
-                key={asg.id}
-                onClick={() => onNavigateSection('assignments')}
-                className="p-3 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] hover:bg-[#F5F7FA] dark:hover:bg-[#172437] transition-colors cursor-pointer"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="font-bold text-xs text-[#182230] dark:text-white">
-                    {asg.title}
-                  </div>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 shrink-0">
-                    {asg.total_marks} Marks
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-[#667085] mt-2">
-                  <span>Due: {new Date(asg.due_date).toLocaleDateString()}</span>
-                  <span>Attempts: {asg.max_attempts === 0 ? 'Unlimited' : asg.max_attempts}</span>
-                </div>
+            {activeAssignments.length === 0 ? (
+              <div className="py-6 text-center text-xs text-[#667085] dark:text-slate-400">
+                No active assignments published at this time.
               </div>
-            ))}
+            ) : (
+              activeAssignments.slice(0, 2).map(asg => (
+                <div
+                  key={asg.id}
+                  onClick={() => onNavigateSection('assignments')}
+                  className="p-3 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] hover:bg-[#F5F7FA] dark:hover:bg-[#172437] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-bold text-xs text-[#182230] dark:text-white">
+                      {asg.title}
+                    </div>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 shrink-0">
+                      {asg.total_marks} Marks
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-[#667085] mt-2">
+                    <span>Due: {new Date(asg.due_date).toLocaleDateString()}</span>
+                    <span>Attempts: {asg.max_attempts === 0 ? 'Unlimited' : asg.max_attempts}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -356,26 +361,32 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
           </div>
 
           <div className="space-y-2.5">
-            {activeQuizzes.slice(0, 2).map(quiz => (
-              <div
-                key={quiz.id}
-                onClick={() => onNavigateSection('quizzes')}
-                className="p-3 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] hover:bg-[#F5F7FA] dark:hover:bg-[#172437] transition-colors cursor-pointer"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="font-bold text-xs text-[#182230] dark:text-white">
-                    {quiz.title}
-                  </div>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 shrink-0">
-                    {quiz.total_points} Pts
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-[#667085] mt-2">
-                  <span>Time: {quiz.time_limit_minutes} mins</span>
-                  <span>Pass mark: {quiz.passing_score}%</span>
-                </div>
+            {activeQuizzes.length === 0 ? (
+              <div className="py-6 text-center text-xs text-[#667085] dark:text-slate-400">
+                No active quizzes published at this time.
               </div>
-            ))}
+            ) : (
+              activeQuizzes.slice(0, 2).map(quiz => (
+                <div
+                  key={quiz.id}
+                  onClick={() => onNavigateSection('quizzes')}
+                  className="p-3 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] hover:bg-[#F5F7FA] dark:hover:bg-[#172437] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-bold text-xs text-[#182230] dark:text-white">
+                      {quiz.title}
+                    </div>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 shrink-0">
+                      {quiz.total_points} Pts
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-[#667085] mt-2">
+                    <span>Time: {quiz.time_limit_minutes} mins</span>
+                    <span>Pass mark: {quiz.passing_score}%</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

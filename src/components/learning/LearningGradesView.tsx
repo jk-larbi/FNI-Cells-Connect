@@ -201,7 +201,7 @@ export const LearningGradesView: React.FC<LearningGradesViewProps> = ({ assignme
             Evaluated Submissions Log ({filteredSubmissions.length})
           </h3>
 
-          <div className="relative min-w-[200px]">
+          <div className="relative w-full sm:w-auto sm:min-w-[200px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"

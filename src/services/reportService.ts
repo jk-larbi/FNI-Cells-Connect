@@ -168,6 +168,27 @@ export class ReportService {
       });
     }
 
+    // Auto-record meeting location in permanent Cell Location History
+    if (report.meetingLocation && report.meetingLocation.trim()) {
+      try {
+        const { CellLocationService } = await import('./cellLocationService');
+        await CellLocationService.recordLocation(
+          {
+            cell_id: report.cellId,
+            cell_name: report.cellName,
+            venue: report.meetingLocation.trim(),
+            meeting_date: report.meetingDate,
+            leader_id: report.tutorUid,
+            leader_name: report.tutorName,
+            notes: `Recorded via cell meeting report for ${report.meetingDate}`,
+          },
+          { id: report.tutorUid, name: report.tutorName }
+        );
+      } catch (locErr) {
+        console.warn('Auto cell location history sync notice:', locErr);
+      }
+    }
+
     this.recordAuditLog({
       action: timing.isLate ? 'SUBMIT_LATE_MEETING_REPORT' : 'SUBMIT_MEETING_REPORT',
       entity_type: 'cellMeetingReports',

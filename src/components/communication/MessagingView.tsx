@@ -728,7 +728,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
               {/* Standard General Emojis Grid */}
               <div className="max-h-52 overflow-y-auto p-1 custom-scrollbar">
-                <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-14 gap-1.5">
+                <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-14 gap-1 sm:gap-1.5">
                   {STANDARD_EMOJI_CATEGORIES[communityEmojiCategory]?.map(emoji => (
                     <button
                       key={emoji}
@@ -737,7 +737,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         setCommunityText(prev => prev + emoji);
                         communityInputRef.current?.focus();
                       }}
-                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer text-xl sm:text-2xl"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer text-lg sm:text-2xl"
                       title={emoji}
                     >
                       <span>{emoji}</span>
@@ -1036,7 +1036,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
               {/* Standard General Emojis Grid */}
               <div className="max-h-52 overflow-y-auto p-1 custom-scrollbar">
-                <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-14 gap-1.5">
+                <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-14 gap-1 sm:gap-1.5">
                   {STANDARD_EMOJI_CATEGORIES[privateEmojiCategory]?.map(emoji => (
                     <button
                       key={emoji}
@@ -1045,7 +1045,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         setPrivateText(prev => prev + emoji);
                         privateInputRef.current?.focus();
                       }}
-                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer text-xl sm:text-2xl"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl hover:bg-[#F5F7FA] flex items-center justify-center hover:scale-125 transition-all cursor-pointer text-lg sm:text-2xl"
                       title={emoji}
                     >
                       <span>{emoji}</span>

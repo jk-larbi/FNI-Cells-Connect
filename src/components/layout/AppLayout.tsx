@@ -18,7 +18,9 @@ import {
 import { DashboardView } from '../dashboard/DashboardView';
 import { CellManagementView } from '../admin/CellManagementView';
 import { CellLeadersView } from '../admin/CellLeadersView';
+import { CellLocationHistoryView } from '../admin/CellLocationHistoryView';
 import { ReportReviewView } from '../admin/ReportReviewView';
+import { ReportHistoryView } from '../admin/ReportHistoryView';
 import { EvangelismAdminView } from '../admin/EvangelismAdminView';
 import { AnalyticsView } from '../admin/AnalyticsView';
 import { AdminSettingsView } from '../admin/AdminSettingsView';
@@ -141,8 +143,8 @@ export const AppLayout: React.FC = () => {
   const isLearningTab = effectiveTab.startsWith('learning-') || effectiveTab === 'learning-portal';
 
   return (
-    <div className="min-h-screen bg-white flex flex-col text-[#182230]">
-      <div className="flex flex-1">
+    <div className="min-h-screen bg-white dark:bg-[#0a111c] flex flex-col text-[#182230] dark:text-slate-100 overflow-x-hidden w-full max-w-full">
+      <div className="flex flex-1 w-full min-w-0">
         {/* Navigation Sidebar */}
         <Sidebar
           currentTab={effectiveTab}
@@ -155,7 +157,7 @@ export const AppLayout: React.FC = () => {
         />
 
         {/* Main Application Area */}
-        <div className="flex-1 flex flex-col md:pl-64 min-w-0">
+        <div className="flex-1 flex flex-col md:pl-64 min-w-0 w-full overflow-x-hidden">
           <Header
             onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
             onOpenNotifications={() => setIsNotifModalOpen(true)}
@@ -165,7 +167,7 @@ export const AppLayout: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-24 md:pb-8">
+          <main className="flex-1 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-28 md:pb-8 min-w-0 overflow-x-hidden">
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
@@ -184,12 +186,21 @@ export const AppLayout: React.FC = () => {
                 {effectiveTab === 'cell-leaders' && (
                   <CellLeadersView onBack={handleGoBack} />
                 )}
+                {effectiveTab === 'cell-location-history' && (
+                  <CellLocationHistoryView onBack={handleGoBack} />
+                )}
                 {effectiveTab === 'report-review' && (
                   <ReportReviewView
                     initialReportId={highlightedReportId}
                     onClearInitialReportId={() => setHighlightedReportId(undefined)}
                     onBack={handleGoBack}
                     onNavigateToTab={(tab) => navigateToTab(tab as any)}
+                  />
+                )}
+                {effectiveTab === 'report-history' && (
+                  <ReportHistoryView
+                    onBack={handleGoBack}
+                    onNavigateToTab={(tab: string) => navigateToTab(tab as any)}
                   />
                 )}
                 {effectiveTab === 'evangelism' && (
@@ -331,10 +342,10 @@ export const AppLayout: React.FC = () => {
       </div>
 
 
-      {/* Thumb-friendly mobile navigation */}
+      {/* Thumb-friendly mobile navigation with iOS safe-area support */}
       <nav
         aria-label="Mobile navigation"
-        className="mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid grid-cols-5 border-t border-[#E3E8EF] bg-white/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)]"
+        className="mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid grid-cols-5 border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         {(isAdmin
           ? [
@@ -360,9 +371,13 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => navigateToTab(item.id)}
               aria-current={active ? 'page' : undefined}
-              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-semibold transition-colors ${active ? 'text-[#142B4A]' : 'text-[#667085]'}`}
+              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-semibold transition-colors ${
+                active ? 'text-[#142B4A] dark:text-white font-bold' : 'text-[#667085] dark:text-slate-400'
+              }`}
             >
-              <span className={`flex h-7 w-10 items-center justify-center rounded-xl ${active ? 'bg-[#142B4A]/[0.07]' : ''}`}>
+              <span className={`flex h-7 w-10 items-center justify-center rounded-xl transition-all ${
+                active ? 'bg-[#142B4A]/[0.08] dark:bg-white/10' : ''
+              }`}>
                 <Icon className={`h-5 w-5 ${active ? 'text-[#C6A45A]' : ''}`} />
                 {item.id === 'notifications' && unreadCount > 0 && (
                   <span className="absolute top-1 right-[calc(50%-18px)] min-w-4 h-4 px-1 rounded-full bg-[#C74646] text-white text-[9px] leading-4">
@@ -370,8 +385,8 @@ export const AppLayout: React.FC = () => {
                   </span>
                 )}
               </span>
-              <span>{item.label}</span>
-              {active && <span className="absolute bottom-0 h-0.5 w-8 rounded-full bg-[#C6A45A]" />}
+              <span className="truncate max-w-[56px] text-center">{item.label}</span>
+              {active && <span className="absolute bottom-0.5 h-0.5 w-7 rounded-full bg-[#C6A45A]" />}
             </button>
           );
         })}

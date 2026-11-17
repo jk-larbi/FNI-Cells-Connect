@@ -48,27 +48,28 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto custom-scrollbar overscroll-contain">
-      <div className="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+      <div className="flex min-h-screen items-center justify-center p-3 sm:p-6 text-center">
         <div
           className="fixed inset-0 bg-navy-950/60 backdrop-blur-xs transition-opacity"
           onClick={onClose}
         />
         <div
-          className={`relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#111c2d] text-left shadow-floating transition-all sm:my-8 w-full ${maxWidthClasses[effectiveMaxWidth]} border border-slate-100 dark:border-[#26384d] flex flex-col max-h-[90vh]`}
+          className={`relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#111c2d] text-left shadow-floating transition-all sm:my-8 w-full ${maxWidthClasses[effectiveMaxWidth]} border border-slate-100 dark:border-[#26384d] flex flex-col max-h-[92vh]`}
         >
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#26384d] px-6 py-4 bg-slate-50/80 dark:bg-[#172437] shrink-0">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#26384d] px-4 py-3 sm:px-6 sm:py-4 bg-slate-50/80 dark:bg-[#172437] shrink-0">
             <div>
               <h3 className="text-base font-bold text-navy-900 dark:text-white">{title}</h3>
               {subtitle && <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">{subtitle}</p>}
             </div>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer"
+              aria-label="Close modal dialog"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="p-6 overflow-y-auto custom-scrollbar overscroll-contain flex-1">{children}</div>
+          <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar overscroll-contain flex-1">{children}</div>
         </div>
       </div>
     </div>

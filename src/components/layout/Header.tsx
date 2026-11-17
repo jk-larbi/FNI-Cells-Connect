@@ -26,12 +26,12 @@ export const Header: React.FC<HeaderProps> = ({
   const deadlineInfo = getCurrentDeadlineInfo();
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-3 sm:px-6 bg-white/95 backdrop-blur-md border-b border-[#E3E8EF] transition-all safe-top">
+    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-2.5 sm:px-6 bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-md border-b border-[#E3E8EF] dark:border-[#1e2d42] transition-all safe-top">
       {/* Left: Mobile toggle & Back button & Deadline badge */}
-      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
         <button
           onClick={onToggleSidebar}
-          className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
+          className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
           aria-label="Open left navigation menu"
           title="Open left navigation menu"
         >
@@ -39,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden sm:inline text-xs font-bold tracking-wide">Menu</span>
         </button>
 
-        <div className="md:hidden w-7 h-7 rounded-lg overflow-hidden border border-[#E3E8EF] bg-[#142B4A] flex items-center justify-center shrink-0">
+        <div className="md:hidden w-7 h-7 rounded-lg overflow-hidden border border-[#E3E8EF] dark:border-[#26384d] bg-[#142B4A] flex items-center justify-center shrink-0">
           <img
             src={`${import.meta.env.BASE_URL}fni-official-logo.jpg`}
             alt="FNI Logo"
@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onGoBack}
-            className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3 rounded-xl bg-[#142B4A]/5 hover:bg-[#142B4A]/10 text-[#142B4A] text-xs font-bold transition-all border border-[#142B4A]/15 cursor-pointer group shadow-2xs shrink-0"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3 rounded-xl bg-[#142B4A]/5 hover:bg-[#142B4A]/10 text-[#142B4A] dark:bg-white/10 dark:text-white text-xs font-bold transition-all border border-[#142B4A]/15 dark:border-white/10 cursor-pointer group shadow-2xs shrink-0"
             title="Go back to previous screen"
             aria-label="Go back to previous screen"
           >
@@ -61,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] text-[#142B4A] font-bold text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
+          <div className="hidden xs:flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#142B4A] dark:text-slate-200 font-bold text-xs border border-[#E3E8EF] dark:border-[#26384d] shrink-0 whitespace-nowrap">
             <Calendar className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
             <span>
               <span className="hidden md:inline">Cycle: </span>
@@ -70,9 +70,9 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="w-2 h-2 rounded-full bg-[#23845B] animate-pulse ml-0.5 shrink-0" />
           </div>
 
-          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5F7FA] text-[#667085] font-medium text-xs border border-[#E3E8EF] shrink-0 whitespace-nowrap">
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#667085] dark:text-slate-400 font-medium text-xs border border-[#E3E8EF] dark:border-[#26384d] shrink-0 whitespace-nowrap">
             <Clock className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
-            <span>Deadline: <strong className="text-[#142B4A]">{deadlineInfo.deadlineFormatted}</strong></span>
+            <span>Deadline: <strong className="text-[#142B4A] dark:text-white">{deadlineInfo.deadlineFormatted}</strong></span>
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Notifications */}
         <button
           onClick={onOpenNotifications}
-          className="relative p-2.5 rounded-full bg-[#F5F7FA] text-[#667085] hover:text-[#142B4A] transition-colors border border-[#E3E8EF]"
+          className="relative p-2 sm:p-2.5 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#667085] dark:text-slate-300 hover:text-[#142B4A] dark:hover:text-white transition-colors border border-[#E3E8EF] dark:border-[#26384d]"
           title="Notifications & Dispatches"
         >
           <Bell className="w-4 h-4" />
@@ -107,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Profile Pill */}
         <button
           onClick={onOpenAccountSettings}
-          className="flex items-center gap-2 pl-2 text-left hover:opacity-90 transition-opacity focus:outline-none"
+          className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 text-left hover:opacity-90 transition-opacity focus:outline-none"
           title="Account Settings"
         >
           <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#C6A45A] text-xs font-bold flex items-center justify-center shadow-sm overflow-hidden shrink-0">
@@ -128,10 +128,10 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
           <div className="hidden lg:block text-left">
-            <div className="text-xs font-bold text-[#182230] leading-tight">
+            <div className="text-xs font-bold text-[#182230] dark:text-white leading-tight">
               {currentUser?.full_name}
             </div>
-            <div className="text-[10px] font-medium text-[#667085]">
+            <div className="text-[10px] font-medium text-[#667085] dark:text-slate-400">
               {isAdmin ? 'System Administrator' : currentUser?.cell_name || 'Cell Leader'}
             </div>
           </div>

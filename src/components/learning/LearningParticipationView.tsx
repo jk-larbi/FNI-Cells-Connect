@@ -222,7 +222,7 @@ export const LearningParticipationView: React.FC = () => {
         <div className="bg-white dark:bg-[#111c2d] rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] shadow-2xs overflow-hidden">
           {/* Table Toolbar */}
           <div className="p-4 border-b border-[#E3E8EF] dark:border-[#26384d] flex flex-wrap items-center justify-between gap-3">
-            <div className="relative flex-1 min-w-[220px]">
+            <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"

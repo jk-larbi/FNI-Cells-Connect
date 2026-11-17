@@ -517,11 +517,26 @@ export interface CellPerformanceRecord {
   latestSubmissionIso?: string;
 }
 
+export interface CellLocationRecord {
+  id: string;
+  cell_id: string;
+  cell_name: string;
+  venue: string;
+  meeting_date: string;
+  leader_id?: string;
+  leader_name: string;
+  notes?: string;
+  created_at: string;
+  created_by?: string;
+}
+
 export type AdminNavTab =
   | 'dashboard'
   | 'cell-management'
   | 'cell-leaders'
+  | 'cell-location-history'
   | 'report-review'
+  | 'report-history'
   | 'learning-portal'
   | 'learning-assignments'
   | 'learning-quizzes'

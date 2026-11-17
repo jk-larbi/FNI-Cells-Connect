@@ -313,7 +313,7 @@ export const LearningEventsView: React.FC<LearningEventsViewProps> = ({
       {/* CREATE / EDIT EVENT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-lg w-full p-4 sm:p-8 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-4 sm:my-8 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF] dark:border-[#26384d]">
               <div>
                 <h3 className="font-bold text-[#142B4A] dark:text-white">
