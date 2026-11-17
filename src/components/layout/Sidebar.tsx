@@ -200,7 +200,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               );
             })}
-          </nav>        </div>
+          </nav>
+        </div>
 
         {/* Bottom Section: Sunday Deadline & Prominent Big Red Logout Button (Always pinned and visible) */}
         <div className="p-3 border-t border-[#E3E8EF] shrink-0 bg-white space-y-2">
