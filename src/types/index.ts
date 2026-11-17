@@ -450,9 +450,10 @@ export interface AuditLog {
 
 export interface TutorRegistrationInput {
   fullName: string;
-  username: string;
+  cellId: string;
+  username?: string;
   phoneNumber?: string;
-  cellName: string;
+  cellName?: string;
   coLeaderName?: string;
   email?: string;
   password?: string;
@@ -460,6 +461,7 @@ export interface TutorRegistrationInput {
 }
 
 export interface TutorLoginInput {
+  cellId?: string;
   username?: string;
   email?: string;
   fullName?: string;

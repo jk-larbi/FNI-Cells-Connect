@@ -289,6 +289,17 @@ export class SupabaseService {
   }
 
   // --- Cells ---
+  static async createAdminCell(name: string): Promise<Cell> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Cell creation cannot be completed safely.');
+    const { data, error } = await supabase!.rpc('admin_create_cell', { p_name: name.trim() });
+    if (error) throw new Error(error.message || 'Cell creation failed.');
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.id) throw new Error('The server did not return the new cell.');
+    const { data: cellRow, error: cellError } = await supabase!.from('cells').select('*').eq('id', row.id).single();
+    if (cellError || !cellRow) throw new Error(cellError?.message || 'The new cell could not be loaded.');
+    return mapCellFromDb(cellRow);
+  }
+
   static async getCells(): Promise<Cell[] | null> {
     if (!this.isAvailable()) return null;
     try {

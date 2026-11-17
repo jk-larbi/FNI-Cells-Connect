@@ -38,8 +38,6 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCellIds, setSelectedCellIds] = useState<string[]>([]);
   const [isDeletingCells, setIsDeletingCells] = useState(false);
-  const [tutorOptions, setTutorOptions] = useState<{ id: string; authId: string; name: string; cellName?: string }[]>([]);
-  const [loadingTutors, setLoadingTutors] = useState(false);
 
   // Profile Drawer / Modal state
   const [selectedCell, setSelectedCell] = useState<Cell | null>(null);
@@ -64,37 +62,6 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
   useEffect(() => {
     loadCells();
-    let mounted = true;
-    setLoadingTutors(true);
-    void (async () => {
-      try {
-        const { data, error } = await supabase.from('profiles')
-          .select('id,supabase_user_id,full_name,cell_name,role')
-          .eq('is_active', true)
-          .in('role', ['tutor', 'cell_leader', 'regional_leader'])
-          .order('full_name', { ascending: true });
-        if (!mounted) return;
-        if (error) {
-          console.error('Could not load tutor accounts for cell assignment:', error);
-          setTutorOptions([]);
-        } else {
-          setTutorOptions((data || []).map(profile => ({
-            id: profile.id,
-            authId: profile.supabase_user_id || profile.id,
-            name: profile.full_name || 'FNI Tutor',
-            cellName: profile.cell_name || undefined,
-          })));
-        }
-      } catch (error) {
-        if (mounted) {
-          console.error('Tutor account lookup failed:', error);
-          setTutorOptions([]);
-        }
-      } finally {
-        if (mounted) setLoadingTutors(false);
-      }
-    })();
-    return () => { mounted = false; };
   }, []);
 
   const openCellProfile = async (cell: Cell) => {
@@ -129,48 +96,22 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
   const handleSaveCell = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCell.name || !editingCell.location) return;
+    const name = editingCell.name?.trim();
+    if (!name) return;
 
     try {
       if (editingCell.id) {
         const full = cells.find(c => c.id === editingCell.id);
         if (full) {
-          const merged: Cell = {
-            ...full,
-            ...editingCell,
-            name: editingCell.name!,
-            location: editingCell.location!,
-          };
-          await CellService.updateCell(merged);
-          setCells(prev => prev.map(c => (c.id === merged.id ? merged : c)));
-          if (selectedCell?.id === merged.id) setSelectedCell(merged);
+          const updated = { ...full, name, normalized_name: name.toLowerCase().replace(/[^a-z0-9]/g, '') };
+          await CellService.updateCell(updated);
+          setCells(prev => prev.map(c => c.id === updated.id ? updated : c));
+          if (selectedCell?.id === updated.id) setSelectedCell(updated);
         }
       } else {
-        if (!editingCell.tutorUid || editingCell.tutorUid === 'admin-created') {
-          window.alert('Select an existing active tutor account before registering this cell.');
-          return;
-        }
-        const { cell } = await CellService.registerCell({
-          name: editingCell.name!,
-          location: editingCell.location!,
-          tutorUid: editingCell.tutorUid,
-          leaderName: editingCell.leader_name || 'Assigned Leader',
-          leaderPhone: editingCell.leader_phone || '',
-          meetingDay: editingCell.meeting_day || 'Wednesday',
-          meetingTime: editingCell.meeting_time || '18:30',
-          venueAddress: editingCell.venue_address || editingCell.location,
-          targetAttendance: editingCell.target_attendance || 20,
-        });
-        const normalized = cell.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        setCells(prev => [
-          cell,
-          ...prev.filter(existing =>
-            existing.id !== cell.id &&
-            existing.name.toLowerCase().replace(/[^a-z0-9]/g, '') !== normalized
-          ),
-        ]);
+        const cell = await CellService.createAdminCell(name);
+        setCells(prev => [cell, ...prev.filter(existing => existing.id !== cell.id)]);
       }
-
       setIsEditModalOpen(false);
       setEditingCell({});
     } catch (error: any) {
@@ -676,7 +617,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               </button>
             </div>
 
-            <form onSubmit={handleSaveCell} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveCell} className="space-y-4 text-xs">
               <div>
                 <label className="block font-bold text-[#182230] mb-1">Cell Name</label>
                 <input
@@ -684,125 +625,15 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   value={editingCell.name || ''}
                   onChange={e => setEditingCell({ ...editingCell, name: e.target.value })}
                   required
-                  placeholder="e.g. Dominion Cell"
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  maxLength={120}
+                  placeholder="e.g. Agape Cell"
+                  className="w-full p-3 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                 />
+                <p className="mt-2 text-[11px] text-[#667085]">Admin creates the official cell name only. Tutors select this cell when they register; their accounts automatically become cell leaders.</p>
               </div>
-
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">Location or Campus</label>
-                <input
-                  type="text"
-                  value={editingCell.location || ''}
-                  onChange={e => setEditingCell({ ...editingCell, location: e.target.value })}
-                  required
-                  placeholder="e.g. Legon Campus, Hostels"
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                />
-              </div>
-
-              {!editingCell.id && (
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Assign Tutor Account</label>
-                  <select
-                    value={editingCell.tutorUid || ''}
-                    onChange={e => {
-                      const tutor = tutorOptions.find(option => option.authId === e.target.value);
-                      setEditingCell({ ...editingCell, tutorUid: e.target.value, leader_name: tutor?.name || editingCell.leader_name });
-                    }}
-                    required
-                    disabled={loadingTutors || tutorOptions.length === 0}
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-white"
-                  >
-                    <option value="">{loadingTutors ? 'Loading active tutors…' : 'Select the tutor responsible for this cell'}</option>
-                    {tutorOptions.map(tutor => (
-                      <option key={tutor.id} value={tutor.authId}>
-                        {tutor.name}{tutor.cellName ? ` · currently ${tutor.cellName}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-[11px] text-[#667085]">
-                    The selected account will be assigned to this cell and its profile will be promoted to Tutor if needed.
-                    {!loadingTutors && tutorOptions.length === 0 ? ' No active tutor accounts are available yet.' : ''}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Leader Name</label>
-                  <input
-                    type="text"
-                    value={editingCell.leader_name || ''}
-                    onChange={e => setEditingCell({ ...editingCell, leader_name: e.target.value })}
-                    placeholder="Leader Full Name"
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Leader Phone</label>
-                  <input
-                    type="text"
-                    value={editingCell.leader_phone || ''}
-                    onChange={e => setEditingCell({ ...editingCell, leader_phone: e.target.value })}
-                    placeholder="+233 24 123 4567"
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Meeting Day</label>
-                  <select
-                    value={editingCell.meeting_day || 'Wednesday'}
-                    onChange={e => setEditingCell({ ...editingCell, meeting_day: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] bg-white"
-                  >
-                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Meeting Time</label>
-                  <input
-                    type="text"
-                    value={editingCell.meeting_time || '18:30'}
-                    onChange={e => setEditingCell({ ...editingCell, meeting_time: e.target.value })}
-                    placeholder="18:30"
-                    className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">Target Attendance</label>
-                <input
-                  type="number"
-                  value={editingCell.target_attendance ?? 20}
-                  onChange={e => setEditingCell({ ...editingCell, target_attendance: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value) || 1) })}
-                  onBlur={() => { if (!editingCell.target_attendance) setEditingCell({ ...editingCell, target_attendance: 20 }); }}
-                  min={1}
-                  className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-[#667085] hover:bg-[#F5F7FA]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63]"
-                >
-                  Save Cell
-                </button>
-              </div>
+              <button type="submit" className="w-full rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold py-3">
+                {editingCell.id ? 'Save Cell Name' : 'Create Cell'}
+              </button>
             </form>
           </div>
         </div>

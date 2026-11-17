@@ -266,135 +266,87 @@ export class AuthService {
     return profile;
   }
 
-  // --- 1. TUTOR REGISTRATION (STRICT SUPABASE AUTH ONLY) ---
+  static async getTutorSignupCells(): Promise<Array<{ id: string; name: string }>> {
+    if (!isSupabaseConfigured || !supabase) return [];
+    const { data, error } = await supabase.functions.invoke('tutor-auth', { body: { action: 'directory' } });
+    if (error) throw new Error(data?.error || error.message || 'Could not load the cell directory.');
+    return (data?.cells || []).map((cell: any) => ({ id: String(cell.id), name: String(cell.name) }));
+  }
+
+  static async getTutorsForCell(cellId: string): Promise<Array<{ id: string; name: string }>> {
+    if (!isSupabaseConfigured || !supabase || !cellId) return [];
+    const { data, error } = await supabase.functions.invoke('tutor-auth', { body: { action: 'directory', cellId } });
+    if (error) throw new Error(data?.error || error.message || 'Could not load registered tutors.');
+    return (data?.tutors || []).map((tutor: any) => ({ id: String(tutor.full_name), name: String(tutor.full_name) }));
+  }
+
+  // --- 1. TUTOR REGISTRATION: join an administrator-created cell ---
   static async registerTutor(input: TutorRegistrationInput): Promise<{
-    profile: Profile | null;
-    cell: Cell | null;
-    error: string | null;
-    needsEmailVerification?: boolean;
-    verificationNotice?: string;
+    profile: Profile | null; cell: Cell | null; error: string | null;
+    needsEmailVerification?: boolean; verificationNotice?: string;
   }> {
-    const fullName = input.fullName?.trim();
-    const cellName = input.cellName?.trim();
-    const username = input.username?.trim().toLowerCase() || '';
+    const fullName = input.fullName?.trim().replace(/\\s+/g, ' ');
+    const cellId = input.cellId?.trim();
     const password = input.password || '';
-    const coLeaderName = input.coLeaderName?.trim();
+    if (!fullName || !cellId || !password) return { profile: null, cell: null, error: 'Select your cell, enter your full name, and create a password.' };
+    if (password.length < 6 || password.length > 128) return { profile: null, cell: null, error: 'Password must be between 6 and 128 characters.' };
+    if (password !== input.confirmPassword) return { profile: null, cell: null, error: 'Passwords do not match.' };
+    if (!isSupabaseConfigured || !supabase) return { profile: null, cell: null, error: 'Supabase authentication service is unavailable.' };
 
-    if (!fullName || !cellName || !username || !password) {
-      return { profile: null, cell: null, error: 'Full name, username, cell name, and password are required.' };
-    }
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-      return { profile: null, cell: null, error: 'Username must be 3–20 characters and use only lowercase letters, numbers, or underscores.' };
-    }
-    if (password.length < 6 || password.length > 128) {
-      return { profile: null, cell: null, error: 'Password must be between 6 and 128 characters.' };
-    }
-    if (input.confirmPassword && password !== input.confirmPassword) {
-      return { profile: null, cell: null, error: 'Passwords do not match.' };
-    }
-    if (!isSupabaseConfigured || !supabase) {
-      return { profile: null, cell: null, error: 'Supabase authentication service is unavailable.' };
-    }
-
-    const normalizedCell = normalizeCellName(cellName);
     try {
-      const allCells = await CellService.getCells();
-      if (allCells.some(c => (c.normalized_name || normalizeCellName(c.name)) === normalizedCell)) {
-        return { profile: null, cell: null, error: `Cell "${cellName}" is already registered. If this is your cell, please log in instead.` };
-      }
-
       const { data, error } = await supabase.functions.invoke('tutor-auth', {
-        body: { action: 'register', fullName, username, password, cellName },
+        body: { action: 'register', fullName, cellId, password },
       });
       if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
         return { profile: null, cell: null, error: data?.error || error?.message || 'Account creation failed. Please try again.' };
       }
-
       const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+        access_token: data.session.access_token, refresh_token: data.session.refresh_token,
       });
       if (sessionError) return { profile: null, cell: null, error: 'Your account was created, but sign-in could not be completed. Please log in.' };
 
-      const uid = data.user.id;
-      const now = new Date().toISOString();
-      const cellId = `cell-${uid}`;
-      const newCell: Cell = {
-        id: cellId,
-        name: cellName,
-        normalized_name: normalizedCell,
-        location: 'Fellowship Center',
-        code: `FNI-CEL-${Date.now().toString().slice(-4)}`,
-        tutorUid: uid,
-        leader_id: uid,
-        leader_name: coLeaderName ? `${fullName} & ${coLeaderName}` : fullName,
-        co_leader_name: coLeaderName || undefined,
-        meeting_day: 'Wednesday',
-        meeting_time: '18:30',
-        venue_address: 'Fellowship Center',
-        target_attendance: 25,
-        status: 'Active',
-        is_active: true,
-        created_at: now,
-      };
-      await CellService.updateCell(newCell);
-
-      const profile: Profile = {
-        id: uid,
-        supabase_user_id: uid,
-        email: '',
-        username,
-        full_name: fullName,
-        cell_id: cellId,
-        cell_name: cellName,
-        role: 'tutor',
-        is_active: true,
-        is_onboarded: true,
-        must_change_password: false,
-        auth_provider: 'credentials',
-        created_at: now,
-      };
-      const saved = await SupabaseService.upsertProfile(profile);
-      if (!saved) return { profile: null, cell: newCell, error: 'Your account was created, but your profile could not be saved. Please contact FNI support.' };
-
-      ReportService.recordAuditLog({
-        action: 'TUTOR_REGISTERED_CELL',
-        entity_type: 'users',
-        entity_id: uid,
-        details: { tutor_name: fullName, username, cell_name: cellName },
-      });
+      const profile = await SupabaseService.getProfile(data.user.id);
+      if (!profile || profile.role !== 'tutor' || profile.cell_id !== cellId) {
+        await supabase.auth.signOut();
+        return { profile: null, cell: null, error: 'Your account was created, but its cell assignment could not be verified. Contact FNI support.' };
+      }
+      const cell = await CellService.getCellById(cellId);
       this.setCurrentProfile(profile);
-      return { profile, cell: newCell, error: null, needsEmailVerification: false };
+      ReportService.recordAuditLog({
+        action: 'TUTOR_REGISTERED_UNDER_CELL', entity_type: 'users', entity_id: profile.id,
+        details: { tutor_name: profile.full_name, cell_id: cellId, cell_name: profile.cell_name },
+      });
+      return { profile, cell, error: null, needsEmailVerification: false };
     } catch (error: any) {
       return { profile: null, cell: null, error: error?.message || 'Registration failed. Please try again.' };
     }
   }
 
-  // --- 2. TUTOR LOGIN (EMAIL + PASSWORD) ---
+  // --- 2. TUTOR LOGIN: cell + registered full name + password ---
   static async signInTutor(input: TutorLoginInput): Promise<{ profile: Profile | null; error: string | null }> {
-    const identifier = (input.username || input.email || input.fullName || '').trim().toLowerCase();
+    const cellId = input.cellId?.trim() || '';
+    const fullName = input.fullName?.trim() || '';
     const password = input.password || '';
-    if (!identifier || !password) return { profile: null, error: 'Username and password are required.' };
+    if (!cellId || !fullName || !password) return { profile: null, error: 'Select your cell, select your registered name, and enter your password.' };
     if (!isSupabaseConfigured || !supabase) return { profile: null, error: 'Supabase authentication service is unavailable.' };
 
     try {
       const { data, error } = await supabase.functions.invoke('tutor-auth', {
-        body: { action: 'login', username: identifier, password },
+        body: { action: 'login', cellId, fullName, password },
       });
       if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
-        return { profile: null, error: data?.error || error?.message || 'Invalid username or password.' };
+        return { profile: null, error: data?.error || error?.message || 'Could not verify your tutor account.' };
       }
       const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+        access_token: data.session.access_token, refresh_token: data.session.refresh_token,
       });
       if (sessionError) return { profile: null, error: 'Could not establish your session. Please try again.' };
 
       const profile = await SupabaseService.getProfile(data.user.id);
-      if (!profile || profile.role !== 'tutor' || !profile.is_active) {
+      if (!profile || profile.role !== 'tutor' || !profile.is_active || profile.cell_id !== cellId) {
         await supabase.auth.signOut();
         this.setCurrentProfile(null);
-        return { profile: null, error: 'This tutor account is inactive or not authorized.' };
+        return { profile: null, error: 'This tutor account is inactive or not assigned to the selected cell.' };
       }
       this.setCurrentProfile(profile);
       SyncStateService.retryPendingSync().catch(() => {});
