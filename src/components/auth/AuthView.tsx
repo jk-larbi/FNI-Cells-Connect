@@ -523,11 +523,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </button>
               </form>
 
-              <div className="text-right -mt-1 hidden">
-                <button type="button" disabled={isSendingReset} onClick={() => handlePasswordReset(loginIdentifier)} className="text-xs font-semibold text-[#142B4A] hover:text-[#C6A45A] underline disabled:opacity-50">
-                  {isSendingReset ? 'Sending reset link...' : 'Forgot password?'}
-                </button>
-              </div>
+
 
               {/* New tutor link */}
               <div className="pt-3 border-t border-[#E3E8EF] text-center">
