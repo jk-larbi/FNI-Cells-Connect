@@ -41,7 +41,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Tutor Registration state (username + password authentication)
+  // Tutor Registration state (tutor chooses their own login/display name)
   const [regFullName, setRegFullName] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
@@ -98,7 +98,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setSuccessNotice('');
 
     if (!regFullName.trim() || !signupCellId || !regPassword || !regConfirmPassword) {
-      setErrorMessage('Select an official cell and complete your name and password fields.');
+      setErrorMessage('Select an official cell, choose your name, and complete both password fields.');
       return;
     }
 
@@ -323,7 +323,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Register as a Cell Leader
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Join an official cell and create your personal password.
+                  Choose the name you want members and the admin to see, then create your personal password.
                 </p>
               </div>
 
@@ -340,10 +340,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   {signupCells.length === 0 && <p className="text-[10px] text-amber-700 mt-1">No active cells are available yet. Please contact the administrator.</p>}
                 </div>
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Full Name <span className="text-[#C74646]">*</span></label>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Choose Your Name <span className="text-[#C74646]">*</span></label>
                   <div className="relative">
                     <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
-                    <input type="text" required maxLength={120} value={regFullName} onChange={e => setRegFullName(e.target.value)} placeholder="Enter your registered full name" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3]" />
+                    <input type="text" required maxLength={120} value={regFullName} onChange={e => setRegFullName(e.target.value)} placeholder="Enter the name you want to register with" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3]" />
                   </div>
                 </div>
                 <div className="text-left">
