@@ -2567,3 +2567,95 @@ html.dark :is(.text-white,.text-white\/90,.text-white\/80) { color: #ffffff !imp
     outline: 2px solid CanvasText !important;
   }
 }
+
+
+/* Notification center: deliberate dark palette with readable hierarchy.
+   Scoped to this panel so light mode and unrelated screens are unaffected. */
+html.dark .fni-notification-center {
+  background-color: #0b1422 !important;
+  color: #e6edf5 !important;
+}
+html.dark .fni-notification-center > div:first-child {
+  background-color: #142238 !important;
+  border-color: #344861 !important;
+  color: #e6edf5 !important;
+}
+html.dark .fni-notification-center > div:first-child :is(span, p, strong, div) {
+  color: #d5e0ed;
+}
+html.dark .fni-notification-center > div:first-child .text-emerald-700 { color: #86efac !important; }
+html.dark .fni-notification-center > div:first-child .text-rose-700 { color: #fda4af !important; }
+html.dark .fni-notification-center > div:first-child .text-slate-600,
+html.dark .fni-notification-center > div:first-child .text-\[\#475569\] { color: #b8c7d9 !important; }
+html.dark .fni-notification-center > div:first-child button {
+  background-color: #203653 !important;
+  color: #f1f5f9 !important;
+  border-color: #526981 !important;
+}
+html.dark .fni-notification-center > div:first-child button svg { color: #e8c979 !important; }
+html.dark .fni-notification-center > div:first-child p {
+  background-color: #1b304a !important;
+  border-color: #3b5877 !important;
+  color: #dbeafe !important;
+}
+html.dark .fni-notification-center button[class*="bg-[#E2E8F0]"],
+html.dark .fni-notification-center button[class*="bg-slate-200"] {
+  background-color: #24364d !important;
+  color: #dce6f2 !important;
+}
+html.dark .fni-notification-center button[class*="bg-[#142B4A]"] {
+  background-color: #c6a45a !important;
+  color: #101a29 !important;
+}
+html.dark .fni-notification-center button[class*="bg-[#142B4A]"] :is(svg, span) {
+  color: #101a29 !important;
+}
+html.dark .fni-notification-center > .border-b {
+  border-color: #344861 !important;
+}
+html.dark .fni-notification-center .text-\[\#475569\],
+html.dark .fni-notification-center .text-\[\#334155\] {
+  color: #b8c7d9 !important;
+}
+html.dark .fni-notification-center .text-\[\#172033\],
+html.dark .fni-notification-center .text-\[\#263548\],
+html.dark .fni-notification-center .text-\[\#142B4A\],
+html.dark .fni-notification-center .text-\[\#102A4C\] {
+  color: #edf4fc !important;
+}
+html.dark .fni-notification-center .text-\[\#64748B\],
+html.dark .fni-notification-center .text-slate-400 {
+  color: #9fb2c8 !important;
+}
+html.dark .fni-notification-center .text-emerald-600 { color: #6ee7b7 !important; }
+html.dark .fni-notification-center .text-blue-600 { color: #93c5fd !important; }
+html.dark .fni-notification-center .text-rose-600 { color: #fda4af !important; }
+html.dark .fni-notification-center .text-amber-600 { color: #fcd34d !important; }
+html.dark .fni-notification-center .text-gold-600,
+html.dark .fni-notification-center .text-gold-500 { color: #e8c979 !important; }
+
+/* Read and unread rows use separate but equally legible surfaces. */
+html.dark .fni-notification-center [class*="!bg-white"] {
+  background-color: #142238 !important;
+  border-color: #344861 !important;
+  color: #dce6f2 !important;
+}
+html.dark .fni-notification-center [class*="!bg-[#EAF1FA]"] {
+  background-color: #1b304a !important;
+  border-color: #52749a !important;
+  color: #f1f6fc !important;
+}
+html.dark .fni-notification-center [class*="hover:!bg-[#F8FAFC]"]:hover,
+html.dark .fni-notification-center [class*="hover:!bg-[#E1EBF7]"]:hover {
+  background-color: #263d59 !important;
+}
+html.dark .fni-notification-center [class*="border-slate-200"] {
+  border-color: #40546c !important;
+}
+html.dark .fni-notification-center [class*="bg-slate-100"] {
+  background-color: #26384e !important;
+  color: #dce6f2 !important;
+}
+html.dark .fni-notification-center .custom-scrollbar {
+  scrollbar-color: #526981 transparent;
+}
