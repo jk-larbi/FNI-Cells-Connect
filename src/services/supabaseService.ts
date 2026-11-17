@@ -318,6 +318,27 @@ export class SupabaseService {
     }
   }
 
+  static async updateCellLeader(cellId: string, newLeaderId: string | null, reason: string): Promise<void> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Leadership was not changed.');
+    const { error } = await supabase!.rpc('admin_update_cell_leader', {
+      p_cell_id: cellId,
+      p_new_leader_id: newLeaderId,
+      p_reason: reason.trim() || null,
+    });
+    if (error) throw new Error(error.message || 'Cell leadership could not be updated.');
+  }
+
+  static async getCellLeadershipHistory(cellId: string): Promise<any[]> {
+    if (!this.isAvailable()) throw new Error('Supabase is unavailable. Leadership history cannot be loaded.');
+    const { data, error } = await supabase!
+      .from('cell_leadership_history')
+      .select('*')
+      .eq('cell_id', cellId)
+      .order('changed_at', { ascending: false });
+    if (error) throw new Error(error.message || 'Leadership history could not be loaded.');
+    return data || [];
+  }
+
   static async archiveCellRegistrations(cellIds: string[]): Promise<boolean> {
     if (!this.isAvailable() || !cellIds.length) return false;
     try {
