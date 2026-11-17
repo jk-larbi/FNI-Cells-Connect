@@ -31,7 +31,6 @@ import {
   MessagesSquare,
   ContactRound,
   X,
-  MapPin,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -98,7 +97,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3 },
     { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
     { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings },
-  ];
   ];
 
   // Tutor Portal Navigation: Dedicated fellowship tools
@@ -248,28 +246,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Middle Section: Navigation Links (Scrollable if screen height is small) */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 custom-scrollbar">
-          <nav className="space-y-3">
-            {isAdmin ? adminNavSections.map(section => (
-              <section key={section.label} className="space-y-1">
-                <p className="px-3 pt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#98A2B3]">{section.label}</p>
-                {section.items.map(item => {
-                  const Icon = item.icon;
-                  const isActive = currentTab === item.id;
-                  return (
-                    <button key={item.id} type="button" onClick={() => { onSelectTab(item.id); onCloseMobile(); }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        isActive ? 'bg-[#229ED9]/10 text-[#1677A8] border border-[#229ED9]/20 shadow-none' : 'text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]'
-                      }`}>
-                      <span className="flex items-center gap-2.5 min-w-0">
-                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#229ED9]' : 'text-[#667085]'}`} />
-                        <span className="truncate">{item.label}</span>
-                      </span>
-                      {item.badge && item.badge > 0 ? <span className="px-1.5 py-0.5 rounded-full bg-[#C74646] text-white text-[10px] font-bold">{item.badge}</span> : isActive ? <span className="w-1.5 h-1.5 rounded-full bg-[#C6A45A]" /> : null}
-                    </button>
-                  );
-                })}
-              </section>
-            )) : navItems.map(item => {
+          <nav className="space-y-1">
+            {navItems.map(item => {
               const Icon = item.icon;
               const isLearning = item.id === 'learning-portal';
               const isLearningActive = currentTab.startsWith('learning-') || currentTab === 'learning-portal';
