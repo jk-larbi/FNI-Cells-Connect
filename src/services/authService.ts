@@ -277,7 +277,7 @@ export class AuthService {
     if (!isSupabaseConfigured || !supabase || !cellId) return [];
     const { data, error } = await supabase.functions.invoke('tutor-auth', { body: { action: 'directory', cellId } });
     if (error) throw new Error(data?.error || error.message || 'Could not load registered tutors.');
-    return (data?.tutors || []).map((tutor: any) => ({ id: String(tutor.id), name: String(tutor.full_name) }));
+    return (data?.tutors || []).map((tutor: any) => ({ id: String(tutor.full_name), name: String(tutor.full_name) }));
   }
 
   // --- 1. TUTOR REGISTRATION: join an administrator-created cell ---
