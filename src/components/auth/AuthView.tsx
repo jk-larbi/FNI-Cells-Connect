@@ -43,14 +43,16 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
   // Tutor Registration state (username + password authentication)
   const [regFullName, setRegFullName] = useState('');
-  const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
-  const [regCellName, setRegCellName] = useState('');
-  const [regCoLeaderName, setRegCoLeaderName] = useState('');
 
   // Tutor Login state
-  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginCellId, setLoginCellId] = useState('');
+  const [loginTutorName, setLoginTutorName] = useState('');
+  const [signupCellId, setSignupCellId] = useState('');
+  const [signupCells, setSignupCells] = useState<Array<{ id: string; name: string }>>([]);
+  const [loginTutors, setLoginTutors] = useState<Array<{ id: string; name: string }>>([]);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
   const [loginPassword, setLoginPassword] = useState('');
   const [showTutorPassword, setShowTutorPassword] = useState(false);
 
@@ -58,6 +60,29 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    AuthService.getTutorSignupCells().then(cells => {
+      if (active) setSignupCells(cells);
+    }).catch(error => {
+      if (active) setErrorMessage(error?.message || 'Could not load the official cell list.');
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!loginCellId) { setLoginTutors([]); setLoginTutorName(''); return; }
+    setDirectoryLoading(true);
+    setLoginTutorName('');
+    AuthService.getTutorsForCell(loginCellId).then(tutors => {
+      if (active) setLoginTutors(tutors);
+    }).catch(error => {
+      if (active) setErrorMessage(error?.message || 'Could not load registered tutor names.');
+    }).finally(() => { if (active) setDirectoryLoading(false); });
+    return () => { active = false; };
+  }, [loginCellId]);
 
   // Feedback states
   const [isLoading, setIsLoading] = useState(false);
@@ -72,8 +97,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!regFullName.trim() || !regUsername.trim() || !regCellName.trim() || !regPassword || !regConfirmPassword) {
-      setErrorMessage('Please complete your name, username, cell name, and password fields.');
+    if (!regFullName.trim() || !signupCellId || !regPassword || !regConfirmPassword) {
+      setErrorMessage('Select an official cell and complete your name and password fields.');
       return;
     }
 
@@ -81,11 +106,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
     try {
       const res = await registerTutor({
         fullName: regFullName.trim(),
-        username: regUsername.trim().toLowerCase(),
         password: regPassword,
         confirmPassword: regConfirmPassword,
-        cellName: regCellName.trim(),
-        coLeaderName: regCoLeaderName.trim() || undefined,
+        cellId: signupCellId,
       });
 
       if (!res.success) {
@@ -105,15 +128,16 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!loginIdentifier.trim() || !loginPassword) {
-      setErrorMessage('Please enter your username and password.');
+    if (!loginCellId || !loginTutorName || !loginPassword) {
+      setErrorMessage('Select your cell, select your registered name, and enter your password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await loginTutor({
-        username: loginIdentifier.trim().toLowerCase(),
+        cellId: loginCellId,
+        fullName: loginTutorName,
         password: loginPassword,
       });
 
@@ -296,99 +320,44 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   <span>Cell Registration</span>
                 </div>
                 <h2 className="text-lg font-bold text-[#142B4A]">
-                  Register Your Fellowship Cell
+                  Register as a Cell Leader
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Create your account with a username and password.
+                  Join an official cell and create your personal password.
                 </p>
               </div>
 
               <form onSubmit={handleTutorSignUp} className="space-y-3">
-                {/* 1. Full Name */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    1. Full Name <span className="text-[#C74646]">*</span>
-                  </label>
-                  <div className="relative group">
-                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
-                    <input
-                      type="text"
-                      required
-                      value={regFullName}
-                      onChange={(e) => setRegFullName(e.target.value)}
-                      placeholder="e.g. Samuel Mensah"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
-                    />
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Official Cell <span className="text-[#C74646]">*</span></label>
+                  <div className="relative">
+                    <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
+                    <select required value={signupCellId} onChange={e => setSignupCellId(e.target.value)} className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]">
+                      <option value="">Select the cell created by Admin</option>
+                      {signupCells.map(cell => <option key={cell.id} value={cell.id}>{cell.name}</option>)}
+                    </select>
                   </div>
+                  {signupCells.length === 0 && <p className="text-[10px] text-amber-700 mt-1">No active cells are available yet. Please contact the administrator.</p>}
                 </div>
-
-                {/* 2. Username */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    2. Username <span className="text-[#C74646]">*</span>
-                  </label>
-                  <div className="relative group">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Full Name <span className="text-[#C74646]">*</span></label>
+                  <div className="relative">
                     <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
-                    <input type="text" required minLength={3} maxLength={20} pattern="[a-zA-Z0-9_]{3,20}" value={regUsername} onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="e.g. samuel_mensah" autoCapitalize="none" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
-                  </div>
-                  <p className="text-[10px] text-[#667085] mt-1">3–20 characters; letters, numbers, and underscores only.</p>
-                </div>
-
-                {/* 4. Cell Fellowship Name */}
-                <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    4. Cell Fellowship Name <span className="text-[#C74646]">*</span>
-                  </label>
-                  <div className="relative group">
-                    <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
-                    <input
-                      type="text"
-                      required
-                      value={regCellName}
-                      onChange={(e) => setRegCellName(e.target.value)}
-                      placeholder="e.g. Grace Fellowship Central"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
-                    />
+                    <input type="text" required maxLength={120} value={regFullName} onChange={e => setRegFullName(e.target.value)} placeholder="Enter your registered full name" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3]" />
                   </div>
                 </div>
-
-
-                {/* Password */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">6. Password <span className="text-[#C74646]">*</span></label>
-                  <input type="password" required minLength={6} maxLength={128} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Create a password (at least 6 characters)" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Password <span className="text-[#C74646]">*</span></label>
+                  <input type="password" required minLength={6} maxLength={128} value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Create a password (at least 6 characters)" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]" />
                 </div>
-                {/* Confirm Password */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">7. Confirm Password <span className="text-[#C74646]">*</span></label>
-                  <input type="password" required minLength={6} maxLength={128} value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all" />
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Confirm Password <span className="text-[#C74646]">*</span></label>
+                  <input type="password" required minLength={6} maxLength={128} value={regConfirmPassword} onChange={e => setRegConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]" />
                 </div>
-                {/* 7. Second Cell Leader / Co-Leader (Optional) */}
-                <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    5. Co-Leader Full Name <span className="text-[#667085] font-normal">(Optional — for paired cells)</span>
-                  </label>
-                  <div className="relative group">
-                    <Users className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
-                    <input
-                      type="text"
-                      value={regCoLeaderName}
-                      onChange={(e) => setRegCoLeaderName(e.target.value)}
-                      placeholder="e.g. Mary Mensah (optional)"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* SIGN UP Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group active:scale-[0.99] border border-[#142B4A]"
-                >
+                <button type="submit" disabled={isLoading || signupCells.length === 0} className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                   <UserPlus className="w-4 h-4 text-[#C6A45A]" />
-                  <span>{isLoading ? 'Registering in Supabase...' : 'Sign Up'}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
+                  <span>{isLoading ? 'Creating your account...' : 'Create Tutor Account'}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
                 </button>
               </form>
 
@@ -510,66 +479,47 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   Tutor Log In
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Sign in with your username and password.
+                  Select your cell and registered name, then enter your password.
                 </p>
               </div>
 
 
               <form onSubmit={handleTutorLogin} className="space-y-3.5">
-                {/* 1. Username */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Username <span className="text-[#C74646]">*</span>
-                  </label>
-                  <div className="relative group">
-                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
-                    <input
-                      type="text"
-                      required
-                      autoCapitalize="none"
-                      value={loginIdentifier}
-                      onChange={(e) => setLoginIdentifier(e.target.value)}
-                      placeholder="Enter your username"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
-                    />
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Cell <span className="text-[#C74646]">*</span></label>
+                  <div className="relative">
+                    <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
+                    <select required value={loginCellId} onChange={e => setLoginCellId(e.target.value)} className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]">
+                      <option value="">Select your cell</option>
+                      {signupCells.map(cell => <option key={cell.id} value={cell.id}>{cell.name}</option>)}
+                    </select>
                   </div>
                 </div>
-
-                {/* 2. Password */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Password <span className="text-[#C74646]">*</span>
-                  </label>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Registered Tutor Name <span className="text-[#C74646]">*</span></label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
+                    <select required value={loginTutorName} onChange={e => setLoginTutorName(e.target.value)} disabled={!loginCellId || directoryLoading || loginTutors.length === 0} className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] disabled:bg-slate-100">
+                      <option value="">{directoryLoading ? 'Loading registered names...' : loginCellId ? 'Select your registered name' : 'Choose a cell first'}</option>
+                      {loginTutors.map(tutor => <option key={tutor.id} value={tutor.name}>{tutor.name}</option>)}
+                    </select>
+                  </div>
+                  {loginCellId && !directoryLoading && loginTutors.length === 0 && <p className="text-[10px] text-amber-700 mt-1">No active tutors are registered under this cell yet.</p>}
+                </div>
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Password <span className="text-[#C74646]">*</span></label>
                   <div className="relative group">
-                    <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
-                    <input
-                      type={showTutorPassword ? "text" : "password"}
-                      required
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      className="w-full pl-9 pr-10 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
-                    />
-                    <button
-                      type="button"
-                      aria-label={showTutorPassword ? "Hide password" : "Show password"}
-                      onClick={() => setShowTutorPassword(!showTutorPassword)}
-                      className="absolute right-3 top-2.5 text-[#667085] hover:text-[#142B4A] focus:outline-none cursor-pointer"
-                    >
+                    <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
+                    <input type={showTutorPassword ? "text" : "password"} required value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-9 pr-10 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]" />
+                    <button type="button" aria-label={showTutorPassword ? "Hide password" : "Show password"} onClick={() => setShowTutorPassword(!showTutorPassword)} className="absolute right-3 top-2.5 text-[#667085]">
                       {showTutorPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4 text-[#667085]" />}
                     </button>
                   </div>
                 </div>
-
-                {/* LOG IN Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group active:scale-[0.99] border border-[#142B4A]"
-                >
+                <button type="submit" disabled={isLoading || !loginTutors.length} className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                   <LogIn className="w-4 h-4 text-[#C6A45A]" />
                   <span>{isLoading ? 'Signing In...' : 'Log In'}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
                 </button>
               </form>
 
