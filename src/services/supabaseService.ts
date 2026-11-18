@@ -70,6 +70,8 @@ function mapCellFromDb(row: any): Cell {
     meeting_day: row.meeting_day,
     meeting_time: row.meeting_time,
     venue_address: row.venue_address,
+    meeting_latitude: row.meeting_latitude == null ? null : Number(row.meeting_latitude),
+    meeting_longitude: row.meeting_longitude == null ? null : Number(row.meeting_longitude),
     total_members: Number(row.total_members || 0),
     active_members: Number(row.active_members || 0),
     new_members: Number(row.new_members || 0),
