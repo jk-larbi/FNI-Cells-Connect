@@ -33,10 +33,11 @@ export class CallSignalingService {
   }): Promise<CallSession> {
     if (!supabase) throw new Error('Supabase client is not available.');
 
-    // Check if recipient has blocked caller
-    const isBlocked = await this.isUserBlocked(params.receiverId, params.callerId);
+    // Only read the current caller's own block list here. The recipient's
+    // device checks its own block list when the incoming call arrives.
+    const isBlocked = await this.isUserBlocked(params.callerId, params.receiverId);
     if (isBlocked) {
-      throw new Error('Unable to connect call to this recipient.');
+      throw new Error('Unblock this person before placing a call.');
     }
 
     const roomId = this.generateRoomId('direct');
