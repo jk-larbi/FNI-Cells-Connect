@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { AuthService } from '../../services/authService';
 import {
@@ -41,10 +41,18 @@ export const AuthView: React.FC<AuthViewProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Tutor Registration state (tutor chooses their own login/display name)
+  // Tutor Registration state (tutor enters full name, which automatically becomes username)
   const [regFullName, setRegFullName] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
+
+  // Automatically derive clean @username from full name
+  const derivedUsername = useMemo(() => {
+    const clean = regFullName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    return clean ? `@${clean}` : '';
+  }, [regFullName]);
 
   // Tutor Login state
   const [loginCellId, setLoginCellId] = useState('');
@@ -90,22 +98,43 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [successNotice, setSuccessNotice] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
 
-
-  // 1. Handle Tutor Registration (Strict Supabase Only - Simplified 3 Fields + Optional Co-Leader)
+  // 1. Handle Tutor Registration (Strict Supabase Only - Enter Full Name -> Auto Username + Create & Confirm Password)
   const handleTutorSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!regFullName.trim() || !signupCellId || !regPassword || !regConfirmPassword) {
-      setErrorMessage('Select an official cell, choose your name, and complete both password fields.');
+    if (!signupCellId) {
+      setErrorMessage('Please select your cell fellowship.');
+      return;
+    }
+
+    if (!regFullName.trim()) {
+      setErrorMessage('Please enter your full name.');
+      return;
+    }
+
+    if (!regPassword || !regConfirmPassword) {
+      setErrorMessage('Please create and confirm your personal password.');
+      return;
+    }
+
+    if (regPassword.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setErrorMessage('Passwords do not match. Please verify your password confirmation.');
       return;
     }
 
     setIsLoading(true);
     try {
+      const cleanUsername = regFullName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
       const res = await registerTutor({
         fullName: regFullName.trim(),
+        username: cleanUsername,
         password: regPassword,
         confirmPassword: regConfirmPassword,
         cellId: signupCellId,
@@ -114,7 +143,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       if (!res.success) {
         setErrorMessage(res.error || 'Registration failed.');
       } else {
-        setSuccessNotice('Account created successfully. You are now signed in.');
+        setSuccessNotice('Account created successfully! You are now signed in.');
         if (onSuccess) onSuccess();
       }
     } finally {
@@ -122,14 +151,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
     }
   };
 
-  // 2. Handle Tutor Login (Direct Supabase Auth)
+  // 2. Handle Tutor Login (Direct Supabase Auth - Cell + Full Name / Username + Password)
   const handleTutorLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessNotice('');
 
-    if (!loginCellId || !loginTutorName || !loginPassword) {
-      setErrorMessage('Select your cell, select your registered name, and enter your password.');
+    if (!loginCellId || !loginTutorName.trim() || !loginPassword) {
+      setErrorMessage('Please select your cell, enter your name or username, and enter your password.');
       return;
     }
 
@@ -137,7 +166,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     try {
       const res = await loginTutor({
         cellId: loginCellId,
-        fullName: loginTutorName,
+        fullName: loginTutorName.trim(),
         password: loginPassword,
       });
 
@@ -317,46 +346,142 @@ export const AuthView: React.FC<AuthViewProps> = ({
               <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#142B4A]/5 border border-[#C6A45A]/30 text-[10px] font-bold text-[#142B4A] uppercase tracking-wider mb-1.5">
                   <UserPlus className="w-3 h-3 text-[#C6A45A]" />
-                  <span>Cell Registration</span>
+                  <span>Leader Registration</span>
                 </div>
                 <h2 className="text-lg font-bold text-[#142B4A]">
                   Register as a Cell Leader
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Choose the name you want members and the admin to see, then create your personal password.
+                  Select your cell, enter your full name (which automatically becomes your username), and create your password.
                 </p>
               </div>
 
-              <form onSubmit={handleTutorSignUp} className="space-y-3">
+              <form onSubmit={handleTutorSignUp} className="space-y-3.5">
+                {/* 1. Select Cell */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Official Cell <span className="text-[#C74646]">*</span></label>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    Select Your Cell <span className="text-[#C74646]">*</span>
+                  </label>
                   <div className="relative">
                     <Building className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
-                    <select required value={signupCellId} onChange={e => setSignupCellId(e.target.value)} className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]">
-                      <option value="">Select the cell created by Admin</option>
-                      {signupCells.map(cell => <option key={cell.id} value={cell.id}>{cell.name}</option>)}
+                    <select
+                      required
+                      value={signupCellId}
+                      onChange={e => setSignupCellId(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                    >
+                      <option value="">Select your cell created by Admin</option>
+                      {signupCells.map(cell => (
+                        <option key={cell.id} value={cell.id}>{cell.name}</option>
+                      ))}
                     </select>
                   </div>
-                  {signupCells.length === 0 && <p className="text-[10px] text-amber-700 mt-1">No active cells are available yet. Please contact the administrator.</p>}
+                  {signupCells.length === 0 && (
+                    <p className="text-[10px] text-amber-700 mt-1">
+                      No active cells are available yet. Please contact the administrator.
+                    </p>
+                  )}
                 </div>
+
+                {/* 2. Full Name (automatically becomes username) */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Choose Your Name <span className="text-[#C74646]">*</span></label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-[#142B4A]">
+                      Your Full Name <span className="text-[#C74646]">*</span>
+                    </label>
+                    {derivedUsername && (
+                      <span className="text-[11px] font-bold text-[#142B4A] bg-[#142B4A]/5 px-2 py-0.5 rounded-md border border-[#C6A45A]/30">
+                        Username: {derivedUsername}
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
-                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3" />
-                    <input type="text" required maxLength={120} value={regFullName} onChange={e => setRegFullName(e.target.value)} placeholder="Enter the name you want to register with" className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3]" />
+                    <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      maxLength={120}
+                      value={regFullName}
+                      onChange={e => setRegFullName(e.target.value)}
+                      placeholder="Enter your full name (e.g. Grace Mensah)"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-[10px] text-[#667085] mt-1">
+                    Your full name will automatically be your username {derivedUsername ? `(${derivedUsername})` : ''}.
+                  </p>
+                </div>
+
+                {/* 3. Create Password */}
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    Create Password <span className="text-[#C74646]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      maxLength={128}
+                      value={regPassword}
+                      onChange={e => setRegPassword(e.target.value)}
+                      placeholder="Create your password (min. 6 characters)"
+                      className="w-full pl-9 pr-10 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showRegPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-3 top-2.5 text-[#667085] hover:text-[#142B4A] cursor-pointer"
+                    >
+                      {showRegPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4 text-[#667085]" />}
+                    </button>
                   </div>
                 </div>
+
+                {/* 4. Confirm Password */}
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Password <span className="text-[#C74646]">*</span></label>
-                  <input type="password" required minLength={6} maxLength={128} value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Create a password (at least 6 characters)" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]" />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-[#142B4A]">
+                      Confirm Password <span className="text-[#C74646]">*</span>
+                    </label>
+                    {regPassword && regConfirmPassword && (
+                      <span className={`text-[10px] font-bold ${regPassword === regConfirmPassword ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {regPassword === regConfirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type={showRegConfirmPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      maxLength={128}
+                      value={regConfirmPassword}
+                      onChange={e => setRegConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password"
+                      className="w-full pl-9 pr-10 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showRegConfirmPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                      className="absolute right-3 top-2.5 text-[#667085] hover:text-[#142B4A] cursor-pointer"
+                    >
+                      {showRegConfirmPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4 text-[#667085]" />}
+                    </button>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Confirm Password <span className="text-[#C74646]">*</span></label>
-                  <input type="password" required minLength={6} maxLength={128} value={regConfirmPassword} onChange={e => setRegConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full px-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230]" />
-                </div>
-                <button type="submit" disabled={isLoading || signupCells.length === 0} className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+
+                <button
+                  type="submit"
+                  disabled={isLoading || signupCells.length === 0}
+                  className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
                   <UserPlus className="w-4 h-4 text-[#C6A45A]" />
-                  <span>{isLoading ? 'Creating your account...' : 'Create Tutor Account'}</span>
+                  <span>{isLoading ? 'Creating your account...' : 'Create Leader Account'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
                 </button>
               </form>
@@ -496,15 +621,41 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   </div>
                 </div>
                 <div className="text-left">
-                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">Registered Tutor Name <span className="text-[#C74646]">*</span></label>
+                  <label className="block text-xs font-semibold text-[#142B4A] mb-1">
+                    Your Full Name or Username <span className="text-[#C74646]">*</span>
+                  </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
-                    <select required value={loginTutorName} onChange={e => setLoginTutorName(e.target.value)} disabled={!loginCellId || directoryLoading || loginTutors.length === 0} className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] disabled:bg-slate-100">
-                      <option value="">{directoryLoading ? 'Loading registered names...' : loginCellId ? 'Select your registered name' : 'Choose a cell first'}</option>
-                      {loginTutors.map(tutor => <option key={tutor.id} value={tutor.name}>{tutor.name}</option>)}
-                    </select>
+                    <input
+                      type="text"
+                      list="registered-cell-tutors"
+                      required
+                      value={loginTutorName}
+                      onChange={e => setLoginTutorName(e.target.value)}
+                      placeholder="Enter your full name or @username"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                    />
+                    <datalist id="registered-cell-tutors">
+                      {loginTutors.map(tutor => (
+                        <option key={tutor.id} value={tutor.name} />
+                      ))}
+                    </datalist>
                   </div>
-                  {loginCellId && !directoryLoading && loginTutors.length === 0 && <p className="text-[10px] text-amber-700 mt-1">No active tutors are registered under this cell yet.</p>}
+                  {loginCellId && !directoryLoading && loginTutors.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                      <span className="text-[10px] text-[#667085]">Quick select:</span>
+                      {loginTutors.slice(0, 4).map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setLoginTutorName(t.name)}
+                          className="text-[10px] font-semibold text-[#142B4A] bg-[#142B4A]/5 hover:bg-[#142B4A]/10 px-2 py-0.5 rounded-full border border-[#E3E8EF] transition-colors cursor-pointer"
+                        >
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">Password <span className="text-[#C74646]">*</span></label>
@@ -516,7 +667,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     </button>
                   </div>
                 </div>
-                <button type="submit" disabled={isLoading || !loginTutors.length} className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                <button type="submit" disabled={isLoading || !loginCellId || !loginTutorName.trim() || !loginPassword} className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                   <LogIn className="w-4 h-4 text-[#C6A45A]" />
                   <span>{isLoading ? 'Signing In...' : 'Log In'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />

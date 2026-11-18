@@ -285,9 +285,10 @@ export class AuthService {
     profile: Profile | null; cell: Cell | null; error: string | null;
     needsEmailVerification?: boolean; verificationNotice?: string;
   }> {
-    const fullName = input.fullName?.trim().replace(/\\s+/g, ' ');
+    const fullName = input.fullName?.trim().replace(/\s+/g, ' ');
     const cellId = input.cellId?.trim();
     const password = input.password || '';
+    const username = input.username?.trim().toLowerCase() || fullName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
     if (!fullName || !cellId || !password) return { profile: null, cell: null, error: 'Select your cell, enter your full name, and create a password.' };
     if (password.length < 6 || password.length > 128) return { profile: null, cell: null, error: 'Password must be between 6 and 128 characters.' };
     if (password !== input.confirmPassword) return { profile: null, cell: null, error: 'Passwords do not match.' };
@@ -295,7 +296,7 @@ export class AuthService {
 
     try {
       const { data, error } = await supabase.functions.invoke('tutor-auth', {
-        body: { action: 'register', fullName, cellId, password },
+        body: { action: 'register', fullName, cellId, password, username },
       });
       if (error || !data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
         return { profile: null, cell: null, error: data?.error || error?.message || 'Account creation failed. Please try again.' };

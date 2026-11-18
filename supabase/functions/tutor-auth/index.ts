@@ -71,8 +71,27 @@ Deno.serve(async (req: Request) => {
       if (duplicateError) throw duplicateError;
       if (existing?.length) return json({ error: "A tutor with that name is already registered under this cell. Please contact the administrator." }, 409);
 
-      // Generate a private, non-user-facing Auth identifier. Tutors sign in with cell + display name + password.
-      const username = `t${crypto.randomUUID().replaceAll("-", "").slice(0, 18)}`;
+      // Automatically generate username from full name as requested
+      const rawBase = String(body.username || fullName).toLowerCase().trim().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+      const baseUsername = rawBase || `t${Date.now()}`;
+      let username = baseUsername;
+
+      // Ensure username uniqueness
+      const { data: existingUsernames } = await admin.from("profiles")
+        .select("username")
+        .ilike("username", `${baseUsername}%`);
+
+      if (existingUsernames && existingUsernames.length > 0) {
+        const set = new Set(existingUsernames.map(u => String(u.username || "").toLowerCase()));
+        if (set.has(username)) {
+          let suffix = 2;
+          while (set.has(`${baseUsername}_${suffix}`) || set.has(`${baseUsername}${suffix}`)) {
+            suffix++;
+          }
+          username = `${baseUsername}_${suffix}`;
+        }
+      }
+
       const email = internalEmail(username);
       const { data: created, error: createError } = await admin.auth.admin.createUser({
         email, email_confirm: true, password,
@@ -133,15 +152,17 @@ Deno.serve(async (req: Request) => {
 
     if (action === "login") {
       const cellId = String(body.cellId || "").trim();
-      const fullName = String(body.fullName || "").trim().replace(/\s+/g, " ");
-      if (!cellId || !fullName || fullName.length > 120) {
-        return json({ error: "Select your cell, your registered name, and enter your password." }, 400);
+      const rawName = String(body.fullName || body.username || "").trim().replace(/\s+/g, " ");
+      if (!cellId || !rawName || rawName.length > 120) {
+        return json({ error: "Select your cell, enter your registered name or username, and enter your password." }, 400);
       }
+      const cleanHandle = rawName.replace(/^@/, "").toLowerCase();
       const { data: matches, error: profileError } = await admin.from("profiles")
         .select("id,supabase_user_id,username,is_active,role,cell_id,full_name")
-        .eq("cell_id", cellId).eq("role", "tutor").eq("is_active", true).ilike("full_name", fullName);
+        .eq("cell_id", cellId).eq("role", "tutor").eq("is_active", true)
+        .or(`full_name.ilike."${rawName}",username.ilike."${cleanHandle}"`);
       if (profileError) throw profileError;
-      if (!matches?.length) return json({ error: "That name is not registered under the selected cell." }, 401);
+      if (!matches?.length) return json({ error: "That name or username is not registered under the selected cell." }, 401);
       if (matches.length > 1) return json({ error: "More than one tutor has that name in this cell. Contact the administrator to distinguish the accounts." }, 409);
 
       const profile = matches[0];
