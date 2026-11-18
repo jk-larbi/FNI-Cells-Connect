@@ -6,213 +6,6 @@ const KEYS = {
   ITEMS: 'fni_gallery_items_cache',
 };
 
-// Initial in-memory default albums
-const DEFAULT_ALBUMS: GalleryAlbum[] = [
-  {
-    id: 'alb-tutor-training',
-    title: 'Tutor Training',
-    description: 'Comprehensive discipleship methodology, cell ministry foundations, and pedagogy for cell tutors.',
-    category: 'training',
-    cover_image_url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80',
-    item_count: 3,
-    created_at: new Date('2026-11-01').toISOString(),
-  },
-  {
-    id: 'alb-leadership-classes',
-    title: 'Leadership Classes',
-    description: 'Executive leadership, pastoral governance, vision casting, and team building workshops.',
-    category: 'leadership',
-    cover_image_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
-    item_count: 2,
-    created_at: new Date('2026-11-02').toISOString(),
-  },
-  {
-    id: 'alb-bible-studies',
-    title: 'Bible Studies',
-    description: 'Expository teachings, Old & New Testament surveys, and systematic biblical hermeneutics.',
-    category: 'biblical',
-    cover_image_url: 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&w=800&q=80',
-    item_count: 2,
-    created_at: new Date('2026-11-03').toISOString(),
-  },
-  {
-    id: 'alb-workshops',
-    title: 'Workshops',
-    description: 'Hands-on practical ministry drills, evangelism outreach clinics, and follow-up strategies.',
-    category: 'practical',
-    cover_image_url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&w=800&q=80',
-    item_count: 2,
-    created_at: new Date('2026-11-04').toISOString(),
-  },
-  {
-    id: 'alb-conference-materials',
-    title: 'Conference Materials',
-    description: 'National annual conference presentations, keynote recordings, and executive digests.',
-    category: 'conference',
-    cover_image_url: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=800&q=80',
-    item_count: 1,
-    created_at: new Date('2026-11-05').toISOString(),
-  },
-];
-
-// Initial in-memory default gallery items
-const DEFAULT_ITEMS: GalleryItem[] = [
-  // Photos
-  {
-    id: 'item-photo-1',
-    title: 'National Cell Leaders Leadership Induction',
-    description: 'Commissioning and dedication of newly appointed fellowship tutors at the Regional Cathedral.',
-    media_type: 'photo',
-    category: 'photos',
-    subcategory: 'Ministry Events',
-    album_id: 'alb-leadership-classes',
-    album_title: 'Leadership Classes',
-    file_url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80',
-    thumbnail_url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80',
-    file_name: 'induction-2026.jpg',
-    file_size: '3.2 MB',
-    file_type: 'image/jpeg',
-    is_featured: true,
-    is_published: true,
-    allow_download: true,
-    tutor_access_level: 'all_tutors',
-    uploaded_by_name: 'Church Directorate',
-    created_at: new Date('2026-11-10T10:00:00Z').toISOString(),
-  },
-  {
-    id: 'item-photo-2',
-    title: 'Evangelism Harvest & Community Outreach Clinic',
-    description: 'Tutors participating in practical neighborhood soul-winning and prayer walk assignments.',
-    media_type: 'photo',
-    category: 'photos',
-    subcategory: 'Workshops & Conferences',
-    album_id: 'alb-workshops',
-    album_title: 'Workshops',
-    file_url: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=1600&q=80',
-    thumbnail_url: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=600&q=80',
-    file_name: 'harvest-outreach.jpg',
-    file_size: '2.8 MB',
-    file_type: 'image/jpeg',
-    is_featured: false,
-    is_published: true,
-    allow_download: true,
-    tutor_access_level: 'all_tutors',
-    uploaded_by_name: 'Evangelism Board',
-    created_at: new Date('2026-11-12T14:30:00Z').toISOString(),
-  },
-  {
-    id: 'item-photo-3',
-    title: 'Themelios Discipleship Class Practical Workshop',
-    description: 'Interactive table discussion during the discipleship modules on building relational small groups.',
-    media_type: 'photo',
-    category: 'photos',
-    subcategory: 'Class Activities',
-    album_id: 'alb-tutor-training',
-    album_title: 'Tutor Training',
-    file_url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80',
-    thumbnail_url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&q=80',
-    file_name: 'themelios-workshop.jpg',
-    file_size: '4.1 MB',
-    file_type: 'image/jpeg',
-    is_featured: true,
-    is_published: true,
-    allow_download: true,
-    tutor_access_level: 'all_tutors',
-    uploaded_by_name: 'Academic Directorate',
-    created_at: new Date('2026-11-14T09:15:00Z').toISOString(),
-  },
-
-  // Videos
-  {
-    id: 'item-video-1',
-    title: 'Mastering Biblical Hermeneutics for Cell Tutors',
-    description: 'Executive masterclass on dissecting and interpreting scriptural texts for small group discussions.',
-    media_type: 'video',
-    category: 'videos',
-    subcategory: 'Recorded Lessons',
-    album_id: 'alb-bible-studies',
-    album_title: 'Bible Studies',
-    file_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    thumbnail_url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80',
-    file_name: 'masterclass-hermeneutics.mp4',
-    file_size: '45.2 MB',
-    file_type: 'video/mp4',
-    duration_seconds: 596,
-    is_featured: true,
-    is_published: true,
-    allow_download: true,
-    tutor_access_level: 'all_tutors',
-    uploaded_by_name: 'Pastoral Council',
-    created_at: new Date('2026-11-15T11:00:00Z').toISOString(),
-  },
-  {
-    id: 'item-video-2',
-    title: 'Cell Growth & Multiplication Masterclass',
-    description: 'Strategic demonstration of how to transition an active cell group into healthy split multiplication.',
-    media_type: 'video',
-    category: 'videos',
-    subcategory: 'Demonstrations',
-    album_id: 'alb-tutor-training',
-    album_title: 'Tutor Training',
-    file_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    thumbnail_url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80',
-    file_name: 'cell-multiplication.mp4',
-    file_size: '68.0 MB',
-    file_type: 'video/mp4',
-    duration_seconds: 653,
-    is_featured: false,
-    is_published: true,
-    allow_download: true,
-    tutor_access_level: 'all_tutors',
-    uploaded_by_name: 'Church Growth Secretariat',
-    created_at: new Date('2026-11-16T15:20:00Z').toISOString(),
-  },
-
-  // Documents
-  {
-    id: 'item-doc-1',
-    title: 'FNI Cell Leader Official Field Handbook 2026',
-    description: 'Complete operational manual, soul-winning follow-up protocols, weekly report procedures, and code of conduct.',
-    media_type: 'document',
-    category: 'documents',
-    subcategory: 'PDF Materials',
-    album_id: 'alb-tutor-training',
-    album_title: 'Tutor Training',
-    file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    thumbnail_url: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=600&q=80',
-    file_name: 'FNI_Cell_Leader_Handbook_2026.pdf',
-    file_size: '3.5 MB',
-    file_type: 'application/pdf',
-    is_featured: true,
-    is_published: true,
-    allow_download: true,
-    tutor_access_level: 'all_tutors',
-    uploaded_by_name: 'Headquarters Secretariat',
-    created_at: new Date('2026-11-08T08:00:00Z').toISOString(),
-  },
-  {
-    id: 'item-doc-2',
-    title: 'Evangelism Soul-Winning Strategy & Follow-Up Guide',
-    description: 'Actionable framework covering initial gospel presentation, prayer counseling, and 72-hour visitation.',
-    media_type: 'document',
-    category: 'documents',
-    subcategory: 'Study Guides',
-    album_id: 'alb-workshops',
-    album_title: 'Workshops',
-    file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    thumbnail_url: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=600&q=80',
-    file_name: 'Evangelism_Strategy_Guide.pdf',
-    file_size: '1.9 MB',
-    file_type: 'application/pdf',
-    is_featured: false,
-    is_published: true,
-    allow_download: true,
-    tutor_access_level: 'all_tutors',
-    uploaded_by_name: 'Evangelism Board',
-    created_at: new Date('2026-11-13T16:45:00Z').toISOString(),
-  },
-];
-
 function readLocal<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -242,7 +35,8 @@ export class GalleryService {
           .select('*, gallery_items(count)')
           .order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0) {
+        if (error) throw error;
+        if (data) {
           const mapped: GalleryAlbum[] = data.map((d: any) => ({
             id: d.id,
             title: d.title,
@@ -259,10 +53,10 @@ export class GalleryService {
         }
       }
     } catch (e) {
-      console.warn('Supabase getAlbums error, falling back to cache:', e);
+      console.warn('Supabase getAlbums failed:', e);
     }
 
-    return readLocal<GalleryAlbum[]>(KEYS.ALBUMS, DEFAULT_ALBUMS);
+    return [];
   }
 
   static async saveAlbum(
@@ -276,7 +70,7 @@ export class GalleryService {
       title: album.title || 'Untitled Album',
       description: album.description || '',
       category: album.category || 'training',
-      cover_image_url: album.cover_image_url || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80',
+      cover_image_url: album.cover_image_url || null,
       created_by: user?.id,
       updated_at: new Date().toISOString(),
       ...(isNew ? { created_at: new Date().toISOString() } : {}),
@@ -295,20 +89,14 @@ export class GalleryService {
         }
       }
     } catch (e) {
-      console.warn('Supabase saveAlbum error, writing to local cache:', e);
+      console.warn('Supabase saveAlbum failed:', e);
     }
 
-    const savedAlbum: GalleryAlbum = {
-      ...payload,
-      created_at: payload.created_at || new Date().toISOString(),
-      item_count: album.item_count || 0,
-    };
-    this.updateLocalAlbum(savedAlbum);
-    return savedAlbum;
+    throw new Error('The album could not be saved to FNI storage. Please try again.');
   }
 
   private static updateLocalAlbum(album: GalleryAlbum): void {
-    const list = readLocal<GalleryAlbum[]>(KEYS.ALBUMS, DEFAULT_ALBUMS);
+    const list = readLocal<GalleryAlbum[]>(KEYS.ALBUMS, []);
     const idx = list.findIndex(a => a.id === album.id);
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...album };
@@ -327,7 +115,7 @@ export class GalleryService {
       console.warn('Supabase deleteAlbum error:', e);
     }
 
-    const list = readLocal<GalleryAlbum[]>(KEYS.ALBUMS, DEFAULT_ALBUMS);
+    const list = readLocal<GalleryAlbum[]>(KEYS.ALBUMS, []);
     writeLocal(KEYS.ALBUMS, list.filter(a => a.id !== albumId));
   }
 
@@ -363,7 +151,8 @@ export class GalleryService {
         }
 
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
+        if (error) throw error;
+        if (data) {
           const mapped: GalleryItem[] = data.map((d: any) => ({
             id: d.id,
             title: d.title,
@@ -376,7 +165,7 @@ export class GalleryService {
             file_url: d.file_url,
             thumbnail_url: d.thumbnail_url || d.file_url,
             file_name: d.file_name,
-            file_size: d.file_size || '1.5 MB',
+            file_size: d.file_size || '',
             file_type: d.file_type,
             duration_seconds: d.duration_seconds,
             is_featured: Boolean(d.is_featured),
@@ -384,7 +173,7 @@ export class GalleryService {
             allow_download: d.allow_download !== false,
             tutor_access_level: d.tutor_access_level || 'all_tutors',
             uploaded_by: d.uploaded_by,
-            uploaded_by_name: d.uploaded_by_name || 'Church Directorate',
+            uploaded_by_name: d.uploaded_by_name || '',
             created_at: d.created_at,
             updated_at: d.updated_at,
           }));
@@ -394,11 +183,10 @@ export class GalleryService {
         }
       }
     } catch (e) {
-      console.warn('Supabase getItems error, falling back to cache:', e);
+      console.warn('Supabase getItems failed:', e);
     }
 
-    const cached = readLocal<GalleryItem[]>(KEYS.ITEMS, DEFAULT_ITEMS);
-    return this.applyLocalFilters(cached, filters, isAdmin);
+    return [];
   }
 
   private static applyLocalFilters(
@@ -453,7 +241,7 @@ export class GalleryService {
       file_url: item.file_url || '',
       thumbnail_url: item.thumbnail_url || item.file_url,
       file_name: item.file_name || 'attachment',
-      file_size: item.file_size || '1.5 MB',
+      file_size: item.file_size || '',
       file_type: item.file_type || (item.media_type === 'photo' ? 'image/jpeg' : item.media_type === 'video' ? 'video/mp4' : 'application/pdf'),
       duration_seconds: item.duration_seconds,
       is_featured: Boolean(item.is_featured),
@@ -461,7 +249,7 @@ export class GalleryService {
       allow_download: item.allow_download !== false,
       tutor_access_level: item.tutor_access_level || 'all_tutors',
       uploaded_by: user?.id,
-      uploaded_by_name: user?.name || item.uploaded_by_name || 'Church Directorate',
+      uploaded_by_name: user?.name || item.uploaded_by_name || '',
       updated_at: new Date().toISOString(),
       ...(isNew ? { created_at: new Date().toISOString() } : {}),
     };
@@ -484,20 +272,14 @@ export class GalleryService {
         }
       }
     } catch (e) {
-      console.warn('Supabase saveItem error, writing to cache:', e);
+      console.warn('Supabase saveItem failed:', e);
     }
 
-    const saved: GalleryItem = {
-      ...payload,
-      created_at: payload.created_at || new Date().toISOString(),
-      album_title: item.album_title,
-    };
-    this.updateLocalItem(saved);
-    return saved;
+    throw new Error('The gallery item could not be saved to FNI storage. Please try again.');
   }
 
   private static updateLocalItem(item: GalleryItem): void {
-    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, DEFAULT_ITEMS);
+    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, []);
     const idx = list.findIndex(i => i.id === item.id);
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...item };
@@ -516,7 +298,7 @@ export class GalleryService {
       console.warn('Supabase deleteItem error:', e);
     }
 
-    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, DEFAULT_ITEMS);
+    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, []);
     writeLocal(KEYS.ITEMS, list.filter(i => i.id !== itemId));
   }
 
@@ -532,7 +314,7 @@ export class GalleryService {
       console.warn('Supabase togglePublish error:', e);
     }
 
-    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, DEFAULT_ITEMS);
+    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, []);
     const target = list.find(i => i.id === itemId);
     if (target) {
       target.is_published = isPublished;
@@ -552,7 +334,7 @@ export class GalleryService {
       console.warn('Supabase toggleFeatured error:', e);
     }
 
-    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, DEFAULT_ITEMS);
+    const list = readLocal<GalleryItem[]>(KEYS.ITEMS, []);
     const target = list.find(i => i.id === itemId);
     if (target) {
       target.is_featured = isFeatured;
@@ -585,14 +367,14 @@ export class GalleryService {
         const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
         const storagePath = `gallery/${Date.now()}_${cleanName}`;
 
-        // Attempt upload to 'fni-chat-media' (which is proven live and working)
+        // Upload to the dedicated FNI gallery bucket
         const { error: uploadError } = await supabase.storage
-          .from('fni-chat-media')
+          .from('fni-gallery-media')
           .upload(storagePath, file, { contentType: file.type, upsert: true });
 
         if (!uploadError) {
           const { data: pubData } = supabase.storage
-            .from('fni-chat-media')
+            .from('fni-gallery-media')
             .getPublicUrl(storagePath);
 
           if (pubData?.publicUrl) {
@@ -606,16 +388,9 @@ export class GalleryService {
         }
       }
     } catch (e) {
-      console.warn('Supabase storage upload fallback to local URL:', e);
+      console.warn('FNI gallery storage upload failed:', e);
     }
 
-    // Fallback: create browser object URL
-    const localUrl = URL.createObjectURL(file);
-    return {
-      url: localUrl,
-      name: file.name,
-      size: formattedSize,
-      mimeType: file.type,
-    };
+    throw new Error('The file could not be uploaded to FNI Gallery. Check the connection and try again.');
   }
 }

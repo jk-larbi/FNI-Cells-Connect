@@ -202,6 +202,8 @@ export interface Cell {
   meeting_day?: string;
   meeting_time?: string;
   venue_address?: string;
+  meeting_latitude?: number | null;
+  meeting_longitude?: number | null;
   total_members?: number;
   active_members?: number;
   new_members?: number;

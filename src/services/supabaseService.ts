@@ -70,6 +70,8 @@ function mapCellFromDb(row: any): Cell {
     meeting_day: row.meeting_day,
     meeting_time: row.meeting_time,
     venue_address: row.venue_address,
+    meeting_latitude: row.meeting_latitude == null ? null : Number(row.meeting_latitude),
+    meeting_longitude: row.meeting_longitude == null ? null : Number(row.meeting_longitude),
     total_members: Number(row.total_members || 0),
     active_members: Number(row.active_members || 0),
     new_members: Number(row.new_members || 0),
@@ -453,7 +455,9 @@ export class SupabaseService {
       leader_phone: cell.leader_phone || '',
       meeting_day: cell.meeting_day || 'Wednesday',
       meeting_time: cell.meeting_time || '18:30:00',
-      venue_address: cell.venue_address || 'Fellowship Venue',
+      venue_address: cell.venue_address || '',
+      meeting_latitude: cell.meeting_latitude ?? null,
+      meeting_longitude: cell.meeting_longitude ?? null,
       total_members: cell.total_members || 0,
       active_members: cell.active_members || 0,
       new_members: cell.new_members || 0,
@@ -1520,20 +1524,7 @@ export class SupabaseService {
 
   // --- Community Groups & Official Group Designation ---
   static async getCommunityGroups(): Promise<CommunityGroup[]> {
-    if (!this.isAvailable()) {
-      return [{
-        id: 'themelios-community',
-        name: 'Themelios Class - FNI Community',
-        description: 'Official ministerial fellowship for all active FNI tutors and leaders',
-        is_official: true,
-        isOfficial: true,
-        category: 'official',
-        created_at: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }];
-    }
+    if (!this.isAvailable()) return [];
     try {
       const { data, error } = await supabase!
         .from('community_groups')
@@ -1558,25 +1549,14 @@ export class SupabaseService {
         updatedAt: row.updated_at,
       }));
     } catch (err) {
-      console.warn('getCommunityGroups error:', err);
-      return [{
-        id: 'themelios-community',
-        name: 'Themelios Class - FNI Community',
-        description: 'Official ministerial fellowship for all active FNI tutors and leaders',
-        is_official: true,
-        isOfficial: true,
-        category: 'official',
-        created_at: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }];
+      console.warn('getCommunityGroups failed:', err);
+      return [];
     }
   }
 
   static async getOfficialCommunityGroup(): Promise<CommunityGroup | null> {
     const groups = await this.getCommunityGroups();
-    return groups.find(g => g.is_official || g.isOfficial) || groups[0] || null;
+    return groups.find(group => group.is_official || group.isOfficial) || null;
   }
 
   static async getCommunityGroupMembers(groupId: string): Promise<CommunityGroupMember[]> {

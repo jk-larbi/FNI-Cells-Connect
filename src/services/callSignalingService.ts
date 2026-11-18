@@ -9,7 +9,6 @@ import {
   CallBlockedUser,
 } from '../types/calling';
 import { NotificationService } from './notificationService';
-import { PushNotificationService } from './pushNotificationService';
 
 export class CallSignalingService {
   // Generate a distinct room ID
@@ -33,10 +32,11 @@ export class CallSignalingService {
   }): Promise<CallSession> {
     if (!supabase) throw new Error('Supabase client is not available.');
 
-    // Check if recipient has blocked caller
-    const isBlocked = await this.isUserBlocked(params.receiverId, params.callerId);
+    // Only read the current caller's own block list here. The recipient's
+    // device checks its own block list when the incoming call arrives.
+    const isBlocked = await this.isUserBlocked(params.callerId, params.receiverId);
     if (isBlocked) {
-      throw new Error('Unable to connect call to this recipient.');
+      throw new Error('Unblock this person before placing a call.');
     }
 
     const roomId = this.generateRoomId('direct');
@@ -62,26 +62,8 @@ export class CallSignalingService {
       .single();
 
     if (error || !data) {
-      console.warn('Call session DB insert fallback:', error);
-      // Return local memory session if table does not yet exist
-      const localSession: CallSession = {
-        id: crypto.randomUUID(),
-        caller_id: params.callerId,
-        caller_name: params.callerName,
-        caller_avatar: params.callerAvatar,
-        caller_cell: params.callerCell,
-        receiver_id: params.receiverId,
-        receiver_name: params.receiverName,
-        receiver_avatar: params.receiverAvatar,
-        room_id: roomId,
-        call_type: params.callType,
-        call_mode: 'direct',
-        status: 'ringing',
-        started_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-      };
-      this.dispatchCallNotifications(localSession);
-      return localSession;
+      console.error('Call session could not be persisted:', error);
+      throw error || new Error('The call could not be started. Please try again.');
     }
 
     const session = data as CallSession;
@@ -109,18 +91,8 @@ export class CallSignalingService {
         },
       });
 
-      // Browser Web Push / Local System Notification
-      PushNotificationService.showLocalNotification(
-        `Incoming FNI ${session.call_type === 'video' ? 'Video' : 'Voice'} Call`,
-        {
-          body: `${session.caller_name} is calling you. Tap to answer.`,
-          tag: `fni-call-${session.id}`,
-          data: {
-            url: window.location.origin + window.location.pathname + '#call-' + session.id,
-            callId: session.id,
-          },
-        }
-      );
+      // The authenticated push function delivers the system notification to
+      // the receiver's registered devices. Do not notify the caller locally.
     } catch (e) {
       console.warn('Failed to dispatch call notification:', e);
     }
@@ -300,34 +272,38 @@ export class CallSignalingService {
 
     const session = data as CallSession;
 
-    // Add host as first participant
-    await supabase.from('call_participants').insert({
-      session_id: session.id,
-      user_id: params.hostId,
-      user_name: params.hostName,
-      user_avatar: params.hostAvatar,
-      role: 'host',
-      is_muted: false,
-      is_video_enabled: params.callType === 'video',
+    // A guarded SECURITY DEFINER RPC loads the real active members and inserts
+    // participant rows. Cell meetings automatically include active members of
+    // the selected cell; group meetings use the explicitly selected invitees.
+    const { error: participantInsertError } = await supabase.rpc('add_call_participants_for_host', {
+      p_session_id: session.id,
+      p_user_ids: params.invitedMemberIds || [],
     });
+    if (participantInsertError) throw participantInsertError;
 
-    // Notify invited members or cell members
-    if (params.invitedMemberIds && params.invitedMemberIds.length > 0) {
-      for (const memberId of params.invitedMemberIds) {
-        if (memberId === params.hostId) continue;
-        NotificationService.createNotification({
-          userId: memberId,
-          type: 'meeting_started',
-          title: `Cell Meeting Started: ${params.title}`,
-          message: `${params.hostName} started a ${params.callType} meeting. Tap to join.`,
-          metadata: {
-            targetTab: 'messages',
-            roomId: session.room_id,
-            sessionId: session.id,
-            callType: params.callType,
-          },
-        }).catch(() => {});
-      }
+    const { data: participantRows, error: participantReadError } = await supabase
+      .from('call_participants')
+      .select('user_id')
+      .eq('session_id', session.id);
+    if (participantReadError) throw participantReadError;
+
+    // Notify every real participant except the host.
+    const invitedIds = Array.from(new Set((participantRows || [])
+      .map(row => String(row.user_id))
+      .filter(userId => userId !== params.hostId)));
+    for (const memberId of invitedIds) {
+      NotificationService.createNotification({
+        userId: memberId,
+        type: 'meeting_started',
+        title: `Cell Meeting Started: ${params.title}`,
+        message: `${params.hostName} started a ${params.callType} meeting. Tap to join.`,
+        metadata: {
+          targetTab: 'messages',
+          roomId: session.room_id,
+          sessionId: session.id,
+          callType: params.callType,
+        },
+      }).catch(() => {});
     }
 
     return session;
@@ -336,38 +312,49 @@ export class CallSignalingService {
   // ---------------------------------------------------------------------------
   // 8. BLOCK & REPORT USERS
   // ---------------------------------------------------------------------------
-  static async blockUser(userId: string, blockedUserId: string, reason?: string): Promise<void> {
-    if (!supabase) return;
-    await supabase.from('call_blocked_users').upsert({
+  static async blockUser(userId: string, blockedUserId: string, reason?: string, blockedUserName?: string): Promise<void> {
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { error } = await supabase.from('call_blocked_users').upsert({
       user_id: userId,
       blocked_user_id: blockedUserId,
+      blocked_user_name: blockedUserName || null,
       reason,
-    });
+    }, { onConflict: 'user_id,blocked_user_id' });
+    if (error) throw error;
+  }
+
+  static async getBlockedUsers(userId: string): Promise<CallBlockedUser[]> {
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { data, error } = await supabase
+      .from('call_blocked_users')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []) as CallBlockedUser[];
   }
 
   static async unblockUser(userId: string, blockedUserId: string): Promise<void> {
-    if (!supabase) return;
-    await supabase
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { error } = await supabase
       .from('call_blocked_users')
       .delete()
       .eq('user_id', userId)
       .eq('blocked_user_id', blockedUserId);
+    if (error) throw error;
   }
 
   static async isUserBlocked(userId: string, targetUserId: string): Promise<boolean> {
-    if (!supabase) return false;
-    try {
-      const { data } = await supabase
-        .from('call_blocked_users')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('blocked_user_id', targetUserId)
-        .maybeSingle();
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { data, error } = await supabase
+      .from('call_blocked_users')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('blocked_user_id', targetUserId)
+      .maybeSingle();
 
-      return Boolean(data);
-    } catch {
-      return false;
-    }
+    if (error) throw error;
+    return Boolean(data);
   }
 
   // ---------------------------------------------------------------------------

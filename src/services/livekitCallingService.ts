@@ -84,24 +84,15 @@ export class LivekitCallingService {
       });
 
       if (error || !data) {
-        console.warn('Edge function returned error, using fallback WebRTC signaling:', error);
-        return {
-          mode: 'webrtc-mesh',
-          token: 'fallback-direct-token',
-          serverUrl: 'direct-webrtc',
-          room: roomName,
-        };
+        console.error('Secure calling token request failed:', error);
+        throw error || new Error('The secure calling service did not return a token.');
       }
 
+      if (data.error) throw new Error(data.error);
       return data as CallingTokenResponse;
-    } catch (e) {
-      console.warn('LiveKit Edge function call failed, falling back to direct WebRTC channel:', e);
-      return {
-        mode: 'webrtc-mesh',
-        token: 'fallback-direct-token',
-        serverUrl: 'direct-webrtc',
-        room: roomName,
-      };
+    } catch (e: any) {
+      console.error('Secure calling token request failed:', e);
+      throw e instanceof Error ? e : new Error('The secure calling service is unavailable.');
     }
   }
 

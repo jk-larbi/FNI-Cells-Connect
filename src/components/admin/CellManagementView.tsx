@@ -7,6 +7,7 @@ import { ReportService } from '../../services/reportService';
 import { FollowUpService } from '../../services/followUpService';
 import { CellMembersPanel } from '../CellMembersPanel';
 import { CellLeadershipPanel } from './CellLeadershipPanel';
+import { CellLocationsMap } from './CellLocationsMap';
 import { supabase } from '../../lib/supabase';
 import {
   Building,
@@ -132,13 +133,30 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       if (editingCell.id) {
         const full = cells.find(c => c.id === editingCell.id);
         if (full) {
-          const updated = { ...full, name, normalized_name: name.toLowerCase().replace(/[^a-z0-9]/g, '') };
+          const updated = {
+            ...full,
+            ...editingCell,
+            name,
+            normalized_name: name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+            venue_address: editingCell.venue_address?.trim() || '',
+            meeting_latitude: editingCell.meeting_latitude ?? null,
+            meeting_longitude: editingCell.meeting_longitude ?? null,
+          };
           await CellService.updateCell(updated);
           setCells(prev => prev.map(c => c.id === updated.id ? updated : c));
           if (selectedCell?.id === updated.id) setSelectedCell(updated);
         }
       } else {
-        const cell = await CellService.createAdminCell(name);
+        let cell = await CellService.createAdminCell(name);
+        if (editingCell.venue_address || editingCell.meeting_latitude != null || editingCell.meeting_longitude != null) {
+          cell = {
+            ...cell,
+            venue_address: editingCell.venue_address?.trim() || '',
+            meeting_latitude: editingCell.meeting_latitude ?? null,
+            meeting_longitude: editingCell.meeting_longitude ?? null,
+          };
+          await CellService.updateCell(cell);
+        }
         setCells(prev => [cell, ...prev.filter(existing => existing.id !== cell.id)]);
       }
       setIsEditModalOpen(false);
@@ -258,6 +276,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
           </button>
         </div>
       </div>
+
+      <CellLocationsMap cells={cells.filter(cell => cell.is_active && !cell.is_archived)} />
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-wrap items-center justify-between gap-4">
@@ -684,10 +704,40 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   placeholder="e.g. Agape Cell"
                   className="w-full p-3 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                 />
-                <p className="mt-2 text-[11px] text-[#667085]">Admin creates the official cell name only. Tutors select this cell when they register; their accounts automatically become cell leaders.</p>
               </div>
+              <div>
+                <label className="block font-bold text-[#182230] mb-1">Meeting Venue Address</label>
+                <input
+                  type="text"
+                  value={editingCell.venue_address || ''}
+                  onChange={e => setEditingCell({ ...editingCell, venue_address: e.target.value })}
+                  placeholder="Enter the actual cell meeting venue"
+                  className="w-full p-3 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#182230] mb-1">Latitude</label>
+                  <input type="number" step="any" min="-90" max="90"
+                    value={editingCell.meeting_latitude ?? ''}
+                    onChange={e => setEditingCell({ ...editingCell, meeting_latitude: e.target.value === '' ? null : Number(e.target.value) })}
+                    placeholder="e.g. 5.6037"
+                    className="w-full p-3 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#182230] mb-1">Longitude</label>
+                  <input type="number" step="any" min="-180" max="180"
+                    value={editingCell.meeting_longitude ?? ''}
+                    onChange={e => setEditingCell({ ...editingCell, meeting_longitude: e.target.value === '' ? null : Number(e.target.value) })}
+                    placeholder="e.g. -0.1870"
+                    className="w-full p-3 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-[#667085]">Enter coordinates from the real venue pin in Google Maps. Do not use estimated coordinates; the map only plots verified locations.</p>
               <button type="submit" className="w-full rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold py-3">
-                {editingCell.id ? 'Save Cell Name' : 'Create Cell'}
+                {editingCell.id ? 'Save Cell Details' : 'Create Cell'}
               </button>
             </form>
           </div>

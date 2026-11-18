@@ -325,7 +325,55 @@ Deno.serve(async req => {
     const recipientIds = (recipients || [])
       .map((row: any) => String(row.id))
       .filter((id: string) => id !== auth.profile.id);
-    if (!recipientIds.length) return json({ sent: 0, failed: 0, message: "No other active recipients" });
+
+    // Respect the receiver's call block list before persisting or pushing an
+    // incoming-call alert. Service-role access is confined to this server function.
+    if (notification.type === "incoming_call" && notification.metadata?.callId) {
+      const { data: blockedCaller, error: blockLookupError } = await db
+        .from("call_blocked_users")
+        .select("id")
+        .eq("user_id", target)
+        .eq("blocked_user_id", auth.profile.id)
+        .maybeSingle();
+      if (blockLookupError) {
+        console.error("Could not verify recipient call-block settings:", blockLookupError);
+        return json({ error: "Unable to verify call permissions." }, 500);
+      }
+      if (blockedCaller) {
+        await db.from("call_sessions")
+          .update({ status: "declined", ended_at: new Date().toISOString() })
+          .eq("id", notification.metadata.callId)
+          .eq("receiver_id", target);
+        return json({ sent: 0, failed: 0, message: "Call declined by recipient block settings." });
+      }
+    }
+
+    // Persist every notification server-side. The browser may not be allowed
+    // to insert a notification for another user under RLS, so this trusted
+    // authenticated edge function performs the upsert with the service role.
+    const storedNotification = {
+      id: String(notification.id).slice(0, 200),
+      user_id: target,
+      recipient_target: target,
+      title: String(notification.title).slice(0, 140),
+      message: String(notification.message).slice(0, 500),
+      type: String(notification.type || "system_alert").slice(0, 80),
+      channel: String(notification.channel || "in_app").slice(0, 40),
+      target_tab: notification.metadata?.targetTab ? String(notification.metadata.targetTab).slice(0, 80) : null,
+      action_url: notification.metadata?.actionUrl ? String(notification.metadata.actionUrl).slice(0, 2000) : null,
+      is_read: false,
+      read_at: null,
+      metadata: notification.metadata || {},
+      created_at: notification.created_at || new Date().toISOString(),
+    };
+    const { error: persistenceError } = await db.from("notifications")
+      .upsert(storedNotification, { onConflict: "id" });
+    if (persistenceError) {
+      console.error("Notification persistence failed:", persistenceError);
+      return json({ error: "The notification could not be saved." }, 500);
+    }
+
+    if (!recipientIds.length) return json({ sent: 0, failed: 0, message: "Notification saved; no other active recipients." });
 
     const { data: devices, error: deviceError } = await db.from("device_tokens")
       .select("id,user_id,token,legacy_data").in("user_id", recipientIds);

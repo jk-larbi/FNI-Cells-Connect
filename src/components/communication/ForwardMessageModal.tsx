@@ -50,13 +50,15 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
 
   if (!isOpen || !message) return null;
 
+  // Only show real, supplied tutor destinations. The former hard-coded
+  // "themelios-community" target was not a real Supabase group identifier.
   const destinations: ForwardDestination[] = [
     {
       type: 'community',
-      id: 'themelios-community',
-      name: 'Themelios Class - FNI Community',
-      role: 'Official Group',
-      cellName: 'Fellowship Network',
+      id: 'community',
+      name: 'FNI Community',
+      role: 'Official Community',
+      cellName: 'All Active FNI Members',
     },
     ...tutorList.map(t => ({
       type: 'private' as const,

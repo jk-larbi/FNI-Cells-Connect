@@ -315,12 +315,23 @@ export class NotificationService {
     const updated = [newNotif, ...current];
     setStoredNotifications(updated);
 
-    // 4. Dispatch a local notification to the sender's currently open browser where permitted
-    PushNotificationService.showLocalNotification(item.title, {
-      body: item.message,
-      tag: id,
-      data: item.metadata,
-    });
+    // 4. Only show a local system notification when this browser belongs to
+    // the actual recipient. Cross-user notifications are pushed by the edge
+    // function to recipient devices; showing them here would notify the sender.
+    if (supabase) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id && user.id === item.userId) {
+          PushNotificationService.showLocalNotification(item.title, {
+            body: item.message,
+            tag: id,
+            data: item.metadata,
+          });
+        }
+      } catch (localNotificationError) {
+        console.warn('Unable to verify local notification recipient:', localNotificationError);
+      }
+    }
 
     return newNotif;
   }
