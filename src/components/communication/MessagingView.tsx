@@ -2711,7 +2711,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {/* Message Stream */}
             <div
               ref={messageStreamRef}
-              className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4 space-y-3 telegram-chat-wallpaper"
+              className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-3 sm:p-4 space-y-3 telegram-chat-wallpaper"
             >
               {currentMessages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-white/90">
@@ -2758,8 +2758,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             handleMessageContextMenu(e, msg);
                           }
                         }}
-                        className={`group relative flex items-end gap-2 select-none w-full ${
-                          isMine ? 'justify-end' : 'justify-start'
+                        className={`group relative flex items-end select-none w-full ${
+                          isMine ? 'justify-end' : 'justify-start gap-2'
                         }`}
                         style={{
                           transform: isSwiping ? `translateX(${swipeOffset}px)` : 'none',
@@ -2797,13 +2797,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           </div>
                         )}
 
-                        {/* Chat Bubble (Telegram styling matching reference) */}
-                        <div
-                          className={`relative max-w-[85%] sm:max-w-[72%] p-3 text-xs transition-shadow text-left ${
-                            isMine ? 'telegram-bubble-outgoing ml-auto' : 'telegram-bubble-incoming mr-auto'
-                          }`}
-                          style={{ textAlign: 'left' }}
-                        >
+                        {/* Chat Bubble Container with Floating Action Overlay */}
+                        <div className={`relative max-w-[85%] sm:max-w-[72%] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
+                          {/* Chat Bubble (Telegram styling matching reference) */}
+                          <div
+                            className={`p-3 text-xs transition-shadow text-left ${
+                              isMine ? 'telegram-bubble-outgoing' : 'telegram-bubble-incoming'
+                            }`}
+                            style={{ textAlign: 'left' }}
+                          >
                           {/* Sender header in community chats */}
                           {!isMine && selectedChatId === 'community' && (
                             <div
@@ -2982,8 +2984,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           )}
                         </div>
 
-                        {/* Desktop Hover action menu (Hidden on mobile; on mobile users tap or long-press) */}
-                        <div className="hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity items-center gap-0.5 text-white/80 shrink-0">
+                        {/* Desktop Hover action menu (Floating absolute overlay so it never pushes message away from the end) */}
+                        <div
+                          className={`hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity items-center gap-0.5 text-white/80 absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none group-hover:pointer-events-auto bg-slate-900/70 dark:bg-black/60 backdrop-blur-md rounded-full px-1 py-0.5 border border-white/10 shadow-lg ${
+                            isMine ? 'right-full mr-2' : 'left-full ml-2'
+                          }`}
+                        >
                           <button
                             type="button"
                             onClick={() => {
@@ -2995,7 +3001,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               });
                               composerInputRef.current?.focus();
                             }}
-                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
                             title="Reply"
                           >
                             <Reply className="w-3.5 h-3.5" />
@@ -3003,7 +3009,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleAddReaction(msg.id, '❤️')}
-                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer text-xs"
                             title="Heart"
                           >
                             ❤️
@@ -3014,7 +3020,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               setForwardTargetMessage(msg);
                               setIsForwardModalOpen(true);
                             }}
-                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
                             title="Forward message"
                           >
                             <Forward className="w-3.5 h-3.5" />
@@ -3022,7 +3028,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleOpenDeleteModal(msg)}
-                            className="p-1 rounded-full bg-black/30 hover:bg-rose-600/80 backdrop-blur-xs text-white hover:text-white cursor-pointer"
+                            className="p-1 rounded-full hover:bg-rose-600/80 transition-colors text-white hover:text-white cursor-pointer"
                             title="Delete message"
                           >
                             <Trash2 className="w-3.5 h-3.5 text-rose-400" />
@@ -3031,7 +3037,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             <button
                               type="button"
                               onClick={() => handleTogglePin(msg)}
-                              className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                              className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
                               title={msg.isPinned ? 'Unpin' : 'Pin to top'}
                             >
                               <Pin className="w-3.5 h-3.5" />
@@ -3040,13 +3046,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           <button
                             type="button"
                             onClick={e => handleMessageContextMenu(e, msg)}
-                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
                             title="More options"
                           >
                             <MoreVertical className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
+                    </div>
                     </React.Fragment>
                   );
                 })
