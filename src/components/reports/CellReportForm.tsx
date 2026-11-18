@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
+import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import { EvangelismReportForm } from './EvangelismReportForm';
 import {
   Users,
@@ -34,6 +35,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const { dispatchNotification } = useNotifications();
+  const meetingDeadlineInfo = getCurrentDeadlineInfo(undefined, undefined, 'meeting');
 
   // Report Type Tab: 'meeting' (Cell Meeting Report) or 'evangelism' (Evangelism Report)
   const [reportType, setReportType] = useState<'meeting' | 'evangelism'>('meeting');
@@ -240,7 +242,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
                 Cell Meeting Report
               </h2>
               <p className="text-xs text-slate-300 mt-0.5">
-                Official weekly fellowship record • Due Sunday at 6:00 PM Ghana Time (Africa/Accra)
+                Official weekly fellowship record • Due {meetingDeadlineInfo.deadlineFormatted}
               </p>
             </div>
             <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { FollowUpService } from '../../services/followUpService';
+import { getCurrentDeadlineInfo } from '../../utils/deadlineUtil';
 import {
   Flame,
   Users,
@@ -35,6 +36,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const { dispatchNotification } = useNotifications();
+  const evangDeadlineInfo = getCurrentDeadlineInfo(undefined, undefined, 'evangelism');
 
   const [cells, setCells] = useState<Cell[]>([]);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(true);
@@ -264,7 +266,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
               Evangelism & Soul-Winning Report
             </h2>
             <p className="text-xs text-slate-300 mt-0.5">
-              Record territory outreach, people spoken to, salvation harvest, and follow-up contacts
+              Record territory outreach & salvation harvest • Due {evangDeadlineInfo.deadlineFormatted}
             </p>
           </div>
           <div className="flex items-center gap-2">

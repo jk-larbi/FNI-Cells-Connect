@@ -165,17 +165,48 @@ export class DeadlineService {
 
     // Save to Supabase system_settings
     if (isSupabaseConfigured && supabase) {
+      const summaryDeadline = `Cell Meetings: ${merged.meeting.dayName} at ${merged.meeting.deadlineTime} | Evangelism: ${merged.evangelism.dayName} at ${merged.evangelism.deadlineTime} Ghana Time`;
       try {
-        await supabase.from('system_settings').upsert({
+        const { error } = await supabase.from('system_settings').upsert({
           id: 'global',
           submission_deadline_day: merged.meeting.dayName,
           submission_deadline_time: merged.meeting.deadlineTime,
-          weekly_deadline: `Every ${merged.meeting.dayName} at ${merged.meeting.deadlineTime} Ghana Time (Africa/Accra)`,
+          enable_meeting_reminders: merged.meeting.remindersEnabled,
+          evangelism_deadline_day: merged.evangelism.dayName,
+          evangelism_deadline_time: merged.evangelism.deadlineTime,
+          enable_evangelism_reminders: merged.evangelism.remindersEnabled,
+          weekly_deadline: summaryDeadline,
           updated_at: nowIso,
           updated_by: updatedBy,
         }, { onConflict: 'id' });
+
+        if (error) {
+          // Fallback to SECURITY DEFINER RPC
+          await supabase.rpc('save_fni_report_deadlines', {
+            p_meeting_day: merged.meeting.dayName,
+            p_meeting_time: merged.meeting.deadlineTime,
+            p_evang_day: merged.evangelism.dayName,
+            p_evang_time: merged.evangelism.deadlineTime,
+            p_enable_meeting_reminders: merged.meeting.remindersEnabled,
+            p_enable_evangelism_reminders: merged.evangelism.remindersEnabled,
+            p_updated_by: updatedBy,
+          });
+        }
       } catch (e) {
-        console.warn('Failed saving deadline settings to Supabase', e);
+        console.warn('Failed saving deadline settings to Supabase, attempting RPC fallback', e);
+        try {
+          await supabase.rpc('save_fni_report_deadlines', {
+            p_meeting_day: merged.meeting.dayName,
+            p_meeting_time: merged.meeting.deadlineTime,
+            p_evang_day: merged.evangelism.dayName,
+            p_evang_time: merged.evangelism.deadlineTime,
+            p_enable_meeting_reminders: merged.meeting.remindersEnabled,
+            p_enable_evangelism_reminders: merged.evangelism.remindersEnabled,
+            p_updated_by: updatedBy,
+          });
+        } catch (rpcErr) {
+          console.warn('Deadline RPC fallback error:', rpcErr);
+        }
       }
     }
 

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { ReportService } from '../../services/reportService';
+import { DeadlineService, DAYS_OF_WEEK } from '../../services/deadlineService';
 import { SystemSettings, AuditLog } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { useBackHandler } from '../../hooks/useBackHandler';
@@ -21,11 +22,14 @@ import {
   Compass,
   Target,
   Bell,
+  BellRing,
   History,
   User,
   Wheat,
   Award,
   Sliders,
+  FileCheck,
+  Flame,
 } from 'lucide-react';
 
 interface AdminSettingsViewProps {
@@ -43,6 +47,15 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   const [mission, setMission] = useState('');
   const [target, setTarget] = useState(5000);
   const [deadline, setDeadline] = useState('Sunday at 6:00 PM Ghana Time (Africa/Accra)');
+
+  // Deadline Cutoff Day & Time States for Both Report Types
+  const [meetingDay, setMeetingDay] = useState(0); // Sunday
+  const [meetingTime, setMeetingTime] = useState('18:00');
+  const [meetingReminders, setMeetingReminders] = useState(true);
+
+  const [evangDay, setEvangDay] = useState(6); // Saturday
+  const [evangTime, setEvangTime] = useState('17:00');
+  const [evangReminders, setEvangReminders] = useState(true);
 
   // Password Change state
   const [newPassword, setNewPassword] = useState('');
@@ -83,9 +96,10 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
 
   useEffect(() => {
     async function load() {
-      const [s, logs] = await Promise.all([
+      const [s, logs, dl] = await Promise.all([
         SettingsService.getSettings(),
         ReportService.getAuditLogs(),
+        DeadlineService.getDeadlineSettings(),
       ]);
       setSettings(s);
       setVision(s.vision);
@@ -93,6 +107,14 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       setTarget(s.annualSoulWinningTarget);
       setDeadline(s.weeklyDeadline);
       setAuditLogs(logs);
+
+      setMeetingDay(dl.meeting.dayOfWeek);
+      setMeetingTime(dl.meeting.deadlineTime);
+      setMeetingReminders(dl.meeting.remindersEnabled);
+      setEvangDay(dl.evangelism.dayOfWeek);
+      setEvangTime(dl.evangelism.deadlineTime);
+      setEvangReminders(dl.evangelism.remindersEnabled);
+
       const { data: emailSettings } = await supabase.from('admin_notification_settings').select('notification_email').eq('id', 1).maybeSingle();
       setNotificationEmail(emailSettings?.notification_email || '');
     }
@@ -104,14 +126,42 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
     setIsSavingSystem(true);
     setSystemSaveNotice('');
     try {
+      const meetingDayName = DAYS_OF_WEEK.find(d => d.value === Number(meetingDay))?.label || 'Sunday';
+      const evangDayName = DAYS_OF_WEEK.find(d => d.value === Number(evangDay))?.label || 'Saturday';
+      const summaryDeadline = `Cell Meetings: ${meetingDayName} at ${meetingTime} | Evangelism: ${evangDayName} at ${evangTime} Ghana Time`;
+
+      // 1. Update deadlines in DeadlineService (Supabase & localStorage)
+      await DeadlineService.updateDeadlineSettings(
+        {
+          meeting: {
+            reportType: 'meeting',
+            dayOfWeek: Number(meetingDay),
+            dayName: meetingDayName,
+            deadlineTime: meetingTime,
+            remindersEnabled: meetingReminders,
+          },
+          evangelism: {
+            reportType: 'evangelism',
+            dayOfWeek: Number(evangDay),
+            dayName: evangDayName,
+            deadlineTime: evangTime,
+            remindersEnabled: evangReminders,
+          },
+        },
+        currentUser?.full_name || 'Administrator'
+      );
+
+      // 2. Update core foundation in SettingsService
       await SettingsService.updateSettings({
         vision,
         mission,
         annualSoulWinningTarget: target,
-        weeklyDeadline: deadline,
+        weeklyDeadline: summaryDeadline,
       }, currentUser?.full_name || 'Administrator');
-      setSystemSaveNotice('Vision, Mission, and annual soul-winning target saved across FNI.');
-      setTimeout(() => setSystemSaveNotice(''), 4500);
+
+      setDeadline(summaryDeadline);
+      setSystemSaveNotice('Vision, Mission, annual target, and cutoff times for both Cell Meetings and Evangelism saved across FNI.');
+      setTimeout(() => setSystemSaveNotice(''), 5000);
     } catch (error: any) {
       setSystemSaveNotice(error?.message || 'Could not save ministry settings. Please try again.');
     } finally {
@@ -372,29 +422,160 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
                   </div>
                 </div>
 
-                {/* Reporting Cutoff Deadline */}
-                <div className="rounded-xl border border-slate-800 p-4 bg-[#0f1d32]/70 space-y-3">
+                {/* Reporting Cutoff Deadlines for Both Report Types */}
+                <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 font-bold text-white">
+                    <div className="flex items-center gap-2 font-bold text-white text-xs sm:text-sm">
                       <div className="w-6 h-6 rounded-lg bg-indigo-950/40 flex items-center justify-center text-indigo-400">
                         <Clock className="w-3.5 h-3.5" />
                       </div>
-                      <span>Reporting Cutoff Deadline</span>
+                      <span>Reporting Cutoff Deadlines</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-slate-300 bg-white/10 px-2 py-0.5 rounded border border-white/10">
+                    <span className="text-[10px] font-bold text-[#C6A45A] bg-[#C6A45A]/15 px-2 py-0.5 rounded-full border border-[#C6A45A]/30">
                       GMT (Africa/Accra)
                     </span>
                   </div>
-                  <input
-                    type="text"
-                    value={deadline}
-                    onChange={e => setDeadline(e.target.value)}
-                    required
-                    placeholder="e.g. Sunday at 6:00 PM Ghana Time"
-                    className="w-full p-2.5 rounded-lg border border-slate-700 bg-[#16233a] text-white text-xs font-semibold focus:border-[#C6A45A] focus:ring-1 focus:ring-[#C6A45A] focus:outline-none shadow-sm"
-                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* 1. Cell Meeting Reports Cutoff */}
+                    <div className="rounded-xl border border-slate-800 p-3.5 bg-[#0f1d32]/80 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-blue-950/50 border border-blue-800/50 flex items-center justify-center text-blue-400">
+                            <FileCheck className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-white leading-tight">Cell Meeting Reports</h4>
+                            <span className="text-[10px] text-slate-400">Weekly fellowship returns</span>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-bold text-blue-300 bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-800/60">
+                          {DAYS_OF_WEEK.find(d => d.value === Number(meetingDay))?.label} {meetingTime}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                            Cutoff Day
+                          </label>
+                          <select
+                            value={meetingDay}
+                            onChange={e => setMeetingDay(Number(e.target.value))}
+                            className="w-full p-2 rounded-lg border border-slate-700 bg-[#16233a] text-white text-xs font-semibold focus:border-[#C6A45A] focus:outline-none"
+                          >
+                            {DAYS_OF_WEEK.map(d => (
+                              <option key={d.value} value={d.value}>
+                                {d.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                            Cutoff Time
+                          </label>
+                          <input
+                            type="time"
+                            value={meetingTime}
+                            onChange={e => setMeetingTime(e.target.value)}
+                            className="w-full p-2 rounded-lg border border-slate-700 bg-[#16233a] text-white text-xs font-semibold focus:border-[#C6A45A] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 text-[11px] text-slate-300">
+                        <div className="flex items-center gap-1.5">
+                          <BellRing className="w-3.5 h-3.5 text-[#C6A45A]" />
+                          <span>Deadline reminders</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setMeetingReminders(!meetingReminders)}
+                          className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                            meetingReminders ? 'bg-emerald-500' : 'bg-slate-700'
+                          }`}
+                        >
+                          <span
+                            className={`block w-4 h-4 rounded-full bg-white transition-transform transform ${
+                              meetingReminders ? 'translate-x-4' : 'translate-x-0.5'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 2. Evangelism Reports Cutoff */}
+                    <div className="rounded-xl border border-slate-800 p-3.5 bg-[#0f1d32]/80 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-amber-950/50 border border-amber-800/50 flex items-center justify-center text-amber-400">
+                            <Flame className="w-4 h-4 text-[#C6A45A]" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-white leading-tight">Evangelism Reports</h4>
+                            <span className="text-[10px] text-slate-400">Souls & outreach returns</span>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-800/60">
+                          {DAYS_OF_WEEK.find(d => d.value === Number(evangDay))?.label} {evangTime}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                            Cutoff Day
+                          </label>
+                          <select
+                            value={evangDay}
+                            onChange={e => setEvangDay(Number(e.target.value))}
+                            className="w-full p-2 rounded-lg border border-slate-700 bg-[#16233a] text-white text-xs font-semibold focus:border-[#C6A45A] focus:outline-none"
+                          >
+                            {DAYS_OF_WEEK.map(d => (
+                              <option key={d.value} value={d.value}>
+                                {d.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                            Cutoff Time
+                          </label>
+                          <input
+                            type="time"
+                            value={evangTime}
+                            onChange={e => setEvangTime(e.target.value)}
+                            className="w-full p-2 rounded-lg border border-slate-700 bg-[#16233a] text-white text-xs font-semibold focus:border-[#C6A45A] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 text-[11px] text-slate-300">
+                        <div className="flex items-center gap-1.5">
+                          <BellRing className="w-3.5 h-3.5 text-[#C6A45A]" />
+                          <span>Deadline reminders</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEvangReminders(!evangReminders)}
+                          className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                            evangReminders ? 'bg-emerald-500' : 'bg-slate-700'
+                          }`}
+                        >
+                          <span
+                            className={`block w-4 h-4 rounded-full bg-white transition-transform transform ${
+                              evangReminders ? 'translate-x-4' : 'translate-x-0.5'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Standard: Sunday 6:00 PM Ghana Time. After this deadline, cell reports are marked as late.
+                    Cutoffs are computed strictly in Ghana Time (Africa/Accra, GMT). Submissions after these times are automatically tagged as <em>Submitted Late</em>.
                   </p>
                 </div>
               </div>

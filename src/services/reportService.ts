@@ -104,7 +104,7 @@ export class ReportService {
     isDraft?: boolean;
   }): Promise<CellMeetingReport> {
     const nowIso = new Date().toISOString();
-    const deadlineInfo = getCurrentDeadlineInfo();
+    const deadlineInfo = getCurrentDeadlineInfo(undefined, undefined, 'meeting');
     const timing = evaluateSubmissionTiming(nowIso, deadlineInfo.deadlineIso);
 
     // Duplicate check: Prevent duplicate submissions for same cell and meetingDate
@@ -295,7 +295,7 @@ export class ReportService {
     testimonies?: string;
   }): Promise<EvangelismReport> {
     const nowIso = new Date().toISOString();
-    const deadlineInfo = getCurrentDeadlineInfo();
+    const deadlineInfo = getCurrentDeadlineInfo(undefined, undefined, 'evangelism');
     const timing = evaluateSubmissionTiming(nowIso, deadlineInfo.deadlineIso);
 
     const reportId = data.id || `evr-${Date.now()}`;

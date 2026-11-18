@@ -7,6 +7,7 @@ import { SettingsService } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { CellLocationService } from '../../services/cellLocationService';
 import { AuthService } from '../../services/authService';
+import { DeadlineService } from '../../services/deadlineService';
 import { DashboardStats, SystemSettings, Cell, CellPerformanceRecord, CellLocationRecord, CellMeetingReport, EvangelismReport } from '../../types';
 import {
   BarChart3,
@@ -106,6 +107,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   // Right sidebar tab: 'activities' or 'tutors'
   const [sidebarTab, setSidebarTab] = useState<'activities' | 'tutors'>('activities');
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
+  const [deadlineSettings, setDeadlineSettings] = useState(DeadlineService.getDeadlineSettingsSync());
+
+  useEffect(() => {
+    DeadlineService.getDeadlineSettings().then(ds => setDeadlineSettings(ds));
+    const unsub = DeadlineService.subscribe(ds => setDeadlineSettings(ds));
+    return () => unsub();
+  }, []);
 
   // Live updates & animation state
   const [liveActivities, setLiveActivities] = useState<TutorActivityItem[]>([]);
@@ -815,7 +823,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                       Reporting Rate
                     </h4>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Weekly Sunday Cutoff
+                      Weekly {deadlineSettings.meeting.dayName} Cutoff
                     </span>
                   </div>
                 </div>
@@ -837,7 +845,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     {cellStats.filter(c => c.meetingReportsCount > 0).length} of {cellStats.length || stats.totalCells} cells
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
-                    Sun 6PM GMT
+                    {deadlineSettings.meeting.dayName.slice(0, 3)} {deadlineSettings.meeting.deadlineTime} GMT
                   </span>
                 </div>
               </div>
