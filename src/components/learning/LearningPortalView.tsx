@@ -125,17 +125,6 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
       {/* 1. Portal Navigation Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E3E8EF] dark:border-[#26384d]">
         <div className="flex items-center gap-3">
-          {onBack && (
-            <button
-              type="button"
-              onClick={handleBackNavigation}
-              className="p-2 rounded-xl bg-[#F5F7FA] dark:bg-[#172437] hover:bg-[#E3E8EF] text-[#142B4A] dark:text-slate-200 transition-colors cursor-pointer group"
-              title="Return to previous section"
-            >
-              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-            </button>
-          )}
-
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#142B4A] text-[#C6A45A] flex items-center justify-center shadow-xs">
               <GraduationCap className="w-5 h-5" />

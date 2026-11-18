@@ -1018,6 +1018,30 @@ export class NotificationService {
   }
 
   /**
+   * Refreshes notification store directly from Supabase and notifies subscribers
+   */
+  static async refreshUserNotifications(userId: string, role: string): Promise<NotificationItem[]> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const remoteItems = await SupabaseService.getNotifications(userId);
+        if (remoteItems !== null) {
+          const authoritative = [...remoteItems].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+          setStoredNotifications(authoritative);
+          const dismissed = await this.loadDismissedIds(userId);
+          const visible = this.filterForUser(authoritative, userId, role).filter(item => !dismissed.has(item.id));
+          SUBSCRIBERS.forEach(cb => cb(authoritative));
+          return visible;
+        }
+      } catch (err) {
+        console.warn('Supabase notifications refresh notice:', err);
+      }
+    }
+    return this.filterForUser(getStoredNotifications(), userId, role);
+  }
+
+  /**
    * Real-time subscription to notifications for a specific user and role
    */
   static subscribeToUserNotifications(

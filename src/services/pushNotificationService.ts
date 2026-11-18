@@ -12,6 +12,7 @@ export interface PushPreferences {
 
 const STORAGE_KEYS = { PREFERENCES_PREFIX: 'fni_push_pref_', TOKEN_PREFIX: 'fni_fcm_token_' };
 const FUNCTION_NAME = 'fni-web-push';
+let pendingClickData: any = null;
 
 const isNativeAndroid = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
 const isAppleMobileWeb = (): boolean => {
@@ -203,14 +204,7 @@ export class PushNotificationService {
         reject(new Error('Android did not return an FCM device token. Check the Firebase Android configuration and try again.'));
       }, 20000);
       try {
-        await PushNotifications.createChannel({
-          id: 'fni_updates',
-          name: 'FNI Updates',
-          description: 'Messages, reports and important FNI activity',
-          importance: 5,
-          sound: 'default',
-          vibration: true,
-        });
+        await this.initializeNativeChannels();
         registrationListener = await PushNotifications.addListener('registration', async ({ value }) => {
           if (settled) return;
           try {
@@ -355,6 +349,36 @@ export class PushNotificationService {
     }
   }
 
+  static getPendingNotificationClick(): any {
+    const data = pendingClickData;
+    pendingClickData = null;
+    return data;
+  }
+
+  static async initializeNativeChannels(): Promise<void> {
+    if (!isNativeAndroid()) return;
+    try {
+      await PushNotifications.createChannel({
+        id: 'fni_updates',
+        name: 'FNI Updates',
+        description: 'Messages, reports and important FNI activity',
+        importance: 5,
+        sound: 'default',
+        vibration: true,
+      });
+      await PushNotifications.createChannel({
+        id: 'fni_calls',
+        name: 'FNI Calls & Meetings',
+        description: 'Incoming voice/video calls and cell meetings',
+        importance: 5,
+        sound: 'default',
+        vibration: true,
+      });
+    } catch (e) {
+      console.warn('Could not initialize native Android notification channels:', e);
+    }
+  }
+
   static async setupForegroundListener(
     onReceive: (payload: { title: string; body: string; data?: any }) => void
   ): Promise<(() => void) | null> {
@@ -363,7 +387,9 @@ export class PushNotificationService {
         onReceive({ title: notification.title || 'FNI Cells Connect', body: notification.body || '', data: notification.data });
       });
       const action = await PushNotifications.addListener('pushNotificationActionPerformed', event => {
-        window.dispatchEvent(new CustomEvent('fni-native-push-click', { detail: event.notification.data || {} }));
+        const payload = event.notification.data || {};
+        pendingClickData = payload;
+        window.dispatchEvent(new CustomEvent('fni-native-push-click', { detail: payload }));
       });
       return () => { void received.remove(); void action.remove(); };
     }

@@ -113,6 +113,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       try {
         if (Capacitor.isNativePlatform()) {
+          await PushNotificationService.initializeNativeChannels();
+          const pending = PushNotificationService.getPendingNotificationClick();
+          if (pending?.targetTab) {
+            setActiveNavigationTarget({
+              targetTab: pending.targetTab,
+              reportId: pending.reportId,
+              conversationId: pending.conversationId,
+              materialId: pending.materialId,
+            });
+          }
           if (currentUser?.id) {
             const active = await PushNotificationService.syncExistingSubscription(currentUser.id);
             if (!cancelled) setIsPushEnabled(active);
@@ -149,20 +159,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     );
 
-    // Setup foreground FCM listener
-    let unsubscribeForeground: (() => void) | null = null;
-    PushNotificationService.setupForegroundListener(payload => {
-      // Re-trigger local notification refresh
-      const notifs = NotificationService.filterForUser(
-        JSON.parse(localStorage.getItem('fni_notifications_store_v2') || '[]'),
-        currentUser.id,
-        currentUser.role
-      );
-      setNotifications(notifs);
-    }).then(unsub => {
-      if (unsub) unsubscribeForeground = unsub;
-    });
-
     // Listen for background service worker click messages via postMessage
     const handleServiceWorkerMessage = (event: MessageEvent) => {
       if (event.data?.type === 'FNI_NOTIFICATION_CLICK' && event.data?.targetTab) {
@@ -177,6 +173,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
     }
+
+    // Native Android push tap listener (attach early before setupForegroundListener)
     const handleNativePushClick = (event: Event) => {
       const data = (event as CustomEvent).detail || {};
       setActiveNavigationTarget({
@@ -187,6 +185,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
     };
     window.addEventListener('fni-native-push-click', handleNativePushClick);
+
+    // Setup foreground FCM listener & real-time refresh
+    let unsubscribeForeground: (() => void) | null = null;
+    PushNotificationService.setupForegroundListener(async () => {
+      // Re-trigger live Supabase notification refresh for fresh content
+      const fresh = await NotificationService.refreshUserNotifications(currentUser.id, currentUser.role);
+      setNotifications(fresh);
+    }).then(unsub => {
+      if (unsub) unsubscribeForeground = unsub;
+    });
 
     return () => {
       unsubscribe();

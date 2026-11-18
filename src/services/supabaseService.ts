@@ -1898,14 +1898,14 @@ export class SupabaseService {
   // --- Device Tokens ---
   static async upsertDeviceToken(data: { id: string; userId: string; token: string; device?: string; platform?: string }): Promise<boolean> {
     if (!isSupabaseConfigured || !supabase) return false;
-    const payload = {
+    const payload: any = {
       id: data.id,
       user_id: data.userId,
       token: data.token,
-      device_type: data.device || "Web",
+      device: data.device || "Web",
       platform: data.platform || "Web",
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "Unknown",
-      last_active: new Date().toISOString(),
+      legacy_data: { kind: data.platform === 'Android' ? 'fcm' : 'webpush' },
+      updated_at: new Date().toISOString(),
     };
     try {
       const { error } = await supabase.from("device_tokens").upsert(payload, { onConflict: "token" });

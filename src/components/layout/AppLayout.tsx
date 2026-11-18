@@ -505,14 +505,6 @@ export const AppLayout: React.FC = () => {
             {/* Shared notifications tab */}
             {effectiveTab === 'notifications' && (
               <div className="max-w-2xl mx-auto space-y-4">
-                <button
-                  type="button"
-                  onClick={handleGoBack}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] text-xs font-bold transition-all border border-[#E3E8EF] cursor-pointer group shadow-2xs"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-                  <span>Back to Previous</span>
-                </button>
                 <NotificationCenterModal
                   isOpen={true}
                   onClose={handleGoBack}
