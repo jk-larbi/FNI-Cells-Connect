@@ -62,26 +62,8 @@ export class CallSignalingService {
       .single();
 
     if (error || !data) {
-      console.warn('Call session DB insert fallback:', error);
-      // Return local memory session if table does not yet exist
-      const localSession: CallSession = {
-        id: crypto.randomUUID(),
-        caller_id: params.callerId,
-        caller_name: params.callerName,
-        caller_avatar: params.callerAvatar,
-        caller_cell: params.callerCell,
-        receiver_id: params.receiverId,
-        receiver_name: params.receiverName,
-        receiver_avatar: params.receiverAvatar,
-        room_id: roomId,
-        call_type: params.callType,
-        call_mode: 'direct',
-        status: 'ringing',
-        started_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-      };
-      this.dispatchCallNotifications(localSession);
-      return localSession;
+      console.error('Call session could not be persisted:', error);
+      throw error || new Error('The call could not be started. Please try again.');
     }
 
     const session = data as CallSession;
@@ -355,19 +337,16 @@ export class CallSignalingService {
   }
 
   static async isUserBlocked(userId: string, targetUserId: string): Promise<boolean> {
-    if (!supabase) return false;
-    try {
-      const { data } = await supabase
-        .from('call_blocked_users')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('blocked_user_id', targetUserId)
-        .maybeSingle();
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { data, error } = await supabase
+      .from('call_blocked_users')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('blocked_user_id', targetUserId)
+      .maybeSingle();
 
-      return Boolean(data);
-    } catch {
-      return false;
-    }
+    if (error) throw error;
+    return Boolean(data);
   }
 
   // ---------------------------------------------------------------------------
