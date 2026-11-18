@@ -39,7 +39,6 @@ import {
   AlertTriangle,
   Send,
   MessageSquare,
-  Sparkles,
 } from 'lucide-react';
 
 export interface ProfileSettingsProps {

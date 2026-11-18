@@ -17,7 +17,6 @@ import {
   Bell,
   ArrowRight,
   GraduationCap,
-  Sparkles,
   Inbox,
   Send,
   HelpCircle,

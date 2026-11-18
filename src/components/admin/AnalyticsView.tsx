@@ -7,7 +7,7 @@ import { SettingsService } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { CellLocationService } from '../../services/cellLocationService';
 import { AuthService } from '../../services/authService';
-import { DashboardStats, SystemSettings, Cell, CellPerformanceRecord, CellLocationRecord } from '../../types';
+import { DashboardStats, SystemSettings, Cell, CellPerformanceRecord, CellLocationRecord, CellMeetingReport, EvangelismReport } from '../../types';
 import {
   BarChart3,
   Download,
@@ -24,16 +24,12 @@ import {
   Search,
   Radio,
   MapPin,
-  Sparkles,
   Clock,
   ArrowUpRight,
   Activity,
   Wifi,
   Compass,
-  Play,
-  Pause,
   RefreshCw,
-  Zap,
   ChevronRight,
   UserCheck,
   HeartHandshake,
@@ -86,18 +82,6 @@ interface CellMapBeacon {
   isActiveNow?: boolean;
 }
 
-// Sample Ghanaian cell radar points for spatial visualisation
-const DEFAULT_MAP_BEACONS: CellMapBeacon[] = [
-  { id: 'b1', cellName: 'Grace Fellowship Cell', tutorName: 'Grace Mensah', venue: 'East Legon, Accra', xPct: 62, yPct: 40, attendance: 38, soulsWon: 4, isActiveNow: true },
-  { id: 'b2', cellName: 'Faith Harvest Cell', tutorName: 'David Osei', venue: 'Achimota Area, Accra', xPct: 44, yPct: 35, attendance: 29, soulsWon: 2, isActiveNow: true },
-  { id: 'b3', cellName: 'Victory Outreach Cell', tutorName: 'Hannah Quaye', venue: 'Kasoa Old Barrier', xPct: 22, yPct: 70, attendance: 42, soulsWon: 6, isActiveNow: false },
-  { id: 'b4', cellName: 'Dunamis Revival Cell', tutorName: 'Samuel Addo', venue: 'Tema Community 4', xPct: 84, yPct: 52, attendance: 34, soulsWon: 3, isActiveNow: true },
-  { id: 'b5', cellName: 'Glory Sanctuary Cell', tutorName: 'Priscilla Boateng', venue: 'Dansoman High St', xPct: 36, yPct: 62, attendance: 26, soulsWon: 1, isActiveNow: false },
-  { id: 'b6', cellName: 'Kingdom Power Cell', tutorName: 'Emmanuel Tetteh', venue: 'Madina Zongo Junc', xPct: 66, yPct: 28, attendance: 45, soulsWon: 5, isActiveNow: true },
-  { id: 'b7', cellName: 'Living Waters Cell', tutorName: 'Eunice Darko', venue: 'Spintex Batsonaa', xPct: 74, yPct: 48, attendance: 31, soulsWon: 2, isActiveNow: false },
-  { id: 'b8', cellName: 'Agape Covenant Cell', tutorName: 'Kwame Asante', venue: 'Adenta Housing', xPct: 70, yPct: 20, attendance: 27, soulsWon: 3, isActiveNow: true },
-];
-
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigateToTab }) => {
@@ -107,6 +91,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   const [weeklyTrends, setWeeklyTrends] = useState<any[]>([]);
   const [cellStats, setCellStats] = useState<CellPerformanceRecord[]>([]);
   const [locationHistory, setLocationHistory] = useState<CellLocationRecord[]>([]);
+  const [meetingReports, setMeetingReports] = useState<CellMeetingReport[]>([]);
+  const [evangelismReports, setEvangelismReports] = useState<EvangelismReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters & Interactivity
@@ -124,10 +110,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   // Live updates & animation state
   const [liveActivities, setLiveActivities] = useState<TutorActivityItem[]>([]);
   const [activeBeacon, setActiveBeacon] = useState<CellMapBeacon | null>(null);
-  const [incomingAlert, setIncomingAlert] = useState<{ id: string; title: string; subtitle: string; timestamp: number } | null>(null);
-  const [isAutoStreaming, setIsAutoStreaming] = useState(false);
   const [recentPulseCard, setRecentPulseCard] = useState<'attendance' | 'souls' | 'compliance' | 'activity' | null>(null);
-  const streamTimerRef = useRef<number | null>(null);
 
   // Animated counters state
   const [displayAttendance, setDisplayAttendance] = useState(0);
@@ -138,13 +121,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   const loadData = async (showLoader = true) => {
     try {
       if (showLoader) setIsLoading(true);
-      const [dashStats, sysSettings, cellList, trends, cStats, locHistory] = await Promise.all([
+      const [dashStats, sysSettings, cellList, trends, cStats, locHistory, meetings, evang] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
         CellService.getActiveCells(),
         AnalyticsService.getWeeklyTrends('admin'),
         AnalyticsService.getCellPerformance(),
         CellLocationService.getLocationHistory().catch(() => []),
+        ReportService.getCellMeetingReports().catch(() => []),
+        ReportService.getEvangelismReports().catch(() => []),
       ]);
       setStats(dashStats);
       setSettings(sysSettings);
@@ -152,9 +137,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
       setWeeklyTrends(trends);
       setCellStats(cStats);
       setLocationHistory(locHistory);
+      setMeetingReports(meetings || []);
+      setEvangelismReports(evang || []);
 
       // Initialize initial live activities from real reports & location records
-      buildInitialActivities(dashStats, cStats, locHistory);
+      buildInitialActivities(locHistory, meetings || [], evang || []);
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -162,13 +149,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
   // Convert existing records into an activity stream
   const buildInitialActivities = (
-    _dashStats: DashboardStats,
-    cStats: CellPerformanceRecord[],
-    locHistory: CellLocationRecord[]
+    locHistory: CellLocationRecord[],
+    meetings: CellMeetingReport[],
+    evang: EvangelismReport[]
   ) => {
     const items: TutorActivityItem[] = [];
 
-    // From location records
+    // From real location records
     locHistory.slice(0, 4).forEach((loc, idx) => {
       items.push({
         id: `loc-${loc.id || idx}`,
@@ -185,80 +172,49 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
       });
     });
 
-    // From cells with submitted reports
-    cStats.filter(c => c.meetingReportsCount > 0 || c.soulsWon > 0).slice(0, 5).forEach((c, idx) => {
-      if (c.soulsWon > 0) {
-        items.push({
-          id: `evang-${c.id}-${idx}`,
-          type: 'evangelism',
-          tutorName: c.leaderName || 'Cell Tutor',
-          cellName: c.name,
-          avatarInitials: (c.leaderName || 'CT').split(' ').map(s => s[0]).slice(0, 2).join(''),
-          actionText: 'Harvested souls in community outreach',
-          details: `${c.peopleReached} contacted · ${c.soulsWon} conversions`,
-          timestamp: new Date().toISOString(),
-          relativeTime: `${(idx + 1) * 25}m ago`,
-          valueBadge: `+${c.soulsWon} Souls`,
-          badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-        });
-      } else {
-        items.push({
-          id: `meet-${c.id}-${idx}`,
-          type: 'meeting',
-          tutorName: c.leaderName || 'Cell Tutor',
-          cellName: c.name,
-          avatarInitials: (c.leaderName || 'CT').split(' ').map(s => s[0]).slice(0, 2).join(''),
-          actionText: 'Filed Weekly Cell Return',
-          details: `${c.totalAttendance} attendees · GHS ${c.offeringsGhs.toFixed(2)} offering`,
-          timestamp: new Date().toISOString(),
-          relativeTime: `${(idx + 2) * 15}m ago`,
-          valueBadge: `${c.totalAttendance} Present`,
-          badgeColor: 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-amber-400/10 dark:text-amber-300',
-        });
-      }
+    // From real evangelism reports
+    evang.slice(0, 4).forEach((report, idx) => {
+      const souls = Number(report.verifiedSoulsWon ?? report.conversions) || 0;
+      const leader = report.tutorName || 'Tutor';
+      items.push({
+        id: `evang-${report.id || idx}`,
+        type: 'evangelism',
+        tutorName: leader,
+        cellName: report.cellName || 'Fellowship Cell',
+        avatarInitials: leader.split(' ').map((s: string) => s[0]).slice(0, 2).join(''),
+        actionText: 'Logged Evangelism Outreach',
+        details: `${report.location || 'Community outreach'} · ${report.peopleSpokenTo || 0} reached`,
+        timestamp: report.submittedAt || report.date || new Date().toISOString(),
+        relativeTime: idx === 0 ? 'Recently' : `${idx + 1}d ago`,
+        valueBadge: `+${souls} Souls`,
+        badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+      });
     });
 
-    setLiveActivities(items.length > 0 ? items : [
-      {
-        id: 'init-1',
+    // From real meeting reports
+    meetings.slice(0, 4).forEach((report, idx) => {
+      const att = Number(report.attendance) || 0;
+      const leader = report.tutorName || 'Tutor';
+      items.push({
+        id: `meet-${report.id || idx}`,
         type: 'meeting',
-        tutorName: 'Grace Mensah',
-        cellName: 'Grace Fellowship Cell',
-        avatarInitials: 'GM',
+        tutorName: leader,
+        cellName: report.cellName || 'Fellowship Cell',
+        avatarInitials: leader.split(' ').map((s: string) => s[0]).slice(0, 2).join(''),
         actionText: 'Filed Weekly Cell Return',
-        details: '38 attendees · East Legon venue',
-        timestamp: new Date().toISOString(),
-        relativeTime: '10 min ago',
-        valueBadge: '38 Present',
+        details: `${att} attendees · ${report.meetingLocation || 'Cell Venue'}`,
+        timestamp: report.submittedAt || report.meetingDate || new Date().toISOString(),
+        relativeTime: idx === 0 ? 'Recently' : `${idx + 1}d ago`,
+        valueBadge: `${att} Present`,
         badgeColor: 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-amber-400/10 dark:text-amber-300',
-      },
-      {
-        id: 'init-2',
-        type: 'evangelism',
-        tutorName: 'David Osei',
-        cellName: 'Faith Harvest Cell',
-        avatarInitials: 'DO',
-        actionText: 'Logged Evangelism Outreach',
-        details: 'Achimota Area · 24 reached',
-        timestamp: new Date().toISOString(),
-        relativeTime: '22 min ago',
-        valueBadge: '+4 Souls',
-        badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-      },
-      {
-        id: 'init-3',
-        type: 'location',
-        tutorName: 'Hannah Quaye',
-        cellName: 'Victory Outreach Cell',
-        avatarInitials: 'HQ',
-        actionText: 'Meeting location confirmed',
-        details: 'Kasoa Old Barrier',
-        timestamp: new Date().toISOString(),
-        relativeTime: '1 hour ago',
-        valueBadge: 'Venue Logged',
-        badgeColor: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-      },
-    ]);
+      });
+    });
+
+    // Sort by timestamp descending
+    items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    // Never use fake mockups — only show genuine submitted records
+    setLiveActivities(items);
   };
 
   // Smooth numeric counter animation
@@ -311,118 +267,66 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     setTimeout(() => setRecentPulseCard(null), 2400);
   };
 
-  // Simulate an incoming tutor submission with realistic Ghanaian cell figures
-  const handleSimulateIncomingReport = () => {
-    const sampleCells = [
-      { name: 'Grace Fellowship Cell', tutor: 'Grace Mensah', venue: 'East Legon, Accra' },
-      { name: 'Faith Harvest Cell', tutor: 'David Osei', venue: 'Achimota Area, Accra' },
-      { name: 'Victory Outreach Cell', tutor: 'Hannah Quaye', venue: 'Kasoa Old Barrier' },
-      { name: 'Dunamis Revival Cell', tutor: 'Samuel Addo', venue: 'Tema Community 4' },
-      { name: 'Glory Sanctuary Cell', tutor: 'Priscilla Boateng', venue: 'Dansoman High St' },
-      { name: 'Kingdom Power Cell', tutor: 'Emmanuel Tetteh', venue: 'Madina Zongo Junc' },
-    ];
-    const pick = sampleCells[Math.floor(Math.random() * sampleCells.length)];
-    const isSoulHarvest = Math.random() > 0.45;
-    const soulsAdded = Math.floor(Math.random() * 5) + 1;
-    const attendanceAdded = Math.floor(Math.random() * 15) + 18;
+  // Dynamic map beacons derived from real registered cells and location history
+  const mapBeacons = useMemo<CellMapBeacon[]>(() => {
+    if (!cells || cells.length === 0) return [];
+    return cells.map((cell, idx) => {
+      const stat = cellStats.find(cs => cs.id === cell.id || cs.name === cell.name);
+      const loc = locationHistory.find(lh => lh.cell_id === cell.id || lh.cell_name === cell.name);
+      const venue = loc?.venue || cell.meeting_location || cell.location || 'Venue pending';
 
-    const newActivity: TutorActivityItem = isSoulHarvest
-      ? {
-          id: `sim-${Date.now()}`,
-          type: 'evangelism',
-          tutorName: pick.tutor,
-          cellName: pick.name,
-          avatarInitials: pick.tutor.split(' ').map(s => s[0]).slice(0, 2).join(''),
-          actionText: 'Harvested souls in community outreach',
-          details: `${pick.venue} · Verified by Cell Leader`,
-          timestamp: new Date().toISOString(),
-          relativeTime: 'Just now',
-          valueBadge: `+${soulsAdded} Souls`,
-          badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-          isNew: true,
-        }
-      : {
-          id: `sim-${Date.now()}`,
-          type: 'meeting',
-          tutorName: pick.tutor,
-          cellName: pick.name,
-          avatarInitials: pick.tutor.split(' ').map(s => s[0]).slice(0, 2).join(''),
-          actionText: 'Filed Weekly Cell Meeting Return',
-          details: `Held at ${pick.venue}`,
-          timestamp: new Date().toISOString(),
-          relativeTime: 'Just now',
-          valueBadge: `${attendanceAdded} Present`,
-          badgeColor: 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-amber-400/10 dark:text-amber-300',
-          isNew: true,
-        };
+      // Distribute points harmoniously within radar perimeter (20% to 80%)
+      const angle = (idx / Math.max(cells.length, 1)) * 2 * Math.PI - Math.PI / 2;
+      const radius = 22 + (idx % 3) * 14;
+      const xPct = Math.round(50 + radius * Math.cos(angle));
+      const yPct = Math.round(50 + radius * Math.sin(angle));
 
-    // Prepend to activities with slide-in animation
-    setLiveActivities(prev => [newActivity, ...prev.slice(0, 7)]);
-
-    // Trigger visual toast
-    setIncomingAlert({
-      id: newActivity.id,
-      title: `${pick.tutor} (${pick.name})`,
-      subtitle: isSoulHarvest
-        ? `Logged Evangelism Harvest (+${soulsAdded} souls won!)`
-        : `Submitted Meeting Report (${attendanceAdded} attendees present)`,
-      timestamp: Date.now(),
-    });
-
-    // Auto-dismiss alert after 5s
-    setTimeout(() => {
-      setIncomingAlert(prev => (prev?.id === newActivity.id ? null : prev));
-    }, 5000);
-
-    // Increment local stats state with smooth roll
-    setStats(prev => {
-      if (!prev) return prev;
       return {
-        ...prev,
-        soulsWon: isSoulHarvest ? prev.soulsWon + soulsAdded : prev.soulsWon,
-        totalAttendance: !isSoulHarvest ? prev.totalAttendance + attendanceAdded : prev.totalAttendance,
-        meetingReportsSubmitted: !isSoulHarvest ? (prev.meetingReportsSubmitted || 0) + 1 : prev.meetingReportsSubmitted,
-        evangelismReportsSubmitted: isSoulHarvest ? (prev.evangelismReportsSubmitted || 0) + 1 : prev.evangelismReportsSubmitted,
+        id: cell.id,
+        cellName: cell.name,
+        tutorName: cell.leader_name || stat?.leaderName || 'Cell Leader',
+        venue,
+        xPct,
+        yPct,
+        attendance: stat?.totalAttendance || 0,
+        soulsWon: stat?.soulsWon || 0,
+        isActiveNow: (stat?.meetingReportsCount ?? 0) > 0,
       };
     });
+  }, [cells, cellStats, locationHistory]);
 
-    triggerLivePulse(isSoulHarvest ? 'souls' : 'attendance');
-  };
-
-  // Auto-stream toggle
-  useEffect(() => {
-    if (isAutoStreaming) {
-      streamTimerRef.current = window.setInterval(() => {
-        handleSimulateIncomingReport();
-      }, 7000);
-    } else if (streamTimerRef.current) {
-      clearInterval(streamTimerRef.current);
-      streamTimerRef.current = null;
-    }
-    return () => {
-      if (streamTimerRef.current) clearInterval(streamTimerRef.current);
-    };
-  }, [isAutoStreaming]);
-
-  // Synthetic smooth monthly curve data for the Wave Chart
+  // Real monthly aggregated curve data for the Wave Chart from genuine submitted returns
   const waveChartData = useMemo(() => {
-    const baseAttendance = stats ? Math.max(30, stats.totalAttendance) : 380;
-    const baseSouls = stats ? Math.max(10, stats.soulsWon) : 85;
+    const currentYear = new Date().getFullYear();
 
     return MONTHS.map((month, idx) => {
-      // Natural organic wave curve peaking in current month
-      const factor = 0.55 + 0.45 * Math.sin((idx / 11) * Math.PI);
-      const attVal = Math.round(baseAttendance * (0.4 + factor * 0.7) * (0.85 + ((idx * 7) % 25) / 100));
-      const soulVal = Math.round(baseSouls * (0.35 + factor * 0.75) * (0.8 + ((idx * 9) % 20) / 100));
+      // Find real submitted reports for this calendar month of current year
+      const monthMeetings = meetingReports.filter(r => {
+        const d = r.meetingDate || r.submittedAt;
+        if (!d) return false;
+        const dt = new Date(d);
+        return !isNaN(dt.getTime()) && dt.getFullYear() === currentYear && dt.getMonth() === idx;
+      });
+      const monthEvang = evangelismReports.filter(r => {
+        const d = r.date || r.submittedAt;
+        if (!d) return false;
+        const dt = new Date(d);
+        return !isNaN(dt.getTime()) && dt.getFullYear() === currentYear && dt.getMonth() === idx;
+      });
+
+      const attendance = monthMeetings.reduce((sum, r) => sum + (Number(r.attendance) || 0), 0);
+      const souls = monthEvang
+        .filter(r => r.status === 'Approved' || r.status === 'approved')
+        .reduce((sum, r) => sum + (Number(r.verifiedSoulsWon ?? r.conversions) || 0), 0);
 
       return {
         month,
-        attendance: attVal,
-        souls: soulVal,
-        sessions: Math.round(attVal / 22),
+        attendance,
+        souls,
+        sessions: monthMeetings.length,
       };
     });
-  }, [stats?.totalAttendance, stats?.soulsWon]);
+  }, [meetingReports, evangelismReports]);
 
   const activeMonthData = waveChartData[selectedMonthIdx] || waveChartData[0];
   const activeValue = overviewMetric === 'attendance' ? activeMonthData.attendance : activeMonthData.souls;
@@ -462,40 +366,6 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
   return (
     <div className="space-y-6">
-      {/* Realtime Live Toast Notification (Animates in when tutors submit) */}
-      {incomingAlert && (
-        <aside
-          role="status"
-          aria-live="polite"
-          className="fixed top-20 right-4 z-50 max-w-sm w-full bg-gradient-to-r from-[#142B4A] via-[#1B365D] to-[#203D63] text-white p-4 rounded-2xl shadow-2xl border border-[#C6A45A]/40 animate-in fade-in slide-in-from-top-4 duration-300"
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#C6A45A]/20 border border-[#C6A45A]/40 flex items-center justify-center shrink-0">
-              <Zap className="w-5 h-5 text-[#C6A45A] animate-pulse" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#C6A45A]">
-                  Live Return Received
-                </span>
-                <span className="text-[9px] text-slate-300">Just now</span>
-              </div>
-              <h4 className="text-xs font-bold text-white truncate mt-0.5">{incomingAlert.title}</h4>
-              <p className="text-[11px] text-slate-200 mt-0.5">{incomingAlert.subtitle}</p>
-            </div>
-            <button
-              onClick={() => setIncomingAlert(null)}
-              className="text-slate-400 hover:text-white text-xs font-bold"
-            >
-              ×
-            </button>
-          </div>
-          <div className="mt-2.5 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-[#C6A45A] rounded-full animate-pulse w-full" />
-          </div>
-        </aside>
-      )}
-
       {/* TOP CONTEXT & COMMAND BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -505,7 +375,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              Live Feed Active
+              Live Telemetry Active
             </span>
           </div>
           <p className="text-xs text-[#667085] dark:text-slate-400 mt-1">
@@ -515,39 +385,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
         {/* Live Controls & Export Actions */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Simulate Live Event Button (Tests animations on demand) */}
+          {/* Refresh live data button */}
           <button
             type="button"
-            onClick={handleSimulateIncomingReport}
-            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#C6A45A]/40 text-[#142B4A] dark:text-white text-xs font-bold hover:bg-[#FDFCF7] dark:hover:bg-slate-700 transition-all shadow-xs flex items-center gap-1.5 group cursor-pointer"
-            title="Simulate an incoming tutor report to watch real-time animations"
+            onClick={() => void loadData(true)}
+            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#E3E8EF] dark:border-slate-700 text-[#182230] dark:text-slate-200 text-xs font-bold hover:bg-[#F5F7FA] dark:hover:bg-slate-700 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+            title="Refresh analytics directly from database"
           >
-            <Zap className="w-3.5 h-3.5 text-[#C6A45A] group-hover:scale-125 transition-transform" />
-            <span>Simulate Report</span>
-          </button>
-
-          {/* Auto Stream Mode Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsAutoStreaming(!isAutoStreaming)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
-              isAutoStreaming
-                ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
-            }`}
-            title="Toggles automatic simulation of incoming tutor reports every 7 seconds"
-          >
-            {isAutoStreaming ? (
-              <>
-                <Pause className="w-3.5 h-3.5 animate-pulse" />
-                <span>Auto-Streaming</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Live Stream</span>
-              </>
-            )}
+            <RefreshCw className="w-3.5 h-3.5 text-[#142B4A] dark:text-[#C6A45A]" />
+            <span className="hidden sm:inline">Refresh</span>
           </button>
 
           <button
@@ -692,13 +538,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     </linearGradient>
                   </defs>
 
-                  {/* Dynamic path generation based on monthly data */}
+                  {/* Dynamic path generation based on real monthly data */}
                   {(() => {
+                    const hasData = waveChartData.some(d => (overviewMetric === 'attendance' ? d.attendance > 0 : d.souls > 0));
                     const maxVal = Math.max(...waveChartData.map(d => (overviewMetric === 'attendance' ? d.attendance : d.souls)), 1);
                     const pts = waveChartData.map((d, i) => {
                       const val = overviewMetric === 'attendance' ? d.attendance : d.souls;
                       const x = (i / 11) * 580 + 10;
-                      const y = 100 - (val / maxVal) * 75;
+                      const y = hasData ? 100 - (val / maxVal) * 75 : 105;
                       return { x, y };
                     });
 
@@ -789,7 +636,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     {displaySouls.toLocaleString()} St
                   </div>
                   <span className="text-[9px] text-emerald-300 font-semibold block mt-0.5">
-                    +{Math.round(displaySouls * 0.28)} this month
+                    +{activeMonthData.souls} this month
                   </span>
                 </div>
 
@@ -1089,8 +936,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             {sidebarTab === 'activities' && (
               <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[290px] overflow-y-auto pr-1 mt-1">
                 {liveActivities.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-slate-400">
-                    No recent tutor activities logged.
+                  <div className="py-8 px-3 text-center">
+                    <div className="w-10 h-10 mx-auto mb-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-slate-400" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No Recent Activity Logged</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+                      Activities will update in real time as tutors submit meeting returns and outreach reports.
+                    </p>
                   </div>
                 ) : (
                   liveActivities.map(item => (
@@ -1208,37 +1061,45 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
               </div>
 
               {/* Cell Beacons (Pulsing Pins) */}
-              {DEFAULT_MAP_BEACONS.map(beacon => {
-                const isSelected = activeBeacon?.id === beacon.id;
-                return (
-                  <div
-                    key={beacon.id}
-                    className="absolute cursor-pointer transition-transform hover:scale-125 z-20"
-                    style={{ left: `${beacon.xPct}%`, top: `${beacon.yPct}%`, transform: 'translate(-50%, -50%)' }}
-                    onClick={() => setActiveBeacon(beacon)}
-                  >
-                    <div className="relative group">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md font-bold text-[9px] text-white ${
-                        beacon.isActiveNow ? 'bg-[#142B4A] border-2 border-[#C6A45A]' : 'bg-slate-600'
-                      }`}>
-                        {beacon.tutorName.split(' ').map(s => s[0]).slice(0, 2).join('')}
-                      </div>
+              {mapBeacons.length === 0 ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-10">
+                  <Compass className="w-6 h-6 text-slate-400 mb-1" />
+                  <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Cell Venues Active</p>
+                  <p className="text-[10px] text-slate-400 max-w-xs mt-0.5">Cell meeting locations will appear on radar as venues are confirmed.</p>
+                </div>
+              ) : (
+                mapBeacons.map(beacon => {
+                  const isSelected = activeBeacon?.id === beacon.id;
+                  return (
+                    <div
+                      key={beacon.id}
+                      className="absolute cursor-pointer transition-transform hover:scale-125 z-20"
+                      style={{ left: `${beacon.xPct}%`, top: `${beacon.yPct}%`, transform: 'translate(-50%, -50%)' }}
+                      onClick={() => setActiveBeacon(beacon)}
+                    >
+                      <div className="relative group">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md font-bold text-[9px] text-white ${
+                          beacon.isActiveNow ? 'bg-[#142B4A] border-2 border-[#C6A45A]' : 'bg-slate-600'
+                        }`}>
+                          {beacon.tutorName.split(' ').map(s => s[0]).slice(0, 2).join('')}
+                        </div>
 
-                      {beacon.isActiveNow && (
-                        <span className="absolute -inset-1 rounded-full bg-[#C6A45A]/50 animate-ping pointer-events-none" />
-                      )}
+                        {beacon.isActiveNow && (
+                          <span className="absolute -inset-1 rounded-full bg-[#C6A45A]/50 animate-ping pointer-events-none" />
+                        )}
 
-                      {/* Tooltip on hover/click */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-30 pointer-events-none">
-                        <div className="px-2 py-1 bg-[#142B4A] text-white text-[9px] font-bold rounded-lg shadow-xl whitespace-nowrap border border-[#C6A45A]/40">
-                          <p>{beacon.cellName}</p>
-                          <p className="text-[#C6A45A] font-normal">{beacon.venue}</p>
+                        {/* Tooltip on hover/click */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-30 pointer-events-none">
+                          <div className="px-2 py-1 bg-[#142B4A] text-white text-[9px] font-bold rounded-lg shadow-xl whitespace-nowrap border border-[#C6A45A]/40">
+                            <p>{beacon.cellName}</p>
+                            <p className="text-[#C6A45A] font-normal">{beacon.venue}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
             {/* Active Beacon Info Footer */}
@@ -1259,7 +1120,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 </div>
               ) : (
                 <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>8 Active Venues Monitored in Ghana</span>
+                  <span>{mapBeacons.length} Active Venues Monitored in Ghana</span>
                   <span className="font-bold text-[#142B4A] dark:text-[#C6A45A]">Click pin to inspect</span>
                 </div>
               )}

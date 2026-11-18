@@ -12,7 +12,6 @@ import {
   Phone,
   Building,
   Check,
-  Sparkles,
   ArrowRight,
 } from 'lucide-react';
 

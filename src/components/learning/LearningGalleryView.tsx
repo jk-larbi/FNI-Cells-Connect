@@ -19,7 +19,6 @@ import {
   Trash2,
   Edit2,
   Clock,
-  Sparkles,
   Layers,
   CheckCircle2,
   AlertCircle,
@@ -205,7 +204,7 @@ export const LearningGalleryView: React.FC = () => {
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full bg-white/10 text-[#C6A45A] font-bold text-xs uppercase tracking-wider backdrop-blur-xs border border-white/10 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
+                <Award className="w-3.5 h-3.5" />
                 <span>Media Archive & Library</span>
               </span>
             </div>

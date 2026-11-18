@@ -14,7 +14,6 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
 } from 'lucide-react';
 
 interface SoulTargetSettingsModalProps {

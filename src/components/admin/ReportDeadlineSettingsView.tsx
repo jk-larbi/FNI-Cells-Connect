@@ -20,7 +20,6 @@ import {
   Flame,
   Globe,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react';
 
 interface ReportDeadlineSettingsViewProps {

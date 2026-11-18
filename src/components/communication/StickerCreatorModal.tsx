@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   X,
-  Sparkles,
+  Wand2,
   Image as ImageIcon,
   Smile,
   Type,
@@ -106,7 +106,7 @@ export const StickerCreatorModal: React.FC<StickerCreatorModalProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/10 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-[#C6A45A] flex items-center justify-center">
-              <Sparkles className="w-5 h-5 stroke-[2.2]" />
+              <Wand2 className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Create Custom Sticker</h3>
@@ -330,7 +330,7 @@ export const StickerCreatorModal: React.FC<StickerCreatorModalProps> = ({
             onClick={handleSave}
             className="px-5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Wand2 className="w-3.5 h-3.5" />
             <span>Create Sticker</span>
           </button>
         </div>

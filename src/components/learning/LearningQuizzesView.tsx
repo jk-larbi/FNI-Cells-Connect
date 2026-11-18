@@ -20,7 +20,7 @@ import {
   ShieldCheck,
   ChevronRight,
   ChevronDown,
-  Sparkles,
+  Wand2,
   BookOpen,
   User,
   Building,
@@ -1347,7 +1347,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                                   : 'bg-white dark:bg-[#111c2d] border border-slate-300 dark:border-slate-700 text-[#667085]'
                               }`}
                             >
-                              <Sparkles className="w-3.5 h-3.5 text-[#C6A45A]" />
+                              <Wand2 className="w-3.5 h-3.5 text-[#C6A45A]" />
                               <span>Automatic Marking</span>
                             </button>
 
