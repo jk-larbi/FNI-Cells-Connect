@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { CallSignalingService } from '../../services/callSignalingService';
-import { CallHistoryRecord, CallType } from '../../types/calling';
+import { CallHistoryRecord, CallBlockedUser, CallType } from '../../types/calling';
 import {
   Phone,
   PhoneIncoming,
@@ -34,6 +34,8 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
   const [filter, setFilter] = useState<'all' | 'missed' | 'incoming' | 'outgoing'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+  const [blockedCallers, setBlockedCallers] = useState<CallBlockedUser[]>([]);
+  const [isLoadingBlocked, setIsLoadingBlocked] = useState(false);
 
   // Back handler support
   useBackHandler(() => {
@@ -51,6 +53,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
   useEffect(() => {
     if (currentUser?.id) {
       loadHistory();
+      loadBlockedCallers();
     }
   }, [currentUser?.id]);
 
@@ -62,6 +65,28 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
       setHistory(records);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadBlockedCallers = async () => {
+    if (!currentUser?.id) return;
+    setIsLoadingBlocked(true);
+    try {
+      setBlockedCallers(await CallSignalingService.getBlockedUsers(currentUser.id));
+    } catch (error) {
+      console.warn('Unable to load blocked callers:', error);
+    } finally {
+      setIsLoadingBlocked(false);
+    }
+  };
+
+  const handleUnblockCaller = async (blockedUserId: string) => {
+    if (!currentUser?.id) return;
+    try {
+      await CallSignalingService.unblockUser(currentUser.id, blockedUserId);
+      setBlockedCallers(current => current.filter(item => item.blocked_user_id !== blockedUserId));
+    } catch (error: any) {
+      alert(error?.message || 'Unable to unblock this caller. Please try again.');
     }
   };
 
@@ -203,6 +228,35 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
           />
         </div>
       </div>
+
+      <section className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-[#142B4A] dark:text-white">Blocked callers</h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">People you have blocked cannot ring you on FNI.</p>
+          </div>
+          <span className="text-xs font-bold text-slate-500">{blockedCallers.length}</span>
+        </div>
+        {isLoadingBlocked ? (
+          <p className="text-xs text-slate-400">Loading blocked callers…</p>
+        ) : blockedCallers.length === 0 ? (
+          <p className="text-xs text-slate-400">You have not blocked anyone.</p>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-white/5">
+            {blockedCallers.map(item => (
+              <div key={item.id} className="py-2 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{item.blocked_user_name || 'Blocked caller'}</p>
+                  <p className="text-[10px] text-slate-400">Blocked {new Date(item.created_at).toLocaleDateString()}</p>
+                </div>
+                <button type="button" onClick={() => handleUnblockCaller(item.blocked_user_id)} className="shrink-0 text-xs font-bold text-[#142B4A] dark:text-blue-300 hover:underline">
+                  Unblock
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* History List */}
       <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-white/10 shadow-xs overflow-hidden">
