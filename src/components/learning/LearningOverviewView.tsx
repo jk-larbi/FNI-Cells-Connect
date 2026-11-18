@@ -21,6 +21,7 @@ import {
   Inbox,
   Send,
   HelpCircle,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -487,12 +488,12 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
         </div>
       )}
 
-      {/* 3. Quick Section Access Hub (The 7 Portal Sections) */}
+      {/* 3. Quick Section Access Hub (The 7 Portal Sections + Media Gallery) */}
       <div className="space-y-3">
         <h2 className="text-base sm:text-lg font-bold text-[#182230] dark:text-white px-1">
           Explore Learning Sections
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {[
             { id: 'assignments' as LearningPortalSection, title: 'Assignments', count: publishedAssignments.length, icon: BookOpen, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40' },
             { id: 'quizzes' as LearningPortalSection, title: 'Quizzes', count: publishedQuizzes.length, icon: FileCheck2, color: 'text-[#C6A45A] bg-amber-50 dark:bg-amber-950/40' },
@@ -500,6 +501,7 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
             { id: 'grades' as LearningPortalSection, title: 'Grades & Scores', count: submissions.length, icon: BarChart3, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40' },
             { id: 'events' as LearningPortalSection, title: 'Upcoming Events', count: upcomingEvents.length, icon: Calendar, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40' },
             { id: 'materials' as LearningPortalSection, title: 'Materials Library', count: resources.length, icon: Library, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40' },
+            { id: 'gallery' as LearningPortalSection, title: 'Media Gallery', count: 7, icon: ImageIcon, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40' },
           ].map(sec => {
             const Icon = sec.icon;
             return (

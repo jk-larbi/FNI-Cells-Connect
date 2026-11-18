@@ -10,6 +10,7 @@ import {
   Library,
   ArrowLeft,
   LayoutDashboard,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LearningPortalSection, Assignment, Quiz, LearningEvent } from '../../types/learning';
@@ -23,6 +24,7 @@ import { LearningParticipationView } from './LearningParticipationView';
 import { LearningGradesView } from './LearningGradesView';
 import { LearningEventsView } from './LearningEventsView';
 import { LearningMaterialsView } from './LearningMaterialsView';
+import { LearningGalleryView } from './LearningGalleryView';
 
 interface LearningPortalViewProps {
   initialSection?: LearningPortalSection;
@@ -106,7 +108,7 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
     }
   };
 
-  // 7 Core Sub-sections matching user requirements
+  // 8 Core Sub-sections matching user requirements
   const sections: { id: LearningPortalSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'assignments', label: 'Assignments', icon: BookOpen },
@@ -115,6 +117,7 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
     { id: 'grades', label: 'Grades & Scores', icon: BarChart3 },
     { id: 'events', label: 'Upcoming Events', icon: Calendar },
     { id: 'materials', label: 'Learning Materials', icon: Library },
+    { id: 'gallery', label: 'Media Gallery', icon: ImageIcon },
   ];
 
   return (
@@ -241,6 +244,10 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
 
         {activeSection === 'materials' && (
           <LearningMaterialsView />
+        )}
+
+        {activeSection === 'gallery' && (
+          <LearningGalleryView />
         )}
       </div>
     </div>

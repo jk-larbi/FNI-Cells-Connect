@@ -29,7 +29,8 @@ export type LearningPortalSection =
   | 'participation'
   | 'grades'
   | 'events'
-  | 'materials';
+  | 'materials'
+  | 'gallery';
 
 export interface AttachmentItem {
   id?: string;
@@ -241,4 +242,64 @@ export interface TutorParticipationMetric {
   participation_rate: number; // percentage
   status: ParticipationStatus;
   last_activity_date?: string;
+}
+
+// =============================================================================
+// GALLERY & MEDIA ASSETS
+// =============================================================================
+export type GalleryMediaType = 'photo' | 'video' | 'document';
+
+export type GalleryPhotoSubcategory =
+  | 'Training Sessions'
+  | 'Class Activities'
+  | 'Ministry Events'
+  | 'Workshops & Conferences';
+
+export type GalleryVideoSubcategory =
+  | 'Recorded Lessons'
+  | 'Tutorials'
+  | 'Training Sessions'
+  | 'Demonstrations';
+
+export type GalleryDocumentSubcategory =
+  | 'PDF Materials'
+  | 'Presentations'
+  | 'Study Guides'
+  | 'Learning Notes';
+
+export interface GalleryAlbum {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  cover_image_url?: string;
+  item_count?: number;
+  created_by?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface GalleryItem {
+  id: string;
+  title: string;
+  description?: string;
+  media_type: GalleryMediaType;
+  category: string;
+  subcategory?: string;
+  album_id?: string | null;
+  album_title?: string;
+  file_url: string;
+  thumbnail_url?: string;
+  file_name?: string;
+  file_size?: string;
+  file_type?: string;
+  duration_seconds?: number;
+  is_featured: boolean;
+  is_published: boolean;
+  allow_download: boolean;
+  tutor_access_level: 'all_tutors' | 'cell_leaders_only' | 'executives_only';
+  uploaded_by?: string;
+  uploaded_by_name?: string;
+  created_at: string;
+  updated_at?: string;
 }
