@@ -9,7 +9,6 @@ import {
   CallBlockedUser,
 } from '../types/calling';
 import { NotificationService } from './notificationService';
-import { PushNotificationService } from './pushNotificationService';
 
 export class CallSignalingService {
   // Generate a distinct room ID
@@ -92,18 +91,8 @@ export class CallSignalingService {
         },
       });
 
-      // Browser Web Push / Local System Notification
-      PushNotificationService.showLocalNotification(
-        `Incoming FNI ${session.call_type === 'video' ? 'Video' : 'Voice'} Call`,
-        {
-          body: `${session.caller_name} is calling you. Tap to answer.`,
-          tag: `fni-call-${session.id}`,
-          data: {
-            url: window.location.origin + window.location.pathname + '#call-' + session.id,
-            callId: session.id,
-          },
-        }
-      );
+      // The authenticated push function delivers the system notification to
+      // the receiver's registered devices. Do not notify the caller locally.
     } catch (e) {
       console.warn('Failed to dispatch call notification:', e);
     }
