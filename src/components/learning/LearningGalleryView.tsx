@@ -13,7 +13,7 @@ import {
   Download,
   Calendar,
   User,
-  Star,
+  Award,
   Eye,
   EyeOff,
   Trash2,
@@ -360,7 +360,7 @@ export const LearningGalleryView: React.FC = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-black text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-500 fill-current" />
+              <Award className="w-4 h-4 text-amber-500" />
               <span>Featured Resources</span>
             </h3>
             <span className="text-[11px] font-semibold text-slate-400">
@@ -387,7 +387,7 @@ export const LearningGalleryView: React.FC = () => {
                   {/* Top Badges */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
                     <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center gap-1 shadow-md">
-                      <Star className="w-3 h-3 fill-current" />
+                      <Award className="w-3 h-3" />
                       <span>FEATURED</span>
                     </span>
                     <span className="px-2 py-0.5 rounded-full bg-black/60 text-white font-bold text-[10px] backdrop-blur-xs uppercase">
@@ -644,7 +644,7 @@ export const LearningGalleryView: React.FC = () => {
                       </span>
                       {item.is_featured && (
                         <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-xs">
-                          <Star className="w-3 h-3 fill-current" />
+                          <Award className="w-3 h-3" />
                         </span>
                       )}
                     </div>
@@ -669,7 +669,7 @@ export const LearningGalleryView: React.FC = () => {
                           className={`p-1 rounded-full ${item.is_featured ? 'text-amber-400' : 'text-slate-400'}`}
                           title="Toggle featured status"
                         >
-                          <Star className="w-3 h-3 fill-current" />
+                          <Award className="w-3 h-3" />
                         </button>
                         <button
                           type="button"

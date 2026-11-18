@@ -38,7 +38,6 @@ import {
   Award,
   Eye,
   EyeOff,
-  Star,
   RefreshCw,
   History,
   Layers,
@@ -367,7 +366,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     if (priority === 'important') {
       return (
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 shadow-2xs">
-          <Star className="w-2.5 h-2.5 shrink-0" />
+          <AlertCircle className="w-2.5 h-2.5 shrink-0" />
           <span>Important</span>
         </span>
       );

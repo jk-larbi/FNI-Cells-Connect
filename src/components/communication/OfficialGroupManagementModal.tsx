@@ -194,7 +194,7 @@ export const OfficialGroupManagementModal: React.FC<OfficialGroupManagementModal
                 >
                   {groups.map(g => (
                     <option key={g.id} value={g.id}>
-                      {g.name} {(g.is_official || g.isOfficial) ? '★ (Current Official)' : ''}
+                      {g.name} {(g.is_official || g.isOfficial) ? '(Current Official)' : ''}
                     </option>
                   ))}
                 </select>

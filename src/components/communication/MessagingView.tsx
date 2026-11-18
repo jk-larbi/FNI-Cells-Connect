@@ -64,7 +64,6 @@ import {
   Settings,
   HelpCircle,
   UserX,
-  Sparkles,
   Shield,
   Copy,
   Forward,
@@ -76,7 +75,6 @@ import {
   ChevronLeft,
   User,
   Delete as BackspaceIcon,
-  Star,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -93,7 +91,7 @@ const STICKER_PACK = [
   { emoji: '❤️', label: 'Love' },
   { emoji: '🙌', label: 'Praise' },
   { emoji: '🔥', label: 'On Fire' },
-  { emoji: '✨', label: 'Shining' },
+  { emoji: '💡', label: 'Truth' },
   { emoji: '💪', label: 'Strength' },
   { emoji: '🕊️', label: 'Peace' },
   { emoji: '🎉', label: 'Celebrate' },
@@ -114,7 +112,7 @@ const EMOJI_CATEGORIES: { name: string; icon: string; emojis: string[] }[] = [
     icon: '🕊️',
     emojis: [
       '🕊️', '📖', '✝️', '🕎', '👑', '🕯️', '⛪', '🍇', '🍞', '🍷', '🐑', '🌾',
-      '🌱', '🌟', '⭐', '💫', '✨', '🛡️', '⚔️', '🎺', '🔔', '📜', '🗝️', '💎',
+      '🌱', '🛡️', '⚔️', '🎺', '🔔', '📜', '🗝️', '💎',
       '💍', '🎁', '💌', '🏛️', '🔥', '💧', '☀️', '🌈', '🙏', '🙌', '🤲', '🛐'
     ],
   },
@@ -152,7 +150,7 @@ const EMOJI_CATEGORIES: { name: string; icon: string; emojis: string[] }[] = [
       '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🐢', '🐍', '🐙', '🦑', '🦐', '🦀',
       '🐡', '🐠', '🐟', '🐬', '🐳', '🦈', '🐊', '🐘', '🦛', '🦏', '🐪', '🦒', '🦘',
       '🐑', '🐐', '🦌', '🐕', '🐈', '🕊️', '🦢', '🌹', '🥀', '🌺', '🌸', '🌼',
-      '🌻', '🌞', '🌝', '🌛', '⭐', '🌟', '✨', '⚡', '🔥', '🌈', '☀️', '⛅', '🌧️', '❄️'
+      '🌻', '🌞', '🌝', '🌛', '⚡', '🔥', '🌈', '☀️', '⛅', '🌧️', '❄️'
     ],
   },
   {
@@ -1255,17 +1253,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       heart: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝'],
       love: ['❤️', '😍', '🥰', '😘', '💕', '💖', '💗', '💓', '💞'],
       pray: ['🙏', '🕊️', '📖', '✝️', '🕎', '⛪', '🕯️'],
-      amen: ['🙏', '🙌', '🕊️', '✝️', '✨'],
+      amen: ['🙏', '🙌', '🕊️', '✝️'],
       cross: ['✝️', '🕎', '⛪', '🕊️'],
       bible: ['📖', '📜', '✝️', '🕯️'],
       church: ['⛪', '🏛️', '🕊️', '📖'],
-      fire: ['🔥', '⚡', '💥', '✨'],
+      fire: ['🔥', '⚡', '💥'],
       smile: ['😀', '😃', '😄', '😁', '😆', '😅', '😊', '🙂', '😇'],
       laugh: ['😂', '🤣', '😆', '😅'],
       thumbs: ['👍', '👎'],
       clap: ['👏', '🙌'],
       hand: ['👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '👋'],
-      star: ['⭐', '🌟', '✨', '💫'],
     };
     for (const [key, ems] of Object.entries(keywordMap)) {
       if (key.includes(q) || q.includes(key)) {
@@ -1864,19 +1861,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               {label}
             </span>
           )}
-          <button
-            type="button"
-            onClick={e => {
-              e.stopPropagation();
-              handleToggleFavoriteSticker({ imageUrl: imgUrl, label: label || 'Sticker', stickerType: 'custom' });
-            }}
-            className={`absolute top-0 right-0 p-1 rounded-full bg-white/80 dark:bg-black/60 shadow-xs transition-opacity cursor-pointer ${
-              isFav ? 'opacity-100 text-amber-500' : 'opacity-0 group-hover/sticker:opacity-100 text-slate-400 hover:text-amber-500'
-            }`}
-            title={isFav ? 'Remove from favorites' : 'Save to favorites'}
-          >
-            <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
-          </button>
         </div>
       );
     }
@@ -1884,24 +1868,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       const parts = msg.content.slice(STICKER_PREFIX.length, -2).split(':');
       const emoji = parts[0];
       const label = parts[1];
-      const isFav = favoriteStickers.some(s => s.emoji === emoji);
       return (
         <div className="group/sticker relative text-center py-1 select-none">
           <span className="text-5xl block animate-bounce-short">{emoji}</span>
           {label && <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 block">{label}</span>}
-          <button
-            type="button"
-            onClick={e => {
-              e.stopPropagation();
-              handleToggleFavoriteSticker({ emoji, label: label || 'Sticker', stickerType: 'fellowship' });
-            }}
-            className={`absolute top-0 right-0 p-1 rounded-full bg-white/80 dark:bg-black/60 shadow-xs transition-opacity cursor-pointer ${
-              isFav ? 'opacity-100 text-amber-500' : 'opacity-0 group-hover/sticker:opacity-100 text-slate-400 hover:text-amber-500'
-            }`}
-            title={isFav ? 'Remove from favorites' : 'Save to favorites'}
-          >
-            <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
-          </button>
         </div>
       );
     }
@@ -3107,8 +3077,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                   : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
                               }`}
                             >
-                              <Star className={`w-3 h-3 ${favoriteStickers.length > 0 ? 'fill-amber-400 text-amber-400' : ''}`} />
-                              <span>Favorites ({favoriteStickers.length})</span>
+                              <Bookmark className="w-3 h-3" />
+                              <span>Saved ({favoriteStickers.length})</span>
                             </button>
                             <button
                               type="button"
@@ -3152,35 +3122,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               FNI Fellowship Pack
                             </span>
                             <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
-                              {STICKER_PACK.map(s => {
-                                const isFav = favoriteStickers.some(f => f.emoji === s.emoji);
-                                return (
-                                  <div
-                                    key={s.label}
-                                    className="group/item relative p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-transparent hover:border-slate-200 dark:hover:border-white/10"
-                                    onClick={() => handleSendSticker(s)}
-                                    title={s.label}
-                                  >
-                                    <span className="text-3xl block">{s.emoji}</span>
-                                    <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300 truncate block mt-0.5">
-                                      {s.label}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={e => {
-                                        e.stopPropagation();
-                                        handleToggleFavoriteSticker({ emoji: s.emoji, label: s.label, stickerType: 'fellowship' });
-                                      }}
-                                      className={`absolute top-1 right-1 p-1 rounded-full bg-white/80 dark:bg-black/60 shadow-xs transition-opacity cursor-pointer ${
-                                        isFav ? 'opacity-100 text-amber-500' : 'opacity-0 group-hover/item:opacity-100 text-slate-400 hover:text-amber-500'
-                                      }`}
-                                      title={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                                    >
-                                      <Star className={`w-3 h-3 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
-                                    </button>
-                                  </div>
-                                );
-                              })}
+                              {STICKER_PACK.map(s => (
+                                <div
+                                  key={s.label}
+                                  className="group/item relative p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                                  onClick={() => handleSendSticker(s)}
+                                  title={s.label}
+                                >
+                                  <span className="text-3xl block">{s.emoji}</span>
+                                  <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300 truncate block mt-0.5">
+                                    {s.label}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         )}
@@ -3189,14 +3143,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         {stickerSubTab === 'favorites' && (
                           <div>
                             <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-1.5">
-                              Starred Stickers
+                              Saved Stickers
                             </span>
                             {favoriteStickers.length === 0 ? (
                               <div className="text-center py-6 px-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
-                                <Star className="w-8 h-8 text-amber-400/60 mx-auto mb-1.5" />
-                                <p className="font-bold text-xs text-slate-700 dark:text-slate-200">No favorite stickers yet</p>
+                                <Bookmark className="w-8 h-8 text-slate-400/60 mx-auto mb-1.5" />
+                                <p className="font-bold text-xs text-slate-700 dark:text-slate-200">No saved stickers yet</p>
                                 <p className="text-[10px] text-slate-500 mt-0.5">
-                                  Tap the star on any sticker in messages or the Fellowship Pack to save it here for fast access.
+                                  Long-press any sticker in the conversation to save it to your collection.
                                 </p>
                               </div>
                             ) : (
@@ -3228,10 +3182,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                         e.stopPropagation();
                                         handleToggleFavoriteSticker(s);
                                       }}
-                                      className="absolute top-1 right-1 p-1 rounded-full bg-white/80 dark:bg-black/60 text-amber-500 shadow-xs cursor-pointer hover:scale-110 transition-transform"
-                                      title="Remove from favorites"
+                                      className="absolute top-1 right-1 p-1 rounded-full bg-white/80 dark:bg-black/60 text-rose-500 shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                                      title="Remove from saved"
                                     >
-                                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 ))}
@@ -3338,17 +3292,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                                     {/* Action buttons on card */}
                                     <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover/custom:opacity-100 transition-opacity">
-                                      <button
-                                        type="button"
-                                        onClick={e => {
-                                          e.stopPropagation();
-                                          handleToggleFavoriteSticker(s);
-                                        }}
-                                        className="p-1 rounded-full bg-white/90 dark:bg-black/70 text-slate-400 hover:text-amber-500 shadow-xs cursor-pointer"
-                                        title={isFav ? 'Remove favorite' : 'Add to favorites'}
-                                      >
-                                        <Star className={`w-3 h-3 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
-                                      </button>
                                       <button
                                         type="button"
                                         onClick={e => {
@@ -3816,7 +3759,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <span>Message Details</span>
             </button>
 
-            {/* If message is a sticker, offer Save / Star to Favorites */}
+            {/* If message is a sticker, offer Save to Saved Stickers */}
             {(contextMenu.msg.content.startsWith(STICKER_PREFIX) ||
               contextMenu.msg.content.startsWith(STICKER_IMG_PREFIX)) && (() => {
               const msg = contextMenu.msg;
@@ -3846,10 +3789,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     }
                     setContextMenu(null);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer text-amber-600 dark:text-amber-400"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer text-blue-600 dark:text-blue-400"
                 >
-                  <Star className={`w-4 h-4 ${isFav ? 'fill-amber-500 text-amber-500' : 'text-amber-500'}`} />
-                  <span>{isFav ? 'Remove from Sticker Favorites' : 'Save to Sticker Favorites'}</span>
+                  <Bookmark className={`w-4 h-4 ${isFav ? 'fill-blue-500 text-blue-500' : 'text-blue-500'}`} />
+                  <span>{isFav ? 'Remove from Saved Stickers' : 'Save to Stickers'}</span>
                 </button>
               );
             })()}

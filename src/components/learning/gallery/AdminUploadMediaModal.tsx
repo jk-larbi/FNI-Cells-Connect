@@ -11,7 +11,7 @@ import {
   Loader2,
   Link,
   Shield,
-  Star,
+  Award,
   Eye,
   Download,
 } from 'lucide-react';
@@ -462,7 +462,7 @@ export const AdminUploadMediaModal: React.FC<AdminUploadMediaModalProps> = ({
                   className="w-4 h-4 rounded text-amber-500"
                 />
                 <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 text-amber-500" />
+                  <Award className="w-3.5 h-3.5 text-amber-500" />
                   <span>Featured Resource</span>
                 </span>
               </label>
