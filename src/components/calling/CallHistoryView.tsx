@@ -31,9 +31,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
   const { startDirectCall } = useCall();
   const [history, setHistory] = useState<CallHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isClearing, setIsClearing] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'missed' | 'incoming' | 'outgoing'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
@@ -135,36 +133,26 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
 
   const handleClearAllHistory = async () => {
     if (!currentUser?.id) return;
-    setIsClearing(true);
+    // Optimistic instant clear: close modal & clear list immediately (0ms delay)
+    setHistory([]);
+    setShowClearConfirm(false);
+
     try {
-      const ok = await CallSignalingService.clearCallHistory(currentUser.id);
-      if (ok) {
-        setHistory([]);
-        setShowClearConfirm(false);
-      } else {
-        alert('Could not clear call history. Please try again.');
-      }
+      await CallSignalingService.clearCallHistory(currentUser.id);
     } catch (e: any) {
-      alert(e?.message || 'Could not clear call history.');
-    } finally {
-      setIsClearing(false);
+      console.warn('Background call history clear notice:', e);
     }
   };
 
   const handleDeleteRecord = async (recordId: string) => {
     if (!currentUser?.id) return;
-    setDeletingRecordId(recordId);
+    // Optimistic instant removal: remove row from state immediately
+    setHistory(prev => prev.filter(r => r.id !== recordId));
+
     try {
-      const ok = await CallSignalingService.deleteCallRecord(recordId, currentUser.id);
-      if (ok) {
-        setHistory(prev => prev.filter(r => r.id !== recordId));
-      } else {
-        alert('Could not delete call record.');
-      }
+      await CallSignalingService.deleteCallRecord(recordId, currentUser.id);
     } catch (e: any) {
-      alert(e?.message || 'Could not delete call record.');
-    } finally {
-      setDeletingRecordId(null);
+      console.warn('Background call record delete notice:', e);
     }
   };
 
@@ -191,12 +179,11 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
             <button
               type="button"
               onClick={() => setShowClearConfirm(true)}
-              disabled={isClearing}
-              className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
               title="Clear all call history"
             >
               <Trash2 className="w-4 h-4 text-rose-500" />
-              <span>{isClearing ? 'Clearing...' : 'Clear History'}</span>
+              <span>Clear History</span>
             </button>
           )}
           <button
@@ -407,8 +394,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
                     <button
                       type="button"
                       onClick={() => handleDeleteRecord(record.id)}
-                      disabled={deletingRecordId === record.id}
-                      className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
                       title="Delete call record"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -438,7 +424,6 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
-                disabled={isClearing}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
               >
                 Cancel
@@ -446,10 +431,9 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
               <button
                 type="button"
                 onClick={handleClearAllHistory}
-                disabled={isClearing}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer"
               >
-                {isClearing ? 'Clearing...' : 'Clear All'}
+                Clear All
               </button>
             </div>
           </div>

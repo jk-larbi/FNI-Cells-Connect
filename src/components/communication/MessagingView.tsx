@@ -380,12 +380,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const [deleteTargetMessage, setDeleteTargetMessage] = useState<CommunityMessage | PrivateMessage | null>(null);
   const [deleteForBoth, setDeleteForBoth] = useState<boolean>(true);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Clear Chat History States
   const [chatToClear, setChatToClear] = useState<{ id: string; name: string } | null>(null);
   const [showClearChatModal, setShowClearChatModal] = useState<boolean>(false);
-  const [isClearingChat, setIsClearingChat] = useState<boolean>(false);
   const [clearChatForEveryone, setClearChatForEveryone] = useState<boolean>(false);
 
   // DOM Refs
@@ -1057,11 +1055,21 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   const handleConfirmDelete = async () => {
     if (!deleteTargetMessage || !currentUser?.id) return;
-    setIsDeleting(true);
+    const msg = deleteTargetMessage;
+    const isCommunity = selectedChatId === 'community';
+    const forEveryone = deleteForBoth;
+
+    // 1. Instant optimistic UI removal and modal dismissal (0ms latency, instant response)
+    setDeleteTargetMessage(null);
+    if (isCommunity) {
+      setCommunityMessages(prev => prev.filter(m => m.id !== msg.id));
+    } else {
+      setPrivateMessages(prev => prev.filter(m => m.id !== msg.id));
+    }
+
+    // 2. Persist deletion in background without blocking the UI
     try {
-      const msg = deleteTargetMessage;
-      const isCommunity = selectedChatId === 'community';
-      if (deleteForBoth) {
+      if (forEveryone) {
         await MessagingService.deleteMessageForEveryone(
           msg.id,
           isCommunity ? 'community' : 'private'
@@ -1073,47 +1081,44 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           isCommunity ? 'community' : 'private'
         );
       }
-      // Remove immediately from active view
-      if (isCommunity) {
-        setCommunityMessages(prev => prev.filter(m => m.id !== msg.id));
-      } else {
-        setPrivateMessages(prev => prev.filter(m => m.id !== msg.id));
-      }
-      setDeleteTargetMessage(null);
     } catch (err) {
-      console.error('Failed to delete message:', err);
-    } finally {
-      setIsDeleting(false);
+      console.warn('Background message delete notice:', err);
     }
   };
 
-  // FNI Clear Chat History Handler
+  // FNI Clear Chat History Handler (Instant & Optimistic)
   const handleConfirmClearChat = async () => {
     if (!currentUser?.id || !chatToClear) return;
-    setIsClearingChat(true);
-    try {
-      if (chatToClear.id === 'community') {
-        const ok = await MessagingService.clearCommunityHistory(currentUser.id, clearChatForEveryone);
-        if (ok && selectedChatId === 'community') {
-          setCommunityMessages([]);
-        }
-      } else {
-        const ok = await MessagingService.clearPrivateConversation(currentUser.id, chatToClear.id, clearChatForEveryone);
-        if (ok && selectedChatId === chatToClear.id) {
-          setPrivateMessages(prev => prev.filter(m => !(
-            (m.senderUid === currentUser.id && m.recipientUid === chatToClear.id) ||
-            (m.senderUid === chatToClear.id && m.recipientUid === currentUser.id)
-          )));
-        }
+    const target = chatToClear;
+    const forEveryone = clearChatForEveryone;
+
+    // 1. Instant optimistic UI clear and modal dismissal (0ms latency, buttery smooth)
+    setShowClearChatModal(false);
+    setChatToClear(null);
+    setClearChatForEveryone(false);
+
+    if (target.id === 'community') {
+      if (selectedChatId === 'community') {
+        setCommunityMessages([]);
       }
-      await loadActiveMessages();
-      setShowClearChatModal(false);
-      setChatToClear(null);
-      setClearChatForEveryone(false);
+    } else {
+      if (selectedChatId === target.id) {
+        setPrivateMessages(prev => prev.filter(m => !(
+          (m.senderUid === currentUser.id && m.recipientUid === target.id) ||
+          (m.senderUid === target.id && m.recipientUid === currentUser.id)
+        )));
+      }
+    }
+
+    // 2. Persist in background without blocking UI
+    try {
+      if (target.id === 'community') {
+        await MessagingService.clearCommunityHistory(currentUser.id, forEveryone);
+      } else {
+        await MessagingService.clearPrivateConversation(currentUser.id, target.id, forEveryone);
+      }
     } catch (err: any) {
-      alert(err?.message || 'Could not clear chat history.');
-    } finally {
-      setIsClearingChat(false);
+      console.warn('Background chat clear notice:', err);
     }
   };
 
@@ -1603,12 +1608,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setFavoriteStickers(MessagingService.getFavoriteStickers(currentUser.id));
   };
 
-  // Delete Custom Sticker
-  const handleDeleteCustomSticker = async (stickerId: string) => {
+  // Delete Custom Sticker (Instant & Optimistic)
+  const handleDeleteCustomSticker = (stickerId: string) => {
     if (!currentUser?.id) return;
-    await MessagingService.deleteUserCustomSticker(currentUser.id, stickerId);
     setUserCustomStickers(prev => prev.filter(s => s.id !== stickerId));
-    setFavoriteStickers(MessagingService.getFavoriteStickers(currentUser.id));
+    setFavoriteStickers(prev => prev.filter(s => s.id !== stickerId));
+    void MessagingService.deleteUserCustomSticker(currentUser.id, stickerId);
   };
 
   // Create Poll
@@ -4347,7 +4352,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
               <button
                 type="button"
-                disabled={isDeleting}
                 onClick={() => setDeleteTargetMessage(null)}
                 className="px-4 py-2 rounded-2xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer transition-colors"
               >
@@ -4355,15 +4359,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </button>
               <button
                 type="button"
-                disabled={isDeleting}
                 onClick={handleConfirmDelete}
                 className="px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
               >
-                {isDeleting ? (
-                  <span>Deleting...</span>
-                ) : (
-                  <span>{deleteForBoth ? 'Delete for Both' : 'Delete for Me'}</span>
-                )}
+                <span>{deleteForBoth ? 'Delete for Both' : 'Delete for Me'}</span>
               </button>
             </div>
           </div>
@@ -4418,7 +4417,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
               <button
                 type="button"
-                disabled={isClearingChat}
                 onClick={() => {
                   setShowClearChatModal(false);
                   setChatToClear(null);
@@ -4430,15 +4428,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </button>
               <button
                 type="button"
-                disabled={isClearingChat}
                 onClick={handleConfirmClearChat}
                 className="px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
               >
-                {isClearingChat ? (
-                  <span>Clearing...</span>
-                ) : (
-                  <span>{clearChatForEveryone ? 'Clear for Everyone' : 'Clear for Me'}</span>
-                )}
+                <span>{clearChatForEveryone ? 'Clear for Everyone' : 'Clear for Me'}</span>
               </button>
             </div>
           </div>
