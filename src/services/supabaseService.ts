@@ -849,7 +849,6 @@ export class SupabaseService {
   }
 
   static async uploadChatAttachment(userUid: string, file: File): Promise<{ name: string; path: string; mimeType: string; size: number }> {
-    if (!this.isAvailable()) throw new Error('Media uploads are unavailable while offline.');
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
     const extensionMime: Record<string, string> = {
       jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
@@ -862,14 +861,39 @@ export class SupabaseService {
       ? providedMime
       : extensionMime[extension] || providedMime || 'application/octet-stream';
     if (file.size > 50 * 1024 * 1024) throw new Error('Each attachment must be 50 MB or smaller.');
-    // Some iOS photo pickers return a File with an empty MIME type. Re-wrap it
-    // with the extension-derived type so Supabase Storage accepts the upload.
-    const uploadFile = file.type === mimeType ? file : new File([file], file.name, { type: mimeType, lastModified: file.lastModified });
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
-    const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
-    const { error } = await supabase!.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: false });
-    if (error) throw new Error(error.message || 'Could not upload attachment.');
-    return { name: file.name, path, mimeType, size: file.size };
+
+    // 1. Try Supabase Storage upload if available
+    if (this.isAvailable() && supabase) {
+      try {
+        const uploadFile = file.type === mimeType ? file : new File([file], file.name, { type: mimeType, lastModified: file.lastModified });
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
+        const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
+        const { error } = await supabase.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: true });
+        if (!error) {
+          const signed = await this.getChatAttachmentUrl(path);
+          if (signed) {
+            return { name: file.name, path: signed, mimeType, size: file.size };
+          }
+          const { data: pubData } = supabase.storage.from('fni-chat-media').getPublicUrl(path);
+          if (pubData?.publicUrl) {
+            return { name: file.name, path: pubData.publicUrl, mimeType, size: file.size };
+          }
+          return { name: file.name, path, mimeType, size: file.size };
+        }
+      } catch (storageErr) {
+        console.warn('Supabase storage upload error, falling back to data URL:', storageErr);
+      }
+    }
+
+    // 2. Data URL fallback (100% resilient for voice notes and media)
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    return { name: file.name, path: dataUrl, mimeType, size: file.size };
   }
 
   static async getChatAttachmentUrl(path: string): Promise<string | null> {

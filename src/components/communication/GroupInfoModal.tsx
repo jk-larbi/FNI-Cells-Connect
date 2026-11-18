@@ -163,6 +163,29 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
   // Media & Links Extraction
   const [activeMediaTab, setActiveMediaTab] = useState<'media' | 'docs' | 'links' | 'audio'>('media');
   const [activeAudioPlaying, setActiveAudioPlaying] = useState<string | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+  const handlePlaySharedAudio = async (url: string) => {
+    if (!url) return;
+    if (activeAudioPlaying === url) {
+      audioPlayerRef.current?.pause();
+      setActiveAudioPlaying(null);
+      return;
+    }
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+    }
+    const audio = new Audio(url);
+    audioPlayerRef.current = audio;
+    audio.onended = () => setActiveAudioPlaying(null);
+    audio.onerror = () => setActiveAudioPlaying(null);
+    setActiveAudioPlaying(url);
+    try {
+      await audio.play();
+    } catch {
+      setActiveAudioPlaying(null);
+    }
+  };
 
   // Invite Link State
   const [inviteCode, setInviteCode] = useState<string>(
@@ -1546,10 +1569,7 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
                       <div className="flex items-center gap-3 min-w-0">
                         <button
                           type="button"
-                          onClick={() => {
-                            if (activeAudioPlaying === aud.url) setActiveAudioPlaying(null);
-                            else setActiveAudioPlaying(aud.url);
-                          }}
+                          onClick={() => handlePlaySharedAudio(aud.url)}
                           className="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                         >
                           {activeAudioPlaying === aud.url ? (

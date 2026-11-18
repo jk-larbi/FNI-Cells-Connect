@@ -282,6 +282,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recordingSecondsRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimerRef = useRef<any>(null);
 
@@ -336,12 +337,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     y: number;
   } | null>(null);
 
-  // Top Audio Player Bar (Image 1 PC Mode)
+  // Top Audio Player Bar & State
   const [activeAudioPlayer, setActiveAudioPlayer] = useState<{
     title: string;
     url: string;
     isPlaying: boolean;
-    duration: string;
+    duration: string | number;
+    currentTime?: number;
+    playbackProgress?: number;
+    isLoading?: boolean;
+    error?: string | null;
   } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -985,6 +990,105 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
+  // Audio Playback & Seeking Engine
+  const handlePlayAudio = async (url: string, title: string) => {
+    if (!url) return;
+
+    // Toggle pause/play if same URL
+    if (activeAudioPlayer && activeAudioPlayer.url === url) {
+      if (activeAudioPlayer.isPlaying) {
+        audioRef.current?.pause();
+        setActiveAudioPlayer(prev => (prev ? { ...prev, isPlaying: false } : null));
+      } else {
+        try {
+          await audioRef.current?.play();
+          setActiveAudioPlayer(prev => (prev ? { ...prev, isPlaying: true, error: null } : null));
+        } catch (err: any) {
+          console.warn('Audio resume error:', err);
+        }
+      }
+      return;
+    }
+
+    // Stop and clean up current audio if playing
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
+      } catch {}
+    }
+
+    const audio = new Audio();
+    audio.crossOrigin = 'anonymous';
+    audioRef.current = audio;
+
+    setActiveAudioPlayer({
+      title,
+      url,
+      isPlaying: true,
+      duration: '0:15',
+      currentTime: 0,
+      playbackProgress: 0,
+      isLoading: true,
+      error: null,
+    });
+
+    audio.onloadedmetadata = () => {
+      const dur = audio.duration;
+      if (dur && !isNaN(dur) && isFinite(dur)) {
+        const durStr = `${Math.floor(dur / 60)}:${Math.floor(dur % 60).toString().padStart(2, '0')}`;
+        setActiveAudioPlayer(prev => (prev && prev.url === url ? { ...prev, duration: durStr, isLoading: false } : prev));
+      } else {
+        setActiveAudioPlayer(prev => (prev && prev.url === url ? { ...prev, isLoading: false } : prev));
+      }
+    };
+
+    audio.ontimeupdate = () => {
+      const cur = audio.currentTime || 0;
+      const dur = audio.duration;
+      const pct = (dur && !isNaN(dur) && dur > 0) ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
+      setActiveAudioPlayer(prev => {
+        if (!prev || prev.url !== url) return prev;
+        return {
+          ...prev,
+          currentTime: cur,
+          playbackProgress: pct,
+        };
+      });
+    };
+
+    audio.onended = () => {
+      setActiveAudioPlayer(prev => (prev && prev.url === url ? { ...prev, isPlaying: false, currentTime: 0, playbackProgress: 0 } : prev));
+    };
+
+    audio.onerror = (e) => {
+      console.warn('Audio playback error on url:', url, e);
+      setActiveAudioPlayer(prev => (prev && prev.url === url ? { ...prev, isPlaying: false, isLoading: false, error: 'Cannot play audio' } : prev));
+    };
+
+    try {
+      audio.src = url;
+      audio.load();
+      await audio.play();
+    } catch (playErr: any) {
+      console.warn('Audio initial play blocked or failed:', playErr);
+      setActiveAudioPlayer(prev => (prev && prev.url === url ? { ...prev, isPlaying: false, isLoading: false, error: playErr?.message || 'Playback blocked' } : prev));
+    }
+  };
+
+  const handleSeekAudio = (e: React.MouseEvent<HTMLDivElement>, fileUrl: string) => {
+    e.stopPropagation();
+    if (!audioRef.current || activeAudioPlayer?.url !== fileUrl) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    if (audioRef.current.duration && !isNaN(audioRef.current.duration) && isFinite(audioRef.current.duration)) {
+      audioRef.current.currentTime = ratio * audioRef.current.duration;
+      setActiveAudioPlayer(prev => prev ? { ...prev, playbackProgress: ratio * 100 } : null);
+    }
+  };
+
   // Telegram Voice Note Waveform Renderer (Matches Screenshot)
   const renderVoiceNote = (
     fileUrl: string,
@@ -993,11 +1097,21 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     formattedTime: string,
     _senderName?: string
   ) => {
-    const isPlayingThis = activeAudioPlayer?.url === fileUrl && activeAudioPlayer.isPlaying;
+    const isThisAudio = activeAudioPlayer?.url === fileUrl;
+    const isPlayingThis = isThisAudio && activeAudioPlayer.isPlaying;
+    const progress = isThisAudio ? (activeAudioPlayer.playbackProgress || 0) : 0;
     const bars = [8, 14, 22, 12, 18, 24, 16, 28, 20, 14, 26, 18, 10, 22, 16, 26, 12, 20, 28, 14, 18, 24, 16, 20, 12, 16, 8];
+    const activeBarIndex = Math.floor((progress / 100) * bars.length);
+
+    let timeLabel = durationStr || '0:15';
+    if (isThisAudio && activeAudioPlayer.currentTime !== undefined && activeAudioPlayer.currentTime > 0) {
+      const curM = Math.floor(activeAudioPlayer.currentTime / 60);
+      const curS = Math.floor(activeAudioPlayer.currentTime % 60).toString().padStart(2, '0');
+      timeLabel = `${curM}:${curS}`;
+    }
 
     return (
-      <div className="flex items-center gap-2.5 py-1 px-1 min-w-[210px] max-w-[290px] select-none">
+      <div className="flex items-center gap-2.5 py-1 px-1 min-w-[220px] max-w-[300px] select-none">
         {/* Play/Pause Button */}
         <button
           type="button"
@@ -1005,8 +1119,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             e.stopPropagation();
             handlePlayAudio(fileUrl, title);
           }}
-          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center shrink-0 transition-transform cursor-pointer"
-          title={isPlayingThis ? 'Pause' : 'Play'}
+          className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 cursor-pointer shadow-md ${
+            isPlayingThis
+              ? 'bg-blue-600 text-white'
+              : 'bg-white/15 dark:bg-white/10 hover:bg-white/25 text-white'
+          }`}
+          title={isPlayingThis ? 'Pause voice note' : 'Play voice note'}
         >
           {isPlayingThis ? (
             <Pause className="w-5 h-5 fill-current" />
@@ -1017,24 +1135,37 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
         {/* Middle: Waveform and Timestamps */}
         <div className="flex-1 min-w-0">
-          <div className="relative flex items-center gap-[2.5px] h-6 py-1">
-            {bars.map((h, i) => (
-              <div
-                key={i}
-                className="w-[2.5px] rounded-full bg-white/70"
-                style={{ height: `${h}px` }}
-              />
-            ))}
+          <div
+            onClick={e => handleSeekAudio(e, fileUrl)}
+            className="relative flex items-center gap-[2.5px] h-6 py-1 cursor-pointer group/wave"
+            title="Tap to seek"
+          >
+            {bars.map((h, i) => {
+              const isActive = isThisAudio && i <= activeBarIndex;
+              return (
+                <div
+                  key={i}
+                  className={`w-[2.5px] rounded-full transition-colors ${
+                    isActive ? 'bg-[#3ca3eb]' : 'bg-white/50 dark:bg-white/30 group-hover/wave:bg-white/70'
+                  }`}
+                  style={{ height: `${h}px` }}
+                />
+              );
+            })}
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#3ca3eb] shadow-xs transition-all duration-300"
-              style={{ left: isPlayingThis ? '60%' : '15%' }}
+              className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#3ca3eb] shadow-xs transition-all pointer-events-none"
+              style={{ left: `calc(${progress}% - 5px)` }}
             />
           </div>
 
           <div className="flex items-center justify-between text-[11px] text-white/70 font-medium px-0.5">
-            <span>{durationStr || '0:25'}</span>
+            <span className={isPlayingThis ? 'text-[#3ca3eb] font-bold' : ''}>{timeLabel}</span>
             <span>{formattedTime}</span>
           </div>
+
+          {isThisAudio && activeAudioPlayer.error && (
+            <p className="text-[10px] text-rose-300 truncate mt-0.5">{activeAudioPlayer.error}</p>
+          )}
         </div>
 
         {/* Right: Circular Avatar with Blue Microphone Badge */}
@@ -1396,70 +1527,122 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   // ---------------------------------------------------------------------------
-  // 5. VOICE NOTE RECORDING & PLAYBACK
+  // 5. VOICE NOTE RECORDING
   // ---------------------------------------------------------------------------
   const startVoiceRecording = async () => {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      alert('Voice recording is not supported on this device/browser.');
+      alert('Voice recording is not supported on this device or browser.');
       return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks: BlobPart[] = [];
 
+      // Determine best supported audio container/codec across iOS, Android, and Desktop
+      let mimeType = 'audio/webm;codecs=opus';
+      if (typeof MediaRecorder.isTypeSupported === 'function') {
+        const candidates = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4;codecs=mp4a.40.2',
+          'audio/mp4',
+          'audio/aac',
+          'audio/ogg',
+        ];
+        const supported = candidates.find(t => MediaRecorder.isTypeSupported(t));
+        if (supported) mimeType = supported;
+      }
+
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType });
+      } catch {
+        recorder = new MediaRecorder(stream);
+        mimeType = recorder.mimeType || 'audio/webm';
+      }
+
+      const chunks: BlobPart[] = [];
       recorder.ondataavailable = e => {
-        if (e.data.size > 0) chunks.push(e.data);
+        if (e.data && e.data.size > 0) chunks.push(e.data);
       };
 
       recorder.onstop = async () => {
-        const mimeType = recorder.mimeType || 'audio/webm';
-        const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
-        const file = new File([new Blob(chunks, { type: mimeType })], `voice-note-${Date.now()}.${ext}`, {
-          type: mimeType,
-        });
+        const finalSecs = recordingSecondsRef.current || 1;
+        const formattedDuration = `${Math.floor(finalSecs / 60)}:${(finalSecs % 60).toString().padStart(2, '0')}`;
+        const blob = new Blob(chunks, { type: mimeType });
 
-        if (file.size > 0 && selectedChatId) {
-          const att = await MessagingService.uploadChatAttachment(currentUser?.id || 'guest', file);
-          if (att) {
-            if (selectedChatId === 'community') {
-              await MessagingService.sendCommunityMessage({
-                senderUid: currentUser.id,
-                senderName: currentUser.full_name || 'Leader',
-                senderRole: currentUser.role,
-                cellName: currentUser.cell_name,
-                content: '🎤 Voice Note',
-                attachments: [att],
-              });
-            } else {
-              const recipientUid = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
-              const recipient = allMembers.find(m => m.id === recipientUid);
-              await MessagingService.sendPrivateMessage({
-                senderUid: currentUser.id,
-                senderName: currentUser.full_name || 'Leader',
-                senderRole: currentUser.role,
-                recipientUid,
-                recipientName: recipient?.full_name || 'FNI Member',
-                content: '🎤 Voice Note',
-                attachments: [att],
-              });
-            }
-            await loadActiveMessages();
+        if (blob.size > 0 && selectedChatId) {
+          // Robust Data URL representation guaranteed to play on any device/offline
+          const dataUrl = await new Promise<string>(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(blob);
+          });
+
+          const ext = mimeType.includes('mp4') ? 'm4a' : (mimeType.includes('aac') ? 'aac' : 'webm');
+          const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: mimeType });
+
+          let att: any = null;
+          try {
+            att = await MessagingService.uploadChatAttachment(currentUser?.id || 'guest', file);
+          } catch (uploadErr) {
+            console.warn('Voice note storage upload fallback:', uploadErr);
           }
+
+          if (!att || !att.path) {
+            att = {
+              name: `Voice Note (${formattedDuration})`,
+              path: dataUrl || '',
+              mimeType: mimeType || 'audio/webm',
+              size: blob.size,
+            };
+          }
+
+          const content = `🎤 Voice Note (${formattedDuration})`;
+          if (selectedChatId === 'community') {
+            await MessagingService.sendCommunityMessage({
+              senderUid: currentUser.id,
+              senderName: currentUser.full_name || 'FNI Leader',
+              senderRole: currentUser.role,
+              cellName: currentUser.cell_name,
+              content,
+              attachments: [att],
+            });
+          } else {
+            const recipientUid = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+            const recipient = allMembers.find(m => m.id === recipientUid);
+            await MessagingService.sendPrivateMessage({
+              senderUid: currentUser.id,
+              senderName: currentUser.full_name || 'FNI Leader',
+              senderRole: currentUser.role,
+              recipientUid,
+              recipientName: recipient?.full_name || 'FNI Member',
+              content,
+              attachments: [att],
+            });
+          }
+          await loadActiveMessages();
         }
 
         stream.getTracks().forEach(t => t.stop());
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start();
+      recorder.start(250); // Timeslice 250ms for chunk reliability
       setIsRecordingVoice(true);
       setRecordingSeconds(0);
+      recordingSecondsRef.current = 0;
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = setInterval(() => {
-        setRecordingSeconds(sec => sec + 1);
+        setRecordingSeconds(sec => {
+          const next = sec + 1;
+          recordingSecondsRef.current = next;
+          return next;
+        });
       }, 1000);
-    } catch (e) {
-      alert('Microphone access was denied or unavailable.');
+    } catch (e: any) {
+      console.error('Microphone access notice:', e);
+      alert('Microphone access was denied or is unavailable on this device.');
     }
   };
 
@@ -1467,37 +1650,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if (mediaRecorderRef.current && isRecordingVoice) {
       mediaRecorderRef.current.stop();
       setIsRecordingVoice(false);
-      clearInterval(recordingTimerRef.current);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
     }
-  };
-
-  const handlePlayAudio = (url: string, title: string) => {
-    if (activeAudioPlayer && activeAudioPlayer.url === url) {
-      if (activeAudioPlayer.isPlaying) {
-        audioRef.current?.pause();
-        setActiveAudioPlayer({ ...activeAudioPlayer, isPlaying: false });
-      } else {
-        audioRef.current?.play();
-        setActiveAudioPlayer({ ...activeAudioPlayer, isPlaying: true });
-      }
-      return;
-    }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    audio.play();
-    setActiveAudioPlayer({
-      title,
-      url,
-      isPlaying: true,
-      duration: 'Live',
-    });
-    audio.onended = () => {
-      setActiveAudioPlayer(null);
-    };
   };
 
   // ---------------------------------------------------------------------------
@@ -1621,11 +1775,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Resolve Attachment URL
   const getAttachmentUrl = (att: ChatAttachment) => {
-    if (!att.path) return '';
-    if (att.path.startsWith('http://') || att.path.startsWith('https://') || att.path.startsWith('blob:')) {
-      return att.path;
+    if (!att) return '';
+    const raw = att.path || (att as any).url || (att as any).dataUrl || '';
+    if (!raw) return '';
+    if (raw.startsWith('data:') || raw.startsWith('blob:') || raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
     }
-    return supabase?.storage.from('fni-chat-media').getPublicUrl(att.path).data.publicUrl || att.path;
+    if (supabase) {
+      const { data } = supabase.storage.from('fni-chat-media').getPublicUrl(raw);
+      if (data?.publicUrl) return data.publicUrl;
+    }
+    return raw;
   };
 
   // Render Formatted Message Body with Clickable Mentions
@@ -2594,17 +2754,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {msg.attachments && msg.attachments.length > 0 && (
                             <div className="space-y-2 mb-1.5">
                               {msg.attachments.map((att, attIdx) => {
-                                const isAudio = att.mimeType?.startsWith('audio') || att.name?.includes('voice-note');
+                                const isAudio = att.mimeType?.startsWith('audio') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
                                 const isImage = att.mimeType?.startsWith('image');
                                 const fileUrl = getAttachmentUrl(att);
 
                                 if (isAudio) {
+                                  const durationMatch = (att.name || msg.content || '').match(/\((\d+:\d+)\)/);
+                                  const initialDuration = durationMatch ? durationMatch[1] : '0:15';
                                   return (
                                     <React.Fragment key={attIdx}>
                                       {renderVoiceNote(
                                         fileUrl,
                                         att.name || 'Voice Message',
-                                        '0:25',
+                                        initialDuration,
                                         formattedTime,
                                         msg.senderName
                                       )}
@@ -2637,7 +2799,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           )}
 
                           {/* Message Text / Sticker / Poll */}
-                          {msg.content !== '🎤 Voice Note' && (
+                          {!msg.content?.startsWith('🎤 Voice Note') && msg.content !== '🎤 Voice Note' && (
                             <div className="leading-relaxed text-left break-words overflow-hidden text-sm sm:text-[15px]">
                               {renderMessageContent(msg)}
                             </div>
