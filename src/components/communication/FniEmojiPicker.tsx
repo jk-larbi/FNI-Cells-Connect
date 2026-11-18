@@ -21,9 +21,27 @@ export const FniEmojiPicker: React.FC<FniEmojiPickerProps> = ({ onSelect }) => {
   const [category, setCategory] = useState('Smileys');
   const [query, setQuery] = useState('');
   const active = EMOJI_CATEGORIES.find(item => item.name === category) || EMOJI_CATEGORIES[0];
-  const emojis = useMemo(() => query.trim()
-    ? EMOJI_CATEGORIES.flatMap(item => item.emojis).filter((emoji, index, all) => all.indexOf(emoji) === index)
-    : active.emojis, [active, query]);
+  const searchTerms: Record<string, string> = {
+    smileys: 'smile happy laugh face crying sad angry sick love emotion',
+    people: 'people person hand gesture body family',
+    hearts: 'heart love affection romance broken heart',
+    nature: 'animal animals pet dog cat bird fish plant flower weather',
+    food: 'food fruit vegetable meal drink dessert',
+    activities: 'sport sports game music art celebration trophy',
+    travel: 'travel transport vehicle car plane building place',
+    objects: 'object technology phone computer tool medical money gift',
+    symbols: 'symbol sign religious check mark warning number',
+    flags: 'flag country nation pride',
+  };
+  const emojis = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return active.emojis;
+    const matchedCategories = EMOJI_CATEGORIES.filter(item =>
+      item.name.toLowerCase().includes(term) || (searchTerms[item.name.toLowerCase()] || '').includes(term)
+    );
+    const directMatches = EMOJI_CATEGORIES.flatMap(item => item.emojis).filter(emoji => emoji.includes(term));
+    return [...new Set([...matchedCategories.flatMap(item => item.emojis), ...directMatches])];
+  }, [active, query]);
 
   return (
     <section aria-label="Emoji picker" className="w-full min-w-0 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#182533] shadow-2xl p-3 space-y-2">
