@@ -284,6 +284,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const recordingSecondsRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordingTimerRef = useRef<any>(null);
 
   // --- TELEGRAM-INSPIRED MESSAGING UPGRADE STATE ---
@@ -1552,6 +1553,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         },
       });
 
+      mediaStreamRef.current = stream;
+
       // Safari/iOS commonly records AAC in MP4; Chromium/Android generally supports Opus in WebM.
       const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -1643,6 +1646,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         } finally {
           stream?.getTracks().forEach(track => track.stop());
           stream = null;
+          mediaStreamRef.current = null;
           mediaRecorderRef.current = null;
           setIsRecordingVoice(false);
           if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
@@ -1666,6 +1670,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     } catch (error: any) {
       console.error('Microphone access error:', error);
       stream?.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
       const message = error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError'
         ? 'Microphone permission was denied. Allow microphone access for FNI Cells Connect in your browser or device settings.'
         : error?.name === 'NotFoundError'
@@ -1685,7 +1690,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     } catch (error) {
       console.error('Could not stop voice recording:', error);
       setSendError('The recording could not be completed. Please try again.');
-      stream?.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current?.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
       mediaRecorderRef.current = null;
       setIsRecordingVoice(false);
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
