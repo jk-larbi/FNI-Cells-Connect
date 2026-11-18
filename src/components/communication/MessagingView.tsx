@@ -1037,13 +1037,26 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setSwipeOffset(0);
   };
 
-  // Context Menu trigger
+  // Context Menu trigger (opened on click or tap on message text)
   const handleMessageContextMenu = (e: React.MouseEvent, msg: CommunityMessage | PrivateMessage) => {
     e.preventDefault();
     e.stopPropagation();
-    const x = Math.min(e.clientX, window.innerWidth - 240);
-    const y = Math.min(e.clientY, window.innerHeight - 340);
-    setContextMenu({ msg, x, y });
+
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+
+    if ((!clientX || clientX === 0) && (!clientY || clientY === 0)) {
+      const el = document.getElementById(`msg-${msg.id}`);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        clientX = rect.left + rect.width / 2;
+        clientY = rect.top + rect.height / 2;
+      }
+    }
+
+    const safeX = Math.max(16, Math.min(clientX || window.innerWidth / 2, window.innerWidth - 240));
+    const safeY = Math.max(16, Math.min(clientY || window.innerHeight / 2, window.innerHeight - 340));
+    setContextMenu({ msg, x: safeX, y: safeY });
   };
 
   // FNI Message Deletion Handlers (Delete for Self vs Delete for Both)
@@ -2994,12 +3007,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         onTouchStart={e => handleTouchStart(msg, e)}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={() => handleTouchEnd(msg)}
-                        onContextMenu={e => handleMessageContextMenu(e, msg)}
-                        onClick={e => {
-                          if (window.innerWidth < 768 && Math.abs(swipeOffset) < 10) {
-                            handleMessageContextMenu(e, msg);
-                          }
-                        }}
                         className={`group relative flex items-end select-none w-full ${
                           isMine ? 'justify-end' : 'justify-start gap-2'
                         }`}
@@ -3018,7 +3025,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         {/* Avatar for other users */}
                         {!isMine && (
                           <div
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const member = allMembers.find(m => m.id === msg.senderUid);
                               if (member) {
                                 setSelectedUserProfile({
@@ -3041,9 +3049,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                         {/* Chat Bubble Container with Floating Action Overlay */}
                         <div className={`relative max-w-[85%] sm:max-w-[72%] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
-                          {/* Chat Bubble (FNI styling) */}
+                          {/* Chat Bubble (FNI styling) - Click or tap opens reactions and message options */}
                           <div
-                            className={`p-3 text-xs transition-shadow text-left ${
+                            onClick={e => {
+                              // If text is being actively highlighted/selected with mouse, do not pop menu
+                              const sel = window.getSelection();
+                              if (sel && sel.toString().trim().length > 0) return;
+                              if (Math.abs(swipeOffset) < 10) {
+                                handleMessageContextMenu(e, msg);
+                              }
+                            }}
+                            onContextMenu={e => handleMessageContextMenu(e, msg)}
+                            className={`p-3 text-xs transition-shadow text-left cursor-pointer active:scale-[0.99] select-text transition-transform ${
                               isMine ? 'fni-bubble-outgoing' : 'fni-bubble-incoming'
                             }`}
                             style={{ textAlign: 'left' }}
@@ -3224,75 +3241,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               )}
                             </div>
                           )}
-                        </div>
-
-                        {/* Desktop Hover action menu (Floating absolute overlay so it never pushes message away from the end) */}
-                        <div
-                          className={`hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity items-center gap-0.5 text-white/80 absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none group-hover:pointer-events-auto bg-slate-900/70 dark:bg-black/60 backdrop-blur-md rounded-full px-1 py-0.5 border border-white/10 shadow-lg ${
-                            isMine ? 'right-full mr-2' : 'left-full ml-2'
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setReplyToMessage({
-                                id: msg.id,
-                                senderName: msg.senderName,
-                                senderUid: msg.senderUid,
-                                content: msg.content.slice(0, 100),
-                              });
-                              composerInputRef.current?.focus();
-                            }}
-                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
-                            title="Reply"
-                          >
-                            <Reply className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleAddReaction(msg.id, '❤️')}
-                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer text-xs"
-                            title="Heart"
-                          >
-                            ❤️
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setForwardTargetMessage(msg);
-                              setIsForwardModalOpen(true);
-                            }}
-                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
-                            title="Forward message"
-                          >
-                            <Forward className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDeleteModal(msg)}
-                            className="p-1 rounded-full hover:bg-rose-600/80 transition-colors text-white hover:text-white cursor-pointer"
-                            title="Delete message"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                          </button>
-                          {canPin && (
-                            <button
-                              type="button"
-                              onClick={() => handleTogglePin(msg)}
-                              className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
-                              title={msg.isPinned ? 'Unpin' : 'Pin to top'}
-                            >
-                              <Pin className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={e => handleMessageContextMenu(e, msg)}
-                            className="p-1 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
-                            title="More options"
-                          >
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -4052,11 +4000,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       )}
 
       {/* =========================================================================
-          FNI FLOATING CONTEXT MENU
+          FNI FLOATING CONTEXT MENU & REACTION PICKER
       ========================================================================= */}
       {contextMenu && (
         <div
-          className="fixed inset-0 z-50 bg-black/10"
+          className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[0.5px]"
           onClick={() => setContextMenu(null)}
           onContextMenu={e => {
             e.preventDefault();
@@ -4065,10 +4013,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{
-              left: Math.min(contextMenu.x, window.innerWidth - 240),
-              top: Math.min(contextMenu.y, window.innerHeight - 340),
-            }}
+            style={
+              window.innerWidth < 640
+                ? {
+                    left: '50%',
+                    bottom: '24px',
+                    transform: 'translateX(-50%)',
+                    width: 'calc(100% - 32px)',
+                    maxWidth: '320px',
+                  }
+                : {
+                    left: Math.max(16, Math.min(contextMenu.x, window.innerWidth - 240)),
+                    top: Math.max(16, Math.min(contextMenu.y, window.innerHeight - 360)),
+                  }
+            }
             className="fixed z-50 w-56 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-2xl p-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn space-y-1"
           >
             {/* Quick Reaction Bar */}
@@ -4077,7 +4035,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <button
                   key={emoji}
                   type="button"
-                  onClick={() => handleAddReaction(contextMenu.msg.id, emoji)}
+                  onClick={() => {
+                    handleAddReaction(contextMenu.msg.id, emoji);
+                    setContextMenu(null);
+                  }}
                   className="hover:scale-125 transition-transform p-1 text-sm cursor-pointer"
                 >
                   {emoji}
