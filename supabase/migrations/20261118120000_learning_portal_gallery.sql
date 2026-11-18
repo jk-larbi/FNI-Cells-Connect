@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.gallery_items (
   allow_download BOOLEAN NOT NULL DEFAULT true,
   tutor_access_level TEXT NOT NULL DEFAULT 'all_tutors' CHECK (tutor_access_level IN ('all_tutors', 'cell_leaders_only', 'executives_only')),
   uploaded_by TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
-  uploaded_by_name TEXT DEFAULT 'FNI Directorate',
+  uploaded_by_name TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
