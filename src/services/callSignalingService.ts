@@ -282,16 +282,35 @@ export class CallSignalingService {
 
     const session = data as CallSession;
 
-    // Add host as first participant
-    await supabase.from('call_participants').insert({
-      session_id: session.id,
-      user_id: params.hostId,
-      user_name: params.hostName,
-      user_avatar: params.hostAvatar,
-      role: 'host',
-      is_muted: false,
-      is_video_enabled: params.callType === 'video',
-    });
+    // Persist the host and every invited member before sending notifications.
+    // This gives RLS a real membership record for room access and LiveKit tokens.
+    const participantIds = Array.from(new Set([params.hostId, ...(params.invitedMemberIds || [])]));
+    const { data: invitedProfiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, cell_name')
+      .in('id', participantIds);
+    if (profilesError) throw profilesError;
+
+    const profileById = new Map((invitedProfiles || []).map(profile => [profile.id, profile]));
+    const participantRows = participantIds
+      .filter(id => profileById.has(id))
+      .map(id => {
+        const profile = profileById.get(id)!;
+        return {
+          session_id: session.id,
+          user_id: id,
+          user_name: profile.full_name || (id === params.hostId ? params.hostName : 'FNI Member'),
+          user_avatar: profile.avatar_url || (id === params.hostId ? params.hostAvatar : null),
+          user_cell: profile.cell_name || null,
+          role: id === params.hostId ? 'host' : 'participant',
+          is_muted: false,
+          is_video_enabled: params.callType === 'video',
+        };
+      });
+    const { error: participantsError } = await supabase
+      .from('call_participants')
+      .insert(participantRows);
+    if (participantsError) throw participantsError;
 
     // Notify invited members or cell members
     if (params.invitedMemberIds && params.invitedMemberIds.length > 0) {
@@ -319,21 +338,23 @@ export class CallSignalingService {
   // 8. BLOCK & REPORT USERS
   // ---------------------------------------------------------------------------
   static async blockUser(userId: string, blockedUserId: string, reason?: string): Promise<void> {
-    if (!supabase) return;
-    await supabase.from('call_blocked_users').upsert({
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { error } = await supabase.from('call_blocked_users').upsert({
       user_id: userId,
       blocked_user_id: blockedUserId,
       reason,
     });
+    if (error) throw error;
   }
 
   static async unblockUser(userId: string, blockedUserId: string): Promise<void> {
-    if (!supabase) return;
-    await supabase
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { error } = await supabase
       .from('call_blocked_users')
       .delete()
       .eq('user_id', userId)
       .eq('blocked_user_id', blockedUserId);
+    if (error) throw error;
   }
 
   static async isUserBlocked(userId: string, targetUserId: string): Promise<boolean> {
