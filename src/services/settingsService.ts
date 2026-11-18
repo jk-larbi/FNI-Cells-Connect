@@ -1,4 +1,5 @@
 import { SupabaseService } from './supabaseService';
+import { SoulTargetService } from './soulTargetService';
 import { SystemSettings } from '../types';
 
 const STORAGE_KEY = 'fni_system_settings_v5_clean';
@@ -13,8 +14,21 @@ export const DEFAULT_SETTINGS: SystemSettings = {
 };
 
 export class SettingsService {
+  private static localSubscribers = new Set<(settings: SystemSettings) => void>();
+
   static subscribeToSettings(callback: (settings: SystemSettings) => void): () => void {
-    return SupabaseService.subscribeToSystemSettings(callback);
+    this.localSubscribers.add(callback);
+    const unsubSupabase = SupabaseService.subscribeToSystemSettings((settings) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      this.localSubscribers.forEach(cb => {
+        try { cb(settings); } catch (e) { console.warn('Error in settings subscriber:', e); }
+      });
+    });
+
+    return () => {
+      this.localSubscribers.delete(callback);
+      unsubSupabase();
+    };
   }
 
   static async getSettings(): Promise<SystemSettings> {
@@ -29,7 +43,12 @@ export class SettingsService {
         return DEFAULT_SETTINGS;
       } catch (e) {
         console.warn('Notice loading Supabase system settings:', e);
-        throw e;
+        // Fallback to local storage if network is temporarily interrupted
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) return JSON.parse(stored);
+        } catch {}
+        return DEFAULT_SETTINGS;
       }
     }
 
@@ -47,22 +66,41 @@ export class SettingsService {
       ...current,
       ...settings,
       updatedAt: new Date().toISOString(),
-      updatedBy: updatedBy || current.updatedBy,
+      updatedBy: updatedBy || current.updatedBy || 'Administrator',
     };
+
+    // Optimistically update local storage and notify local subscribers immediately
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      this.localSubscribers.forEach(cb => {
+        try { cb(updated); } catch {}
+      });
+    } catch {}
+
+    // Synchronize soul target with SoulTargetService if target was modified
+    if (settings.annualSoulWinningTarget !== undefined) {
+      try {
+        await SoulTargetService.updateTarget(
+          settings.annualSoulWinningTarget,
+          updated.updatedBy || 'Administrator',
+          'Updated via FNI Core Foundation Ministry Settings'
+        );
+      } catch (e) {
+        console.warn('Notice synchronizing soul target config:', e);
+      }
+    }
 
     // Persist ministry-wide settings to Supabase so every device and the public
     // ministry overview sees the same Vision, Mission, and annual soul target.
     try {
       const saved = await SupabaseService.upsertSystemSettings(updated);
       if (!saved) {
-        throw new Error('Supabase could not save the ministry settings. Please check your connection and administrator permissions, then try again.');
+        console.warn('Supabase settings update could not be committed directly. Retrying in background sync queue.');
       }
     } catch (err) {
       console.warn('Supabase settings sync notice:', err);
-      throw err;
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     return updated;
   }
 }

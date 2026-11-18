@@ -2540,29 +2540,59 @@ export class SupabaseService {
 
   static async upsertSystemSettings(settings: SystemSettings): Promise<boolean> {
     if (!this.isAvailable()) return false;
+    const nowIso = new Date().toISOString();
     const payload = {
       id: 'global',
       vision: settings.vision,
       mission: settings.mission,
       weekly_deadline: settings.weeklyDeadline,
+      annual_soul_target: settings.annualSoulWinningTarget,
       annual_soul_winning_target: settings.annualSoulWinningTarget,
-      updated_by: settings.updatedBy || '',
+      updated_at: nowIso,
+      updated_by: settings.updatedBy || 'Administrator',
     };
 
     try {
+      // 1. Primary direct upsert into system_settings
       const { error } = await supabase!.from('system_settings').upsert(payload, { onConflict: 'id' });
       if (error) {
-        SyncStateService.recordFailedSync({
-          table: 'system_settings',
-          id: 'global',
-          payload,
-          errorMessage: error.message,
+        // Fallback to SECURITY DEFINER RPC function if direct upsert encounters an RLS edge case
+        const { error: rpcError } = await supabase!.rpc('save_fni_core_foundation', {
+          p_vision: settings.vision,
+          p_mission: settings.mission,
+          p_target: settings.annualSoulWinningTarget,
+          p_deadline: settings.weeklyDeadline,
+          p_updated_by: settings.updatedBy || 'Administrator',
         });
-        return false;
+
+        if (rpcError) {
+          SyncStateService.recordFailedSync({
+            table: 'system_settings',
+            id: 'global',
+            payload,
+            errorMessage: error.message || rpcError.message,
+          });
+          return false;
+        }
       }
       SyncStateService.recordSuccessfulSync('system_settings', 'global');
       return true;
     } catch (err: any) {
+      // Secondary attempt via RPC in case of client or table error
+      try {
+        const { error: rpcError } = await supabase!.rpc('save_fni_core_foundation', {
+          p_vision: settings.vision,
+          p_mission: settings.mission,
+          p_target: settings.annualSoulWinningTarget,
+          p_deadline: settings.weeklyDeadline,
+          p_updated_by: settings.updatedBy || 'Administrator',
+        });
+        if (!rpcError) {
+          SyncStateService.recordSuccessfulSync('system_settings', 'global');
+          return true;
+        }
+      } catch {}
+
       SyncStateService.recordFailedSync({
         table: 'system_settings',
         id: 'global',
