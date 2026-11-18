@@ -440,7 +440,7 @@ export const CommunicationSettingsModal: React.FC<CommunicationSettingsModalProp
                   {[
                     { id: 'chime', name: 'Celestial Chime', desc: 'Default FNI harmonious chime' },
                     { id: 'classic', name: 'Gentle Ring', desc: 'Soft bell tone' },
-                    { id: 'modern', name: 'Telegram Echo', desc: 'Clean modern pulse' },
+                    { id: 'modern', name: 'FNI Echo', desc: 'Clean modern pulse' },
                   ].map(rt => (
                     <button
                       key={rt.id}

@@ -555,7 +555,7 @@ export class NotificationService {
   }
 
   /**
-   * 4b. TELEGRAM-STYLE MENTION NOTIFICATION
+   * 4b. FNI MENTION NOTIFICATION
    */
   static async notifyMention(params: {
     messageId: string;
@@ -587,7 +587,7 @@ export class NotificationService {
   }
 
   /**
-   * 4c. TELEGRAM-STYLE MESSAGE REPLY NOTIFICATION
+   * 4c. FNI MESSAGE REPLY NOTIFICATION
    */
   static async notifyMessageReply(params: {
     messageId: string;

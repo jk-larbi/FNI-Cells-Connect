@@ -497,6 +497,42 @@ export interface UserPinnedChat {
   pinnedAt?: string;
 }
 
+export interface ChatFolder {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
+  color: string;
+  position: number;
+  included_chat_ids: string[];
+  excluded_chat_ids?: string[];
+  include_all_groups?: boolean;
+  include_all_direct?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ChatFolderCreateInput {
+  name: string;
+  icon?: string;
+  color?: string;
+  included_chat_ids: string[];
+  excluded_chat_ids?: string[];
+  include_all_groups?: boolean;
+  include_all_direct?: boolean;
+}
+
+export interface ChatFolderUpdateInput {
+  name?: string;
+  icon?: string;
+  color?: string;
+  position?: number;
+  included_chat_ids?: string[];
+  excluded_chat_ids?: string[];
+  include_all_groups?: boolean;
+  include_all_direct?: boolean;
+}
+
 export interface MessageReactionParticipant {
   id?: string;
   message_id?: string;

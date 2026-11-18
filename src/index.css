@@ -114,9 +114,10 @@
 }
 
 /* =============================================================== */
-/* TELEGRAM OFFICIAL CHAT VISUAL SYSTEM                            */
+/* FNI OFFICIAL CHAT VISUAL SYSTEM                                 */
 /* =============================================================== */
-.telegram-chat-wallpaper {
+.fni-chat-wallpaper,
+.fni-chat-wallpaper {
   background-color: #85ad7b;
   background-image:
     linear-gradient(180deg, rgba(133, 173, 123, 0.94) 0%, rgba(141, 183, 134, 0.94) 100%),
@@ -125,7 +126,8 @@
   background-repeat: no-repeat, repeat;
 }
 
-html.dark .telegram-chat-wallpaper {
+html.dark .fni-chat-wallpaper,
+html.dark .fni-chat-wallpaper {
   background-color: #0e1621;
   background-image:
     linear-gradient(180deg, rgba(14, 22, 33, 0.95) 0%, rgba(23, 33, 43, 0.95) 100%),
@@ -134,7 +136,7 @@ html.dark .telegram-chat-wallpaper {
   background-repeat: no-repeat, repeat;
 }
 
-.telegram-doodle-light {
+.fni-doodle-light {
   background-color: #85ad7b;
   background-image:
     linear-gradient(180deg, rgba(133, 173, 123, 0.94) 0%, rgba(141, 183, 134, 0.94) 100%),
@@ -143,7 +145,7 @@ html.dark .telegram-chat-wallpaper {
   background-repeat: no-repeat, repeat;
 }
 
-.telegram-doodle-dark {
+.fni-doodle-dark {
   background-color: #0e1621;
   background-image:
     linear-gradient(180deg, rgba(14, 22, 33, 0.95) 0%, rgba(23, 33, 43, 0.95) 100%),
@@ -152,7 +154,8 @@ html.dark .telegram-chat-wallpaper {
   background-repeat: no-repeat, repeat;
 }
 
-.telegram-bubble-incoming {
+.fni-bubble-incoming,
+.fni-bubble-incoming {
   background-color: #ffffff; /* White neutral incoming bubble */
   color: #111827;
   border-radius: 18px 18px 18px 4px;
@@ -160,7 +163,8 @@ html.dark .telegram-chat-wallpaper {
   text-align: left !important;
 }
 
-html.dark .telegram-bubble-incoming {
+html.dark .fni-bubble-incoming,
+.fni-bubble-incoming {
   background-color: #212d3b;
   color: #ffffff;
   border-radius: 18px 18px 18px 4px;
@@ -168,32 +172,34 @@ html.dark .telegram-bubble-incoming {
   text-align: left !important;
 }
 
-.telegram-bubble-outgoing {
-  background-color: #effedd; /* Soft light-green Telegram outgoing bubble */
+.fni-bubble-outgoing,
+.fni-bubble-outgoing {
+  background-color: #effedd; /* Soft light-green FNI outgoing bubble */
   color: #111827;
   border-radius: 18px 18px 4px 18px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
   text-align: left !important;
 }
 
-html.dark .telegram-bubble-outgoing {
-  background-color: #1b5e3f; /* Telegram dark emerald forest green */
+html.dark .fni-bubble-outgoing,
+.fni-bubble-outgoing {
+  background-color: #1b5e3f; /* FNI dark emerald forest green */
   color: #ffffff;
   border-radius: 18px 18px 4px 18px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   text-align: left !important;
 }
 
-.telegram-bubble-outgoing .fni-msg-time {
+.fni-bubble-outgoing .fni-msg-time {
   color: rgba(30, 70, 54, 0.7);
 }
-html.dark .telegram-bubble-outgoing .fni-msg-time {
+html.dark .fni-bubble-outgoing .fni-msg-time {
   color: rgba(255, 255, 255, 0.7);
 }
-.telegram-bubble-incoming .fni-msg-time {
+.fni-bubble-incoming .fni-msg-time {
   color: rgba(100, 116, 139, 0.8);
 }
-html.dark .telegram-bubble-incoming .fni-msg-time {
+html.dark .fni-bubble-incoming .fni-msg-time {
   color: rgba(255, 255, 255, 0.65);
 }
 
@@ -775,7 +781,7 @@ html.dark .fni-simple-landing .border-white {
 }
 
 
-/* Compact, Telegram-inspired message rhythm and safe long-message wrapping. */
+/* Compact, FNI message rhythm and safe long-message wrapping. */
 .fni-messaging-view .fni-chat-stream > * + * { margin-top: .55rem !important; }
 .fni-messaging-view .fni-swipe-message { overflow-wrap: anywhere; word-break: normal; }
 .fni-messaging-view .fni-chat-composer textarea { max-height: 35vh; overflow-y: auto; line-height: 1.45; }
@@ -785,7 +791,7 @@ html.dark .fni-simple-landing .border-white {
 }
 
 
-/* Keep each chat in its own Telegram-style scroll viewport. The page itself
+/* Keep each chat in its own FNI-styled scroll viewport. The page itself
    stays still while users move through long message histories. */
 .fni-messaging-view .fni-chat-panel {
   height: min(78dvh, 760px);
@@ -872,7 +878,7 @@ html.dark .fni-simple-landing .border-white {
 
 
 /* Community Hub participates in the app's document scroll; only private chats
-   retain a dedicated Telegram-style message viewport. */
+   retain a dedicated FNI message viewport. */
 .fni-messaging-view .fni-community-panel {
   height: auto !important;
   min-height: 0 !important;
@@ -945,7 +951,7 @@ body {
 }
 
 
-/* Unified Telegram-style chat viewport for Community and Private conversations.
+/* Unified FNI chat viewport for Community and Private conversations.
    The page scrolls normally outside chats; inside a chat, only the history moves. */
 .fni-messaging-view .fni-community-panel {
   display: flex;
@@ -1115,7 +1121,7 @@ body {
 }
 
 
-/* Full-screen Telegram-inspired FNI Community conversation.
+/* Full-screen FNI Community conversation.
    Existing Supabase messages, calls, wallpapers, clear-history and composer actions
    remain wired to the same handlers; this layer changes presentation only. */
 .fni-messaging-view.fni-community-mode {
@@ -1494,7 +1500,7 @@ body {
 }
 
 
-/* Telegram Desktop layout: the application frame is fixed to the viewport;
+/* FNI Desktop layout: the application frame is fixed to the viewport;
    only the message history scrolls. Mobile rules below intentionally differ. */
 @media (min-width: 768px) {
   html:has(.fni-app-shell.fni-messaging-route),
@@ -1586,7 +1592,7 @@ body {
 }
 
 
-/* Telegram/WhatsApp-style mobile Messages screen:
+/* FNI mobile Messages screen:
    keep the app chrome and conversation controls stationary; only the
    message history is the vertical touch-scroll surface on phones. */
 @media (max-width: 767px) {
@@ -1702,7 +1708,7 @@ body {
 }
 
 
-/* Native-feeling Telegram-style message action controls. */
+/* Native-feeling FNI message action controls. */
 .fni-message-menu-trigger {
   display: inline-flex;
   width: 36px;

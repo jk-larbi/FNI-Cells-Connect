@@ -92,7 +92,7 @@ export const MessageDetailsModal: React.FC<MessageDetailsModalProps> = ({
             </div>
             <div>
               <h3 className="font-semibold text-slate-900 dark:text-white">Message Info</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Telegram-style details</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Message Delivery Details</p>
             </div>
           </div>
           <button

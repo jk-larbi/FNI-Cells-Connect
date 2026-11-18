@@ -15,6 +15,7 @@ import { UserProfileModal } from './UserProfileModal';
 import { OfficialGroupManagementModal } from './OfficialGroupManagementModal';
 import { GroupInfoModal } from './GroupInfoModal';
 import { StickerCreatorModal } from './StickerCreatorModal';
+import { ChatFolderModal, FOLDER_ICONS, FOLDER_COLORS } from './ChatFolderModal';
 import {
   PrivateMessage,
   CommunityMessage,
@@ -24,8 +25,10 @@ import {
   UserPinnedChat,
   CommunityGroup,
   CustomSticker,
+  ChatFolder,
 } from '../../types';
 import {
+  Folder,
   MessageSquare,
   Users,
   Send,
@@ -87,7 +90,7 @@ export interface MessagingViewProps {
   onMobileChatStateChange?: (isChatOpen: boolean) => void;
 }
 
-// Telegram-style quick stickers
+// FNI quick stickers
 const STICKER_PACK = [
   { emoji: '🙏', label: 'Praying' },
   { emoji: '❤️', label: 'Love' },
@@ -251,18 +254,21 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Navigation State
   // When no conversation is selected (selectedChatId === null), the FNI Communication Home Page is shown
-  // On desktop view (width >= 768px), default to 'saved_messages' for authentic Telegram split view
+  // On desktop view (width >= 768px), default to 'saved_messages' for split view
   const [selectedChatId, setSelectedChatId] = useState<string | null>(
     initialConversationId || (typeof window !== 'undefined' && window.innerWidth >= 768 ? 'saved_messages' : null)
   );
   const [mobileScreen, setMobileScreen] = useState<'list' | 'chat'>(initialConversationId ? 'chat' : 'list');
-  const [activeFolder, setActiveFolder] = useState<'all' | 'fni' | 'personal' | 'unread' | 'channels'>('all');
+  const [activeFolderId, setActiveFolderId] = useState<string>('all');
+  const [chatFolders, setChatFolders] = useState<ChatFolder[]>([]);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [folderToEdit, setFolderToEdit] = useState<ChatFolder | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [homeTutorSearch, setHomeTutorSearch] = useState('');
   const [isSearchInChatOpen, setIsSearchInChatOpen] = useState(false);
   const [searchInChatQuery, setSearchInChatQuery] = useState('');
 
-  // Sync mobile chat state with AppLayout to provide full-screen immersive Telegram experience
+  // Sync mobile chat state with AppLayout to provide full-screen immersive chat experience
   useEffect(() => {
     onMobileChatStateChange?.(mobileScreen === 'chat' && selectedChatId !== null);
   }, [mobileScreen, selectedChatId, onMobileChatStateChange]);
@@ -291,7 +297,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimerRef = useRef<any>(null);
 
-  // --- TELEGRAM-INSPIRED MESSAGING UPGRADE STATE ---
+  // --- FNI MESSAGING STATE ---
   // Pinned Chats
   const [userPinnedChats, setUserPinnedChats] = useState<UserPinnedChat[]>([]);
   const [activeChatActionMenuId, setActiveChatActionMenuId] = useState<string | null>(null);
@@ -336,7 +342,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [favoriteStickers, setFavoriteStickers] = useState<CustomSticker[]>([]);
   const [recentStickers, setRecentStickers] = useState<CustomSticker[]>([]);
 
-  // Telegram Floating Context Menu
+  // FNI Floating Context Menu
   const [contextMenu, setContextMenu] = useState<{
     msg: CommunityMessage | PrivateMessage;
     x: number;
@@ -541,6 +547,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
+  const loadChatFolders = async () => {
+    if (!currentUser?.id) return;
+    try {
+      const list = await MessagingService.getUserChatFolders(currentUser.id);
+      setChatFolders(list);
+    } catch (e) {
+      console.warn('Chat folders load notice:', e);
+    }
+  };
+
   useEffect(() => {
     async function loadDirectory() {
       try {
@@ -549,6 +565,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           loadPinnedChats(),
           loadOfficialGroup(),
           loadStickers(),
+          loadChatFolders(),
         ]);
         if (directory) {
           const eligible = directory.filter(
@@ -657,14 +674,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       loadActiveMessages();
     }
 
-    // Supabase Realtime channel
+    // Supabase Realtime channel for messages and personal chat folders
     const channel = supabase
-      ?.channel(`fni-telegram-messages-${currentUser?.id || 'guest'}`)
+      ?.channel(`fni-messages-${currentUser?.id || 'guest'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_messages' }, () => {
         if (selectedChatId === 'community') loadActiveMessages();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages' }, () => {
         if (selectedChatId && selectedChatId !== 'community') loadActiveMessages();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_folders' }, () => {
+        loadChatFolders();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_folder_conversations' }, () => {
+        loadChatFolders();
       })
       .subscribe();
 
@@ -702,8 +725,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   }, [tutorList]);
 
   // ---------------------------------------------------------------------------
-  // 3. CONTACT LIST GENERATION (TELEGRAM CHAT LIST)
-  // Saved Messages is top-level personal cloud chat matching Telegram
+  // 3. CONTACT LIST GENERATION (FNI CHAT LIST)
+  // Saved Messages is top-level personal cloud chat matching FNI design
   // ---------------------------------------------------------------------------
   const contacts: ChatContact[] = useMemo(() => {
     const list: ChatContact[] = [];
@@ -716,7 +739,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       pinnedMap.set(cid, order);
     });
 
-    // 0. Saved Messages (Telegram Cloud Notes & Personal Storage)
+    // 0. Saved Messages (Personal Notes & Personal Storage)
     const savedMsgs = privateMessages.filter(m => m.senderUid === currentUser?.id && m.recipientUid === currentUser?.id);
     const lastSaved = savedMsgs[savedMsgs.length - 1];
     const isSavedPinned = pinnedMap.has('saved_messages') || true;
@@ -728,7 +751,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       cellName: 'Cloud Notebook',
       isPinned: isSavedPinned,
       type: 'saved' as const,
-      avatarUrl: '', // Rendered with Telegram blue bookmark circle
+      avatarUrl: '', // Rendered with blue bookmark circle
       lastMessage: lastSaved
         ? (lastSaved.attachments?.length ? 'Photo' : lastSaved.content.slice(0, 42))
         : 'Photo',
@@ -797,15 +820,35 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     });
   }, [communityMessages, tutorList, userPinnedChats, officialGroup, privateMessages, currentUser]);
 
-  // Folder tab counts for Telegram categories
-  const folderCounts = useMemo(() => {
-    const allCount = contacts.length;
-    const fniCount = contacts.filter(c => c.type === 'community' || c.id === 'community').length;
-    const personalCount = contacts.filter(c => c.type === 'direct' || c.id === 'saved_messages').length;
-    const unreadCount = contacts.filter(c => (c.unreadCount || 0) > 0 || c.id === 'community').length;
-    const channelsCount = contacts.filter(c => c.type === 'community').length;
-    return { allCount, fniCount, personalCount, unreadCount, channelsCount };
+  // Helper to determine if a contact is included in a folder
+  const isContactInFolder = (contact: any, folder: ChatFolder) => {
+    if (folder.included_chat_ids?.includes(contact.id)) return true;
+    if (folder.include_all_groups && contact.type === 'community' && !folder.excluded_chat_ids?.includes(contact.id)) return true;
+    if (folder.include_all_direct && (contact.type === 'direct' || contact.id === 'saved_messages') && !folder.excluded_chat_ids?.includes(contact.id)) return true;
+    return false;
+  };
+
+  // Folder tab unread counts
+  const folderUnreadMap = useMemo(() => {
+    const map = new Map<string, number>();
+    chatFolders.forEach(folder => {
+      const unread = contacts
+        .filter(c => isContactInFolder(c, folder))
+        .reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+      map.set(folder.id, unread);
+    });
+    return map;
+  }, [chatFolders, contacts]);
+
+  const allChatsUnreadCount = useMemo(() => {
+    return contacts.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
   }, [contacts]);
+
+  // Active folder object
+  const activeFolderObj = useMemo(() => {
+    if (activeFolderId === 'all') return null;
+    return chatFolders.find(f => f.id === activeFolderId) || null;
+  }, [chatFolders, activeFolderId]);
 
   // Filtered contacts based on folder and search query
   const filteredContacts = useMemo(() => {
@@ -815,15 +858,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const matchesName = c.name.toLowerCase().includes(q);
         const matchesCell = c.cellName?.toLowerCase().includes(q);
         const matchesLast = c.lastMessage?.toLowerCase().includes(q);
-        if (!matchesName && !matchesCell && !matchesLast) return false;
+        const matchesRole = c.role?.toLowerCase().includes(q);
+        if (!matchesName && !matchesCell && !matchesLast && !matchesRole) return false;
       }
-      if (activeFolder === 'fni') return c.type === 'community' || c.id === 'community';
-      if (activeFolder === 'personal') return c.type === 'direct' || c.id === 'saved_messages';
-      if (activeFolder === 'unread') return (c.unreadCount || 0) > 0 || c.id === 'community';
-      if (activeFolder === 'channels') return c.type === 'community';
+      if (activeFolderId === 'all') return true;
+      if (activeFolderObj) return isContactInFolder(c, activeFolderObj);
       return true;
     });
-  }, [contacts, searchQuery, activeFolder]);
+  }, [contacts, searchQuery, activeFolderId, activeFolderObj]);
 
   // Active contact when a chat is open
   const activeContact = useMemo(() => {
@@ -923,7 +965,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Swipe to Reply & Long-Press touch handlers (Mobile Telegram interaction)
+  // Swipe to Reply & Long-Press touch handlers (mobile interaction)
   const handleTouchStart = (msg: CommunityMessage | PrivateMessage, e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
@@ -992,7 +1034,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setContextMenu({ msg, x, y });
   };
 
-  // Telegram Message Deletion Handlers (Delete for Self vs Delete for Both)
+  // FNI Message Deletion Handlers (Delete for Self vs Delete for Both)
   const handleOpenDeleteModal = (msg: CommunityMessage | PrivateMessage) => {
     setDeleteTargetMessage(msg);
     setDeleteForBoth(true);
@@ -1031,7 +1073,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
-  // Telegram Date Label Formatter
+  // FNI Date Label Formatter
   const getMessageDateLabel = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
@@ -1153,7 +1195,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
-  // Telegram Voice Note Waveform Renderer (Matches Screenshot)
+  // FNI Voice Note Waveform Renderer (Matches Screenshot)
   const renderVoiceNote = (
     fileUrl: string,
     title: string,
@@ -1245,7 +1287,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     );
   };
 
-  // Telegram Emoji Insertion & Cursor Management (Smooth, no forced mobile keyboard shift)
+  // FNI Emoji Insertion & Cursor Management (Smooth, no forced mobile keyboard shift)
   const handleInsertEmoji = (emoji: string) => {
     const textarea = composerInputRef.current;
     if (!textarea) {
@@ -2010,7 +2052,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             </div>
 
-            {/* Pill Search Input with Telegram-style Compose Button */}
+            {/* Pill Search Input with Compose Button */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -2041,42 +2083,96 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </button>
             </div>
 
-            {/* Folder Filter Tabs (Telegram Category Pills Matching Reference) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pt-0.5 text-xs select-none">
-              {[
-                { id: 'all', label: 'All Chats', count: folderCounts.allCount },
-                { id: 'fni', label: 'FNI ❤️', count: folderCounts.fniCount },
-                { id: 'personal', label: 'Personal', count: folderCounts.personalCount },
-                { id: 'unread', label: 'Unread', count: folderCounts.unreadCount },
-                { id: 'channels', label: 'Channels', count: folderCounts.channelsCount },
-              ].map(f => {
-                const isActive = activeFolder === f.id;
-                return (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setActiveFolder(f.id as any)}
-                    className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 px-2 text-xs shrink-0 ${
-                      isActive
-                        ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+            {/* Folder Filter Tabs (Personal Chat Folders) */}
+            <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pt-1 pb-0.5 text-xs select-none">
+              {/* All Chats Tab (Always exists, not deletable) */}
+              <button
+                type="button"
+                onClick={() => setActiveFolderId('all')}
+                className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
+                  activeFolderId === 'all'
+                    ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                }`}
+              >
+                <span>All Chats</span>
+                {allChatsUnreadCount > 0 && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      activeFolderId === 'all'
+                        ? 'bg-[#2AABEE] text-white'
+                        : 'bg-slate-200 dark:bg-[#242f3d] text-slate-600 dark:text-slate-300'
                     }`}
                   >
-                    <span>{f.label}</span>
-                    {f.count > 0 && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                          isActive
-                            ? 'bg-[#2AABEE] text-white'
-                            : 'bg-slate-200 dark:bg-[#242f3d] text-slate-600 dark:text-slate-300'
-                        }`}
+                    {allChatsUnreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Personal Chat Folders */}
+              {chatFolders.map(f => {
+                const isActive = activeFolderId === f.id;
+                const IconComponent = FOLDER_ICONS[f.icon]?.icon || Folder;
+                const colorConfig = FOLDER_COLORS[f.color] || FOLDER_COLORS.blue;
+                const unread = folderUnreadMap.get(f.id) || 0;
+
+                return (
+                  <div key={f.id} className="relative shrink-0 flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFolderId(f.id)}
+                      className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs ${
+                        isActive
+                          ? `${colorConfig.text} border-b-2 ${colorConfig.border}`
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                      }`}
+                    >
+                      <IconComponent className="w-3.5 h-3.5" />
+                      <span>{f.name}</span>
+                      {unread > 0 && (
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                            isActive
+                              ? colorConfig.activeClass
+                              : 'bg-slate-200 dark:bg-[#242f3d] text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          {unread}
+                        </span>
+                      )}
+                    </button>
+
+                    {isActive && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFolderToEdit(f);
+                          setIsFolderModalOpen(true);
+                        }}
+                        className="p-1 mb-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Folder Settings"
                       >
-                        {f.count}
-                      </span>
+                        <Settings className="w-3 h-3" />
+                      </button>
                     )}
-                  </button>
+                  </div>
                 );
               })}
+
+              {/* Create / Manage Folder Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setFolderToEdit(null);
+                  setIsFolderModalOpen(true);
+                }}
+                className="pb-1.5 px-2 text-slate-400 hover:text-[#2AABEE] transition-colors cursor-pointer flex items-center gap-1 shrink-0 font-medium text-[11px]"
+                title="Create or manage chat folders"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="hidden sm:inline">New Folder</span>
+              </button>
             </div>
           </div>
 
@@ -2212,17 +2308,44 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             })}
 
             {filteredContacts.length === 0 && (
-              <div className="p-8 text-center text-slate-400">
-                <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p className="text-xs">No conversations match your search.</p>
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsModalOpen(true)}
-                  className="mt-3 text-xs text-blue-600 font-bold hover:underline"
-                >
-                  Browse Tutor Directory
-                </button>
-              </div>
+              activeFolderObj ? (
+                <div className="p-8 text-center text-slate-400 space-y-3">
+                  <div className={`w-12 h-12 mx-auto rounded-3xl flex items-center justify-center ${FOLDER_COLORS[activeFolderObj.color]?.bg || 'bg-blue-50 dark:bg-white/5'} ${FOLDER_COLORS[activeFolderObj.color]?.text || 'text-[#2AABEE]'}`}>
+                    {React.createElement(FOLDER_ICONS[activeFolderObj.icon]?.icon || Folder, { className: 'w-6 h-6' })}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      This folder is empty
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+                      Add conversations to {activeFolderObj.name} to quickly organize your chats.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFolderToEdit(activeFolderObj);
+                      setIsFolderModalOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#2AABEE] hover:bg-[#2090cc] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Add Chats</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-slate-400">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs">No conversations match your search.</p>
+                  <button
+                    type="button"
+                    onClick={() => setIsSettingsModalOpen(true)}
+                    className="mt-3 text-xs text-blue-600 font-bold hover:underline cursor-pointer"
+                  >
+                    Browse Tutor Directory
+                  </button>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -2438,7 +2561,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   </button>
                   <div className="min-w-0">
                     <p className="font-bold truncate text-xs">{activeAudioPlayer.title}</p>
-                    <p className="text-[10px] text-blue-300">Telegram Voice & Audio Stream</p>
+                    <p className="text-[10px] text-blue-300">FNI Voice & Audio Stream</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -2454,7 +2577,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             )}
 
-            {/* Chat Header Bar (Telegram Layout matching reference) */}
+            {/* Chat Header Bar (FNI Layout) */}
             <div className="px-3 sm:px-4 py-2 bg-white dark:bg-[#17212b] border-b border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
               <div className="flex items-center gap-2.5 min-w-0">
                 {/* Mobile Back Button returning to list */}
@@ -2698,7 +2821,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             )}
 
-            {/* Multi-Pinned Messages Bar (Telegram Cyan Left-Bar Layout) */}
+            {/* Multi-Pinned Messages Bar (Left-Bar Accent Layout) */}
             {allPinnedMessages.length > 0 && currentPinnedBannerMessage && (
               <div
                 onClick={handleCyclePinnedMessage}
@@ -2754,7 +2877,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {/* Message Stream */}
             <div
               ref={messageStreamRef}
-              className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-3 sm:p-4 space-y-3 telegram-chat-wallpaper"
+              className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-3 sm:p-4 space-y-3 fni-chat-wallpaper"
             >
               {currentMessages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-white/90">
@@ -2781,7 +2904,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                   return (
                     <React.Fragment key={msg.id}>
-                      {/* Telegram Centered Date Separator (Matches Reference) */}
+                      {/* Centered Date Separator (Matches Reference) */}
                       {showDateHeader && (
                         <div className="flex justify-center my-3 select-none">
                           <span className="px-3.5 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-md shadow-xs border border-white/5">
@@ -2842,10 +2965,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                         {/* Chat Bubble Container with Floating Action Overlay */}
                         <div className={`relative max-w-[85%] sm:max-w-[72%] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
-                          {/* Chat Bubble (Telegram styling matching reference) */}
+                          {/* Chat Bubble (FNI styling) */}
                           <div
                             className={`p-3 text-xs transition-shadow text-left ${
-                              isMine ? 'telegram-bubble-outgoing' : 'telegram-bubble-incoming'
+                              isMine ? 'fni-bubble-outgoing' : 'fni-bubble-incoming'
                             }`}
                             style={{ textAlign: 'left' }}
                           >
@@ -2879,7 +3002,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             </div>
                           )}
 
-                          {/* Reply Preview Card inside bubble (Telegram cyan left-bar) */}
+                          {/* Reply Preview Card inside bubble (accent left-bar) */}
                           {msg.replyTo && (
                             <div
                               onClick={e => {
@@ -2932,7 +3055,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                   return (
                                     <div key={attIdx} className="relative rounded-2xl overflow-hidden max-h-80 bg-black/10 select-none my-1">
                                       <img src={fileUrl} alt={att.name} className="w-full h-full object-cover rounded-2xl" />
-                                      {/* Telegram photo timestamp overlay in bottom-right matching reference */}
+                                      {/* Photo timestamp overlay in bottom-right matching reference */}
                                       <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] flex items-center gap-1 font-medium select-none shadow-xs">
                                         <span>{formattedTime}</span>
                                         {isMine && <CheckCheck className="w-3.5 h-3.5 text-white" />}
@@ -2964,7 +3087,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             </div>
                           )}
 
-                          {/* Telegram Reaction Pills */}
+                          {/* Reaction Pills */}
                           {msg.reactions && Object.keys(msg.reactions).length > 0 && (
                             <div className="flex flex-wrap items-center gap-1 mt-1.5 pt-1">
                               {Object.entries(msg.reactions).map(([emoji, userIds]) => {
@@ -3013,7 +3136,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             </div>
                           )}
 
-                          {/* Timestamp & Status info with Telegram #53d793 checkmarks (rendered if not purely an image attachment) */}
+                          {/* Timestamp & Status info with status checkmarks (rendered if not purely an image attachment) */}
                           {!(msg.attachments && msg.attachments.length > 0 && msg.attachments.some(a => a.mimeType?.startsWith('image')) && (!msg.content || msg.content === 'Photo' || msg.content === '📷 Photo')) && (
                             <div className="mt-1 flex items-center justify-end gap-1 text-[10px] fni-msg-time select-none">
                               {msg.isPinned && <Pin className="w-2.5 h-2.5 mr-0.5" />}
@@ -3610,7 +3733,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     />
                   )}
 
-                  {/* Telegram mobile composer input row matching reference */}
+                  {/* Mobile composer input row matching reference */}
                   <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <button
                       type="button"
@@ -3668,7 +3791,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <Camera className="w-5 h-5" />
                     </button>
 
-                    {/* Circular Vibrant Telegram Blue Mic/Send Button (#2AABEE from reference) */}
+                    {/* Circular Mic/Send Button (#2AABEE from reference) */}
                     {inputText.trim() || stagedFiles.length > 0 ? (
                       <button
                         type="submit"
@@ -3853,7 +3976,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       )}
 
       {/* =========================================================================
-          TELEGRAM FLOATING CONTEXT MENU
+          FNI FLOATING CONTEXT MENU
       ========================================================================= */}
       {contextMenu && (
         <div
@@ -3872,7 +3995,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             }}
             className="fixed z-50 w-56 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-2xl p-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn space-y-1"
           >
-            {/* Quick Telegram Reaction Bar */}
+            {/* Quick Reaction Bar */}
             <div className="flex items-center justify-between p-1.5 bg-slate-100 dark:bg-slate-800/60 rounded-xl overflow-x-auto">
               {['👍', '❤️', '🔥', '😂', '👏', '🙏', '🎉', '🕊️', '💯'].map(emoji => (
                 <button
@@ -4110,7 +4233,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       />
 
       {/* =========================================================================
-          TELEGRAM MESSAGE DELETION MODAL (DELETE FOR SELF VS DELETE FOR BOTH)
+          FNI MESSAGE DELETION MODAL (DELETE FOR SELF VS DELETE FOR BOTH)
       ========================================================================= */}
       {deleteTargetMessage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
@@ -4177,7 +4300,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       )}
 
       {/* =========================================================================
-          GROUP INFO & SETTINGS MODAL (TELEGRAM / WHATSAPP STYLE)
+          GROUP INFO & SETTINGS MODAL
       ========================================================================= */}
       <GroupInfoModal
         isOpen={isGroupInfoModalOpen}
@@ -4236,6 +4359,25 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             await handleSendCustomSticker({ imageUrl: newSticker.imageUrl, label: newSticker.label });
           } else if (newSticker.emoji) {
             await handleSendSticker({ emoji: newSticker.emoji, label: newSticker.label });
+          }
+        }}
+      />
+
+      {/* =========================================================================
+          FNI CHAT FOLDER MODAL
+      ========================================================================= */}
+      <ChatFolderModal
+        isOpen={isFolderModalOpen}
+        onClose={() => {
+          setIsFolderModalOpen(false);
+          setFolderToEdit(null);
+        }}
+        availableChats={contacts}
+        initialEditingFolder={folderToEdit}
+        onFoldersUpdated={updatedFolders => {
+          setChatFolders(updatedFolders);
+          if (activeFolderId !== 'all' && !updatedFolders.some(f => f.id === activeFolderId)) {
+            setActiveFolderId('all');
           }
         }}
       />

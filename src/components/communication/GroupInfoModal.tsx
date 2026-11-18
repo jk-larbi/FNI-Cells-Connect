@@ -498,7 +498,7 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
       {/* Modal Container: Fullscreen on mobile, centered card on desktop */}
       <div className="relative w-full h-[100dvh] md:h-[88vh] md:max-w-2xl bg-white dark:bg-[#0c1421] md:rounded-3xl shadow-2xl border-0 md:border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden">
         {/* =========================================================================
-            HEADER BAR (WhatsApp / Telegram style)
+            HEADER BAR (FNI Official style)
         ========================================================================= */}
         <div className="flex items-center justify-between px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-white dark:bg-[#182533] border-b border-slate-200/80 dark:border-white/10 shrink-0 z-20">
           <div className="flex items-center gap-2">
@@ -643,7 +643,7 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
                   Created by FNI Leadership Directorate on Nov 7, 2026
                 </div>
 
-                {/* Quick Actions Row (WhatsApp / Telegram style) */}
+                {/* Quick Actions Row (FNI Actions) */}
                 <div className="grid grid-cols-5 gap-2 w-full max-w-md mt-5 pt-4 border-t border-slate-200/60 dark:border-white/10">
                   {/* Add Members */}
                   <button

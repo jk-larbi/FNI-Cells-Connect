@@ -49,6 +49,9 @@ import {
   OfficialGroupHistoryRecord,
   UserGroupPreferences,
   CustomSticker,
+  ChatFolder,
+  ChatFolderCreateInput,
+  ChatFolderUpdateInput,
 } from '../types';
 
 // ==============================================================================
@@ -1140,7 +1143,7 @@ export class SupabaseService {
   ): Promise<boolean> {
     if (!this.isAvailable()) return false;
     try {
-      // Telegram-style: 1 active reaction per user per message
+      // FNI rule: 1 active reaction per user per message
       const { data: existing, error: lookupError } = await supabase!
         .from('private_message_reactions')
         .select('id, emoji')
@@ -1367,7 +1370,7 @@ export class SupabaseService {
   ): Promise<boolean> {
     if (!this.isAvailable()) return false;
     try {
-      // Telegram-style: 1 active reaction per user per message
+      // FNI rule: 1 active reaction per user per message
       const { data: existing, error: lookupError } = await supabase!
         .from('community_message_reactions')
         .select('id, emoji')
@@ -1645,6 +1648,333 @@ export class SupabaseService {
       return true;
     } catch (err) {
       console.warn('reorderPinnedChats failed:', err);
+      return false;
+    }
+  }
+
+  // --- Personal Chat Folders ---
+  static async getUserChatFolders(userId: string): Promise<ChatFolder[]> {
+    if (!userId) return [];
+    if (!this.isAvailable()) {
+      try {
+        const local = localStorage.getItem(`fni_chat_folders_${userId}`);
+        return local ? JSON.parse(local) : [];
+      } catch {
+        return [];
+      }
+    }
+    try {
+      const { data, error } = await supabase!
+        .from('chat_folders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('position', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.warn('getUserChatFolders supabase error, falling back to local cache:', error.message);
+        const local = localStorage.getItem(`fni_chat_folders_${userId}`);
+        return local ? JSON.parse(local) : [];
+      }
+      const folders: ChatFolder[] = (data || []).map((row: any) => ({
+        id: row.id,
+        user_id: row.user_id,
+        name: row.name,
+        icon: row.icon || 'folder',
+        color: row.color || 'blue',
+        position: row.position ?? 0,
+        included_chat_ids: Array.isArray(row.included_chat_ids) ? row.included_chat_ids : [],
+        excluded_chat_ids: Array.isArray(row.excluded_chat_ids) ? row.excluded_chat_ids : [],
+        include_all_groups: Boolean(row.include_all_groups),
+        include_all_direct: Boolean(row.include_all_direct),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      }));
+      try {
+        localStorage.setItem(`fni_chat_folders_${userId}`, JSON.stringify(folders));
+      } catch {}
+      return folders;
+    } catch (err) {
+      console.warn('getUserChatFolders exception:', err);
+      try {
+        const local = localStorage.getItem(`fni_chat_folders_${userId}`);
+        return local ? JSON.parse(local) : [];
+      } catch {
+        return [];
+      }
+    }
+  }
+
+  static async createChatFolder(
+    userId: string,
+    input: ChatFolderCreateInput
+  ): Promise<{ success: boolean; folder?: ChatFolder; error?: string }> {
+    if (!userId || !input.name?.trim()) {
+      return { success: false, error: 'User ID and folder name are required.' };
+    }
+    try {
+      const current = await this.getUserChatFolders(userId);
+      const nextPos = current.length;
+      const newFolder: ChatFolder = {
+        id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        user_id: userId,
+        name: input.name.trim(),
+        icon: input.icon || 'folder',
+        color: input.color || 'blue',
+        position: nextPos,
+        included_chat_ids: input.included_chat_ids || [],
+        excluded_chat_ids: input.excluded_chat_ids || [],
+        include_all_groups: Boolean(input.include_all_groups),
+        include_all_direct: Boolean(input.include_all_direct),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      if (this.isAvailable()) {
+        const { data, error } = await supabase!
+          .from('chat_folders')
+          .insert({
+            user_id: userId,
+            name: newFolder.name,
+            icon: newFolder.icon,
+            color: newFolder.color,
+            position: newFolder.position,
+            included_chat_ids: newFolder.included_chat_ids,
+            excluded_chat_ids: newFolder.excluded_chat_ids,
+            include_all_groups: newFolder.include_all_groups,
+            include_all_direct: newFolder.include_all_direct,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.warn('createChatFolder supabase error, caching locally:', error.message);
+        } else if (data) {
+          newFolder.id = data.id;
+          newFolder.created_at = data.created_at;
+          newFolder.updated_at = data.updated_at;
+
+          if (newFolder.included_chat_ids.length > 0) {
+            const rows = newFolder.included_chat_ids.map(cid => ({
+              folder_id: newFolder.id,
+              user_id: userId,
+              conversation_id: cid,
+              conversation_type: cid === 'community' ? 'community' : cid === 'saved_messages' ? 'saved' : 'direct',
+            }));
+            const { error: convErr } = await supabase!
+              .from('chat_folder_conversations')
+              .insert(rows);
+            if (convErr) console.warn('chat_folder_conversations insert error:', convErr.message);
+          }
+        }
+      }
+
+      const updated = [...current, newFolder];
+      try {
+        localStorage.setItem(`fni_chat_folders_${userId}`, JSON.stringify(updated));
+      } catch {}
+
+      return { success: true, folder: newFolder };
+    } catch (err: any) {
+      console.error('createChatFolder failed:', err);
+      return { success: false, error: err?.message || 'Failed to create chat folder.' };
+    }
+  }
+
+  static async updateChatFolder(
+    userId: string,
+    folderId: string,
+    updates: ChatFolderUpdateInput
+  ): Promise<{ success: boolean; folder?: ChatFolder; error?: string }> {
+    if (!userId || !folderId) {
+      return { success: false, error: 'User ID and folder ID are required.' };
+    }
+    try {
+      const current = await this.getUserChatFolders(userId);
+      const idx = current.findIndex(f => f.id === folderId);
+      if (idx === -1) {
+        return { success: false, error: 'Folder not found.' };
+      }
+
+      const existing = current[idx];
+      const updatedFolder: ChatFolder = {
+        ...existing,
+        name: updates.name !== undefined ? updates.name.trim() : existing.name,
+        icon: updates.icon !== undefined ? updates.icon : existing.icon,
+        color: updates.color !== undefined ? updates.color : existing.color,
+        position: updates.position !== undefined ? updates.position : existing.position,
+        included_chat_ids: updates.included_chat_ids !== undefined ? updates.included_chat_ids : existing.included_chat_ids,
+        excluded_chat_ids: updates.excluded_chat_ids !== undefined ? updates.excluded_chat_ids : existing.excluded_chat_ids,
+        include_all_groups: updates.include_all_groups !== undefined ? updates.include_all_groups : existing.include_all_groups,
+        include_all_direct: updates.include_all_direct !== undefined ? updates.include_all_direct : existing.include_all_direct,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (this.isAvailable()) {
+        const payload: any = {
+          updated_at: updatedFolder.updated_at,
+        };
+        if (updates.name !== undefined) payload.name = updatedFolder.name;
+        if (updates.icon !== undefined) payload.icon = updatedFolder.icon;
+        if (updates.color !== undefined) payload.color = updatedFolder.color;
+        if (updates.position !== undefined) payload.position = updatedFolder.position;
+        if (updates.included_chat_ids !== undefined) payload.included_chat_ids = updatedFolder.included_chat_ids;
+        if (updates.excluded_chat_ids !== undefined) payload.excluded_chat_ids = updatedFolder.excluded_chat_ids;
+        if (updates.include_all_groups !== undefined) payload.include_all_groups = updatedFolder.include_all_groups;
+        if (updates.include_all_direct !== undefined) payload.include_all_direct = updatedFolder.include_all_direct;
+
+        const { error } = await supabase!
+          .from('chat_folders')
+          .update(payload)
+          .eq('id', folderId)
+          .eq('user_id', userId);
+
+        if (error) {
+          console.warn('updateChatFolder supabase error:', error.message);
+        } else if (updates.included_chat_ids !== undefined) {
+          const { error: delErr } = await supabase!
+            .from('chat_folder_conversations')
+            .delete()
+            .eq('folder_id', folderId);
+          if (delErr) {
+            console.warn('chat_folder_conversations delete error:', delErr.message);
+          }
+
+          if (updatedFolder.included_chat_ids.length > 0) {
+            const rows = updatedFolder.included_chat_ids.map(cid => ({
+              folder_id: folderId,
+              user_id: userId,
+              conversation_id: cid,
+              conversation_type: cid === 'community' ? 'community' : cid === 'saved_messages' ? 'saved' : 'direct',
+            }));
+            const { error: insErr } = await supabase!
+              .from('chat_folder_conversations')
+              .insert(rows);
+            if (insErr) {
+              console.warn('chat_folder_conversations update insert error:', insErr.message);
+            }
+          }
+        }
+      }
+
+      current[idx] = updatedFolder;
+      try {
+        localStorage.setItem(`fni_chat_folders_${userId}`, JSON.stringify(current));
+      } catch {}
+
+      return { success: true, folder: updatedFolder };
+    } catch (err: any) {
+      console.error('updateChatFolder failed:', err);
+      return { success: false, error: err?.message || 'Failed to update folder.' };
+    }
+  }
+
+  static async deleteChatFolder(
+    userId: string,
+    folderId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!userId || !folderId) {
+      return { success: false, error: 'User ID and folder ID are required.' };
+    }
+    try {
+      if (this.isAvailable()) {
+        const { error } = await supabase!
+          .from('chat_folders')
+          .delete()
+          .eq('id', folderId)
+          .eq('user_id', userId);
+        if (error) {
+          console.warn('deleteChatFolder supabase error:', error.message);
+        }
+      }
+
+      const current = await this.getUserChatFolders(userId);
+      const filtered = current.filter(f => f.id !== folderId);
+      try {
+        localStorage.setItem(`fni_chat_folders_${userId}`, JSON.stringify(filtered));
+      } catch {}
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('deleteChatFolder failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete folder.' };
+    }
+  }
+
+  static async reorderChatFolders(
+    userId: string,
+    folderIds: string[]
+  ): Promise<boolean> {
+    if (!userId || !folderIds || folderIds.length === 0) return false;
+    try {
+      if (this.isAvailable()) {
+        for (let idx = 0; idx < folderIds.length; idx++) {
+          const { error: reorderErr } = await supabase!
+            .from('chat_folders')
+            .update({ position: idx, updated_at: new Date().toISOString() })
+            .eq('id', folderIds[idx])
+            .eq('user_id', userId);
+          if (reorderErr) {
+            console.warn('reorderChatFolders update error:', reorderErr.message);
+          }
+        }
+      }
+
+      const current = await this.getUserChatFolders(userId);
+      const reordered: ChatFolder[] = [];
+      folderIds.forEach((fid, idx) => {
+        const found = current.find(f => f.id === fid);
+        if (found) {
+          reordered.push({ ...found, position: idx });
+        }
+      });
+      current.forEach(f => {
+        if (!folderIds.includes(f.id)) {
+          reordered.push({ ...f, position: reordered.length });
+        }
+      });
+
+      try {
+        localStorage.setItem(`fni_chat_folders_${userId}`, JSON.stringify(reordered));
+      } catch {}
+
+      return true;
+    } catch (err) {
+      console.warn('reorderChatFolders exception:', err);
+      return false;
+    }
+  }
+
+  static async addChatToFolder(
+    userId: string,
+    folderId: string,
+    chatId: string
+  ): Promise<boolean> {
+    try {
+      const folders = await this.getUserChatFolders(userId);
+      const target = folders.find(f => f.id === folderId);
+      if (!target) return false;
+      if (target.included_chat_ids.includes(chatId)) return true;
+      const nextIncluded = [...target.included_chat_ids, chatId];
+      const res = await this.updateChatFolder(userId, folderId, { included_chat_ids: nextIncluded });
+      return res.success;
+    } catch {
+      return false;
+    }
+  }
+
+  static async removeChatFromFolder(
+    userId: string,
+    folderId: string,
+    chatId: string
+  ): Promise<boolean> {
+    try {
+      const folders = await this.getUserChatFolders(userId);
+      const target = folders.find(f => f.id === folderId);
+      if (!target) return false;
+      const nextIncluded = target.included_chat_ids.filter(id => id !== chatId);
+      const res = await this.updateChatFolder(userId, folderId, { included_chat_ids: nextIncluded });
+      return res.success;
+    } catch {
       return false;
     }
   }

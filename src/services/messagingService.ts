@@ -14,6 +14,9 @@ import {
   OfficialGroupHistoryRecord,
   UserGroupPreferences,
   CustomSticker,
+  ChatFolder,
+  ChatFolderCreateInput,
+  ChatFolderUpdateInput,
 } from '../types';
 import { AuthService } from './authService';
 import { CellService } from './cellService';
@@ -863,6 +866,56 @@ export class MessagingService {
 
   static async reorderPinnedChats(userId: string, orderedChatIds: string[]): Promise<boolean> {
     return SupabaseService.reorderPinnedChats(userId, orderedChatIds);
+  }
+
+  // --- Personal Chat Folders ---
+  static async getUserChatFolders(userId: string): Promise<ChatFolder[]> {
+    return SupabaseService.getUserChatFolders(userId);
+  }
+
+  static async createChatFolder(
+    userId: string,
+    input: ChatFolderCreateInput
+  ): Promise<{ success: boolean; folder?: ChatFolder; error?: string }> {
+    return SupabaseService.createChatFolder(userId, input);
+  }
+
+  static async updateChatFolder(
+    userId: string,
+    folderId: string,
+    updates: ChatFolderUpdateInput
+  ): Promise<{ success: boolean; folder?: ChatFolder; error?: string }> {
+    return SupabaseService.updateChatFolder(userId, folderId, updates);
+  }
+
+  static async deleteChatFolder(
+    userId: string,
+    folderId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    return SupabaseService.deleteChatFolder(userId, folderId);
+  }
+
+  static async reorderChatFolders(
+    userId: string,
+    folderIds: string[]
+  ): Promise<boolean> {
+    return SupabaseService.reorderChatFolders(userId, folderIds);
+  }
+
+  static async addChatToFolder(
+    userId: string,
+    folderId: string,
+    chatId: string
+  ): Promise<boolean> {
+    return SupabaseService.addChatToFolder(userId, folderId, chatId);
+  }
+
+  static async removeChatFromFolder(
+    userId: string,
+    folderId: string,
+    chatId: string
+  ): Promise<boolean> {
+    return SupabaseService.removeChatFromFolder(userId, folderId, chatId);
   }
 
   // --- Official Community Groups ---

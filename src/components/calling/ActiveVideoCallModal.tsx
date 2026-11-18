@@ -252,7 +252,7 @@ export const ActiveVideoCallModal: React.FC = () => {
         )}
       </div>
 
-      {/* ── 2. TOP FLOATING BAR (TELEGRAM STYLE: < Back & Pin & Status) ── */}
+      {/* ── 2. TOP FLOATING BAR (FNI CALL STATUS & CONTROLS) ── */}
       <div
         className={`relative z-30 flex items-center justify-between px-4 sm:px-6 transition-opacity duration-300 ${
           controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -302,7 +302,7 @@ export const ActiveVideoCallModal: React.FC = () => {
       {/* ── 3. LOWER SECTION: REMOTE NAME BADGE + LOCAL PiP PREVIEW (BOTTOM-LEFT) ── */}
       {!isCalling && (
         <div className="relative z-20 px-4 sm:px-6 mt-auto flex flex-col items-start gap-2 pointer-events-none">
-          {/* Remote Participant Badge (Placed right above the PiP window as in Telegram) */}
+          {/* Remote Participant Badge (Placed right above the PiP window) */}
           <div
             className={`interactive-control pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white shadow-xl transition-opacity duration-300 ${
               controlsVisible ? 'opacity-100' : 'opacity-0'
@@ -354,7 +354,7 @@ export const ActiveVideoCallModal: React.FC = () => {
         </div>
       )}
 
-      {/* ── 4. BOTTOM FLOATING CIRCULAR CONTROL DOCK (TELEGRAM STYLE) ── */}
+      {/* ── 4. BOTTOM FLOATING CIRCULAR CONTROL DOCK (FNI CALL CONTROLS) ── */}
       <div
         className={`relative z-30 pt-3 transition-opacity duration-300 ${
           controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -428,7 +428,7 @@ export const ActiveVideoCallModal: React.FC = () => {
             <MessageSquare className="w-5 h-5" />
           </button>
 
-          {/* Button 5: End Call (Telegram style with red accent / X icon) */}
+          {/* Button 5: End Call (High visibility red accent / phone icon) */}
           <button
             type="button"
             onClick={(e) => {
