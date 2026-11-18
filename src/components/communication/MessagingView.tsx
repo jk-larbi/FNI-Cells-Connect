@@ -533,7 +533,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
     // 1. Official FNI Community Group
     const lastComm = communityMessages[communityMessages.length - 1];
-    const groupName = officialGroup?.name || 'Themelios Class - FNI Community';
+    const groupName = officialGroup?.name || 'FNI Community';
     const isCommPinned = pinnedMap.has('community') || userPinnedChats.length === 0;
 
     list.push({
@@ -545,7 +545,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       type: 'community',
       lastMessage: lastComm
         ? `${lastComm.senderName}: ${lastComm.content.slice(0, 42)}`
-        : 'Welcome to FNI Fellowship Community',
+        : 'No messages yet',
       lastMessageTime: lastComm
         ? new Date(lastComm.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : 'Active',
@@ -557,14 +557,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       const isPeerPinned = pinnedMap.has(peer.id);
       list.push({
         id: peer.id,
-        name: peer.role === 'admin' || peer.role === 'super_admin' ? 'FNI Leadership Directorate' : (peer.full_name || peer.name),
+        name: peer.role === 'admin' || peer.role === 'super_admin' || peer.role === 'national_admin' ? 'FNI Leadership Directorate' : (peer.full_name || peer.name || 'FNI Member'),
         role: peer.role === 'admin' ? 'Church Administrator' : 'Fellowship Tutor',
-        cellName: peer.cell_name || 'Cell Leader',
+        cellName: peer.cell_name || '',
         avatarUrl: peer.avatar_url || peer.photo_url,
-        isOnline: peer.is_active || true,
+        
         type: 'direct',
         isPinned: isPeerPinned,
-        lastMessage: 'Tap to start direct private conversation',
+        lastMessage: 'No messages yet',
         lastMessageTime: '',
         unreadCount: 0,
       });
@@ -1606,7 +1606,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     Community Forum
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Open Themelios Class to communicate with all cell leaders
+                    Open FNI Community to communicate with active members
                   </p>
                 </button>
 
