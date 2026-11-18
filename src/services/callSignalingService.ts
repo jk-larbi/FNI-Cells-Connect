@@ -282,53 +282,38 @@ export class CallSignalingService {
 
     const session = data as CallSession;
 
-    // Persist the host and every invited member before sending notifications.
-    // This gives RLS a real membership record for room access and LiveKit tokens.
-    const participantIds = Array.from(new Set([params.hostId, ...(params.invitedMemberIds || [])]));
-    const { data: invitedProfiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, cell_name')
-      .in('id', participantIds);
-    if (profilesError) throw profilesError;
+    // A guarded SECURITY DEFINER RPC loads the real active members and inserts
+    // participant rows. Cell meetings automatically include active members of
+    // the selected cell; group meetings use the explicitly selected invitees.
+    const { error: participantInsertError } = await supabase.rpc('add_call_participants_for_host', {
+      p_session_id: session.id,
+      p_user_ids: params.invitedMemberIds || [],
+    });
+    if (participantInsertError) throw participantInsertError;
 
-    const profileById = new Map((invitedProfiles || []).map(profile => [profile.id, profile]));
-    const participantRows = participantIds
-      .filter(id => profileById.has(id))
-      .map(id => {
-        const profile = profileById.get(id)!;
-        return {
-          session_id: session.id,
-          user_id: id,
-          user_name: profile.full_name || (id === params.hostId ? params.hostName : 'FNI Member'),
-          user_avatar: profile.avatar_url || (id === params.hostId ? params.hostAvatar : null),
-          user_cell: profile.cell_name || null,
-          role: id === params.hostId ? 'host' : 'participant',
-          is_muted: false,
-          is_video_enabled: params.callType === 'video',
-        };
-      });
-    const { error: participantsError } = await supabase
+    const { data: participantRows, error: participantReadError } = await supabase
       .from('call_participants')
-      .insert(participantRows);
-    if (participantsError) throw participantsError;
+      .select('user_id')
+      .eq('session_id', session.id);
+    if (participantReadError) throw participantReadError;
 
-    // Notify invited members or cell members
-    if (params.invitedMemberIds && params.invitedMemberIds.length > 0) {
-      for (const memberId of params.invitedMemberIds) {
-        if (memberId === params.hostId) continue;
-        NotificationService.createNotification({
-          userId: memberId,
-          type: 'meeting_started',
-          title: `Cell Meeting Started: ${params.title}`,
-          message: `${params.hostName} started a ${params.callType} meeting. Tap to join.`,
-          metadata: {
-            targetTab: 'messages',
-            roomId: session.room_id,
-            sessionId: session.id,
-            callType: params.callType,
-          },
-        }).catch(() => {});
-      }
+    // Notify every real participant except the host.
+    const invitedIds = Array.from(new Set((participantRows || [])
+      .map(row => String(row.user_id))
+      .filter(userId => userId !== params.hostId)));
+    for (const memberId of invitedIds) {
+      NotificationService.createNotification({
+        userId: memberId,
+        type: 'meeting_started',
+        title: `Cell Meeting Started: ${params.title}`,
+        message: `${params.hostName} started a ${params.callType} meeting. Tap to join.`,
+        metadata: {
+          targetTab: 'messages',
+          roomId: session.room_id,
+          sessionId: session.id,
+          callType: params.callType,
+        },
+      }).catch(() => {});
     }
 
     return session;
