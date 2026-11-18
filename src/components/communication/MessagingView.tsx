@@ -71,6 +71,7 @@ import {
   List,
 } from 'lucide-react';
 import { Button } from '../common/Button';
+import { FniEmojiPicker } from './FniEmojiPicker';
 
 export interface MessagingViewProps {
   initialConversationId?: string;
@@ -96,9 +97,6 @@ const STICKER_PACK = [
 
 const STICKER_PREFIX = '[[FNI_STICKER:';
 const POLL_PREFIX = '[[FNI_POLL:';
-
-// Quick Emoji Categories
-const EMOJI_LIST = ['❤️', '🙏', '😂', '👍', '🔥', '👏', '🎉', '🕊️', '✨', '💪', '🙌', '💯', '😊', '😍', '🤔', '🤝'];
 
 interface ChatContact {
   id: string; // 'community' | 'saved_messages' | profileId
@@ -2257,50 +2255,24 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             )}
 
-            {/* Emoji & Sticker Picker Popup */}
+            {/* Full emoji and sticker picker; stays inside the mobile composer width. */}
             {showEmojiPicker && (
-              <div className="absolute right-4 bottom-16 z-30 w-72 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-2xl p-3 text-xs animate-fadeIn space-y-3">
-                <div>
-                  <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-1">
-                    Quick Stickers
-                  </span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {STICKER_PACK.map(s => (
-                      <button
-                        key={s.label}
-                        type="button"
-                        onClick={() => handleSendSticker(s)}
-                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-110"
-                        title={s.label}
-                      >
-                        <span className="text-2xl block">{s.emoji}</span>
-                        <span className="text-[9px] text-slate-500 truncate block mt-0.5">{s.label}</span>
+              <div className="absolute inset-x-2 bottom-[calc(100%+0.5rem)] z-40 max-w-[min(24rem,calc(100vw-1rem))] ml-auto rounded-2xl animate-fadeIn">
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#182533] shadow-2xl p-3 mb-2">
+                  <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-2">FNI Stickers</span>
+                  <div className="grid grid-cols-6 gap-1">
+                    {STICKER_PACK.map(sticker => (
+                      <button key={sticker.label} type="button" onClick={() => handleSendSticker(sticker)} aria-label={sticker.label} title={sticker.label} className="min-h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-2xl">
+                        {sticker.emoji}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-white/5">
-                  <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-1">
-                    Emojis
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {EMOJI_LIST.map(emoji => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => {
-                          setInputText(prev => prev + emoji);
-                          setShowEmojiPicker(false);
-                          composerInputRef.current?.focus();
-                        }}
-                        className="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-base flex items-center justify-center cursor-pointer"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <FniEmojiPicker onSelect={emoji => {
+                  setInputText(prev => prev + emoji);
+                  setShowEmojiPicker(false);
+                  requestAnimationFrame(() => composerInputRef.current?.focus());
+                }} />
               </div>
             )}
 
