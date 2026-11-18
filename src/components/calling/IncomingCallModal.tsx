@@ -1,13 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { CallSignalingService } from '../../services/callSignalingService';
 import { useCall } from '../../context/CallContext';
 import { Phone, PhoneOff, Video, Sparkles } from 'lucide-react';
 
 export const IncomingCallModal: React.FC = () => {
   const { incomingSession, acceptIncomingCall, declineIncomingCall } = useCall();
+  const { currentUser } = useAuth();
+  const [isBlocking, setIsBlocking] = useState(false);
 
   if (!incomingSession) return null;
 
   const isVideo = incomingSession.call_type === 'video';
+
+  const handleBlockCaller = async () => {
+    if (!currentUser?.id || isBlocking) return;
+    setIsBlocking(true);
+    try {
+      await CallSignalingService.blockUser(
+        currentUser.id,
+        incomingSession.caller_id,
+        'Blocked from incoming call',
+        incomingSession.caller_name
+      );
+      await declineIncomingCall();
+    } catch (error: any) {
+      alert(error?.message || 'Unable to block this caller. Please try again.');
+    } finally {
+      setIsBlocking(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-md animate-fadeIn">
@@ -86,6 +108,14 @@ export const IncomingCallModal: React.FC = () => {
             <span className="text-[11px] font-bold text-emerald-400">Accept</span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleBlockCaller}
+          disabled={isBlocking}
+          className="relative z-10 mt-6 text-xs font-semibold text-slate-300 hover:text-rose-300 disabled:opacity-50 transition-colors"
+        >
+          {isBlocking ? 'Blocking caller…' : 'Block caller'}
+        </button>
       </div>
     </div>
   );
