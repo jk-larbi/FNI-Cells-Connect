@@ -69,9 +69,9 @@ declare
 begin
   select role::text, full_name into v_role, v_user_name
   from public.profiles
-  where id = auth.uid()::text and is_active = true;
+  where id = private.current_fni_profile_id() and is_active = true;
 
-  if auth.uid() is null or v_role not in ('tutor', 'cell_leader', 'admin', 'super_admin', 'national_admin') then
+  if auth.uid() is null or v_role not in ('tutor', 'admin', 'super_admin', 'national_admin') then
     raise exception 'Only active FNI leaders and administrators can pin community messages';
   end if;
 
@@ -133,7 +133,7 @@ begin
     raise exception 'Private message not found';
   end if;
 
-  if auth.uid()::text <> v_sender and auth.uid()::text <> v_recipient and not private.is_admin() then
+  if private.current_fni_profile_id() <> v_sender and private.current_fni_profile_id() <> v_recipient and not private.is_fni_admin() then
     raise exception 'Not authorized to pin this message';
   end if;
 
@@ -200,15 +200,15 @@ create policy community_groups_read_all on public.community_groups
 drop policy if exists community_groups_admin_manage on public.community_groups;
 create policy community_groups_admin_manage on public.community_groups
   for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+  using (private.is_fni_admin())
+  with check (private.is_fni_admin());
 
 -- Seed default official group if absent
 insert into public.community_groups (id, name, description, is_official, category)
 values (
-  'themelios-community',
-  'Themelios Class - FNI Community',
-  'Official ministerial fellowship for all active FNI tutors and leaders',
+  'fni-community',
+  'FNI Community',
+  'Official community for active FNI tutors and leaders',
   true,
   'official'
 )
@@ -238,8 +238,8 @@ create policy community_group_members_select on public.community_group_members
 drop policy if exists community_group_members_admin on public.community_group_members;
 create policy community_group_members_admin on public.community_group_members
   for all to authenticated
-  using (user_id = (select auth.uid())::text or public.is_admin())
-  with check (user_id = (select auth.uid())::text or public.is_admin());
+  using (private.is_fni_admin())
+  with check (private.is_fni_admin());
 
 -- Audit History table for official group designation changes
 create table if not exists public.official_community_group_history (
@@ -264,7 +264,7 @@ create policy official_community_group_history_select on public.official_communi
 
 drop policy if exists official_community_group_history_admin on public.official_community_group_history;
 create policy official_community_group_history_admin on public.official_community_group_history
-  for insert to authenticated with check (public.is_admin());
+  for insert to authenticated with check (private.is_fni_admin());
 
 
 -- 5. RPC PROCEDURE: DESIGNATE OFFICIAL COMMUNITY GROUP
@@ -285,11 +285,11 @@ declare
   v_new_group_name text;
   v_enrolled_count integer := 0;
 begin
-  if auth.uid() is null or not public.is_admin() then
+  if private.current_fni_profile_id() is null or not private.is_fni_admin() then
     raise exception 'Only FNI system administrators can change the official community group designation.';
   end if;
 
-  v_admin_uid := auth.uid()::text;
+  v_admin_uid := private.current_fni_profile_id();
   select full_name into v_admin_name from public.profiles where id = v_admin_uid;
   v_admin_name := coalesce(v_admin_name, 'System Administrator');
 
@@ -345,7 +345,7 @@ begin
          case when p.role in ('admin', 'super_admin', 'national_admin') then 'admin' else 'member' end,
          true
   from public.profiles p
-  where p.is_active = true and p.role::text in ('tutor', 'cell_leader', 'admin', 'super_admin', 'national_admin')
+  where p.is_active = true and coalesce(p.is_test_account,false) is false and p.role::text in ('tutor', 'admin', 'super_admin', 'national_admin')
   on conflict (group_id, user_id) do update set is_active = true;
 
   get diagnostics v_enrolled_count = row_count;
@@ -375,7 +375,7 @@ as $$
 declare
   v_official_group_id text;
 begin
-  if NEW.is_active = true and NEW.role::text in ('tutor', 'cell_leader', 'admin', 'super_admin', 'national_admin') then
+  if NEW.is_active = true and coalesce(NEW.is_test_account,false) is false and NEW.role::text in ('tutor', 'admin', 'super_admin', 'national_admin') then
     select id into v_official_group_id
     from public.community_groups
     where is_official = true
@@ -386,7 +386,7 @@ begin
       values (
         v_official_group_id, 
         NEW.id, 
-        case when NEW.role in ('admin', 'super_admin') then 'admin' else 'member' end, 
+        case when NEW.role in ('admin', 'super_admin', 'national_admin') then 'admin' else 'member' end, 
         true
       )
       on conflict (group_id, user_id) do update set is_active = true;
@@ -398,16 +398,16 @@ $$;
 
 drop trigger if exists trg_auto_enroll_official_group on public.profiles;
 create trigger trg_auto_enroll_official_group
-  after insert or update of is_active, role on public.profiles
+  after insert or update of is_active, role, is_test_account on public.profiles
   for each row execute function public.auto_enroll_active_tutor_in_official_group();
 
 -- Backfill all existing active tutors and leaders into the official group now
 insert into public.community_group_members (group_id, user_id, role, is_active)
-select 'themelios-community', p.id,
+select 'fni-community', p.id,
        case when p.role in ('admin', 'super_admin', 'national_admin') then 'admin' else 'member' end,
        true
 from public.profiles p
-where p.is_active = true and p.role::text in ('tutor', 'cell_leader', 'admin', 'super_admin', 'national_admin')
+where p.is_active = true and coalesce(p.is_test_account,false) is false and p.role::text in ('tutor', 'admin', 'super_admin', 'national_admin')
 on conflict (group_id, user_id) do update set is_active = true;
 
 
