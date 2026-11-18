@@ -100,13 +100,13 @@ serve(async (req) => {
 
     const livekitApiKey = Deno.env.get('LIVEKIT_API_KEY');
     const livekitApiSecret = Deno.env.get('LIVEKIT_API_SECRET');
-    const livekitUrl = Deno.env.get('LIVEKIT_URL') || 'wss://fni-cells-connect.livekit.cloud';
+    const livekitUrl = Deno.env.get('LIVEKIT_URL');
 
     // One-to-one calls can use the authenticated Supabase WebRTC signal channel.
     // Group/cell rooms require LiveKit; do not pretend a mesh fallback supports them.
-    if (!livekitApiKey || !livekitApiSecret) {
+    if (!livekitApiKey || !livekitApiSecret || !livekitUrl) {
       if (session.call_mode !== 'direct') {
-        return new Response(JSON.stringify({ error: 'Group and cell calls require LiveKit credentials. Configure LIVEKIT_API_KEY and LIVEKIT_API_SECRET.' }), {
+        return new Response(JSON.stringify({ error: 'Group and cell calls require LIVEKIT_API_KEY, LIVEKIT_API_SECRET and LIVEKIT_URL secrets.' }), {
           status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
