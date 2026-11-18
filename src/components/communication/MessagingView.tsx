@@ -558,7 +558,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       list.push({
         id: peer.id,
         name: peer.role === 'admin' || peer.role === 'super_admin' || peer.role === 'national_admin' ? 'FNI Leadership Directorate' : (peer.full_name || peer.name || 'FNI Member'),
-        role: peer.role === 'admin' ? 'Church Administrator' : 'Fellowship Tutor',
+        role: peer.role === 'admin' || peer.role === 'super_admin' || peer.role === 'national_admin' ? 'FNI Administrator' : 'Fellowship Tutor',
         cellName: peer.cell_name || '',
         avatarUrl: peer.avatar_url || peer.photo_url,
         
