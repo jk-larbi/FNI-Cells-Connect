@@ -323,14 +323,26 @@ export class CallSignalingService {
   // ---------------------------------------------------------------------------
   // 8. BLOCK & REPORT USERS
   // ---------------------------------------------------------------------------
-  static async blockUser(userId: string, blockedUserId: string, reason?: string): Promise<void> {
+  static async blockUser(userId: string, blockedUserId: string, reason?: string, blockedUserName?: string): Promise<void> {
     if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
     const { error } = await supabase.from('call_blocked_users').upsert({
       user_id: userId,
       blocked_user_id: blockedUserId,
+      blocked_user_name: blockedUserName || null,
       reason,
     });
     if (error) throw error;
+  }
+
+  static async getBlockedUsers(userId: string): Promise<CallBlockedUser[]> {
+    if (!supabase) throw new Error('Call blocking is unavailable because Supabase is not connected.');
+    const { data, error } = await supabase
+      .from('call_blocked_users')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []) as CallBlockedUser[];
   }
 
   static async unblockUser(userId: string, blockedUserId: string): Promise<void> {
