@@ -111,14 +111,28 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = CallSignalingService.subscribeToIncomingCalls(
       currentUser.id,
       session => {
-        // If already on an active call, automatically flag as busy
-        if (activeSession) {
-          CallSignalingService.declineCall(session.id, 'busy');
-          return;
-        }
+        // Check the current recipient's own block list before showing or ringing.
+        void (async () => {
+          try {
+            const blocked = await CallSignalingService.isUserBlocked(currentUser.id, session.caller_id);
+            if (blocked) {
+              await CallSignalingService.declineCall(session.id, 'declined');
+              return;
+            }
 
-        setIncomingSession(session);
-        CallSignalingService.startIncomingRingtone();
+            // If already on an active call, automatically flag as busy.
+            if (activeSession) {
+              await CallSignalingService.declineCall(session.id, 'busy');
+              return;
+            }
+
+            setIncomingSession(session);
+            CallSignalingService.startIncomingRingtone();
+          } catch (error) {
+            console.warn('Could not verify incoming call permissions:', error);
+            await CallSignalingService.declineCall(session.id, 'failed').catch(() => {});
+          }
+        })();
       },
       session => {
         // Status change listener: e.g. caller cancelled or ended
