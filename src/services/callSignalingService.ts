@@ -319,7 +319,7 @@ export class CallSignalingService {
       blocked_user_id: blockedUserId,
       blocked_user_name: blockedUserName || null,
       reason,
-    });
+    }, { onConflict: 'user_id,blocked_user_id' });
     if (error) throw error;
   }
 
