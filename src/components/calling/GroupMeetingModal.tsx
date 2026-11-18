@@ -58,15 +58,16 @@ export const GroupMeetingModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-9990 flex items-center justify-center bg-slate-950 animate-fadeIn select-none p-0 sm:p-6"
-      style={{
-        paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom) + 0.5rem))',
-      }}
+      className="fixed inset-0 w-screen h-screen h-[100dvh] z-[99999] flex flex-col justify-between bg-slate-950 animate-fadeIn select-none p-0 border-0 rounded-none overflow-hidden m-0"
     >
-      <div className="relative w-full h-full max-w-6xl flex flex-col justify-between sm:rounded-3xl bg-[#0f172a] border-0 sm:border border-white/10 overflow-hidden shadow-2xl">
+      <div className="relative w-full h-full flex flex-col justify-between bg-[#0f172a] border-0 rounded-none overflow-hidden">
         {/* Top Header */}
-        <div className="flex items-center justify-between p-4 bg-slate-900/80 backdrop-blur-md border-b border-white/10 z-10">
+        <div
+          className="flex items-center justify-between p-4 bg-slate-900/90 backdrop-blur-md border-b border-white/10 z-10"
+          style={{
+            paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+          }}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#142B4A] to-[#203D63] border border-[#C6A45A]/30 flex items-center justify-center text-[#C6A45A]">
               <Users className="w-5 h-5" />

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { CallSignalingService } from '../../services/callSignalingService';
 import { useCall } from '../../context/CallContext';
-import { Phone, PhoneOff, Video, Sparkles } from 'lucide-react';
+import { Phone, PhoneOff, Video } from 'lucide-react';
 
 export const IncomingCallModal: React.FC = () => {
   const { incomingSession, acceptIncomingCall, declineIncomingCall } = useCall();
@@ -32,7 +32,7 @@ export const IncomingCallModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-sm rounded-3xl bg-[#142B4A] border border-white/10 p-8 shadow-2xl text-center text-white overflow-hidden">
         {/* Glow backdrop pulse */}
         <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-[#C6A45A]/20 blur-3xl animate-pulse" />
@@ -40,7 +40,7 @@ export const IncomingCallModal: React.FC = () => {
 
         {/* Call Type Header */}
         <div className="relative z-10 flex items-center justify-center gap-1.5 text-xs font-bold text-[#C6A45A] uppercase tracking-wider mb-6">
-          <Sparkles className="w-3.5 h-3.5" />
+          {isVideo ? <Video className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
           <span>Incoming FNI {isVideo ? 'Video' : 'Voice'} Call</span>
         </div>
 

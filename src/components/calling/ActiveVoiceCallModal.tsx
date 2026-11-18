@@ -42,7 +42,7 @@ export const ActiveVoiceCallModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-9990 flex items-center justify-center p-4 bg-navy-950/90 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-navy-950/90 backdrop-blur-md animate-fadeIn"
       style={{
         paddingTop: 'max(1rem, env(safe-area-inset-top))',
         paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))',

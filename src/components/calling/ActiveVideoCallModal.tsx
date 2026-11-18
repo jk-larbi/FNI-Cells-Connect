@@ -36,9 +36,11 @@ export const ActiveVideoCallModal: React.FC = () => {
 
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const callingLocalVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const [controlsVisible, setControlsVisible] = useState(true);
   const [isFillScreen, setIsFillScreen] = useState(true);
+  const [isSwapped, setIsSwapped] = useState(false);
   const [isInCallChatOpen, setIsInCallChatOpen] = useState(false);
   const [quickMessageText, setQuickMessageText] = useState('');
   const [quickMessagesList, setQuickMessagesList] = useState<Array<{ id: string; sender: string; text: string; time: string }>>([
@@ -52,19 +54,68 @@ export const ActiveVideoCallModal: React.FC = () => {
 
   const autoHideTimeoutRef = useRef<number | null>(null);
 
+  // Request fullscreen on devices supporting it to take over the entire display
+  useEffect(() => {
+    const requestFs = async () => {
+      try {
+        if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch {}
+    };
+    requestFs();
+
+    return () => {
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      } catch {}
+    };
+  }, []);
+
+  const isCalling =
+    !remoteStream ||
+    remoteStream.getVideoTracks().length === 0 ||
+    connectionState === 'initiating' ||
+    connectionState === 'connecting' ||
+    activeSession?.status === 'ringing';
+
   // Attach remote video stream
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
+    const el = remoteVideoRef.current;
+    if (el) {
+      if (remoteStream) {
+        el.srcObject = remoteStream;
+        el.play().catch(() => {});
+      } else {
+        el.srcObject = null;
+      }
     }
-  }, [remoteStream]);
+  }, [remoteStream, isSwapped]);
 
   // Attach local video stream
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
+    // 1. PiP preview when in active call
+    if (localVideoRef.current) {
+      if (localStream) {
+        localVideoRef.current.srcObject = localStream;
+        localVideoRef.current.play().catch(() => {});
+      } else {
+        localVideoRef.current.srcObject = null;
+      }
     }
-  }, [localStream]);
+
+    // 2. Fullscreen local camera preview when placing/waiting for call
+    if (callingLocalVideoRef.current) {
+      if (localStream) {
+        callingLocalVideoRef.current.srcObject = localStream;
+        callingLocalVideoRef.current.play().catch(() => {});
+      } else {
+        callingLocalVideoRef.current.srcObject = null;
+      }
+    }
+  }, [localStream, isCalling, isSwapped]);
 
   // Auto-hide controls after inactivity
   useEffect(() => {
@@ -131,44 +182,73 @@ export const ActiveVideoCallModal: React.FC = () => {
   return (
     <div
       onClick={handleScreenTap}
-      className="fixed inset-0 z-9990 flex flex-col justify-between bg-black animate-fadeIn select-none overflow-hidden touch-manipulation"
-      style={{
-        paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))',
-      }}
+      className="fixed inset-0 w-screen h-screen h-[100dvh] z-[99999] flex flex-col justify-between bg-black animate-fadeIn select-none overflow-hidden touch-manipulation m-0 p-0 border-0"
     >
-      {/* ── 1. BACKGROUND REMOTE VIDEO (FULL VIEWPORT) ── */}
-      <div className="absolute inset-0 w-full h-full bg-slate-950 flex items-center justify-center overflow-hidden">
-        {remoteStream ? (
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            className={`w-full h-full ${isFillScreen ? 'object-cover' : 'object-contain'}`}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-4 text-slate-300 p-6 text-center">
-            <div className="relative">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#142B4A] to-[#203D63] border-4 border-[#C6A45A]/40 flex items-center justify-center text-3xl font-black text-white shadow-2xl">
-                {peerName.slice(0, 2).toUpperCase()}
+      {/* ── 1. BACKGROUND VIDEO (FULL VIEWPORT EDGE-TO-EDGE) ── */}
+      <div className="absolute inset-0 w-full h-full bg-slate-950 flex items-center justify-center overflow-hidden pointer-events-none">
+        {/* If in active call and remote video is connected */}
+        {!isCalling ? (
+          (isSwapped ? (isVideoEnabled && localStream) : remoteStream) ? (
+            <video
+              ref={isSwapped ? localVideoRef : remoteVideoRef}
+              autoPlay
+              playsInline
+              muted={isSwapped}
+              className={`w-full h-full ${isFillScreen ? 'object-cover' : 'object-contain'} ${isSwapped ? 'transform -scale-x-100' : ''}`}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-4 text-slate-300 p-6 text-center">
+              <div className="relative">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#142B4A] to-[#203D63] border-4 border-[#C6A45A]/40 flex items-center justify-center text-3xl font-black text-white shadow-2xl">
+                  {peerName.slice(0, 2).toUpperCase()}
+                </div>
               </div>
-              <div className="absolute -inset-2 rounded-full border-2 border-sky-400 animate-ping opacity-40 pointer-events-none" />
-            </div>
-
-            <div>
               <h2 className="text-xl font-black text-white tracking-tight">{peerName}</h2>
-              <div className="mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold backdrop-blur-md">
-                <Signal className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-                <span>
-                  {connectionState === 'connecting' || connectionState === 'initiating'
-                    ? 'Establishing secure video link...'
-                    : connectionState === 'reconnecting'
-                    ? 'Reconnecting video stream...'
-                    : 'Video connected • Waiting for remote camera'}
-                </span>
+              <span className="text-xs text-slate-400 font-medium">Camera turned off</span>
+            </div>
+          )
+        ) : (
+          /* While Calling / Ringing: Local camera takes over the ENTIRE background screen */
+          <>
+            {isVideoEnabled && localStream ? (
+              <video
+                ref={callingLocalVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover transform -scale-x-100"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-b from-[#0B1528] via-[#142B4A] to-[#0A101D]" />
+            )}
+
+            {/* Dark vignette gradient overlay for crisp legibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/80 pointer-events-none" />
+
+            {/* Central Calling Card with Pulsating Ring Animations */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center gap-4 text-center px-6 pointer-events-auto">
+              <div className="relative">
+                {/* Glowing pulsating rings */}
+                <div className="absolute -inset-4 rounded-full bg-sky-500/20 animate-ping pointer-events-none" />
+                <div className="absolute -inset-2 rounded-full border-2 border-sky-400/40 animate-pulse pointer-events-none" />
+                <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-[#142B4A] to-[#203D63] border-4 border-white/20 flex items-center justify-center text-3xl font-black text-white shadow-2xl">
+                  {peerName.slice(0, 2).toUpperCase()}
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-black text-white tracking-tight drop-shadow-md">{peerName}</h2>
+                <div className="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 text-xs font-bold text-sky-400 backdrop-blur-md border border-white/15 shadow-xl">
+                  <Signal className="w-3.5 h-3.5 animate-pulse text-sky-400" />
+                  <span>
+                    {connectionState === 'initiating' || activeSession.status === 'ringing'
+                      ? 'Ringing...'
+                      : 'Connecting secure video link...'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
@@ -177,6 +257,9 @@ export const ActiveVideoCallModal: React.FC = () => {
         className={`relative z-30 flex items-center justify-between px-4 sm:px-6 transition-opacity duration-300 ${
           controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{
+          paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+        }}
       >
         {/* Left: < Back Button */}
         <button
@@ -195,7 +278,7 @@ export const ActiveVideoCallModal: React.FC = () => {
         {/* Center: Live Call Timer */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-xs font-mono font-bold text-white shadow-lg">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>{formatTime(callDuration)}</span>
+          <span>{isCalling ? (activeSession.status === 'ringing' ? 'Ringing...' : 'Calling...') : formatTime(callDuration)}</span>
         </div>
 
         {/* Right: Pin / Aspect Ratio Toggle Button */}
@@ -217,63 +300,68 @@ export const ActiveVideoCallModal: React.FC = () => {
       </div>
 
       {/* ── 3. LOWER SECTION: REMOTE NAME BADGE + LOCAL PiP PREVIEW (BOTTOM-LEFT) ── */}
-      <div className="relative z-20 px-4 sm:px-6 mt-auto flex flex-col items-start gap-2 pointer-events-none">
-        {/* Remote Participant Badge (Placed right above the PiP window as in Telegram) */}
-        <div
-          className={`interactive-control pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white shadow-xl transition-opacity duration-300 ${
-            controlsVisible ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          {/* Mute indicator */}
-          <MicOff className="w-3.5 h-3.5 text-white/80 shrink-0" />
-          <span className="text-xs font-bold tracking-tight">{peerName}</span>
-          <span className="text-xs" title="FNI Fellowship Minister">🕎</span>
-        </div>
+      {!isCalling && (
+        <div className="relative z-20 px-4 sm:px-6 mt-auto flex flex-col items-start gap-2 pointer-events-none">
+          {/* Remote Participant Badge (Placed right above the PiP window as in Telegram) */}
+          <div
+            className={`interactive-control pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white shadow-xl transition-opacity duration-300 ${
+              controlsVisible ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {/* Mute indicator */}
+            <MicOff className="w-3.5 h-3.5 text-white/80 shrink-0" />
+            <span className="text-xs font-bold tracking-tight">{peerName}</span>
+            <span className="text-xs" title="FNI Fellowship Minister">🕎</span>
+          </div>
 
-        {/* Local Picture-in-Picture Preview Window (Bottom-Left with Distinct Blue Outline) */}
-        <div
-          className="interactive-control pointer-events-auto relative w-24 sm:w-32 aspect-3/4 rounded-2xl overflow-hidden bg-slate-900 border-2 border-sky-400 shadow-2xl shadow-sky-950/50 transition-transform active:scale-95 cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            // Flip camera when tapping preview or toggle state
-            flipCamera();
-          }}
-          title="Your preview • Tap to flip camera"
-        >
-          {isVideoEnabled && localStream ? (
-            <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover transform -scale-x-100"
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-400 text-xs p-2 text-center">
-              <VideoOff className="w-5 h-5 mb-1 text-slate-500" />
-              <span className="text-[10px] font-semibold">Camera Off</span>
-            </div>
-          )}
-
-          {/* Local Name Badge Inside PiP Window at the bottom */}
-          <div className="absolute inset-x-0 bottom-0 py-1 px-1.5 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-center justify-between text-white">
-            <span className="text-[10px] font-bold truncate max-w-[55px]">
-              {myShortName}...
-            </span>
-            {isMuted ? (
-              <MicOff className="w-3 h-3 text-rose-400 shrink-0" />
+          {/* Local Picture-in-Picture Preview Window (Tap to swap streams) */}
+          <div
+            className="interactive-control pointer-events-auto relative w-24 sm:w-32 aspect-3/4 rounded-2xl overflow-hidden bg-slate-900 border-2 border-sky-400 shadow-2xl shadow-sky-950/50 transition-transform active:scale-95 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Tap to swap full screen and PiP stream
+              setIsSwapped(prev => !prev);
+            }}
+            title="Tap to swap with main video"
+          >
+            {(isSwapped ? remoteStream : (isVideoEnabled && localStream)) ? (
+              <video
+                ref={isSwapped ? remoteVideoRef : localVideoRef}
+                autoPlay
+                playsInline
+                muted={!isSwapped}
+                className={`w-full h-full object-cover ${!isSwapped ? 'transform -scale-x-100' : ''}`}
+              />
             ) : (
-              <Mic className="w-3 h-3 text-sky-400 shrink-0" />
+              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-400 text-xs p-2 text-center">
+                <VideoOff className="w-5 h-5 mb-1 text-slate-500" />
+                <span className="text-[10px] font-semibold">Camera Off</span>
+              </div>
             )}
+
+            {/* Local Name Badge Inside PiP Window at the bottom */}
+            <div className="absolute inset-x-0 bottom-0 py-1 px-1.5 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-center justify-between text-white">
+              <span className="text-[10px] font-bold truncate max-w-[55px]">
+                {isSwapped ? peerName.split(' ')[0] : myShortName}...
+              </span>
+              {isMuted ? (
+                <MicOff className="w-3 h-3 text-rose-400 shrink-0" />
+              ) : (
+                <Mic className="w-3 h-3 text-sky-400 shrink-0" />
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ── 4. BOTTOM FLOATING CIRCULAR CONTROL DOCK (TELEGRAM STYLE) ── */}
       <div
         className={`relative z-30 pt-3 transition-opacity duration-300 ${
           controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{
+          paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom) + 0.75rem))',
+        }}
       >
         <div className="flex items-center justify-center gap-3 sm:gap-4 px-4 max-w-md mx-auto">
           {/* Button 1: Switch / Flip Camera */}
@@ -347,7 +435,7 @@ export const ActiveVideoCallModal: React.FC = () => {
               e.stopPropagation();
               endCall();
             }}
-            className="interactive-control w-12 h-12 rounded-full bg-rose-900/80 hover:bg-rose-600 active:bg-rose-700 backdrop-blur-md border border-rose-500/40 text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-lg shadow-rose-950/60"
+            className="interactive-control w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 backdrop-blur-md border border-rose-500/40 text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-lg shadow-rose-950/60"
             title="End video call"
           >
             <X className="w-6 h-6" />
