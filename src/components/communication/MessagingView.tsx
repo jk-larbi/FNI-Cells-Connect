@@ -299,6 +299,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Multi-Pinned Messages
   const [activePinnedIndex, setActivePinnedIndex] = useState(0);
   const [isPinnedModalOpen, setIsPinnedModalOpen] = useState(false);
+  const [isPinning, setIsPinning] = useState(false);
 
   // User Mentions (@)
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -856,8 +857,28 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   const currentPinnedBannerMessage = allPinnedMessages[activePinnedIndex] || null;
 
+  // Authoritative pin permissions for active chat:
+  // - Community chat: only administrators and active leaders/tutors can pin/unpin messages
+  // - Private chats: both participants can pin/unpin messages
+  const canPin = useMemo(() => {
+    if (selectedChatId === 'community') {
+      return (
+        isAdmin ||
+        currentUser?.role === 'tutor' ||
+        currentUser?.role === 'admin' ||
+        currentUser?.role === 'super_admin' ||
+        currentUser?.role === 'national_admin'
+      );
+    }
+    return true;
+  }, [selectedChatId, isAdmin, currentUser?.role]);
+
   const handleCyclePinnedMessage = () => {
     if (allPinnedMessages.length === 0) return;
+    if (allPinnedMessages.length === 1) {
+      scrollToMessageId(allPinnedMessages[0].id);
+      return;
+    }
     const nextIdx = (activePinnedIndex + 1) % allPinnedMessages.length;
     setActivePinnedIndex(nextIdx);
     const targetMsg = allPinnedMessages[nextIdx];
@@ -1700,20 +1721,42 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // 6. PINNING & UNPINNING
   // ---------------------------------------------------------------------------
   const handleTogglePin = async (msg: CommunityMessage | PrivateMessage, notify = false) => {
+    if (isPinning) return;
+    setIsPinning(true);
     setOpenMessageMenuId(null);
     setContextMenu(null);
-    const pinnerDetails = {
-      uid: currentUser.id,
-      name: currentUser.full_name || 'FNI Leader',
-      content: msg.content,
-      recipientUid: 'recipientUid' in msg ? (msg.senderUid === currentUser.id ? msg.recipientUid : msg.senderUid) : undefined,
-    };
-    if (selectedChatId === 'community') {
-      await MessagingService.setCommunityMessagePin(msg.id, !msg.isPinned, notify, pinnerDetails);
-    } else {
-      await MessagingService.setPrivateMessagePin(msg.id, currentUser.id, !msg.isPinned, notify, pinnerDetails);
+
+    const actionLabel = msg.isPinned ? 'unpin' : 'pin';
+
+    try {
+      const pinnerDetails = {
+        uid: currentUser.id,
+        name: currentUser.full_name || 'FNI Leader',
+        content: msg.content,
+        recipientUid: 'recipientUid' in msg ? (msg.senderUid === currentUser.id ? msg.recipientUid : msg.senderUid) : undefined,
+      };
+
+      let res: { success: boolean; error?: string };
+      if (selectedChatId === 'community') {
+        res = await MessagingService.setCommunityMessagePin(msg.id, !msg.isPinned, notify, pinnerDetails);
+      } else {
+        res = await MessagingService.setPrivateMessagePin(msg.id, currentUser.id, !msg.isPinned, notify, pinnerDetails);
+      }
+
+      if (!res.success) {
+        const errorMsg = res.error || `Unable to ${actionLabel} message. Please check permissions and try again.`;
+        alert(errorMsg);
+        return;
+      }
+
+      // Refresh messages only after successful persistence
+      await loadActiveMessages();
+    } catch (err: any) {
+      console.error('Error toggling pin:', err);
+      alert(err?.message || `Failed to ${actionLabel} message. Please check your connection and try again.`);
+    } finally {
+      setIsPinning(false);
     }
-    await loadActiveMessages();
   };
 
   // Reactions
@@ -2694,7 +2737,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <span className="hidden sm:inline">All Pins</span>
                     </button>
                   )}
-                  {(isAdmin || currentPinnedBannerMessage.senderUid === currentUser?.id || selectedChatId !== 'community') && (
+                  {canPin && (
                     <button
                       type="button"
                       onClick={() => handleTogglePin(currentPinnedBannerMessage)}
@@ -3033,7 +3076,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           >
                             <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                           </button>
-                          {(isAdmin || msg.senderUid === currentUser?.id || selectedChatId !== 'community') && (
+                          {canPin && (
                             <button
                               type="button"
                               onClick={() => handleTogglePin(msg)}
@@ -3886,7 +3929,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <span>Forward</span>
             </button>
 
-            {(isAdmin || contextMenu.msg.senderUid === currentUser?.id || selectedChatId !== 'community') && (
+            {canPin && (
               <button
                 type="button"
                 onClick={() => {
@@ -3972,7 +4015,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         onClose={() => setIsPinnedModalOpen(false)}
         pinnedMessages={allPinnedMessages}
         conversationTitle={activeContact?.name || 'Conversation'}
-        canUnpin={isAdmin || selectedChatId !== 'community'}
+        canUnpin={canPin}
         onSelectMessage={(msgId: string) => scrollToMessageId(msgId)}
         onUnpinMessage={(msgId: string) => {
           const target = allPinnedMessages.find(m => m.id === msgId);

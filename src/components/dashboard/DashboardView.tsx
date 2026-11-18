@@ -533,27 +533,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
           </div>
 
-          {/* Teaching Outlines */}
-          <div
-            onClick={() => onNavigateToTab('materials')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#23845B] shrink-0">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="font-bold text-[#142B4A] text-xs group-hover:text-emerald-700 transition-colors">
-                  Teaching Outlines
-                </div>
-                <div className="text-[11px] text-[#667085]">
-                  Publish Weekly Discipleship Notes
-                </div>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
-          </div>
-
           {/* System Settings */}
           <div
             onClick={() => onNavigateToTab('settings')}

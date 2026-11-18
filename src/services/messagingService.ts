@@ -389,9 +389,9 @@ export class MessagingService {
     pinned: boolean,
     notifyMembers = false,
     pinnerDetails?: { uid: string; name: string; content?: string; recipientUid?: string }
-  ): Promise<boolean> {
-    const success = await SupabaseService.setPrivateMessagePin(messageId, userId, pinned);
-    if (success && pinned && notifyMembers && pinnerDetails?.recipientUid) {
+  ): Promise<{ success: boolean; error?: string }> {
+    const res = await SupabaseService.setPrivateMessagePin(messageId, userId, pinned);
+    if (res.success && pinned && notifyMembers && pinnerDetails?.recipientUid) {
       try {
         const { NotificationService } = await import('./notificationService');
         await NotificationService.notifyPinnedMessage({
@@ -406,7 +406,7 @@ export class MessagingService {
         console.warn('Pinned notification dispatch notice:', err);
       }
     }
-    return success;
+    return res;
   }
 
   static async clearPrivateConversation(viewerUid: string, conversationId: string): Promise<boolean> {
@@ -632,9 +632,9 @@ export class MessagingService {
     pinned: boolean,
     notifyMembers = false,
     pinnerDetails?: { uid: string; name: string; content?: string }
-  ): Promise<boolean> {
-    const success = await SupabaseService.setCommunityMessagePin(messageId, pinned, notifyMembers);
-    if (success && pinned && notifyMembers && pinnerDetails) {
+  ): Promise<{ success: boolean; error?: string }> {
+    const res = await SupabaseService.setCommunityMessagePin(messageId, pinned, notifyMembers, pinnerDetails);
+    if (res.success && pinned && notifyMembers && pinnerDetails) {
       try {
         const { NotificationService } = await import('./notificationService');
         await NotificationService.notifyPinnedMessage({
@@ -648,7 +648,7 @@ export class MessagingService {
         console.warn('Pinned notification dispatch notice:', err);
       }
     }
-    return success;
+    return res;
   }
 
   static async getCommunityMessages(viewerUid?: string): Promise<CommunityMessage[]> {
@@ -664,7 +664,11 @@ export class MessagingService {
         if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
         const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
         const deletedForSelf = viewerUid ? this.getDeletedForSelfIds(viewerUid) : new Set<string>();
-        let visibleMessages = supaMsgs.filter(message =>
+        const memberMap = new Map((directory || []).map(m => [m.id, m.full_name]));
+        let visibleMessages = supaMsgs.map(msg => ({
+          ...msg,
+          pinnedByName: msg.pinnedByName || (msg.pinnedBy ? memberMap.get(msg.pinnedBy) : undefined),
+        })).filter(message =>
           allowedMemberIds.has(message.senderUid) &&
           !message.deletedForEveryoneAt &&
           !deletedForSelf.has(message.id) &&

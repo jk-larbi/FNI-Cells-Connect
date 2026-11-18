@@ -986,7 +986,7 @@ export class SupabaseService {
       return messages.map(message => ({
         ...message,
         reactions: grouped.get(message.id) || {},
-        isPinned: pinnedIds.has(message.id),
+        isPinned: Boolean(message.isPinned || pinnedIds.has(message.id)),
       }));
     } catch (err) {
       console.warn('Private messages could not be loaded:', err);
@@ -1183,20 +1183,33 @@ export class SupabaseService {
     messageId: string,
     userId: string,
     pinned: boolean
-  ): Promise<boolean> {
-    if (!this.isAvailable()) return false;
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
     try {
-      // 1. Try modern RPC first
-      try {
-        await supabase!.rpc('set_private_message_pin', {
-          p_message_id: messageId,
-          p_pinned: pinned,
-        });
-      } catch (rpcErr) {
-        console.warn('RPC set_private_message_pin notice:', rpcErr);
+      // 1. Direct update on private_messages table
+      const payload: any = pinned
+        ? {
+            is_pinned: true,
+            pinned_at: new Date().toISOString(),
+            pinned_by: userId,
+          }
+        : {
+            is_pinned: false,
+            pinned_at: null,
+            pinned_by: null,
+          };
+
+      const { error: directError } = await supabase!
+        .from('private_messages')
+        .update(payload)
+        .eq('id', messageId);
+
+      if (directError) {
+        console.warn('Direct private_messages pin update notice:', directError);
       }
 
       // 2. Also keep private_message_pins table in sync
+      let pinTableSuccess = false;
       if (pinned) {
         const { data: existing, error: lookupError } = await supabase!
           .from('private_message_pins')
@@ -1204,25 +1217,52 @@ export class SupabaseService {
           .eq('message_id', messageId)
           .eq('user_id', userId)
           .maybeSingle();
-        if (lookupError) throw lookupError;
+        if (lookupError) {
+          console.warn('private_message_pins lookup notice:', lookupError);
+        }
         if (!existing) {
-          const { error } = await supabase!
+          const { error: insertError } = await supabase!
             .from('private_message_pins')
             .insert({ message_id: messageId, user_id: userId });
-          if (error) throw error;
+          if (insertError) {
+            console.warn('private_message_pins insert notice:', insertError);
+          } else {
+            pinTableSuccess = true;
+          }
+        } else {
+          pinTableSuccess = true;
         }
       } else {
-        const { error } = await supabase!
+        const { error: deleteError } = await supabase!
           .from('private_message_pins')
           .delete()
           .eq('message_id', messageId)
           .eq('user_id', userId);
-        if (error) throw error;
+        if (deleteError) {
+          console.warn('private_message_pins delete notice:', deleteError);
+        } else {
+          pinTableSuccess = true;
+        }
       }
-      return true;
-    } catch (error) {
+
+      // 3. Try RPC silently
+      const { error: rpcErr } = await supabase!.rpc('set_private_message_pin', {
+        p_message_id: messageId,
+        p_pinned: pinned,
+      });
+      if (rpcErr) {
+        console.warn('RPC set_private_message_pin notice:', rpcErr);
+      }
+
+      // If both direct update and pins table failed, report error
+      if (directError && !pinTableSuccess) {
+        return { success: false, error: directError.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
       console.warn('Private message pin failed:', error);
-      return false;
+      return { success: false, error: error?.message || 'Failed to update private message pin' };
     }
   }
 
@@ -1373,20 +1413,50 @@ export class SupabaseService {
   static async setCommunityMessagePin(
     messageId: string,
     pinned: boolean,
-    notifyMembers?: boolean
-  ): Promise<boolean> {
-    if (!this.isAvailable()) return false;
+    notifyMembers?: boolean,
+    pinnerDetails?: { uid: string; name: string }
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
     try {
-      const { error } = await supabase!.rpc('set_community_message_pin', {
-        p_message_id: messageId,
-        p_pinned: pinned,
-        p_notify: Boolean(notifyMembers),
-      });
-      if (error) throw error;
-      return true;
-    } catch (error) {
+      const authUser = (await supabase!.auth.getUser()).data.user;
+      const authUid = authUser?.id || pinnerDetails?.uid;
+
+      // 1. Direct update on public.community_messages (column grants for authenticated: is_pinned, pinned_at, pinned_by)
+      const payload: any = pinned
+        ? {
+            is_pinned: true,
+            pinned_at: new Date().toISOString(),
+            pinned_by: authUid || null,
+          }
+        : {
+            is_pinned: false,
+            pinned_at: null,
+            pinned_by: null,
+          };
+
+      const { error: directError } = await supabase!
+        .from('community_messages')
+        .update(payload)
+        .eq('id', messageId);
+
+      if (directError) {
+        console.warn('Direct community message pin update error:', directError);
+        // Fallback to RPC in case RPC is present and functional
+        const { error: rpcError } = await supabase!.rpc('set_community_message_pin', {
+          p_message_id: messageId,
+          p_pinned: pinned,
+          p_notify: Boolean(notifyMembers),
+        });
+        if (rpcError) {
+          console.error('Both direct update and RPC failed for community pin:', rpcError);
+          return { success: false, error: directError.message || rpcError.message };
+        }
+      }
+
+      return { success: true };
+    } catch (error: any) {
       console.warn('Community message pin update failed:', error);
-      return false;
+      return { success: false, error: error?.message || 'Could not update community message pin' };
     }
   }
 
