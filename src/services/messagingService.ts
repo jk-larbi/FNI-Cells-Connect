@@ -557,7 +557,7 @@ export class MessagingService {
           senderName: msg.senderName,
           recipientUid: data.replyTo.senderUid,
           content: msg.content,
-          conversationTitle: 'Themelios Community',
+          conversationTitle: 'FNI Community',
         });
       }
 
@@ -570,7 +570,7 @@ export class MessagingService {
               senderName: msg.senderName,
               recipientUid: mentionUid,
               content: msg.content,
-              conversationTitle: 'Themelios Community',
+              conversationTitle: 'FNI Community',
             });
           }
         }
@@ -602,7 +602,7 @@ export class MessagingService {
           pinnerUid: pinnerDetails.uid,
           pinnerName: pinnerDetails.name,
           content: pinnerDetails.content || 'Pinned message',
-          conversationTitle: 'Themelios Community',
+          conversationTitle: 'FNI Community',
         });
       } catch (err) {
         console.warn('Pinned notification dispatch notice:', err);
