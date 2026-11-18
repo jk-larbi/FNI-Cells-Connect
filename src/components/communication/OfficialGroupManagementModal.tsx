@@ -151,13 +151,13 @@ export const OfficialGroupManagementModal: React.FC<OfficialGroupManagementModal
             <div className="flex items-start justify-between">
               <div>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-white shadow-sm mb-2">
-                  <ShieldCheck className="w-3.5 h-3.5" /> ACTIVE OFFICIAL GROUP
+                  <ShieldCheck className="w-3.5 h-3.5" /> {currentOfficialGroup ? 'ACTIVE OFFICIAL GROUP' : 'NO OFFICIAL GROUP'}
                 </span>
                 <h4 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {currentOfficialGroup?.name || 'Themelios Class - FNI Community'}
+                  {currentOfficialGroup?.name || 'No official group designated'}
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-md">
-                  {currentOfficialGroup?.description || 'Official ministerial fellowship for all active FNI tutors and leaders.'}
+                  {currentOfficialGroup?.description || 'Choose an existing FNI community group below to designate it as the official group.'}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-lg">
