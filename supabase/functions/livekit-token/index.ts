@@ -56,7 +56,7 @@ serve(async (req) => {
       .eq('supabase_user_id', user.id)
       .maybeSingle();
 
-    if (profileError || !profile || !profile.is_active || profile.is_test_account || !['tutor', 'admin', 'super_admin'].includes(profile.role)) {
+    if (profileError || !profile || !profile.is_active || profile.is_test_account || !['tutor', 'admin', 'super_admin', 'national_admin'].includes(profile.role)) {
       return new Response(JSON.stringify({ error: 'An active FNI member profile is required.' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
