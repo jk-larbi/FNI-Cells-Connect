@@ -130,7 +130,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
             CallSignalingService.startIncomingRingtone();
           } catch (error) {
             console.warn('Could not verify incoming call permissions:', error);
-            await CallSignalingService.declineCall(session.id, 'failed').catch(() => {});
+            await CallSignalingService.declineCall(session.id, 'declined').catch(() => {});
           }
         })();
       },
