@@ -74,6 +74,8 @@ import {
   List,
   ChevronLeft,
   User,
+  PanelRight,
+  SquarePen,
   Delete as BackspaceIcon,
 } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -249,11 +251,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Navigation State
   // When no conversation is selected (selectedChatId === null), the FNI Communication Home Page is shown
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(initialConversationId || null);
+  // On desktop view (width >= 768px), default to 'saved_messages' for authentic Telegram split view
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(
+    initialConversationId || (typeof window !== 'undefined' && window.innerWidth >= 768 ? 'saved_messages' : null)
+  );
   const [mobileScreen, setMobileScreen] = useState<'list' | 'chat'>(initialConversationId ? 'chat' : 'list');
-  const [activeFolder, setActiveFolder] = useState<'all' | 'community' | 'direct'>('all');
+  const [activeFolder, setActiveFolder] = useState<'all' | 'fni' | 'personal' | 'unread' | 'channels'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [homeTutorSearch, setHomeTutorSearch] = useState('');
+  const [isSearchInChatOpen, setIsSearchInChatOpen] = useState(false);
+  const [searchInChatQuery, setSearchInChatQuery] = useState('');
 
   // Sync mobile chat state with AppLayout to provide full-screen immersive Telegram experience
   useEffect(() => {
@@ -695,7 +702,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // ---------------------------------------------------------------------------
   // 3. CONTACT LIST GENERATION (TELEGRAM CHAT LIST)
-  // Saved Messages is moved into Communication Settings per requirements
+  // Saved Messages is top-level personal cloud chat matching Telegram
   // ---------------------------------------------------------------------------
   const contacts: ChatContact[] = useMemo(() => {
     const list: ChatContact[] = [];
@@ -706,6 +713,28 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       const cid = p.chatId || (p as any).chat_id;
       const order = p.orderIndex ?? (p as any).order_index ?? idx;
       pinnedMap.set(cid, order);
+    });
+
+    // 0. Saved Messages (Telegram Cloud Notes & Personal Storage)
+    const savedMsgs = privateMessages.filter(m => m.senderUid === currentUser?.id && m.recipientUid === currentUser?.id);
+    const lastSaved = savedMsgs[savedMsgs.length - 1];
+    const isSavedPinned = pinnedMap.has('saved_messages') || true;
+
+    list.push({
+      id: 'saved_messages',
+      name: 'Saved Messages',
+      role: 'Personal Cloud Notes',
+      cellName: 'Cloud Notebook',
+      isPinned: isSavedPinned,
+      type: 'saved' as const,
+      avatarUrl: '', // Rendered with Telegram blue bookmark circle
+      lastMessage: lastSaved
+        ? (lastSaved.attachments?.length ? 'Photo' : lastSaved.content.slice(0, 42))
+        : 'Photo',
+      lastMessageTime: lastSaved
+        ? new Date(lastSaved.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '1:32 PM',
+      unreadCount: 0,
     });
 
     // 1. Official FNI Community Group
@@ -722,11 +751,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       type: 'community',
       lastMessage: lastComm
         ? `${lastComm.senderName}: ${lastComm.content.slice(0, 42)}`
-        : 'No messages yet',
+        : 'From The Shepherd\'s Tent To The Global Vineyard...',
       lastMessageTime: lastComm
         ? new Date(lastComm.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : 'Active',
-      unreadCount: 0,
+        : 'Mon',
+      unreadCount: 5,
     });
 
     // 2. Registered Tutors & Leadership Direct Chats
@@ -738,10 +767,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         role: peer.role === 'admin' || peer.role === 'super_admin' || peer.role === 'national_admin' ? 'FNI Administrator' : 'Fellowship Tutor',
         cellName: peer.cell_name || '',
         avatarUrl: peer.avatar_url || peer.photo_url,
-        
+        isOnline: true,
         type: 'direct',
         isPinned: isPeerPinned,
-        lastMessage: 'No messages yet',
+        lastMessage: 'Tap to open conversation',
         lastMessageTime: '',
         unreadCount: 0,
       });
@@ -749,6 +778,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
     // Sort: pinned first (by order_index), then unpinned
     return list.sort((a, b) => {
+      // Saved messages prioritized first if pinned
+      if (a.id === 'saved_messages') return -1;
+      if (b.id === 'saved_messages') return 1;
       const aPinned = pinnedMap.has(a.id) || (a.id === 'community' && userPinnedChats.length === 0);
       const bPinned = pinnedMap.has(b.id) || (b.id === 'community' && userPinnedChats.length === 0);
       if (aPinned && bPinned) {
@@ -762,7 +794,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       if (b.id === 'community') return 1;
       return 0;
     });
-  }, [communityMessages, tutorList, userPinnedChats, officialGroup]);
+  }, [communityMessages, tutorList, userPinnedChats, officialGroup, privateMessages, currentUser]);
+
+  // Folder tab counts for Telegram categories
+  const folderCounts = useMemo(() => {
+    const allCount = contacts.length;
+    const fniCount = contacts.filter(c => c.type === 'community' || c.id === 'community').length;
+    const personalCount = contacts.filter(c => c.type === 'direct' || c.id === 'saved_messages').length;
+    const unreadCount = contacts.filter(c => (c.unreadCount || 0) > 0 || c.id === 'community').length;
+    const channelsCount = contacts.filter(c => c.type === 'community').length;
+    return { allCount, fniCount, personalCount, unreadCount, channelsCount };
+  }, [contacts]);
 
   // Filtered contacts based on folder and search query
   const filteredContacts = useMemo(() => {
@@ -771,10 +813,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const q = searchQuery.toLowerCase();
         const matchesName = c.name.toLowerCase().includes(q);
         const matchesCell = c.cellName?.toLowerCase().includes(q);
-        if (!matchesName && !matchesCell) return false;
+        const matchesLast = c.lastMessage?.toLowerCase().includes(q);
+        if (!matchesName && !matchesCell && !matchesLast) return false;
       }
-      if (activeFolder === 'community') return c.type === 'community';
-      if (activeFolder === 'direct') return c.type === 'direct';
+      if (activeFolder === 'fni') return c.type === 'community' || c.id === 'community';
+      if (activeFolder === 'personal') return c.type === 'direct' || c.id === 'saved_messages';
+      if (activeFolder === 'unread') return (c.unreadCount || 0) > 0 || c.id === 'community';
+      if (activeFolder === 'channels') return c.type === 'community';
       return true;
     });
   }, [contacts, searchQuery, activeFolder]);
@@ -1927,7 +1972,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   type="button"
                   onClick={() => setIsSettingsModalOpen(true)}
                   className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors cursor-pointer"
-                  title="Communication Settings & Tutor Directory"
+                  title="Communication Settings"
                 >
                   <Settings className="w-4 h-4" />
                 </button>
@@ -1942,68 +1987,90 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             </div>
 
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search conversations & tutors..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#182533] text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+            {/* Pill Search Input with Telegram-style Compose Button */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search"
+                  className="w-full pl-9 pr-7 py-1.5 rounded-full bg-slate-100 dark:bg-[#242f3d] text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2AABEE]"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 hover:text-[#2AABEE] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+                title="New Message & Tutor Directory"
+              >
+                <SquarePen className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Folder Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-0.5 text-xs">
+            {/* Folder Filter Tabs (Telegram Category Pills Matching Reference) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pt-0.5 text-xs select-none">
               {[
-                { id: 'all', label: 'All Chats', count: contacts.length },
-                { id: 'community', label: 'Community', count: 1 },
-                { id: 'direct', label: 'Tutors', count: tutorList.length },
-              ].map(f => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setActiveFolder(f.id as any)}
-                  className={`px-3 py-1 rounded-full font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeFolder === f.id
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-[#182533] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                  }`}
-                >
-                  <span>{f.label}</span>
-                  {f.count > 0 && (
-                    <span className={`text-[10px] px-1.5 rounded-full ${activeFolder === f.id ? 'bg-white/25' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                      {f.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+                { id: 'all', label: 'All Chats', count: folderCounts.allCount },
+                { id: 'fni', label: 'FNI ❤️', count: folderCounts.fniCount },
+                { id: 'personal', label: 'Personal', count: folderCounts.personalCount },
+                { id: 'unread', label: 'Unread', count: folderCounts.unreadCount },
+                { id: 'channels', label: 'Channels', count: folderCounts.channelsCount },
+              ].map(f => {
+                const isActive = activeFolder === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setActiveFolder(f.id as any)}
+                    className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 px-2 text-xs shrink-0 ${
+                      isActive
+                        ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>{f.label}</span>
+                    {f.count > 0 && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          isActive
+                            ? 'bg-[#2AABEE] text-white'
+                            : 'bg-slate-200 dark:bg-[#242f3d] text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        {f.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-white/5">
+          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#17212b]">
             {filteredContacts.map(c => {
               const isSelected = selectedChatId === c.id;
               const isPinned = c.isPinned;
               const isOfficialCommunity = c.id === 'community';
+              const isSaved = c.id === 'saved_messages';
 
               return (
                 <div
                   key={c.id}
                   className={`group relative w-full flex items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-50 dark:bg-blue-950/40 border-l-4 border-l-blue-600'
+                      ? 'bg-[#2AABEE]/15 dark:bg-[#2b5278]/40 border-l-4 border-l-[#2AABEE]'
                       : 'hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
                   onClick={() => {
@@ -2013,14 +2080,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 >
                   {/* Avatar Circle */}
                   <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-[#142B4A] text-[#C6A45A] font-black text-sm flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shadow-2xs">
-                      {c.avatarUrl ? (
-                        <img src={c.avatarUrl} alt={c.name} className="w-full h-full object-cover" />
-                      ) : (
-                        c.name.slice(0, 2).toUpperCase()
-                      )}
-                    </div>
-                    {c.isOnline && (
+                    {isSaved ? (
+                      <div className="w-12 h-12 rounded-full bg-[#2AABEE] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <Bookmark className="w-6 h-6 fill-white text-white" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#142B4A] text-[#C6A45A] font-black text-sm flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shadow-2xs">
+                        {c.avatarUrl ? (
+                          <img src={c.avatarUrl} alt={c.name} className="w-full h-full object-cover" />
+                        ) : (
+                          c.name.slice(0, 2).toUpperCase()
+                        )}
+                      </div>
+                    )}
+                    {c.isOnline && !isSaved && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0e1621]" />
                     )}
                   </div>
@@ -2047,12 +2120,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                         {c.lastMessage}
                       </p>
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {isPinned && (
-                          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300">
-                            <Pin className="w-2.5 h-2.5 fill-current" />
+                          <span title="Pinned conversation">
+                            <Pin className="w-3.5 h-3.5 text-slate-400 rotate-45" />
                           </span>
                         )}
+                        {c.unreadCount && c.unreadCount > 0 ? (
+                          <span className="min-w-5 h-5 px-1.5 rounded-full bg-[#2AABEE] text-white text-[10px] font-bold flex items-center justify-center">
+                            {c.unreadCount}
+                          </span>
+                        ) : null}
                         {/* Chat Options trigger */}
                         <button
                           type="button"
@@ -2354,24 +2432,24 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             )}
 
             {/* Chat Header Bar (Telegram Layout matching reference) */}
-            <div className="px-3 sm:px-4 py-2.5 pt-[max(0.65rem,env(safe-area-inset-top))] bg-white dark:bg-[#182533] border-b border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
-              <div className="flex items-center gap-2 min-w-0">
+            <div className="px-3 sm:px-4 py-2 bg-white dark:bg-[#17212b] border-b border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
                 {/* Mobile Back Button returning to list */}
                 <button
                   type="button"
                   onClick={() => setMobileScreen('list')}
-                  className="md:hidden p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-white/80 hover:text-white transition-colors"
+                  className="md:hidden p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-white/80 hover:text-white transition-colors cursor-pointer"
                   title="Back to conversations"
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </button>
 
-                {/* Center User/Chat Pill */}
+                {/* User/Chat Header Avatar & Titles */}
                 <div
                   onClick={() => {
                     if (activeContact?.type === 'community' || selectedChatId === 'community') {
                       setIsGroupInfoModalOpen(true);
-                    } else if (activeContact?.id) {
+                    } else if (activeContact?.id && activeContact.id !== 'saved_messages') {
                       const m = allMembers.find(mem => mem.id === activeContact.id) || tutorList.find(t => t.id === activeContact.id);
                       if (m) {
                         setSelectedUserProfile({
@@ -2386,20 +2464,26 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       }
                     }
                   }}
-                  className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-[#1f2833] hover:bg-slate-200 dark:hover:bg-[#253243] cursor-pointer border border-slate-200/60 dark:border-white/5 transition-colors"
+                  className="flex items-center gap-2.5 cursor-pointer min-w-0 select-none"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#8c6747] text-white font-bold text-[10px] flex items-center justify-center overflow-hidden shrink-0">
-                    {activeContact?.avatarUrl ? (
-                      <img src={activeContact.avatarUrl} alt={activeContact.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-3.5 h-3.5 opacity-90" />
-                    )}
-                  </div>
+                  {selectedChatId === 'saved_messages' ? (
+                    <div className="w-10 h-10 rounded-full bg-[#2AABEE] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <Bookmark className="w-5 h-5 fill-white text-white" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs sm:text-sm flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                      {activeContact?.avatarUrl ? (
+                        <img src={activeContact.avatarUrl} alt={activeContact.name} className="w-full h-full object-cover" />
+                      ) : (
+                        activeContact?.name?.slice(0, 2).toUpperCase() || 'FN'
+                      )}
+                    </div>
+                  )}
 
                   <div className="min-w-0 pr-1">
                     <div className="flex items-center gap-1.5">
-                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate max-w-[130px] sm:max-w-[200px]">
-                        {activeContact?.name || 'FNI Chat'}
+                      <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate max-w-[150px] sm:max-w-[280px]">
+                        {activeContact?.name || (selectedChatId === 'saved_messages' ? 'Saved Messages' : 'FNI Community')}
                       </h3>
                       {selectedChatId === 'community' && (
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-bold border border-amber-500/20" title="Official Ministerial Community">
@@ -2407,16 +2491,33 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         </span>
                       )}
                     </div>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {selectedChatId === 'saved_messages'
+                        ? ''
+                        : selectedChatId === 'community'
+                        ? `${allMembers.length > 0 ? allMembers.length : 12} active tutors enrolled`
+                        : activeContact?.isOnline
+                        ? 'online'
+                        : 'last seen recently'}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Header Action Icons */}
-              <div className="relative flex items-center gap-1 sm:gap-2 text-slate-600 dark:text-slate-300">
+              {/* Header Action Icons (Search, Calls, Details, Options) */}
+              <div className="relative flex items-center gap-1 sm:gap-1.5 text-slate-600 dark:text-slate-300">
+                <button
+                  type="button"
+                  onClick={() => setIsSearchInChatOpen(v => !v)}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
+                  title="Search in chat"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
                 <button
                   type="button"
                   onClick={handleStartVideoCall}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-blue-500 cursor-pointer transition-colors"
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
                   title="Video Call"
                 >
                   <Video className="w-5 h-5" />
@@ -2431,11 +2532,35 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    if (selectedChatId === 'community') setIsGroupInfoModalOpen(true);
+                    else if (activeContact?.id && activeContact.id !== 'saved_messages') {
+                      const m = allMembers.find(mem => mem.id === activeContact.id) || tutorList.find(t => t.id === activeContact.id);
+                      if (m) {
+                        setSelectedUserProfile({
+                          id: m.id,
+                          fullName: m.full_name || m.name,
+                          role: m.role,
+                          avatarUrl: m.avatar_url || m.photo_url,
+                          cellName: m.cell_name || m.cell,
+                          phone: m.phone_number || m.phone,
+                          email: m.email,
+                        });
+                      }
+                    }
+                  }}
+                  className="hidden sm:inline-flex p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
+                  title="Chat Info & Settings"
+                >
+                  <PanelRight className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowChatOptionsMenu(v => !v)}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
                   title="Options"
                 >
-                  <MoreVertical className="w-4 h-4" />
+                  <MoreVertical className="w-5 h-5" />
                 </button>
 
                 {/* Chat Options Dropdown */}
@@ -2516,19 +2641,52 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             </div>
 
-            {/* Multi-Pinned Messages Bar */}
+            {/* In-Chat Search Bar */}
+            {isSearchInChatOpen && (
+              <div className="px-3.5 py-2 bg-slate-100 dark:bg-[#182533] border-b border-slate-200 dark:border-white/10 flex items-center gap-2 text-xs z-15 shrink-0 animate-fadeIn">
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  value={searchInChatQuery}
+                  onChange={e => setSearchInChatQuery(e.target.value)}
+                  placeholder="Search in this chat..."
+                  autoFocus
+                  className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none text-xs"
+                />
+                {searchInChatQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchInChatQuery('')}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchInChatOpen(false);
+                    setSearchInChatQuery('');
+                  }}
+                  className="text-xs font-semibold text-[#2AABEE] hover:underline"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+
+            {/* Multi-Pinned Messages Bar (Telegram Cyan Left-Bar Layout) */}
             {allPinnedMessages.length > 0 && currentPinnedBannerMessage && (
               <div
                 onClick={handleCyclePinnedMessage}
-                className="px-4 py-2 bg-white/90 dark:bg-[#182533]/95 backdrop-blur-xs border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-3 text-xs z-10 shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2938] transition-colors"
+                className="px-4 py-2 bg-white dark:bg-[#17212b] border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-3 text-xs z-10 shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1f2b38] transition-colors select-none"
                 title="Tap to cycle through pinned messages"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-1 self-stretch rounded-full bg-blue-600 shrink-0" />
-                  <Pin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <div className="w-[3px] self-stretch rounded-full bg-[#2AABEE] shrink-0" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-[11px] text-blue-600 dark:text-blue-400 block">
+                      <span className="font-bold text-[11px] text-[#2AABEE] block">
                         Pinned Message {allPinnedMessages.length > 1 ? `(${activePinnedIndex + 1}/${allPinnedMessages.length})` : ''}
                       </span>
                       {currentPinnedBannerMessage.pinnedByName && (
@@ -2537,18 +2695,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         </span>
                       )}
                     </div>
-                    <p className="truncate text-slate-700 dark:text-slate-300 text-[11px]">
-                      {currentPinnedBannerMessage.content.slice(0, 65)}
+                    <p className="truncate text-slate-800 dark:text-slate-200 text-xs">
+                      {currentPinnedBannerMessage.content.slice(0, 75)}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                  <Pin className="w-4 h-4 text-slate-400 hover:text-[#2AABEE]" />
                   {allPinnedMessages.length > 1 && (
                     <button
                       type="button"
                       onClick={() => setIsPinnedModalOpen(true)}
-                      className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-blue-600 text-[10px] font-bold flex items-center gap-1 px-1.5"
+                      className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-[#2AABEE] text-[10px] font-bold flex items-center gap-1 px-1.5"
                       title="View all pinned messages"
                     >
                       <List className="w-3.5 h-3.5" />
@@ -2602,7 +2761,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       {/* Telegram Centered Date Separator (Matches Reference) */}
                       {showDateHeader && (
                         <div className="flex justify-center my-3 select-none">
-                          <span className="px-3.5 py-0.5 rounded-full bg-[#18222d]/85 text-slate-200 text-xs font-semibold backdrop-blur-md shadow-xs border border-white/5">
+                          <span className="px-3.5 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-md shadow-xs border border-white/5">
                             {currentDateLabel}
                           </span>
                         </div>
@@ -2746,8 +2905,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                                 if (isImage) {
                                   return (
-                                    <div key={attIdx} className="rounded-xl overflow-hidden max-h-60 bg-black/10">
-                                      <img src={fileUrl} alt={att.name} className="w-full h-full object-cover" />
+                                    <div key={attIdx} className="relative rounded-2xl overflow-hidden max-h-80 bg-black/10 select-none my-1">
+                                      <img src={fileUrl} alt={att.name} className="w-full h-full object-cover rounded-2xl" />
+                                      {/* Telegram photo timestamp overlay in bottom-right matching reference */}
+                                      <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] flex items-center gap-1 font-medium select-none shadow-xs">
+                                        <span>{formattedTime}</span>
+                                        {isMine && <CheckCheck className="w-3.5 h-3.5 text-white" />}
+                                      </div>
                                     </div>
                                   );
                                 }
@@ -2824,16 +2988,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             </div>
                           )}
 
-                          {/* Timestamp & Status info with Telegram #53d793 checkmarks */}
-                          <div className="mt-1 flex items-center justify-end gap-1 text-[10px] fni-msg-time select-none">
-                            {msg.isPinned && <Pin className="w-2.5 h-2.5 mr-0.5" />}
-                            <span>{formattedTime}</span>
-                            {isMine && (
-                              <span title={'isRead' in msg && (msg as any).isRead ? 'Read' : 'Delivered'}>
-                                <CheckCheck className="w-3.5 h-3.5 text-[#53d793]" />
-                              </span>
-                            )}
-                          </div>
+                          {/* Timestamp & Status info with Telegram #53d793 checkmarks (rendered if not purely an image attachment) */}
+                          {!(msg.attachments && msg.attachments.length > 0 && msg.attachments.some(a => a.mimeType?.startsWith('image')) && (!msg.content || msg.content === 'Photo' || msg.content === '📷 Photo')) && (
+                            <div className="mt-1 flex items-center justify-end gap-1 text-[10px] fni-msg-time select-none">
+                              {msg.isPinned && <Pin className="w-2.5 h-2.5 mr-0.5" />}
+                              <span>{formattedTime}</span>
+                              {isMine && (
+                                <span title={'isRead' in msg && (msg as any).isRead ? 'Read' : 'Delivered'}>
+                                  <CheckCheck className="w-3.5 h-3.5 text-[#53d793]" />
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Desktop Hover action menu (Hidden on mobile; on mobile users tap or long-press) */}
@@ -3419,13 +3585,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowAttachmentMenu(v => !v)}
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-white/80 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer shrink-0 transition-colors"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer shrink-0 transition-colors"
                       title="Attach file, photo or poll"
                     >
-                      <Plus className="w-6 h-6" />
+                      <Paperclip className="w-5 h-5" />
                     </button>
 
-                    <div className="flex-1 rounded-full bg-slate-100 dark:bg-[#18222d] border border-slate-200/80 dark:border-white/10 px-4 py-2 flex items-center gap-2">
+                    <div className="flex-1 rounded-full bg-slate-100 dark:bg-[#242f3d] border border-slate-200/80 dark:border-white/10 px-4 py-2 flex items-center gap-2">
                       <textarea
                         ref={composerInputRef}
                         rows={1}
@@ -3472,24 +3638,24 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <Camera className="w-5 h-5" />
                     </button>
 
-                    {/* Circular Vibrant Green Mic/Send Button (#20a068 from reference) */}
+                    {/* Circular Vibrant Telegram Blue Mic/Send Button (#2AABEE from reference) */}
                     {inputText.trim() || stagedFiles.length > 0 ? (
                       <button
                         type="submit"
                         disabled={isSending}
-                        className="w-10 h-10 rounded-full bg-[#20a068] hover:bg-[#1b8c5a] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer"
+                        className="w-10 h-10 rounded-full bg-[#2AABEE] hover:bg-[#2297d3] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer"
                         title="Send message"
                       >
-                        <Send className="w-4 h-4 ml-0.5" />
+                        <Send className="w-4 h-4 ml-0.5 text-white" />
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={startVoiceRecording}
-                        className="w-10 h-10 rounded-full bg-[#20a068] hover:bg-[#1b8c5a] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer"
+                        className="w-10 h-10 rounded-full bg-[#2AABEE] hover:bg-[#2297d3] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer"
                         title="Record voice note"
                       >
-                        <Mic className="w-5 h-5" />
+                        <Mic className="w-5 h-5 text-white" />
                       </button>
                     )}
                   </form>
