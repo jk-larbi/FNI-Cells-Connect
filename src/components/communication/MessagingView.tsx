@@ -47,6 +47,7 @@ import {
   Video,
   Play,
   Pause,
+  Camera,
   BarChart2,
   Bookmark,
   Share2,
@@ -69,14 +70,17 @@ import {
   ArrowDown,
   ShieldCheck,
   List,
+  ChevronLeft,
+  User,
+  Delete as BackspaceIcon,
 } from 'lucide-react';
 import { Button } from '../common/Button';
-import { FniEmojiPicker } from './FniEmojiPicker';
 
 export interface MessagingViewProps {
   initialConversationId?: string;
   initialTab?: 'private' | 'community';
   onBack?: () => void;
+  onMobileChatStateChange?: (isChatOpen: boolean) => void;
 }
 
 // Telegram-style quick stickers
@@ -98,6 +102,59 @@ const STICKER_PACK = [
 const STICKER_PREFIX = '[[FNI_STICKER:';
 const POLL_PREFIX = '[[FNI_POLL:';
 
+// Comprehensive Unicode Emoji Categories
+const EMOJI_CATEGORIES: { name: string; icon: string; emojis: string[] }[] = [
+  {
+    name: 'Faith & Ministry',
+    icon: '🕊️',
+    emojis: [
+      '🕊️', '📖', '✝️', '🕎', '👑', '🕯️', '⛪', '🍇', '🍞', '🍷', '🐑', '🌾',
+      '🌱', '🌟', '⭐', '💫', '✨', '🛡️', '⚔️', '🎺', '🔔', '📜', '🗝️', '💎',
+      '💍', '🎁', '💌', '🏛️', '🔥', '💧', '☀️', '🌈'
+    ],
+  },
+  {
+    name: 'Smileys',
+    icon: '😊',
+    emojis: [
+      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇',
+      '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑',
+      '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬',
+      '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵',
+      '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️',
+      '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱'
+    ],
+  },
+  {
+    name: 'Gestures',
+    icon: '👍',
+    emojis: [
+      '👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '👋', '🤚',
+      '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈',
+      '👉', '👆', '👇', '☝️', '✊', '👊', '🤛', '🤜', '🤳'
+    ],
+  },
+  {
+    name: 'Hearts & Symbols',
+    icon: '❤️',
+    emojis: [
+      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕',
+      '💞', '💓', '💗', '💖', '💘', '💝', '💟', '💯', '💢', '💥', '💫', '💬',
+      '🗨️', '🗯️', '💭', '💤', '✅', '❌', '⚠️', '⚡', '💡'
+    ],
+  },
+  {
+    name: 'Activities & Celebration',
+    icon: '🎉',
+    emojis: [
+      '🎉', '🎊', '🎈', '🎂', '🎁', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🎗️',
+      '🎫', '🎟️', '🎪', '🎤', '🎧', '🎼', '🎵', '🎶', '🥁', '🎷', '🎺', '🎸',
+      '📱', '💻', '🖥️', '📦', '📌', '📍', '📎', '📋', '📁', '📂', '📚', '📝'
+    ],
+  },
+];
+const EMOJI_LIST = EMOJI_CATEGORIES[0].emojis;
+
 interface ChatContact {
   id: string; // 'community' | 'saved_messages' | profileId
   name: string;
@@ -116,6 +173,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   initialConversationId,
   initialTab,
   onBack,
+  onMobileChatStateChange,
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const { startDirectCall, startGroupMeeting } = useCall();
@@ -127,6 +185,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [activeFolder, setActiveFolder] = useState<'all' | 'community' | 'direct'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [homeTutorSearch, setHomeTutorSearch] = useState('');
+
+  // Sync mobile chat state with AppLayout to provide full-screen immersive Telegram experience
+  useEffect(() => {
+    onMobileChatStateChange?.(mobileScreen === 'chat' && selectedChatId !== null);
+  }, [mobileScreen, selectedChatId, onMobileChatStateChange]);
 
   // Contacts / Directory
   const [allMembers, setAllMembers] = useState<any[]>([]);
@@ -212,19 +275,30 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Popovers & Drawers
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activePickerTab, setActivePickerTab] = useState<'stickers' | 'emojis'>('emojis');
+  const [selectedEmojiCategory, setSelectedEmojiCategory] = useState<string>('Faith & Ministry');
+  const [emojiSearchQuery, setEmojiSearchQuery] = useState<string>('');
   const [showChatOptionsMenu, setShowChatOptionsMenu] = useState(false);
   const [openMessageMenuId, setOpenMessageMenuId] = useState<string | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<MessageReply | null>(null);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const [deleteTargetMessage, setDeleteTargetMessage] = useState<CommunityMessage | PrivateMessage | null>(null);
+  const [deleteForBoth, setDeleteForBoth] = useState<boolean>(true);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // DOM Refs
   const messageStreamRef = useRef<HTMLDivElement | null>(null);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const cameraFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Back button handler
   useBackHandler(() => {
     if (contextMenu !== null) {
       setContextMenu(null);
+      return true;
+    }
+    if (deleteTargetMessage !== null) {
+      setDeleteTargetMessage(null);
       return true;
     }
     if (isPinnedModalOpen) {
@@ -676,18 +750,41 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }, 50);
   };
 
-  // Swipe to Reply touch handlers
-  const handleTouchStart = (msgId: string, e: React.TouchEvent) => {
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Swipe to Reply & Long-Press touch handlers (Mobile Telegram interaction)
+  const handleTouchStart = (msg: CommunityMessage | PrivateMessage, e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
-    setSwipingMessageId(msgId);
+    setSwipingMessageId(msg.id);
     setSwipeOffset(0);
+
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+    const touch = e.touches[0];
+    const clientX = touch.clientX;
+    const clientY = touch.clientY;
+    longPressTimeoutRef.current = setTimeout(() => {
+      const x = Math.min(clientX, window.innerWidth - 240);
+      const y = Math.min(clientY, window.innerHeight - 340);
+      setContextMenu({ msg, x, y });
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate(40); } catch (_) {}
+      }
+    }, 500);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!swipingMessageId) return;
     const diffX = e.touches[0].clientX - touchStartXRef.current;
     const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
+    if (diffY > 10 || Math.abs(diffX) > 10) {
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+    }
     if (diffY > 30) {
       setSwipeOffset(0);
       return;
@@ -698,6 +795,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleTouchEnd = (msg: CommunityMessage | PrivateMessage) => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
     if (swipeOffset < -45) {
       setReplyToMessage({
         id: msg.id,
@@ -719,6 +820,227 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     const y = Math.min(e.clientY, window.innerHeight - 340);
     setContextMenu({ msg, x, y });
   };
+
+  // Telegram Message Deletion Handlers (Delete for Self vs Delete for Both)
+  const handleOpenDeleteModal = (msg: CommunityMessage | PrivateMessage) => {
+    setDeleteTargetMessage(msg);
+    setDeleteForBoth(true);
+    setContextMenu(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetMessage || !currentUser?.id) return;
+    setIsDeleting(true);
+    try {
+      const msg = deleteTargetMessage;
+      const isCommunity = selectedChatId === 'community';
+      if (deleteForBoth) {
+        await MessagingService.deleteMessageForEveryone(
+          msg.id,
+          isCommunity ? 'community' : 'private'
+        );
+      } else {
+        await MessagingService.deleteMessageForSelf(
+          currentUser.id,
+          msg.id,
+          isCommunity ? 'community' : 'private'
+        );
+      }
+      // Remove immediately from active view
+      if (isCommunity) {
+        setCommunityMessages(prev => prev.filter(m => m.id !== msg.id));
+      } else {
+        setPrivateMessages(prev => prev.filter(m => m.id !== msg.id));
+      }
+      setDeleteTargetMessage(null);
+    } catch (err) {
+      console.error('Failed to delete message:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Telegram Date Label Formatter
+  const getMessageDateLabel = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      const today = new Date();
+      if (d.toDateString() === today.toDateString()) {
+        return 'Today';
+      }
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      if (d.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+      }
+      return d.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+      });
+    } catch {
+      return 'Today';
+    }
+  };
+
+  // Telegram Voice Note Waveform Renderer (Matches Screenshot)
+  const renderVoiceNote = (
+    fileUrl: string,
+    title: string,
+    durationStr: string,
+    formattedTime: string,
+    _senderName?: string
+  ) => {
+    const isPlayingThis = activeAudioPlayer?.url === fileUrl && activeAudioPlayer.isPlaying;
+    const bars = [8, 14, 22, 12, 18, 24, 16, 28, 20, 14, 26, 18, 10, 22, 16, 26, 12, 20, 28, 14, 18, 24, 16, 20, 12, 16, 8];
+
+    return (
+      <div className="flex items-center gap-2.5 py-1 px-1 min-w-[210px] max-w-[290px] select-none">
+        {/* Play/Pause Button */}
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation();
+            handlePlayAudio(fileUrl, title);
+          }}
+          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center shrink-0 transition-transform cursor-pointer"
+          title={isPlayingThis ? 'Pause' : 'Play'}
+        >
+          {isPlayingThis ? (
+            <Pause className="w-5 h-5 fill-current" />
+          ) : (
+            <Play className="w-5 h-5 fill-current ml-0.5" />
+          )}
+        </button>
+
+        {/* Middle: Waveform and Timestamps */}
+        <div className="flex-1 min-w-0">
+          <div className="relative flex items-center gap-[2.5px] h-6 py-1">
+            {bars.map((h, i) => (
+              <div
+                key={i}
+                className="w-[2.5px] rounded-full bg-white/70"
+                style={{ height: `${h}px` }}
+              />
+            ))}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#3ca3eb] shadow-xs transition-all duration-300"
+              style={{ left: isPlayingThis ? '60%' : '15%' }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] text-white/70 font-medium px-0.5">
+            <span>{durationStr || '0:25'}</span>
+            <span>{formattedTime}</span>
+          </div>
+        </div>
+
+        {/* Right: Circular Avatar with Blue Microphone Badge */}
+        <div className="relative shrink-0 ml-1">
+          <div className="w-9 h-9 rounded-full bg-[#8c6747] text-white font-bold text-xs flex items-center justify-center overflow-hidden">
+            <User className="w-5 h-5 opacity-90" />
+          </div>
+          <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 rounded-full bg-[#2087d3] text-white flex items-center justify-center border border-[#212d3b]">
+            <Mic className="w-2.5 h-2.5" />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Telegram Emoji Insertion & Cursor Management (Smooth, no forced mobile keyboard shift)
+  const handleInsertEmoji = (emoji: string) => {
+    const textarea = composerInputRef.current;
+    if (!textarea) {
+      setInputText(prev => prev + emoji);
+      return;
+    }
+    const start = textarea.selectionStart ?? inputText.length;
+    const end = textarea.selectionEnd ?? inputText.length;
+    const before = inputText.substring(0, start);
+    const after = inputText.substring(end);
+    const updated = `${before}${emoji}${after}`;
+    setInputText(updated);
+
+    const newPos = start + emoji.length;
+    setTimeout(() => {
+      try {
+        textarea.selectionStart = newPos;
+        textarea.selectionEnd = newPos;
+      } catch (_) {}
+    }, 0);
+  };
+
+  const handleEmojiBackspace = () => {
+    const textarea = composerInputRef.current;
+    if (!textarea) {
+      setInputText(prev => prev.slice(0, -1));
+      return;
+    }
+    const start = textarea.selectionStart ?? inputText.length;
+    const end = textarea.selectionEnd ?? inputText.length;
+    if (start === end && start > 0) {
+      const before = inputText.substring(0, start);
+      const after = inputText.substring(end);
+      const chars = Array.from(before);
+      chars.pop();
+      const newBefore = chars.join('');
+      setInputText(`${newBefore}${after}`);
+      const newPos = newBefore.length;
+      setTimeout(() => {
+        try {
+          textarea.selectionStart = newPos;
+          textarea.selectionEnd = newPos;
+        } catch (_) {}
+      }, 0);
+    } else if (start !== end) {
+      const before = inputText.substring(0, start);
+      const after = inputText.substring(end);
+      setInputText(`${before}${after}`);
+      setTimeout(() => {
+        try {
+          textarea.selectionStart = start;
+          textarea.selectionEnd = start;
+        } catch (_) {}
+      }, 0);
+    }
+  };
+
+  const filteredEmojis = useMemo(() => {
+    if (!emojiSearchQuery.trim()) {
+      return (
+        EMOJI_CATEGORIES.find(c => c.name === selectedEmojiCategory)?.emojis ||
+        EMOJI_CATEGORIES[0].emojis
+      );
+    }
+    const q = emojiSearchQuery.toLowerCase().trim();
+    const matchingCats = EMOJI_CATEGORIES.filter(c => c.name.toLowerCase().includes(q));
+    if (matchingCats.length > 0) {
+      return Array.from(new Set(matchingCats.flatMap(c => c.emojis)));
+    }
+    const keywordMap: Record<string, string[]> = {
+      heart: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝'],
+      love: ['❤️', '😍', '🥰', '😘', '💕', '💖', '💗', '💓', '💞'],
+      pray: ['🙏', '🕊️', '📖', '✝️', '🕎', '⛪', '🕯️'],
+      amen: ['🙏', '🙌', '🕊️', '✝️', '✨'],
+      cross: ['✝️', '🕎', '⛪', '🕊️'],
+      bible: ['📖', '📜', '✝️', '🕯️'],
+      church: ['⛪', '🏛️', '🕊️', '📖'],
+      fire: ['🔥', '⚡', '💥', '✨'],
+      smile: ['😀', '😃', '😄', '😁', '😆', '😅', '😊', '🙂', '😇'],
+      laugh: ['😂', '🤣', '😆', '😅'],
+      thumbs: ['👍', '👎'],
+      clap: ['👏', '🙌'],
+      hand: ['👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '👋'],
+      star: ['⭐', '🌟', '✨', '💫'],
+    };
+    for (const [key, ems] of Object.entries(keywordMap)) {
+      if (key.includes(q) || q.includes(key)) {
+        return ems;
+      }
+    }
+    return EMOJI_CATEGORIES.flatMap(c => c.emojis).slice(0, 32);
+  }, [emojiSearchQuery, selectedEmojiCategory]);
 
   // Forwarding execution
   const handleForwardToTarget = async (dest: ForwardDestination) => {
@@ -1224,7 +1546,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // 7. RENDER VIEW
   // ---------------------------------------------------------------------------
   return (
-    <div className="h-[calc(100vh-4.5rem)] sm:h-[calc(100vh-5rem)] flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-card">
+    <div className="h-[100dvh] md:h-[calc(100vh-5rem)] flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-none md:rounded-3xl border-0 md:border border-slate-200/80 dark:border-white/10 shadow-none md:shadow-card">
       <div className="flex-1 flex overflow-hidden">
         {/* =====================================================================
             LEFT PANE: RECENT CONVERSATIONS & SEARCH (Desktop Left Sidebar / Mobile List View)
@@ -1655,7 +1977,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           <div
             className={`${
               mobileScreen === 'list' ? 'hidden md:flex' : 'flex'
-            } flex-1 flex-col overflow-hidden relative bg-[#8da4b6] dark:bg-[#0c1421]`}
+            } flex-1 flex-col overflow-hidden relative bg-[#0e1621]`}
           >
             {/* Top Audio Player Bar (Image 1) */}
             {activeAudioPlayer && (
@@ -1686,45 +2008,59 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             )}
 
-            {/* Chat Header Bar */}
-            <div className="px-4 py-3 bg-white dark:bg-[#182533] border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
-              <div className="flex items-center gap-3 min-w-0">
-                {/* Back Button that returns to Communication Hub Home Page (NOT dashboard) */}
+            {/* Chat Header Bar (Telegram Layout matching reference) */}
+            <div className="px-3 sm:px-4 py-2.5 pt-[max(0.65rem,env(safe-area-inset-top))] bg-white dark:bg-[#182533] border-b border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Mobile Back Button returning to list */}
                 <button
                   type="button"
-                  onClick={handleBackToHome}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 font-bold text-xs transition-colors cursor-pointer shrink-0"
-                  title="Return to Communication Hub"
+                  onClick={() => setMobileScreen('list')}
+                  className="md:hidden p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-white/80 hover:text-white transition-colors"
+                  title="Back to conversations"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Back</span>
+                  <ChevronLeft className="w-6 h-6" />
                 </button>
 
-                <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
-                  {activeContact?.avatarUrl ? (
-                    <img src={activeContact.avatarUrl} alt={activeContact.name} className="w-full h-full object-cover" />
-                  ) : (
-                    activeContact?.name.slice(0, 2).toUpperCase() || 'FN'
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                      {activeContact?.name || 'FNI Chat'}
-                    </h3>
-                    {selectedChatId === 'community' && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20" title="Official Ministerial Community">
-                        <ShieldCheck className="w-3 h-3 text-amber-500" />
-                        <span>Official</span>
-                      </span>
+                {/* Center User/Chat Pill */}
+                <div
+                  onClick={() => {
+                    if (activeContact?.type !== 'community' && activeContact?.id) {
+                      const m = allMembers.find(mem => mem.id === activeContact.id) || tutorList.find(t => t.id === activeContact.id);
+                      if (m) {
+                        setSelectedUserProfile({
+                          id: m.id,
+                          fullName: m.full_name || m.name,
+                          role: m.role,
+                          avatarUrl: m.avatar_url || m.photo_url,
+                          cellName: m.cell_name || m.cell,
+                          phone: m.phone_number || m.phone,
+                          email: m.email,
+                        });
+                      }
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-[#1f2833] hover:bg-slate-200 dark:hover:bg-[#253243] cursor-pointer border border-slate-200/60 dark:border-white/5 transition-colors"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#8c6747] text-white font-bold text-[10px] flex items-center justify-center overflow-hidden shrink-0">
+                    {activeContact?.avatarUrl ? (
+                      <img src={activeContact.avatarUrl} alt={activeContact.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-3.5 h-3.5 opacity-90" />
                     )}
                   </div>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400">
-                    {activeContact?.type === 'community'
-                      ? `${allMembers.length || 12} active tutors enrolled`
-                      : activeContact?.cellName || 'last seen recently'}
-                  </p>
+
+                  <div className="min-w-0 pr-1">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate max-w-[130px] sm:max-w-[200px]">
+                        {activeContact?.name || 'FNI Chat'}
+                      </h3>
+                      {selectedChatId === 'community' && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-bold border border-amber-500/20" title="Official Ministerial Community">
+                          <ShieldCheck className="w-3 h-3 text-amber-500" />
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1732,19 +2068,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <div className="relative flex items-center gap-1 sm:gap-2 text-slate-600 dark:text-slate-300">
                 <button
                   type="button"
-                  onClick={handleStartVoiceCall}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 cursor-pointer transition-colors"
-                  title="Voice Call"
+                  onClick={handleStartVideoCall}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-blue-500 cursor-pointer transition-colors"
+                  title="Video Call"
                 >
-                  <Phone className="w-4 h-4" />
+                  <Video className="w-5 h-5" />
                 </button>
                 <button
                   type="button"
-                  onClick={handleStartVideoCall}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 cursor-pointer transition-colors"
-                  title="Video Call"
+                  onClick={handleStartVoiceCall}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-emerald-500 cursor-pointer transition-colors"
+                  title="Voice Call"
                 >
-                  <Video className="w-4 h-4" />
+                  <Phone className="w-5 h-5" />
                 </button>
                 <button
                   type="button"
@@ -1876,7 +2212,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {/* Message Stream */}
             <div
               ref={messageStreamRef}
-              className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4 space-y-3 telegram-doodle-light dark:telegram-doodle-dark"
+              className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4 space-y-3 telegram-chat-wallpaper"
             >
               {currentMessages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-white/90">
@@ -1888,7 +2224,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   </div>
                 </div>
               ) : (
-                currentMessages.map(msg => {
+                currentMessages.map((msg, index) => {
                   const isMine = msg.senderUid === currentUser?.id;
                   const formattedTime = new Date(msg.createdAt).toLocaleTimeString([], {
                     hour: '2-digit',
@@ -1896,61 +2232,50 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   });
                   const isSwiping = swipingMessageId === msg.id;
 
+                  const prevMsg = index > 0 ? currentMessages[index - 1] : null;
+                  const currentDateLabel = getMessageDateLabel(msg.createdAt);
+                  const prevDateLabel = prevMsg ? getMessageDateLabel(prevMsg.createdAt) : null;
+                  const showDateHeader = !prevMsg || currentDateLabel !== prevDateLabel;
+
                   return (
-                    <div
-                      key={msg.id}
-                      id={`msg-${msg.id}`}
-                      onTouchStart={e => handleTouchStart(msg.id, e)}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={() => handleTouchEnd(msg)}
-                      onContextMenu={e => handleMessageContextMenu(e, msg)}
-                      className={`group relative flex items-end gap-2 select-none ${
-                        isMine ? 'justify-end' : 'justify-start'
-                      }`}
-                      style={{
-                        transform: isSwiping ? `translateX(${swipeOffset}px)` : 'none',
-                        transition: isSwiping ? 'none' : 'transform 0.2s ease',
-                      }}
-                    >
-                      {/* Swipe to reply reveal indicator */}
-                      {isSwiping && swipeOffset < -20 && (
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md animate-scaleIn pointer-events-none z-10">
-                          <Reply className="w-4 h-4" />
+                    <React.Fragment key={msg.id}>
+                      {/* Telegram Centered Date Separator (Matches Reference) */}
+                      {showDateHeader && (
+                        <div className="flex justify-center my-3 select-none">
+                          <span className="px-3.5 py-0.5 rounded-full bg-[#18222d]/85 text-slate-200 text-xs font-semibold backdrop-blur-md shadow-xs border border-white/5">
+                            {currentDateLabel}
+                          </span>
                         </div>
                       )}
 
-                      {/* Avatar for other users */}
-                      {!isMine && (
-                        <div
-                          onClick={() => {
-                            const member = allMembers.find(m => m.id === msg.senderUid);
-                            if (member) {
-                              setSelectedUserProfile({
-                                id: member.id,
-                                fullName: member.full_name || member.name,
-                                role: member.role,
-                                avatarUrl: member.avatar_url || member.photo_url,
-                                cellName: member.cell_name,
-                                phone: member.phone_number || member.phone,
-                                email: member.email,
-                              });
-                            }
-                          }}
-                          className="w-7 h-7 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-[10px] flex items-center justify-center shrink-0 mb-1 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                          title="View user profile"
-                        >
-                          {msg.senderName?.slice(0, 2).toUpperCase() || 'FN'}
-                        </div>
-                      )}
-
-                      {/* Chat Bubble */}
                       <div
-                        className={`relative w-fit min-w-0 max-w-[85%] sm:max-w-[70%] p-3 text-left text-xs leading-relaxed [overflow-wrap:anywhere] transition-shadow ${
-                          isMine ? 'telegram-bubble-outgoing' : 'telegram-bubble-incoming'
+                        id={`msg-${msg.id}`}
+                        onTouchStart={e => handleTouchStart(msg, e)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={() => handleTouchEnd(msg)}
+                        onContextMenu={e => handleMessageContextMenu(e, msg)}
+                        onClick={e => {
+                          if (window.innerWidth < 768 && Math.abs(swipeOffset) < 10) {
+                            handleMessageContextMenu(e, msg);
+                          }
+                        }}
+                        className={`group relative flex items-end gap-2 select-none w-full ${
+                          isMine ? 'justify-end' : 'justify-start'
                         }`}
+                        style={{
+                          transform: isSwiping ? `translateX(${swipeOffset}px)` : 'none',
+                          transition: isSwiping ? 'none' : 'transform 0.2s ease',
+                        }}
                       >
-                        {/* Sender header in community chats */}
-                        {!isMine && selectedChatId === 'community' && (
+                        {/* Swipe to reply reveal indicator */}
+                        {isSwiping && swipeOffset < -20 && (
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md animate-scaleIn pointer-events-none z-10">
+                            <Reply className="w-4 h-4" />
+                          </div>
+                        )}
+
+                        {/* Avatar for other users */}
+                        {!isMine && (
                           <div
                             onClick={() => {
                               const member = allMembers.find(m => m.id === msg.senderUid);
@@ -1966,214 +2291,255 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 });
                               }
                             }}
-                            className="flex items-center gap-2 mb-1 cursor-pointer"
+                            className="w-7 h-7 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-[10px] flex items-center justify-center shrink-0 mb-1 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                            title="View user profile"
                           >
-                            <span className="font-black text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                              {msg.senderName}
-                            </span>
-                            {msg.cellName && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300">
-                                {msg.cellName}
+                            {msg.senderName?.slice(0, 2).toUpperCase() || 'FN'}
+                          </div>
+                        )}
+
+                        {/* Chat Bubble (Telegram styling matching reference) */}
+                        <div
+                          className={`relative max-w-[85%] sm:max-w-[72%] p-3 text-xs transition-shadow text-left ${
+                            isMine ? 'telegram-bubble-outgoing ml-auto' : 'telegram-bubble-incoming mr-auto'
+                          }`}
+                          style={{ textAlign: 'left' }}
+                        >
+                          {/* Sender header in community chats */}
+                          {!isMine && selectedChatId === 'community' && (
+                            <div
+                              onClick={() => {
+                                const member = allMembers.find(m => m.id === msg.senderUid);
+                                if (member) {
+                                  setSelectedUserProfile({
+                                    id: member.id,
+                                    fullName: member.full_name || member.name,
+                                    role: member.role,
+                                    avatarUrl: member.avatar_url || member.photo_url,
+                                    cellName: member.cell_name,
+                                    phone: member.phone_number || member.phone,
+                                    email: member.email,
+                                  });
+                                }
+                              }}
+                              className="flex items-center gap-2 mb-1 cursor-pointer"
+                            >
+                              <span className="font-black text-xs text-blue-400 hover:underline">
+                                {msg.senderName}
+                              </span>
+                              {msg.cellName && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/10 text-slate-300">
+                                  {msg.cellName}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Reply Preview Card inside bubble (Telegram cyan left-bar) */}
+                          {msg.replyTo && (
+                            <div
+                              onClick={e => {
+                                e.stopPropagation();
+                                scrollToMessageId(msg.replyTo!.id);
+                              }}
+                              className="mb-1.5 p-2 rounded-xl bg-black/25 border-l-[3px] border-[#38a5e1] cursor-pointer text-[11px] hover:bg-black/35 transition-colors text-left"
+                            >
+                              <div className="font-bold text-[#38a5e1] text-xs leading-tight">
+                                {msg.replyTo.senderName}
+                              </div>
+                              <div className="flex items-center gap-1 text-[11px] text-white/80 truncate mt-0.5">
+                                {msg.replyTo.content.includes('Voice') || msg.replyTo.content.includes('🎤') ? (
+                                  <>
+                                    <Mic className="w-3 h-3 text-[#38a5e1] shrink-0" />
+                                    <span className="truncate">Voice message</span>
+                                  </>
+                                ) : (
+                                  <span className="truncate">{msg.replyTo.content}</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Attachments & Voice Notes */}
+                          {msg.attachments && msg.attachments.length > 0 && (
+                            <div className="space-y-2 mb-1.5">
+                              {msg.attachments.map((att, attIdx) => {
+                                const isAudio = att.mimeType?.startsWith('audio') || att.name?.includes('voice-note');
+                                const isImage = att.mimeType?.startsWith('image');
+                                const fileUrl = getAttachmentUrl(att);
+
+                                if (isAudio) {
+                                  return (
+                                    <React.Fragment key={attIdx}>
+                                      {renderVoiceNote(
+                                        fileUrl,
+                                        att.name || 'Voice Message',
+                                        '0:25',
+                                        formattedTime,
+                                        msg.senderName
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                }
+
+                                if (isImage) {
+                                  return (
+                                    <div key={attIdx} className="rounded-xl overflow-hidden max-h-60 bg-black/10">
+                                      <img src={fileUrl} alt={att.name} className="w-full h-full object-cover" />
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <a
+                                    key={attIdx}
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 rounded-xl bg-black/15 flex items-center gap-2 hover:underline"
+                                  >
+                                    <Paperclip className="w-4 h-4" />
+                                    <span className="truncate">{att.name}</span>
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Message Text / Sticker / Poll */}
+                          {msg.content !== '🎤 Voice Note' && (
+                            <div className="leading-relaxed text-left break-words overflow-hidden text-sm sm:text-[15px]">
+                              {renderMessageContent(msg)}
+                            </div>
+                          )}
+
+                          {/* Telegram Reaction Pills */}
+                          {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1 mt-1.5 pt-1">
+                              {Object.entries(msg.reactions).map(([emoji, userIds]) => {
+                                const hasMyReaction = currentUser?.id ? (userIds || []).includes(currentUser.id) : false;
+                                const count = (userIds || []).length;
+                                if (count === 0) return null;
+                                return (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      handleAddReaction(msg.id, emoji);
+                                    }}
+                                    onDoubleClick={e => {
+                                      e.stopPropagation();
+                                      setReactionModalMessageId(msg.id);
+                                      setReactionModalEmoji(emoji);
+                                      setIsReactionModalOpen(true);
+                                    }}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border transition-transform hover:scale-105 cursor-pointer ${
+                                      hasMyReaction
+                                        ? 'bg-blue-100 dark:bg-blue-950/70 border-blue-400 text-blue-700 dark:text-blue-300'
+                                        : 'bg-black/5 dark:bg-black/25 border-transparent text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                                    }`}
+                                    title="Click to toggle reaction, double-click for participants"
+                                  >
+                                    <span>{emoji}</span>
+                                    <span className="text-[10px]">{count}</span>
+                                  </button>
+                                );
+                              })}
+                              <button
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setReactionModalMessageId(msg.id);
+                                  setReactionModalEmoji(undefined);
+                                  setIsReactionModalOpen(true);
+                                }}
+                                className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1 py-0.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 font-semibold cursor-pointer"
+                                title="View reaction participants"
+                              >
+                                <Users className="w-3 h-3 inline mr-0.5" />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Timestamp & Status info with Telegram #53d793 checkmarks */}
+                          <div className="mt-1 flex items-center justify-end gap-1 text-[10px] fni-msg-time select-none">
+                            {msg.isPinned && <Pin className="w-2.5 h-2.5 mr-0.5" />}
+                            <span>{formattedTime}</span>
+                            {isMine && (
+                              <span title={'isRead' in msg && (msg as any).isRead ? 'Read' : 'Delivered'}>
+                                <CheckCheck className="w-3.5 h-3.5 text-[#53d793]" />
                               </span>
                             )}
                           </div>
-                        )}
-
-                        {/* Reply Preview if this is replying to another message */}
-                        {msg.replyTo && (
-                          <div
-                            onClick={() => scrollToMessageId(msg.replyTo!.id)}
-                            className="mb-2 p-2 rounded-xl bg-black/5 dark:bg-black/20 border-l-4 border-blue-500 cursor-pointer text-[11px] hover:bg-black/10 transition-colors"
-                          >
-                            <span className="font-bold text-blue-600 dark:text-blue-400 block">
-                              {msg.replyTo.senderName}
-                            </span>
-                            <span className="truncate block opacity-80">
-                              {msg.replyTo.content}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Attachments if any */}
-                        {msg.attachments && msg.attachments.length > 0 && (
-                          <div className="space-y-2 mb-2">
-                            {msg.attachments.map((att, attIdx) => {
-                              const isAudio = att.mimeType?.startsWith('audio') || att.name?.includes('voice-note');
-                              const isImage = att.mimeType?.startsWith('image');
-                              const fileUrl = getAttachmentUrl(att);
-
-                              if (isAudio) {
-                                return (
-                                  <div
-                                    key={attIdx}
-                                    className="p-2.5 rounded-2xl bg-black/5 dark:bg-black/20 flex items-center justify-between gap-3 min-w-[200px]"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => handlePlayAudio(fileUrl, att.name || 'Voice Note')}
-                                      className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
-                                    >
-                                      <Play className="w-4 h-4 ml-0.5" />
-                                    </button>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-bold text-xs truncate">{att.name || 'Voice Message'}</p>
-                                      <p className="text-[10px] opacity-70">Tap to listen</p>
-                                    </div>
-                                  </div>
-                                );
-                              }
-
-                              if (isImage) {
-                                return (
-                                  <div key={attIdx} className="rounded-xl overflow-hidden max-h-60 bg-black/10">
-                                    <img src={fileUrl} alt={att.name} className="w-full h-full object-cover" />
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <a
-                                  key={attIdx}
-                                  href={fileUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-2 rounded-xl bg-black/5 dark:bg-black/20 flex items-center gap-2 hover:underline"
-                                >
-                                  <Paperclip className="w-4 h-4" />
-                                  <span className="truncate">{att.name}</span>
-                                </a>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Message Text / Sticker / Poll */}
-                        <div className="leading-relaxed">
-                          {renderMessageContent(msg)}
                         </div>
 
-                        {/* Telegram Reaction Pills */}
-                        {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1 mt-1.5 pt-1">
-                            {Object.entries(msg.reactions).map(([emoji, userIds]) => {
-                              const hasMyReaction = currentUser?.id ? (userIds || []).includes(currentUser.id) : false;
-                              const count = (userIds || []).length;
-                              if (count === 0) return null;
-                              return (
-                                <button
-                                  key={emoji}
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAddReaction(msg.id, emoji);
-                                  }}
-                                  onDoubleClick={(e) => {
-                                    e.stopPropagation();
-                                    setReactionModalMessageId(msg.id);
-                                    setReactionModalEmoji(emoji);
-                                    setIsReactionModalOpen(true);
-                                  }}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border transition-transform hover:scale-105 cursor-pointer ${
-                                    hasMyReaction
-                                      ? 'bg-blue-100 dark:bg-blue-950/70 border-blue-400 text-blue-700 dark:text-blue-300'
-                                      : 'bg-black/5 dark:bg-black/25 border-transparent text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                                  }`}
-                                  title="Click to toggle reaction, double-click for participants"
-                                >
-                                  <span>{emoji}</span>
-                                  <span className="text-[10px]">{count}</span>
-                                </button>
-                              );
-                            })}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setReactionModalMessageId(msg.id);
-                                setReactionModalEmoji(undefined);
-                                setIsReactionModalOpen(true);
-                              }}
-                              className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1 py-0.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 font-semibold cursor-pointer"
-                              title="View reaction participants"
-                            >
-                              <Users className="w-3 h-3 inline mr-0.5" />
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Timestamp & Status info */}
-                        <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70 select-none">
-                          {msg.isPinned && <Pin className="w-2.5 h-2.5 mr-0.5" />}
-                          <span>{formattedTime}</span>
-                          {isMine && (
-                            <span title={'isRead' in msg && (msg as any).isRead ? 'Read' : 'Delivered'}>
-                              {'isRead' in msg && (msg as any).isRead ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-blue-500 dark:text-white" />
-                              ) : (
-                                <Check className="w-3.5 h-3.5" />
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Hover action menu trigger */}
-                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1 text-white/90 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReplyToMessage({
-                              id: msg.id,
-                              senderName: msg.senderName,
-                              senderUid: msg.senderUid,
-                              content: msg.content.slice(0, 100),
-                            });
-                            composerInputRef.current?.focus();
-                          }}
-                          className="min-h-9 min-w-9 p-2 rounded-full bg-black/45 hover:bg-black/60 backdrop-blur-xs text-white cursor-pointer flex items-center justify-center"
-                          title="Reply"
-                        >
-                          <Reply className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAddReaction(msg.id, '❤️')}
-                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
-                          title="Heart"
-                        >
-                          ❤️
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setForwardTargetMessage(msg);
-                            setIsForwardModalOpen(true);
-                          }}
-                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
-                          title="Forward message"
-                        >
-                          <Forward className="w-3.5 h-3.5" />
-                        </button>
-                        {(isAdmin || msg.senderUid === currentUser?.id || selectedChatId !== 'community') && (
+                        {/* Desktop Hover action menu (Hidden on mobile; on mobile users tap or long-press) */}
+                        <div className="hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity items-center gap-0.5 text-white/80 shrink-0">
                           <button
                             type="button"
-                            onClick={() => handleTogglePin(msg)}
+                            onClick={() => {
+                              setReplyToMessage({
+                                id: msg.id,
+                                senderName: msg.senderName,
+                                senderUid: msg.senderUid,
+                                content: msg.content.slice(0, 100),
+                              });
+                              composerInputRef.current?.focus();
+                            }}
                             className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
-                            title={msg.isPinned ? 'Unpin' : 'Pin to top'}
+                            title="Reply"
                           >
-                            <Pin className="w-3.5 h-3.5" />
+                            <Reply className="w-3.5 h-3.5" />
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={e => handleMessageContextMenu(e, msg)}
-                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
-                          title="More options"
-                        >
-                          <MoreVertical className="w-3.5 h-3.5" />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAddReaction(msg.id, '❤️')}
+                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                            title="Heart"
+                          >
+                            ❤️
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForwardTargetMessage(msg);
+                              setIsForwardModalOpen(true);
+                            }}
+                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                            title="Forward message"
+                          >
+                            <Forward className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDeleteModal(msg)}
+                            className="p-1 rounded-full bg-black/30 hover:bg-rose-600/80 backdrop-blur-xs text-white hover:text-white cursor-pointer"
+                            title="Delete message"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                          </button>
+                          {(isAdmin || msg.senderUid === currentUser?.id || selectedChatId !== 'community') && (
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePin(msg)}
+                              className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                              title={msg.isPinned ? 'Unpin' : 'Pin to top'}
+                            >
+                              <Pin className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={e => handleMessageContextMenu(e, msg)}
+                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                            title="More options"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })
               )}
@@ -2255,31 +2621,165 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             )}
 
-            {/* Full emoji and sticker picker; stays inside the mobile composer width. */}
-            {showEmojiPicker && (
-              <div className="absolute inset-x-2 bottom-[calc(100%+0.5rem)] z-40 max-w-[min(24rem,calc(100vw-1rem))] ml-auto rounded-2xl animate-fadeIn">
-                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#182533] shadow-2xl p-3 mb-2">
-                  <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-2">FNI Stickers</span>
-                  <div className="grid grid-cols-6 gap-1">
-                    {STICKER_PACK.map(sticker => (
-                      <button key={sticker.label} type="button" onClick={() => handleSendSticker(sticker)} aria-label={sticker.label} title={sticker.label} className="min-h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-2xl">
-                        {sticker.emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <FniEmojiPicker onSelect={emoji => {
-                  setInputText(prev => prev + emoji);
-                  setShowEmojiPicker(false);
-                  requestAnimationFrame(() => composerInputRef.current?.focus());
-                }} />
-              </div>
-            )}
-
             {/* =================================================================
                 MESSAGE COMPOSER (Appears ONLY when conversation is open)
             ================================================================= */}
-            <div className="p-3 bg-white dark:bg-[#182533] border-t border-slate-200/80 dark:border-white/10 shrink-0 z-20">
+            <div
+              className="p-3 bg-white dark:bg-[#182533] border-t border-slate-200/80 dark:border-white/10 shrink-0 z-30 relative"
+              style={{
+                paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+              }}
+            >
+              {/* Emoji & Sticker Drawer (Docked cleanly above composer bar) */}
+              {showEmojiPicker && (
+                <>
+                  {/* Backdrop for click-outside */}
+                  <div
+                    className="fixed inset-0 z-20 cursor-default"
+                    onClick={() => setShowEmojiPicker(false)}
+                  />
+                  <div
+                    onClick={e => e.stopPropagation()}
+                    className="absolute left-2 right-2 sm:left-auto sm:right-4 bottom-[calc(100%+8px)] z-30 w-auto sm:w-[380px] max-w-[96vw] rounded-3xl bg-white dark:bg-[#182533] border border-slate-200/90 dark:border-white/15 shadow-2xl p-3 text-xs animate-fadeIn space-y-2.5"
+                  >
+                    {/* Header: Emojis vs Stickers switcher + Backspace & Close buttons */}
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/10">
+                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setActivePickerTab('emojis')}
+                          className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                            activePickerTab === 'emojis'
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white'
+                          }`}
+                        >
+                          Emojis
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActivePickerTab('stickers')}
+                          className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                            activePickerTab === 'stickers'
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white'
+                          }`}
+                        >
+                          Stickers
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {/* Quick Backspace Button inside emoji picker */}
+                        <button
+                          type="button"
+                          onClick={handleEmojiBackspace}
+                          className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 hover:text-rose-500 transition-colors cursor-pointer"
+                          title="Delete last character"
+                        >
+                          <BackspaceIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowEmojiPicker(false)}
+                          className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer"
+                          title="Close"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {activePickerTab === 'stickers' ? (
+                      <div>
+                        <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-2">
+                          FNI Fellowship Stickers
+                        </span>
+                        <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto custom-scrollbar p-1">
+                          {STICKER_PACK.map(s => (
+                            <button
+                              key={s.label}
+                              type="button"
+                              onClick={() => handleSendSticker(s)}
+                              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                              title={s.label}
+                            >
+                              <span className="text-2xl block">{s.emoji}</span>
+                              <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate block mt-0.5">{s.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {/* Search Input for Emojis */}
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            value={emojiSearchQuery}
+                            onChange={e => setEmojiSearchQuery(e.target.value)}
+                            placeholder="Search emojis (pray, amen, cross, love...)"
+                            className="w-full pl-8 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                          />
+                          {emojiSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setEmojiSearchQuery('')}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Category Tabs */}
+                        {!emojiSearchQuery && (
+                          <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1 text-base">
+                            {EMOJI_CATEGORIES.map(cat => (
+                              <button
+                                key={cat.name}
+                                type="button"
+                                onClick={() => setSelectedEmojiCategory(cat.name)}
+                                className={`p-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
+                                  selectedEmojiCategory === cat.name
+                                    ? 'bg-blue-50 dark:bg-blue-900/40 ring-1 ring-blue-500 scale-105'
+                                    : 'hover:bg-slate-100 dark:hover:bg-white/5 opacity-70 hover:opacity-100'
+                                }`}
+                                title={cat.name}
+                              >
+                                <span>{cat.icon}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Emoji Grid */}
+                        <div className="max-h-56 overflow-y-auto custom-scrollbar p-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                            {emojiSearchQuery ? `Search Results (${filteredEmojis.length})` : selectedEmojiCategory}
+                          </div>
+                          <div className="grid grid-cols-8 gap-1">
+                            {filteredEmojis.map((emoji, eIdx) => (
+                              <button
+                                key={`${emoji}-${eIdx}`}
+                                type="button"
+                                onClick={() => handleInsertEmoji(emoji)}
+                                className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-lg flex items-center justify-center cursor-pointer transition-transform hover:scale-125 active:scale-90"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                          {filteredEmojis.length === 0 && (
+                            <p className="text-center text-slate-400 py-4 text-xs">No matching emojis found.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
               {isRecordingVoice ? (
                 /* Voice recording active row */
                 <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300">
@@ -2311,18 +2811,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     />
                   )}
 
-                  {/* Signature Telegram composer input row */}
+                  {/* Telegram mobile composer input row matching reference */}
                   <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setShowAttachmentMenu(v => !v)}
-                      className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer shrink-0"
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-white/80 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer shrink-0 transition-colors"
                       title="Attach file, photo or poll"
                     >
-                      <Paperclip className="w-5 h-5" />
+                      <Plus className="w-6 h-6" />
                     </button>
 
-                    <div className="flex-1 rounded-full bg-slate-100 dark:bg-[#0c1421] border border-slate-200/80 dark:border-white/10 px-4 py-2 flex items-center gap-2">
+                    <div className="flex-1 rounded-full bg-slate-100 dark:bg-[#18222d] border border-slate-200/80 dark:border-white/10 px-4 py-2 flex items-center gap-2">
                       <textarea
                         ref={composerInputRef}
                         rows={1}
@@ -2334,37 +2834,62 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             handleSendMessage();
                           }
                         }}
-                        placeholder="Message (type @ to mention a tutor)"
-                        className="flex-1 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none max-h-24"
+                        placeholder="Message"
+                        className="flex-1 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none max-h-24 leading-snug"
                       />
                       <button
                         type="button"
                         onClick={() => setShowEmojiPicker(v => !v)}
-                        className="text-slate-400 hover:text-slate-600 dark:hover:text-white shrink-0 cursor-pointer"
+                        className="text-slate-400 hover:text-slate-600 dark:text-white/70 dark:hover:text-white shrink-0 cursor-pointer transition-colors"
+                        title="Emojis & Stickers"
                       >
                         <Smile className="w-5 h-5" />
                       </button>
                     </div>
 
-                  {inputText.trim() || stagedFiles.length > 0 ? (
-                    <button
-                      type="submit"
-                      disabled={isSending}
-                      className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shrink-0 shadow-xs transition-transform active:scale-95 cursor-pointer"
-                    >
-                      <Send className="w-4 h-4 ml-0.5" />
-                    </button>
-                  ) : (
+                    {/* Camera Button */}
+                    <input
+                      ref={cameraFileInputRef}
+                      type="file"
+                      accept="image/*,video/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={e => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          setStagedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                        }
+                      }}
+                    />
                     <button
                       type="button"
-                      onClick={startVoiceRecording}
-                      className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shrink-0 shadow-xs transition-transform active:scale-95 cursor-pointer"
-                      title="Record voice note"
+                      onClick={() => cameraFileInputRef.current?.click()}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-white/80 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer shrink-0 transition-colors"
+                      title="Take photo or video"
                     >
-                      <Mic className="w-5 h-5" />
+                      <Camera className="w-5 h-5" />
                     </button>
-                  )}
-                </form>
+
+                    {/* Circular Vibrant Green Mic/Send Button (#20a068 from reference) */}
+                    {inputText.trim() || stagedFiles.length > 0 ? (
+                      <button
+                        type="submit"
+                        disabled={isSending}
+                        className="w-10 h-10 rounded-full bg-[#20a068] hover:bg-[#1b8c5a] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer"
+                        title="Send message"
+                      >
+                        <Send className="w-4 h-4 ml-0.5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={startVoiceRecording}
+                        className="w-10 h-10 rounded-full bg-[#20a068] hover:bg-[#1b8c5a] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer"
+                        title="Record voice note"
+                      >
+                        <Mic className="w-5 h-5" />
+                      </button>
+                    )}
+                  </form>
               </div>
             )}
             </div>
@@ -2630,6 +3155,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Info className="w-4 h-4 text-purple-500" />
               <span>Message Details</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleOpenDeleteModal(contextMenu.msg);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-left font-semibold cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4 text-rose-500" />
+              <span>Delete</span>
+            </button>
           </div>
         </div>
       )}
@@ -2735,6 +3271,73 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           setOfficialGroup(grp);
         }}
       />
+
+      {/* =========================================================================
+          TELEGRAM MESSAGE DELETION MODAL (DELETE FOR SELF VS DELETE FOR BOTH)
+      ========================================================================= */}
+      {deleteTargetMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white dark:bg-[#182533] rounded-3xl border border-slate-200/80 dark:border-white/10 max-w-sm w-full p-6 shadow-2xl space-y-4 animate-scaleIn text-slate-900 dark:text-white"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Delete message?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-black/20 text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-white/5 line-clamp-3">
+              {deleteTargetMessage.content}
+            </div>
+
+            {/* Checkbox for "Also delete for [User]" */}
+            <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer text-xs select-none">
+              <input
+                type="checkbox"
+                checked={deleteForBoth}
+                onChange={e => setDeleteForBoth(e.target.checked)}
+                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 dark:border-slate-600 dark:bg-slate-700"
+              />
+              <span className="font-medium text-slate-700 dark:text-slate-200">
+                {selectedChatId === 'community'
+                  ? 'Delete for everyone in fellowship'
+                  : `Also delete for ${activeContact?.name || 'recipient'}`}
+              </span>
+            </label>
+
+            {/* Action buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeleteTargetMessage(null)}
+                className="px-4 py-2 rounded-2xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              >
+                {isDeleting ? (
+                  <span>Deleting...</span>
+                ) : (
+                  <span>{deleteForBoth ? 'Delete for Both' : 'Delete for Me'}</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

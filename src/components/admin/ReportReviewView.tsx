@@ -27,7 +27,6 @@ import {
   Users,
   MapPin,
   DollarSign,
-  ArrowLeft,
   Download,
   Printer,
   ChevronLeft,
@@ -541,16 +540,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       {/* Top Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          {onBack && (
-            <button
-              type="button"
-              onClick={handleBackNavigation}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] mb-2 cursor-pointer group"
-            >
-              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Previous</span>
-            </button>
-          )}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#142B4A] text-[#C6A45A] flex items-center justify-center shadow-sm">
               <FileCheck className="w-5 h-5" />

@@ -21,7 +21,6 @@ import {
   Printer,
   FileCheck,
   AlertTriangle,
-  ArrowLeft,
   Search,
   Radio,
   MapPin,
@@ -500,16 +499,6 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
       {/* TOP CONTEXT & COMMAND BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] dark:hover:text-white mb-2 cursor-pointer group"
-            >
-              <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Previous</span>
-            </button>
-          )}
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl md:text-2xl font-black text-[#142B4A] dark:text-white tracking-tight">
               Primary Analytics Dashboard

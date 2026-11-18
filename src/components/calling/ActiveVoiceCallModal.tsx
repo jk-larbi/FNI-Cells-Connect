@@ -41,8 +41,14 @@ export const ActiveVoiceCallModal: React.FC = () => {
   const isPeerSpeaking = activeSpeakers.length > 0;
 
   return (
-    <div className="fixed inset-0 z-9990 flex items-center justify-center p-4 bg-navy-950/85 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-sm rounded-3xl bg-[#142B4A] border border-white/10 p-8 shadow-2xl text-center text-white flex flex-col justify-between min-h-[460px]">
+    <div
+      className="fixed inset-0 z-9990 flex items-center justify-center p-4 bg-navy-950/90 backdrop-blur-md animate-fadeIn"
+      style={{
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))',
+      }}
+    >
+      <div className="relative w-full max-w-sm rounded-3xl bg-[#142B4A] border border-white/10 p-6 sm:p-8 shadow-2xl text-center text-white flex flex-col justify-between max-h-[85vh] min-h-[420px]">
         {/* Header Bar */}
         <div className="flex items-center justify-between text-xs text-slate-300">
           <div className="flex items-center gap-1.5 text-emerald-400 font-bold">

@@ -880,12 +880,29 @@ export class SupabaseService {
   static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
     if (!this.isAvailable()) return false;
     const rpc = scope === 'private' ? 'fni_delete_private_message_for_everyone' : 'fni_delete_community_message_for_everyone';
-    const { data, error } = await supabase!.rpc(rpc, { p_message_id: messageId });
-    if (error) {
-      console.warn('Delete for everyone failed:', error.message);
-      return false;
+    try {
+      const { data, error } = await supabase!.rpc(rpc, { p_message_id: messageId });
+      if (!error && data === true) return true;
+    } catch {}
+
+    // Fallback: direct table update / deletion
+    try {
+      const table = scope === 'private' ? 'private_messages' : 'community_messages';
+      const { error: updateError } = await supabase!
+        .from(table)
+        .update({ deleted_for_everyone_at: new Date().toISOString() })
+        .eq('id', messageId);
+      if (!updateError) return true;
+
+      const { error: deleteError } = await supabase!
+        .from(table)
+        .delete()
+        .eq('id', messageId);
+      if (!deleteError) return true;
+    } catch (e) {
+      console.warn('Direct fallback delete error:', e);
     }
-    return data === true;
+    return false;
   }
 
   // --- Private Messages ---
@@ -1023,6 +1040,20 @@ export class SupabaseService {
       return true;
     } catch (error) {
       console.warn('Could not hide private message for this user:', error);
+      return false;
+    }
+  }
+
+  static async hideCommunityMessageForUser(userUid: string, messageId: string): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { error } = await supabase!
+        .from('community_message_hidden_for_user')
+        .upsert({ user_id: userUid, message_id: messageId }, { onConflict: 'user_id,message_id' });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Could not hide community message for this user:', error);
       return false;
     }
   }

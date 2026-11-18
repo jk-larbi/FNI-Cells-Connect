@@ -57,8 +57,14 @@ export const GroupMeetingModal: React.FC = () => {
   const totalParticipantsCount = remoteParticipants.length + 1; // +1 for self
 
   return (
-    <div className="fixed inset-0 z-9990 flex items-center justify-center bg-slate-950 animate-fadeIn select-none p-3 sm:p-6">
-      <div className="relative w-full h-full max-w-6xl flex flex-col justify-between rounded-3xl bg-[#0f172a] border border-white/10 overflow-hidden shadow-2xl">
+    <div
+      className="fixed inset-0 z-9990 flex items-center justify-center bg-slate-950 animate-fadeIn select-none p-0 sm:p-6"
+      style={{
+        paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom) + 0.5rem))',
+      }}
+    >
+      <div className="relative w-full h-full max-w-6xl flex flex-col justify-between sm:rounded-3xl bg-[#0f172a] border-0 sm:border border-white/10 overflow-hidden shadow-2xl">
         {/* Top Header */}
         <div className="flex items-center justify-between p-4 bg-slate-900/80 backdrop-blur-md border-b border-white/10 z-10">
           <div className="flex items-center gap-3">
@@ -184,7 +190,12 @@ export const GroupMeetingModal: React.FC = () => {
         </div>
 
         {/* Bottom Meeting Controls */}
-        <div className="flex items-center justify-center gap-4 p-4 bg-slate-900/90 backdrop-blur-md border-t border-white/10 z-10">
+        <div
+          className="flex items-center justify-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-900/90 backdrop-blur-md border-t border-white/10 z-10 shrink-0"
+          style={{
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+          }}
+        >
           {/* Mute Mic */}
           <button
             type="button"

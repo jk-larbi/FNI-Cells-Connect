@@ -19,7 +19,6 @@ import {
   X,
   Filter,
   MessageSquare,
-  ArrowLeft,
   Flame,
   BookmarkCheck,
   PhoneCall,
@@ -394,16 +393,6 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          {onBack && (
-            <button
-              type="button"
-              onClick={handleBackNavigation}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-navy-900 mb-2 cursor-pointer group"
-            >
-              <ArrowLeft className="w-4 h-4 text-gold-500 group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Previous</span>
-            </button>
-          )}
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl font-black text-navy-950 dark:text-white tracking-tight">
               Follow-Up & Discipleship Management

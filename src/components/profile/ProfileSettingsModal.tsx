@@ -420,15 +420,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-          ) : inline && onBack ? (
-            <button
-              type="button"
-              onClick={onBack}
-              className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-colors"
-              title="Back"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
           ) : null}
           <h2 className="text-base sm:text-lg font-black text-[#142B4A] dark:text-white tracking-tight">
             {currentSection === 'menu' && 'Profile Settings'}

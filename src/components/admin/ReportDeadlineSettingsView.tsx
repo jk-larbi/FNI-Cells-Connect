@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   Bell,
   BellRing,
-  ArrowLeft,
   FileCheck,
   Flame,
   Globe,
@@ -137,16 +136,6 @@ export const ReportDeadlineSettingsView: React.FC<ReportDeadlineSettingsViewProp
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#142B4A] dark:hover:text-white mb-2 cursor-pointer group"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Previous</span>
-            </button>
-          )}
           <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold bg-[#C6A45A]/10 text-[#C6A45A] border border-[#C6A45A]/30 mb-1">
             <Clock className="w-3 h-3" />
             <span>Administrative Governance</span>

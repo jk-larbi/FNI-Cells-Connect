@@ -18,7 +18,6 @@ import {
   User,
   Shield,
   Plus,
-  ArrowLeft,
 } from 'lucide-react';
 import { CreateMeetingModal } from './CreateMeetingModal';
 
@@ -129,16 +128,6 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
   return (
     <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
       {/* Top Header */}
-      {onBack && (
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667085] hover:text-[#142B4A] dark:text-slate-400 dark:hover:text-white cursor-pointer group"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Previous</span>
-        </button>
-      )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">

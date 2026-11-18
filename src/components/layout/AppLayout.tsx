@@ -131,6 +131,7 @@ export const AppLayout: React.FC = () => {
   const [highlightedReportId, setHighlightedReportId] = useState<string | undefined>(undefined);
   const [targetConversationId, setTargetConversationId] = useState<string | undefined>(undefined);
   const [editingMeetingReport, setEditingMeetingReport] = useState<any | null>(null);
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
   // Register initial tab into NavigationService
   useEffect(() => {
@@ -293,6 +294,13 @@ export const AppLayout: React.FC = () => {
     currentTab === 'finance'
   ) ? 'my-dashboard' : currentTab;
 
+  // Reset mobile chat fullscreen state when navigating tabs
+  useEffect(() => {
+    if (effectiveTab !== 'messages') {
+      setIsMobileChatOpen(false);
+    }
+  }, [effectiveTab]);
+
   // Resolve learning portal sub-section
   const getLearningSection = (tab: AppNavTab): LearningPortalSection => {
     if (tab === 'learning-assignments') return 'assignments';
@@ -323,17 +331,23 @@ export const AppLayout: React.FC = () => {
 
         {/* Main Application Area */}
         <div className={`flex-1 flex flex-col ${isSidebarCollapsed ? 'md:pl-[76px]' : 'md:pl-64'} min-w-0 w-full overflow-x-hidden transition-all duration-300 ease-in-out`}>
-          <Header
-            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
-            onOpenNotifications={() => setIsNotifModalOpen(true)}
-            onNavigateToForm={() => navigateToTab(isAdmin ? 'report-review' : 'submit-cell-meeting-report')}
-            onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
-            canGoBack={canGoBack}
-            onGoBack={handleGoBack}
-          />
+          <div className={isMobileChatOpen && effectiveTab === 'messages' ? 'hidden md:block' : 'block'}>
+            <Header
+              onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+              onOpenNotifications={() => setIsNotifModalOpen(true)}
+              onNavigateToForm={() => navigateToTab(isAdmin ? 'report-review' : 'submit-cell-meeting-report')}
+              onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+              canGoBack={canGoBack}
+              onGoBack={handleGoBack}
+            />
+            <LatestAndroidUpdate />
+          </div>
 
-          <LatestAndroidUpdate />
-          <main className={`fni-app-main flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 overflow-x-hidden ${effectiveTab === 'messages' ? 'fni-messaging-route-main' : ''}`}>
+          <main className={`fni-app-main flex-1 min-w-0 ${
+            isMobileChatOpen && effectiveTab === 'messages'
+              ? 'p-0 max-w-none pb-0 h-dvh overflow-hidden'
+              : 'p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 overflow-x-hidden'
+          } ${effectiveTab === 'messages' ? 'fni-messaging-route-main' : ''}`}>
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
@@ -392,6 +406,7 @@ export const AppLayout: React.FC = () => {
                   <MessagingView
                     initialConversationId={targetConversationId}
                     onBack={handleGoBack}
+                    onMobileChatStateChange={setIsMobileChatOpen}
                   />
                 )}
                 {effectiveTab === 'call-history' && (
@@ -476,6 +491,7 @@ export const AppLayout: React.FC = () => {
                   <MessagingView
                     initialConversationId={targetConversationId}
                     onBack={handleGoBack}
+                    onMobileChatStateChange={setIsMobileChatOpen}
                   />
                 )}
                 {effectiveTab === 'call-history' && (
@@ -520,7 +536,9 @@ export const AppLayout: React.FC = () => {
       {/* Thumb-friendly mobile navigation with iOS safe-area support */}
       <nav
         aria-label="Mobile navigation"
-        className="mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid grid-cols-5 border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid grid-cols-5 border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
+          isMobileChatOpen && effectiveTab === 'messages' ? 'hidden' : ''
+        }`}
       >
         {(isAdmin
           ? [

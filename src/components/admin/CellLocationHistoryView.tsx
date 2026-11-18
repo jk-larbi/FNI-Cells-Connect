@@ -12,7 +12,6 @@ import {
   Calendar,
   Users,
   Building,
-  ArrowLeft,
   Download,
   Printer,
   FileText,
@@ -218,15 +217,6 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
       {/* 1. Header Banner */}
       <div className="bg-white dark:bg-[#111c2d] rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="p-2 rounded-xl text-[#667085] hover:text-[#142B4A] hover:bg-[#F5F7FA] border border-[#E3E8EF] transition-colors shrink-0 mt-0.5 cursor-pointer"
-              title="Go Back"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          )}
           <div className="w-12 h-12 rounded-2xl bg-[#142B4A]/10 text-[#142B4A] dark:bg-white/10 dark:text-white flex items-center justify-center shrink-0 border border-[#142B4A]/15">
             <MapPin className="w-6 h-6 text-[#C6A45A]" />
           </div>

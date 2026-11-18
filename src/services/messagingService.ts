@@ -53,8 +53,39 @@ export class MessagingService {
     return SupabaseService.getChatAttachmentUrl(path);
   }
 
+  static getDeletedForSelfIds(userId: string): Set<string> {
+    if (!userId) return new Set();
+    const stored = getStored<string[]>(`fni_deleted_for_self_${userId}`, []);
+    return new Set(stored);
+  }
+
+  static async deleteMessageForSelf(userId: string, messageId: string, scope: 'private' | 'community'): Promise<boolean> {
+    if (!userId || !messageId) return false;
+    // 1. Persist in local storage immediately
+    const existing = this.getDeletedForSelfIds(userId);
+    existing.add(messageId);
+    setStored(`fni_deleted_for_self_${userId}`, Array.from(existing));
+
+    // 2. Persist in Supabase hidden table
+    if (scope === 'private') {
+      await SupabaseService.hidePrivateMessageForUser(userId, messageId);
+    } else {
+      await SupabaseService.hideCommunityMessageForUser(userId, messageId);
+    }
+    return true;
+  }
+
   static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
-    return SupabaseService.deleteMessageForEveryone(messageId, scope);
+    const success = await SupabaseService.deleteMessageForEveryone(messageId, scope);
+    // Also prune from local cache
+    if (scope === 'private') {
+      const msgs = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
+      setStored(STORAGE_KEYS.PRIVATE, msgs.filter(m => m.id !== messageId));
+    } else {
+      const msgs = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
+      setStored(STORAGE_KEYS.COMMUNITY, msgs.filter(m => m.id !== messageId));
+    }
+    return success;
   }
 
   static async editMessage(messageId: string, scope: 'private' | 'community', content: string): Promise<boolean> {
@@ -317,9 +348,12 @@ export class MessagingService {
           (message.senderUid === conversationId && message.recipientUid === viewerUid);
       };
 
+      const deletedForSelf = this.getDeletedForSelfIds(viewerUid);
       const visible = supaMsgs.filter(message =>
         belongsToConversation(message) &&
+        !message.deletedForEveryoneAt &&
         !hidden.has(message.id) &&
+        !deletedForSelf.has(message.id) &&
         new Date(message.createdAt).getTime() > cutoff
       );
       return visible.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -623,8 +657,11 @@ export class MessagingService {
         const currentProfile = AuthService.getCurrentProfile();
         if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
         const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
+        const deletedForSelf = viewerUid ? this.getDeletedForSelfIds(viewerUid) : new Set<string>();
         let visibleMessages = supaMsgs.filter(message =>
           allowedMemberIds.has(message.senderUid) &&
+          !message.deletedForEveryoneAt &&
+          !deletedForSelf.has(message.id) &&
           (!message.cellName?.trim() || activeCellNames.has(message.cellName.trim().toLowerCase()))
         );
         if (viewerUid && supabase) {
@@ -636,7 +673,9 @@ export class MessagingService {
           const cutoff = preferenceResult.data?.cleared_at ? new Date(preferenceResult.data.cleared_at).getTime() : 0;
           const hiddenIds = new Set((hiddenResult.data || []).map(row => row.message_id));
           visibleMessages = visibleMessages.filter(message =>
-            message.isPinned || (new Date(message.createdAt).getTime() > cutoff && !hiddenIds.has(message.id))
+            !message.deletedForEveryoneAt &&
+            !deletedForSelf.has(message.id) &&
+            (message.isPinned || (new Date(message.createdAt).getTime() > cutoff && !hiddenIds.has(message.id)))
           );
         }
         setStored(STORAGE_KEYS.COMMUNITY, visibleMessages);
