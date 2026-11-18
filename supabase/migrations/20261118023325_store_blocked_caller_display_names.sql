@@ -1,0 +1,1 @@
+alter table public.call_blocked_users add column if not exists blocked_user_name text;
