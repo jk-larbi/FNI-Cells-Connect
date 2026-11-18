@@ -326,6 +326,28 @@ Deno.serve(async req => {
       .map((row: any) => String(row.id))
       .filter((id: string) => id !== auth.profile.id);
 
+    // Respect the receiver's call block list before persisting or pushing an
+    // incoming-call alert. Service-role access is confined to this server function.
+    if (notification.type === "incoming_call" && notification.metadata?.callId) {
+      const { data: blockedCaller, error: blockLookupError } = await db
+        .from("call_blocked_users")
+        .select("id")
+        .eq("user_id", target)
+        .eq("blocked_user_id", auth.profile.id)
+        .maybeSingle();
+      if (blockLookupError) {
+        console.error("Could not verify recipient call-block settings:", blockLookupError);
+        return json({ error: "Unable to verify call permissions." }, 500);
+      }
+      if (blockedCaller) {
+        await db.from("call_sessions")
+          .update({ status: "declined", ended_at: new Date().toISOString() })
+          .eq("id", notification.metadata.callId)
+          .eq("receiver_id", target);
+        return json({ sent: 0, failed: 0, message: "Call declined by recipient block settings." });
+      }
+    }
+
     // Persist every notification server-side. The browser may not be allowed
     // to insert a notification for another user under RLS, so this trusted
     // authenticated edge function performs the upsert with the service role.
