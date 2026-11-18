@@ -2118,7 +2118,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       </div>
 
                       {/* Hover action menu trigger */}
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 text-white/80 shrink-0">
+                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1 text-white/90 shrink-0">
                         <button
                           type="button"
                           onClick={() => {
@@ -2130,7 +2130,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             });
                             composerInputRef.current?.focus();
                           }}
-                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                          className="min-h-9 min-w-9 p-2 rounded-full bg-black/45 hover:bg-black/60 backdrop-blur-xs text-white cursor-pointer flex items-center justify-center"
                           title="Reply"
                         >
                           <Reply className="w-3.5 h-3.5" />
