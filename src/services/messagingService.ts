@@ -12,6 +12,8 @@ import {
   CommunityGroup,
   CommunityGroupMember,
   OfficialGroupHistoryRecord,
+  UserGroupPreferences,
+  CustomSticker,
 } from '../types';
 import { AuthService } from './authService';
 import { CellService } from './cellService';
@@ -21,6 +23,10 @@ const STORAGE_KEYS = {
   COMMUNITY: 'fni_community_messages_v1',
   INVITES: 'fni_invitation_codes_v1',
   COMMUNITY_ACCESS: 'fni_community_authorized_users_v1',
+  CUSTOM_STICKERS: 'fni_user_custom_stickers_v1',
+  FAVORITE_STICKERS: 'fni_user_fav_stickers_v1',
+  RECENT_STICKERS: 'fni_user_recent_stickers_v1',
+  GROUP_PREFS: 'fni_user_group_prefs_v1',
 };
 
 function getStored<T>(key: string, fallback: T): T {
@@ -893,5 +899,170 @@ export class MessagingService {
 
   static async getOfficialGroupHistory(): Promise<OfficialGroupHistoryRecord[]> {
     return SupabaseService.getOfficialGroupHistory();
+  }
+
+  // --- Group Settings & Member Management ---
+  static async updateCommunityGroup(
+    groupId: string,
+    updates: Partial<CommunityGroup>
+  ): Promise<{ success: boolean; error?: string }> {
+    return SupabaseService.updateCommunityGroup(groupId, updates);
+  }
+
+  static async updateGroupMemberRole(
+    groupId: string,
+    userId: string,
+    role: string
+  ): Promise<{ success: boolean; error?: string }> {
+    return SupabaseService.updateGroupMemberRole(groupId, userId, role);
+  }
+
+  static async removeGroupMember(
+    groupId: string,
+    userId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    return SupabaseService.removeGroupMember(groupId, userId);
+  }
+
+  static async addGroupMember(
+    groupId: string,
+    userId: string,
+    role: string = 'member'
+  ): Promise<{ success: boolean; error?: string }> {
+    return SupabaseService.addGroupMember(groupId, userId, role);
+  }
+
+  // --- User Group Preferences (Mute, Mentions, Announcements) ---
+  static async getUserGroupPreferences(
+    userId: string,
+    groupId: string
+  ): Promise<UserGroupPreferences> {
+    const defaultPrefs: UserGroupPreferences = {
+      userId,
+      groupId,
+      isMuted: false,
+      mutedUntil: null,
+      notifyMentions: true,
+      notifyAnnouncements: true,
+    };
+    try {
+      const fromDb = await SupabaseService.getUserGroupPreferences(userId, groupId);
+      if (fromDb) return fromDb;
+    } catch (_) {}
+
+    // Local storage fallback
+    const localMap = getStored<Record<string, UserGroupPreferences>>(STORAGE_KEYS.GROUP_PREFS, {});
+    const key = `${userId}_${groupId}`;
+    return localMap[key] || defaultPrefs;
+  }
+
+  static async saveUserGroupPreferences(
+    prefs: UserGroupPreferences
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await SupabaseService.saveUserGroupPreferences(prefs);
+    } catch (_) {}
+
+    // Always update local storage
+    const localMap = getStored<Record<string, UserGroupPreferences>>(STORAGE_KEYS.GROUP_PREFS, {});
+    const key = `${prefs.userId}_${prefs.groupId}`;
+    localMap[key] = prefs;
+    setStored(STORAGE_KEYS.GROUP_PREFS, localMap);
+    return { success: true };
+  }
+
+  // --- Custom Stickers, Favorites & Frequently Used ---
+  static async getUserCustomStickers(userId: string): Promise<CustomSticker[]> {
+    try {
+      const dbStickers = await SupabaseService.getUserCustomStickers(userId);
+      if (dbStickers && dbStickers.length > 0) return dbStickers;
+    } catch (_) {}
+
+    const localStickers = getStored<CustomSticker[]>(`${STORAGE_KEYS.CUSTOM_STICKERS}_${userId}`, []);
+    return localStickers;
+  }
+
+  static async saveUserCustomSticker(
+    userId: string,
+    sticker: Omit<CustomSticker, 'id'> & { id?: string }
+  ): Promise<{ success: boolean; sticker?: CustomSticker; error?: string }> {
+    const id = sticker.id || `stk_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const fullSticker: CustomSticker = {
+      ...sticker,
+      id,
+      userId,
+      createdAt: new Date().toISOString(),
+      usageCount: sticker.usageCount || 1,
+    };
+
+    try {
+      const res = await SupabaseService.saveUserCustomSticker(userId, fullSticker);
+      if (res.success && res.sticker) return res;
+    } catch (_) {}
+
+    // Fallback local storage
+    const list = getStored<CustomSticker[]>(`${STORAGE_KEYS.CUSTOM_STICKERS}_${userId}`, []);
+    const updated = [fullSticker, ...list.filter(s => s.id !== id)];
+    setStored(`${STORAGE_KEYS.CUSTOM_STICKERS}_${userId}`, updated);
+    return { success: true, sticker: fullSticker };
+  }
+
+  static async deleteUserCustomSticker(
+    userId: string,
+    stickerId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await SupabaseService.deleteUserCustomSticker(userId, stickerId);
+    } catch (_) {}
+
+    const list = getStored<CustomSticker[]>(`${STORAGE_KEYS.CUSTOM_STICKERS}_${userId}`, []);
+    const filtered = list.filter(s => s.id !== stickerId);
+    setStored(`${STORAGE_KEYS.CUSTOM_STICKERS}_${userId}`, filtered);
+
+    // Also remove from favorites if present
+    const favs = getStored<CustomSticker[]>(`${STORAGE_KEYS.FAVORITE_STICKERS}_${userId}`, []);
+    setStored(`${STORAGE_KEYS.FAVORITE_STICKERS}_${userId}`, favs.filter(s => s.id !== stickerId));
+
+    return { success: true };
+  }
+
+  static getFavoriteStickers(userId: string): CustomSticker[] {
+    return getStored<CustomSticker[]>(`${STORAGE_KEYS.FAVORITE_STICKERS}_${userId}`, []);
+  }
+
+  static toggleFavoriteSticker(userId: string, sticker: CustomSticker): boolean {
+    const favs = this.getFavoriteStickers(userId);
+    const exists = favs.some(f => (f.imageUrl && f.imageUrl === sticker.imageUrl) || (f.emoji && f.emoji === sticker.emoji && f.label === sticker.label));
+    let next: CustomSticker[];
+    if (exists) {
+      next = favs.filter(f => !((f.imageUrl && f.imageUrl === sticker.imageUrl) || (f.emoji && f.emoji === sticker.emoji && f.label === sticker.label)));
+    } else {
+      next = [{ ...sticker, id: sticker.id || `fav_${Date.now()}` }, ...favs];
+    }
+    setStored(`${STORAGE_KEYS.FAVORITE_STICKERS}_${userId}`, next);
+    return !exists;
+  }
+
+  static getFrequentlyUsedStickers(userId: string): CustomSticker[] {
+    return getStored<CustomSticker[]>(`${STORAGE_KEYS.RECENT_STICKERS}_${userId}`, []);
+  }
+
+  static recordStickerUsage(userId: string, sticker: { emoji?: string; imageUrl?: string; label: string }): void {
+    const list = this.getFrequentlyUsedStickers(userId);
+    const key = sticker.imageUrl || sticker.emoji || sticker.label;
+    const existing = list.find(s => (s.imageUrl || s.emoji || s.label) === key);
+    const usage = (existing?.usageCount || 0) + 1;
+    const updatedItem: CustomSticker = {
+      id: existing?.id || `rec_${Date.now()}`,
+      userId,
+      stickerType: 'recent',
+      emoji: sticker.emoji,
+      imageUrl: sticker.imageUrl,
+      label: sticker.label,
+      usageCount: usage,
+      createdAt: new Date().toISOString(),
+    };
+    const next = [updatedItem, ...list.filter(s => (s.imageUrl || s.emoji || s.label) !== key)].slice(0, 32);
+    setStored(`${STORAGE_KEYS.RECENT_STICKERS}_${userId}`, next);
   }
 }

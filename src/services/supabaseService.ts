@@ -47,6 +47,8 @@ import {
   CommunityGroup,
   CommunityGroupMember,
   OfficialGroupHistoryRecord,
+  UserGroupPreferences,
+  CustomSticker,
 } from '../types';
 
 // ==============================================================================
@@ -1646,31 +1648,252 @@ export class SupabaseService {
     if (!this.isAvailable()) return [];
     try {
       const { data, error } = await supabase!
-        .from('official_community_group_history')
+        .from('official_group_history')
         .select('*')
-        .order('changed_at', { ascending: false });
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []).map((row: any) => ({
         id: row.id,
-        previous_group_id: row.previous_group_id,
-        previousGroupId: row.previous_group_id,
-        previous_group_name: row.previous_group_name,
-        previousGroupName: row.previous_group_name,
-        new_group_id: row.new_group_id,
-        newGroupId: row.new_group_id,
-        new_group_name: row.new_group_name,
-        newGroupName: row.new_group_name,
-        changed_by_uid: row.changed_by_uid,
-        changedByUid: row.changed_by_uid,
-        changed_by_name: row.changed_by_name,
-        changedByName: row.changed_by_name,
-        changed_at: row.changed_at,
-        changedAt: row.changed_at,
+        previous_group_id: row.previous_group_id || '',
+        previous_group_name: row.previous_group_name || 'Previous Group',
+        new_group_id: row.new_group_id || '',
+        new_group_name: row.new_group_name || 'Official Group',
+        changed_by_uid: row.changed_by_uid || row.designated_by || '',
+        changed_by_name: row.changed_by_name || 'Admin',
+        changed_at: row.changed_at || row.created_at || new Date().toISOString(),
         reason: row.reason,
+        previousGroupId: row.previous_group_id,
+        previousGroupName: row.previous_group_name,
+        newGroupId: row.new_group_id,
+        newGroupName: row.new_group_name,
+        changedByUid: row.changed_by_uid || row.designated_by,
+        changedByName: row.changed_by_name,
+        changedAt: row.changed_at || row.created_at,
       }));
     } catch (err) {
-      console.warn('getOfficialGroupHistory error:', err);
+      console.warn('getOfficialGroupHistory query notice:', err);
       return [];
+    }
+  }
+
+  static async updateCommunityGroup(
+    groupId: string,
+    updates: Partial<CommunityGroup>
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
+    try {
+      const payload: any = { updated_at: new Date().toISOString() };
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.avatar_url !== undefined || updates.avatarUrl !== undefined) {
+        payload.avatar_url = updates.avatar_url || updates.avatarUrl;
+      }
+      if (updates.permissions !== undefined) payload.permissions = updates.permissions;
+      if (updates.announcement_mode !== undefined) payload.announcement_mode = updates.announcement_mode;
+      if (updates.invite_code !== undefined) payload.invite_code = updates.invite_code;
+      if (updates.require_approval !== undefined) payload.require_approval = updates.require_approval;
+      if (updates.disappearing_messages !== undefined) payload.disappearing_messages = updates.disappearing_messages;
+      if (updates.meeting_schedule !== undefined) payload.meeting_schedule = updates.meeting_schedule;
+      if (updates.meeting_location !== undefined) payload.meeting_location = updates.meeting_location;
+      if (updates.oversight_contact !== undefined) payload.oversight_contact = updates.oversight_contact;
+
+      const { error } = await supabase!
+        .from('community_groups')
+        .update(payload)
+        .eq('id', groupId);
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      console.warn('updateCommunityGroup error:', err);
+      return { success: false, error: err?.message || 'Failed to update group' };
+    }
+  }
+
+  static async updateGroupMemberRole(
+    groupId: string,
+    userId: string,
+    role: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
+    try {
+      const { error } = await supabase!
+        .from('community_group_members')
+        .update({ role, is_active: true })
+        .match({ group_id: groupId, user_id: userId });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to update member role' };
+    }
+  }
+
+  static async removeGroupMember(
+    groupId: string,
+    userId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
+    try {
+      const { error } = await supabase!
+        .from('community_group_members')
+        .delete()
+        .match({ group_id: groupId, user_id: userId });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to remove member' };
+    }
+  }
+
+  static async addGroupMember(
+    groupId: string,
+    userId: string,
+    role: string = 'member'
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
+    try {
+      const { error } = await supabase!
+        .from('community_group_members')
+        .upsert({
+          group_id: groupId,
+          user_id: userId,
+          role,
+          is_active: true,
+          joined_at: new Date().toISOString(),
+        }, { onConflict: 'group_id,user_id' });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to add member' };
+    }
+  }
+
+  static async getUserGroupPreferences(
+    userId: string,
+    groupId: string
+  ): Promise<UserGroupPreferences | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const { data, error } = await supabase!
+        .from('user_group_preferences')
+        .select('*')
+        .match({ user_id: userId, group_id: groupId })
+        .maybeSingle();
+      if (error || !data) return null;
+      return {
+        userId: data.user_id,
+        groupId: data.group_id,
+        isMuted: Boolean(data.is_muted),
+        mutedUntil: data.muted_until,
+        notifyMentions: data.notify_mentions ?? true,
+        notifyAnnouncements: data.notify_announcements ?? true,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  static async saveUserGroupPreferences(
+    prefs: UserGroupPreferences
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false };
+    try {
+      const { error } = await supabase!
+        .from('user_group_preferences')
+        .upsert({
+          user_id: prefs.userId,
+          group_id: prefs.groupId,
+          is_muted: prefs.isMuted,
+          muted_until: prefs.mutedUntil || null,
+          notify_mentions: prefs.notifyMentions,
+          notify_announcements: prefs.notifyAnnouncements,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,group_id' });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
+    }
+  }
+
+  static async getUserCustomStickers(userId: string): Promise<CustomSticker[]> {
+    if (!this.isAvailable()) return [];
+    try {
+      const { data, error } = await supabase!
+        .from('user_custom_stickers')
+        .select('*')
+        .eq('user_id', userId)
+        .order('usage_count', { ascending: false });
+      if (error || !data) return [];
+      return data.map((r: any) => ({
+        id: r.id,
+        userId: r.user_id,
+        stickerType: r.sticker_type,
+        imageUrl: r.image_url,
+        emoji: r.emoji,
+        label: r.label,
+        usageCount: r.usage_count,
+        createdAt: r.created_at,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  static async saveUserCustomSticker(
+    userId: string,
+    sticker: Omit<CustomSticker, 'id'> & { id?: string }
+  ): Promise<{ success: boolean; sticker?: CustomSticker; error?: string }> {
+    if (!this.isAvailable()) return { success: false };
+    try {
+      const payload: any = {
+        user_id: userId,
+        sticker_type: sticker.stickerType,
+        image_url: sticker.imageUrl || null,
+        emoji: sticker.emoji || null,
+        label: sticker.label,
+        usage_count: sticker.usageCount || 1,
+        updated_at: new Date().toISOString(),
+      };
+      if (sticker.id) payload.id = sticker.id;
+
+      const { data, error } = await supabase!
+        .from('user_custom_stickers')
+        .upsert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      return {
+        success: true,
+        sticker: {
+          id: data.id,
+          userId: data.user_id,
+          stickerType: data.sticker_type,
+          imageUrl: data.image_url,
+          emoji: data.emoji,
+          label: data.label,
+          usageCount: data.usage_count,
+          createdAt: data.created_at,
+        },
+      };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
+    }
+  }
+
+  static async deleteUserCustomSticker(
+    userId: string,
+    stickerId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isAvailable()) return { success: false };
+    try {
+      const { error } = await supabase!
+        .from('user_custom_stickers')
+        .delete()
+        .match({ id: stickerId, user_id: userId });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
     }
   }
 

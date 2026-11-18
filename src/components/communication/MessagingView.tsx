@@ -13,6 +13,8 @@ import { MessageDetailsModal } from './MessageDetailsModal';
 import { ForwardMessageModal, ForwardDestination } from './ForwardMessageModal';
 import { UserProfileModal } from './UserProfileModal';
 import { OfficialGroupManagementModal } from './OfficialGroupManagementModal';
+import { GroupInfoModal } from './GroupInfoModal';
+import { StickerCreatorModal } from './StickerCreatorModal';
 import {
   PrivateMessage,
   CommunityMessage,
@@ -21,6 +23,7 @@ import {
   ChatPoll,
   UserPinnedChat,
   CommunityGroup,
+  CustomSticker,
 } from '../../types';
 import {
   MessageSquare,
@@ -73,6 +76,7 @@ import {
   ChevronLeft,
   User,
   Delete as BackspaceIcon,
+  Star,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -100,56 +104,123 @@ const STICKER_PACK = [
 ];
 
 const STICKER_PREFIX = '[[FNI_STICKER:';
+const STICKER_IMG_PREFIX = '[[FNI_STICKER_IMG:';
 const POLL_PREFIX = '[[FNI_POLL:';
 
-// Comprehensive Unicode Emoji Categories
+// Comprehensive Apple-Style Unicode Emoji Categories
 const EMOJI_CATEGORIES: { name: string; icon: string; emojis: string[] }[] = [
   {
-    name: 'Faith & Ministry',
+    name: 'Faith & Fellowship',
     icon: '🕊️',
     emojis: [
       '🕊️', '📖', '✝️', '🕎', '👑', '🕯️', '⛪', '🍇', '🍞', '🍷', '🐑', '🌾',
       '🌱', '🌟', '⭐', '💫', '✨', '🛡️', '⚔️', '🎺', '🔔', '📜', '🗝️', '💎',
-      '💍', '🎁', '💌', '🏛️', '🔥', '💧', '☀️', '🌈'
+      '💍', '🎁', '💌', '🏛️', '🔥', '💧', '☀️', '🌈', '🙏', '🙌', '🤲', '🛐'
     ],
   },
   {
-    name: 'Smileys',
-    icon: '😊',
+    name: 'Smileys & Emotion',
+    icon: '😀',
     emojis: [
-      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇',
-      '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑',
-      '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬',
-      '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵',
-      '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️',
-      '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱'
+      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '🫠', '😉', '😊',
+      '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝',
+      '🤑', '🤗', '🤭', '🫢', '🫣', '🤫', '🤔', '🫡', '🤐', '🤨', '😐', '😑', '😶',
+      '🫥', '😏', '😒', '🙄', '😬', '😮‍💨', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷',
+      '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '🥸',
+      '😎', '🤓', '🧐', '😕', '🫤', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺',
+      '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩',
+      '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '💩', '🤡'
     ],
   },
   {
-    name: 'Gestures',
-    icon: '👍',
+    name: 'People & Body',
+    icon: '👋',
     emojis: [
-      '👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '👋', '🤚',
-      '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈',
-      '👉', '👆', '👇', '☝️', '✊', '👊', '🤛', '🤜', '🤳'
+      '👋', '🤚', '🖐️', '✋', '🖖', '🫱', '🫲', '🫳', '🫴', '👌', '🤌', '🤏', '✌️',
+      '🤞', '🫰', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '🫵', '👍',
+      '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '🫶', '👐', '🤲', '🤝', '🙏', '✍️',
+      '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '👃', '🧠', '🫀', '🫁', '👀',
+      '👁️', '👅', '👄', '👶', '👧', '🧒', '👦', '👩', '🧑', '👨', '👵', '🧓', '👴'
+    ],
+  },
+  {
+    name: 'Animals & Nature',
+    icon: '🐶',
+    emojis: [
+      '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷',
+      '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴',
+      '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🐢', '🐍', '🐙', '🦑', '🦐', '🦀',
+      '🐡', '🐠', '🐟', '🐬', '🐳', '🦈', '🐊', '🐘', '🦛', '🦏', '🐪', '🦒', '🦘',
+      '🐑', '🐐', '🦌', '🐕', '🐈', '🕊️', '🦢', '🌹', '🥀', '🌺', '🌸', '🌼',
+      '🌻', '🌞', '🌝', '🌛', '⭐', '🌟', '✨', '⚡', '🔥', '🌈', '☀️', '⛅', '🌧️', '❄️'
+    ],
+  },
+  {
+    name: 'Food & Drink',
+    icon: '🍏',
+    emojis: [
+      '🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑',
+      '🥭', '🍍', '🥥', '🥝', '🍅', '🥑', '🥦', '🥬', '🥒', '🌶️', '🌽', '🥕', '🧄',
+      '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞',
+      '🧇', '🥓', '🥩', '🍗', '🍖', '🌭', '🍔', '🍟', '🍕', '🥪', '🥙', '🌮', '🌯',
+      '🥗', '🥘', '🍝', '🍜', '🍲', '🍣', '🍱', '🥟', '🍤', '🍙', '🍚', '🍘', '🍦',
+      '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🍫', '🍬', '🍭', '🍮', '🍯', '🍼',
+      '🥛', '☕', '🫖', '🍵', '🧃', '🥤', '🍶', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂'
+    ],
+  },
+  {
+    name: 'Activities & Sports',
+    icon: '⚽',
+    emojis: [
+      '⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸',
+      '🏒', '🏑', '🏏', '⛳', '🏹', '🎣', '🥊', '🥋', '🛹', '🛼', '🛷', '⛸️', '🎿',
+      '🏂', '🏋️', '🤼', '🤸', '⛹️', '🤺', '🧘', '🏄', '🏊', '🚴', '🏆', '🥇', '🥈',
+      '🥉', '🏅', '🎖️', '🎗️', '🎫', '🎟️', '🎪', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹',
+      '🥁', '🎷', '🎺', '🎸', '🎻', '🎲', '♟️', '🎯', '🎳', '🎮', '🕹️', '🧩'
+    ],
+  },
+  {
+    name: 'Travel & Places',
+    icon: '✈️',
+    emojis: [
+      '🚗', '🚕', '🚙', '🚌', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚜', '🛵', '🏍️',
+      '🚲', '🛴', '🚨', '🚥', '🚦', '🛑', '⚓', '⛵', '🚤', '🛳️', '⛴️', '🚢', '✈️',
+      '🛩️', '🛫', '🛬', '🪂', '🚁', '🚀', '🛸', '🌍', '🌎', '🌏', '🗺️', '🧭', '🏔️',
+      '🌋', '🏕️', '🏖️', '🏜️', '🏝️', '🏟️', '🏛️', '🏗️', '🏘️', '🏠', '🏡', '🏢', '🏣',
+      '🏥', '🏦', '🏨', '🏪', '🏫', '🏬', '🏭', '🏰', '⛪', '🕌', '🕍'
+    ],
+  },
+  {
+    name: 'Objects',
+    icon: '💡',
+    emojis: [
+      '⌚', '📱', '📲', '💻', '⌨️', '🖥️', '🖨️', '📷', '📸', '📹', '🎥', '📽️', '📞',
+      '☎️', '📺', '📻', '🎙️', '⏱️', '⏲️', '⏰', '🕰️', '⌛', '⏳', '🔋', '🔌', '💡',
+      '🔦', '🕯️', '🧯', '💵', '🪙', '💰', '💳', '💎', '⚖️', '🧰', '🔧', '🔨', '🛠️',
+      '⚙️', '⛓️', '🧲', '💣', '🛡️', '🔮', '📿', '💈', '🔭', '🔬', '🩹', '🩺', '💊',
+      '💉', '🩸', '🧬', '🧪', '🌡️', '🧹', '🧺', '🧻', '🛁', '🧸', '🖼️', '🎁', '🎈',
+      '🎉', '🎊', '🏮', '📦', '🏷️', '✉️', '📩', '📨', '📧', '📫', '📝', '📁', '📂'
     ],
   },
   {
     name: 'Hearts & Symbols',
     icon: '❤️',
     emojis: [
-      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕',
-      '💞', '💓', '💗', '💖', '💘', '💝', '💟', '💯', '💢', '💥', '💫', '💬',
-      '🗨️', '🗯️', '💭', '💤', '✅', '❌', '⚠️', '⚡', '💡'
+      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞',
+      '💓', '💗', '💖', '💘', '💝', '💟', '💯', '💢', '💥', '💫', '💬', '💭', '💤',
+      '🛑', '⚠️', '🚸', '⛔', '🚫', '✅', '❌', '⭕', '❗', '❓', '❕', '❔', '‼️',
+      '⁉️', '🔆', '🔅', '🔱', '⚜️', '☢️', '☣️', '⬆️', '↗️', '➡️', '↘️', '⬇️', '↙️',
+      '⬅️', '↖️', '↕️', '↔️', '↩️', '↪️', '⤴️', '⤵️', '🔃', '🔄', '🔙', '🔚', '🔛',
+      '🔜', '🔝', '✝️', '🕎', '✡️', '🔯', '☯️', '♾️'
     ],
   },
   {
-    name: 'Activities & Celebration',
-    icon: '🎉',
+    name: 'Flags',
+    icon: '🚩',
     emojis: [
-      '🎉', '🎊', '🎈', '🎂', '🎁', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🎗️',
-      '🎫', '🎟️', '🎪', '🎤', '🎧', '🎼', '🎵', '🎶', '🥁', '🎷', '🎺', '🎸',
-      '📱', '💻', '🖥️', '📦', '📌', '📍', '📎', '📋', '📁', '📂', '📚', '📝'
+      '🚩', '🏁', '🎌', '🏴', '🏳️', '🇬🇭', '🇳🇬', '🇿🇦', '🇰🇪', '🇺🇬', '🇺🇸', '🇬🇧', '🇨🇦',
+      '🇦🇺', '🇳🇿', '🇫🇷', '🇩🇪', '🇮🇹', '🇪🇸', '🇵🇹', '🇧🇷', '🇯🇵', '🇨🇳', '🇮🇳', '🇸🇬', '🇦🇪',
+      '🇸🇦', '🇮🇱', '🇺🇦', '🇷🇺', '🇪🇺'
     ],
   },
 ];
@@ -249,6 +320,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Official Group Management
   const [isOfficialGroupModalOpen, setIsOfficialGroupModalOpen] = useState(false);
   const [officialGroup, setOfficialGroup] = useState<CommunityGroup | null>(null);
+  const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
+
+  // Custom Stickers, Favorites & Recents
+  const [isStickerCreatorOpen, setIsStickerCreatorOpen] = useState(false);
+  const [stickerSubTab, setStickerSubTab] = useState<'pack' | 'favorites' | 'recent' | 'custom'>('pack');
+  const [userCustomStickers, setUserCustomStickers] = useState<CustomSticker[]>([]);
+  const [favoriteStickers, setFavoriteStickers] = useState<CustomSticker[]>([]);
+  const [recentStickers, setRecentStickers] = useState<CustomSticker[]>([]);
 
   // Telegram Floating Context Menu
   const [contextMenu, setContextMenu] = useState<{
@@ -276,7 +355,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activePickerTab, setActivePickerTab] = useState<'stickers' | 'emojis'>('emojis');
-  const [selectedEmojiCategory, setSelectedEmojiCategory] = useState<string>('Faith & Ministry');
+  const [selectedEmojiCategory, setSelectedEmojiCategory] = useState<string>('Faith & Fellowship');
   const [emojiSearchQuery, setEmojiSearchQuery] = useState<string>('');
   const [showChatOptionsMenu, setShowChatOptionsMenu] = useState(false);
   const [openMessageMenuId, setOpenMessageMenuId] = useState<string | null>(null);
@@ -325,6 +404,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setIsOfficialGroupModalOpen(false);
       return true;
     }
+    if (isGroupInfoModalOpen) {
+      setIsGroupInfoModalOpen(false);
+      return true;
+    }
+    if (isStickerCreatorOpen) {
+      setIsStickerCreatorOpen(false);
+      return true;
+    }
     if (isSettingsModalOpen) {
       setIsSettingsModalOpen(false);
       return true;
@@ -355,6 +442,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     isForwardModalOpen ||
     selectedUserProfile !== null ||
     isOfficialGroupModalOpen ||
+    isGroupInfoModalOpen ||
+    isStickerCreatorOpen ||
     isSettingsModalOpen ||
     showCallHistoryModal ||
     isPollModalOpen ||
@@ -429,6 +518,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
+  const loadStickers = async () => {
+    if (!currentUser?.id) return;
+    try {
+      setFavoriteStickers(MessagingService.getFavoriteStickers(currentUser.id));
+      setRecentStickers(MessagingService.getFrequentlyUsedStickers(currentUser.id));
+      const custom = await MessagingService.getUserCustomStickers(currentUser.id);
+      if (custom) setUserCustomStickers(custom);
+    } catch (e) {
+      console.warn('Stickers load notice:', e);
+    }
+  };
+
   useEffect(() => {
     async function loadDirectory() {
       try {
@@ -436,6 +537,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           MessagingService.getMemberDirectory(),
           loadPinnedChats(),
           loadOfficialGroup(),
+          loadStickers(),
         ]);
         if (directory) {
           const eligible = directory.filter(
@@ -1143,6 +1245,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if (!selectedChatId) return;
     setShowEmojiPicker(false);
     const content = `${STICKER_PREFIX}${sticker.emoji}:${sticker.label}]]`;
+    if (currentUser?.id) {
+      MessagingService.recordStickerUsage(currentUser.id, sticker);
+      setRecentStickers(MessagingService.getFrequentlyUsedStickers(currentUser.id));
+    }
     if (selectedChatId === 'community') {
       await MessagingService.sendCommunityMessage({
         senderUid: currentUser.id,
@@ -1164,6 +1270,65 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       });
     }
     await loadActiveMessages();
+  };
+
+  // Send Custom Image Sticker
+  const handleSendCustomSticker = async (sticker: { imageUrl: string; label: string }) => {
+    if (!selectedChatId) return;
+    setShowEmojiPicker(false);
+    const content = `${STICKER_IMG_PREFIX}${sticker.imageUrl}:${sticker.label}]]`;
+    if (currentUser?.id) {
+      MessagingService.recordStickerUsage(currentUser.id, sticker);
+      setRecentStickers(MessagingService.getFrequentlyUsedStickers(currentUser.id));
+    }
+    if (selectedChatId === 'community') {
+      await MessagingService.sendCommunityMessage({
+        senderUid: currentUser.id,
+        senderName: currentUser.full_name || 'FNI Leader',
+        senderRole: currentUser.role,
+        cellName: currentUser.cell_name,
+        content,
+      });
+    } else {
+      const recipientUid = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+      const recipient = allMembers.find(m => m.id === recipientUid);
+      await MessagingService.sendPrivateMessage({
+        senderUid: currentUser.id,
+        senderName: currentUser.full_name || 'FNI Leader',
+        senderRole: currentUser.role,
+        recipientUid,
+        recipientName: recipient?.full_name || 'FNI Member',
+        content,
+      });
+    }
+    await loadActiveMessages();
+  };
+
+  // Toggle Favorite Sticker
+  const handleToggleFavoriteSticker = (sticker: {
+    emoji?: string;
+    imageUrl?: string;
+    label: string;
+    stickerType?: 'custom' | 'favorite' | 'recent' | 'fellowship';
+  }) => {
+    if (!currentUser?.id) return;
+    const fullSticker: CustomSticker = {
+      id: sticker.imageUrl ? `fav_img_${sticker.label}_${Date.now()}` : `fav_emo_${sticker.emoji}`,
+      stickerType: sticker.stickerType || (sticker.imageUrl ? 'custom' : 'fellowship'),
+      label: sticker.label,
+      emoji: sticker.emoji,
+      imageUrl: sticker.imageUrl,
+    };
+    MessagingService.toggleFavoriteSticker(currentUser.id, fullSticker);
+    setFavoriteStickers(MessagingService.getFavoriteStickers(currentUser.id));
+  };
+
+  // Delete Custom Sticker
+  const handleDeleteCustomSticker = async (stickerId: string) => {
+    if (!currentUser?.id) return;
+    await MessagingService.deleteUserCustomSticker(currentUser.id, stickerId);
+    setUserCustomStickers(prev => prev.filter(s => s.id !== stickerId));
+    setFavoriteStickers(MessagingService.getFavoriteStickers(currentUser.id));
   };
 
   // Create Poll
@@ -1521,12 +1686,62 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if (msg.content.startsWith(POLL_PREFIX)) {
       return renderPollCard(msg.id, msg.content);
     }
+    if (msg.content.startsWith(STICKER_IMG_PREFIX)) {
+      const contentBody = msg.content.slice(STICKER_IMG_PREFIX.length, -2);
+      const firstColon = contentBody.indexOf(':');
+      const imgUrl = firstColon !== -1 ? contentBody.slice(0, firstColon) : contentBody;
+      const label = firstColon !== -1 ? contentBody.slice(firstColon + 1) : '';
+      const isFav = favoriteStickers.some(s => s.imageUrl === imgUrl);
+      return (
+        <div className="group/sticker relative py-1 text-center select-none">
+          <img
+            src={imgUrl}
+            alt={label || 'Custom Sticker'}
+            className="max-w-[170px] max-h-[170px] object-contain mx-auto rounded-2xl drop-shadow-md transition-transform group-hover/sticker:scale-105"
+          />
+          {label && (
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 block">
+              {label}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation();
+              handleToggleFavoriteSticker({ imageUrl: imgUrl, label: label || 'Sticker', stickerType: 'custom' });
+            }}
+            className={`absolute top-0 right-0 p-1 rounded-full bg-white/80 dark:bg-black/60 shadow-xs transition-opacity cursor-pointer ${
+              isFav ? 'opacity-100 text-amber-500' : 'opacity-0 group-hover/sticker:opacity-100 text-slate-400 hover:text-amber-500'
+            }`}
+            title={isFav ? 'Remove from favorites' : 'Save to favorites'}
+          >
+            <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
+          </button>
+        </div>
+      );
+    }
     if (msg.content.startsWith(STICKER_PREFIX)) {
       const parts = msg.content.slice(STICKER_PREFIX.length, -2).split(':');
+      const emoji = parts[0];
+      const label = parts[1];
+      const isFav = favoriteStickers.some(s => s.emoji === emoji);
       return (
-        <div className="text-center py-1">
-          <span className="text-5xl block animate-bounce-short">{parts[0]}</span>
-          {parts[1] && <span className="text-[10px] font-bold text-slate-500 mt-1 block">{parts[1]}</span>}
+        <div className="group/sticker relative text-center py-1 select-none">
+          <span className="text-5xl block animate-bounce-short">{emoji}</span>
+          {label && <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 block">{label}</span>}
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation();
+              handleToggleFavoriteSticker({ emoji, label: label || 'Sticker', stickerType: 'fellowship' });
+            }}
+            className={`absolute top-0 right-0 p-1 rounded-full bg-white/80 dark:bg-black/60 shadow-xs transition-opacity cursor-pointer ${
+              isFav ? 'opacity-100 text-amber-500' : 'opacity-0 group-hover/sticker:opacity-100 text-slate-400 hover:text-amber-500'
+            }`}
+            title={isFav ? 'Remove from favorites' : 'Save to favorites'}
+          >
+            <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
+          </button>
         </div>
       );
     }
@@ -2024,7 +2239,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 {/* Center User/Chat Pill */}
                 <div
                   onClick={() => {
-                    if (activeContact?.type !== 'community' && activeContact?.id) {
+                    if (activeContact?.type === 'community' || selectedChatId === 'community') {
+                      setIsGroupInfoModalOpen(true);
+                    } else if (activeContact?.id) {
                       const m = allMembers.find(mem => mem.id === activeContact.id) || tutorList.find(t => t.id === activeContact.id);
                       if (m) {
                         setSelectedUserProfile({
@@ -2116,6 +2333,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <Video className="w-4 h-4 text-blue-500" />
                       <span>Video Call</span>
                     </button>
+                    {selectedChatId === 'community' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowChatOptionsMenu(false);
+                          setIsGroupInfoModalOpen(true);
+                        }}
+                        className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold text-blue-600 dark:text-blue-400"
+                      >
+                        <Info className="w-4 h-4" />
+                        <span>Group Info & Settings</span>
+                      </button>
+                    )}
                     {isAdmin && selectedChatId === 'community' && (
                       <button
                         type="button"
@@ -2691,24 +2921,292 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     </div>
 
                     {activePickerTab === 'stickers' ? (
-                      <div>
-                        <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-2">
-                          FNI Fellowship Stickers
-                        </span>
-                        <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto custom-scrollbar p-1">
-                          {STICKER_PACK.map(s => (
+                      <div className="space-y-2">
+                        {/* Sticker Sub-tabs & Create Action */}
+                        <div className="flex items-center justify-between gap-1 pb-1 border-b border-slate-100 dark:border-white/5">
+                          <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar py-0.5 text-[11px] font-bold">
                             <button
-                              key={s.label}
                               type="button"
-                              onClick={() => handleSendSticker(s)}
-                              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-110 active:scale-95"
-                              title={s.label}
+                              onClick={() => setStickerSubTab('pack')}
+                              className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                                stickerSubTab === 'pack'
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                              }`}
                             >
-                              <span className="text-2xl block">{s.emoji}</span>
-                              <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate block mt-0.5">{s.label}</span>
+                              🕊️ Fellowship
                             </button>
-                          ))}
+                            <button
+                              type="button"
+                              onClick={() => setStickerSubTab('favorites')}
+                              className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                                stickerSubTab === 'favorites'
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                              }`}
+                            >
+                              <Star className={`w-3 h-3 ${favoriteStickers.length > 0 ? 'fill-amber-400 text-amber-400' : ''}`} />
+                              <span>Favorites ({favoriteStickers.length})</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStickerSubTab('recent')}
+                              className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                                stickerSubTab === 'recent'
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                              }`}
+                            >
+                              🕒 Recent
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStickerSubTab('custom')}
+                              className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                                stickerSubTab === 'custom'
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                              }`}
+                            >
+                              🎨 My Stickers ({userCustomStickers.length})
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsStickerCreatorOpen(true)}
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold cursor-pointer shadow-xs transition-colors"
+                            title="Create Custom Sticker"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Create</span>
+                          </button>
                         </div>
+
+                        {/* Sub-tab 1: Fellowship Default Pack */}
+                        {stickerSubTab === 'pack' && (
+                          <div>
+                            <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-1.5">
+                              FNI Fellowship Pack
+                            </span>
+                            <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
+                              {STICKER_PACK.map(s => {
+                                const isFav = favoriteStickers.some(f => f.emoji === s.emoji);
+                                return (
+                                  <div
+                                    key={s.label}
+                                    className="group/item relative p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                                    onClick={() => handleSendSticker(s)}
+                                    title={s.label}
+                                  >
+                                    <span className="text-3xl block">{s.emoji}</span>
+                                    <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300 truncate block mt-0.5">
+                                      {s.label}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        handleToggleFavoriteSticker({ emoji: s.emoji, label: s.label, stickerType: 'fellowship' });
+                                      }}
+                                      className={`absolute top-1 right-1 p-1 rounded-full bg-white/80 dark:bg-black/60 shadow-xs transition-opacity cursor-pointer ${
+                                        isFav ? 'opacity-100 text-amber-500' : 'opacity-0 group-hover/item:opacity-100 text-slate-400 hover:text-amber-500'
+                                      }`}
+                                      title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                                    >
+                                      <Star className={`w-3 h-3 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Sub-tab 2: Favorites */}
+                        {stickerSubTab === 'favorites' && (
+                          <div>
+                            <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-1.5">
+                              Starred Stickers
+                            </span>
+                            {favoriteStickers.length === 0 ? (
+                              <div className="text-center py-6 px-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+                                <Star className="w-8 h-8 text-amber-400/60 mx-auto mb-1.5" />
+                                <p className="font-bold text-xs text-slate-700 dark:text-slate-200">No favorite stickers yet</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  Tap the star on any sticker in messages or the Fellowship Pack to save it here for fast access.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
+                                {favoriteStickers.map((s, idx) => (
+                                  <div
+                                    key={s.id || idx}
+                                    className="group/fav relative p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-slate-200/50 dark:border-white/5"
+                                    onClick={() => {
+                                      if (s.imageUrl) {
+                                        handleSendCustomSticker({ imageUrl: s.imageUrl, label: s.label });
+                                      } else if (s.emoji) {
+                                        handleSendSticker({ emoji: s.emoji, label: s.label });
+                                      }
+                                    }}
+                                    title={s.label}
+                                  >
+                                    {s.imageUrl ? (
+                                      <img src={s.imageUrl} alt={s.label} className="w-10 h-10 object-contain mx-auto rounded-lg" />
+                                    ) : (
+                                      <span className="text-3xl block">{s.emoji || '🕊️'}</span>
+                                    )}
+                                    <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300 truncate block mt-0.5">
+                                      {s.label}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        handleToggleFavoriteSticker(s);
+                                      }}
+                                      className="absolute top-1 right-1 p-1 rounded-full bg-white/80 dark:bg-black/60 text-amber-500 shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                                      title="Remove from favorites"
+                                    >
+                                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Sub-tab 3: Recent Stickers */}
+                        {stickerSubTab === 'recent' && (
+                          <div>
+                            <span className="font-extrabold text-[10px] uppercase text-slate-400 block mb-1.5">
+                              Frequently Used Stickers
+                            </span>
+                            {recentStickers.length === 0 ? (
+                              <div className="text-center py-6 px-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+                                <Clock className="w-8 h-8 text-slate-400/60 mx-auto mb-1.5" />
+                                <p className="font-bold text-xs text-slate-700 dark:text-slate-200">No recent stickers</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  Stickers you send in chats will automatically appear here for quick reuse.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
+                                {recentStickers.map((s, idx) => (
+                                  <div
+                                    key={s.id || idx}
+                                    className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-slate-200/50 dark:border-white/5"
+                                    onClick={() => {
+                                      if (s.imageUrl) {
+                                        handleSendCustomSticker({ imageUrl: s.imageUrl, label: s.label });
+                                      } else if (s.emoji) {
+                                        handleSendSticker({ emoji: s.emoji, label: s.label });
+                                      }
+                                    }}
+                                    title={s.label}
+                                  >
+                                    {s.imageUrl ? (
+                                      <img src={s.imageUrl} alt={s.label} className="w-10 h-10 object-contain mx-auto rounded-lg" />
+                                    ) : (
+                                      <span className="text-3xl block">{s.emoji || '🕊️'}</span>
+                                    )}
+                                    <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300 truncate block mt-0.5">
+                                      {s.label}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Sub-tab 4: My Created Stickers */}
+                        {stickerSubTab === 'custom' && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="font-extrabold text-[10px] uppercase text-slate-400">
+                                My Created Stickers
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setIsStickerCreatorOpen(true)}
+                                className="text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:underline cursor-pointer"
+                              >
+                                + New Sticker
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
+                              {/* Create Card */}
+                              <button
+                                type="button"
+                                onClick={() => setIsStickerCreatorOpen(true)}
+                                className="p-2 rounded-2xl border-2 border-dashed border-blue-400/40 hover:border-blue-500 bg-blue-50/50 dark:bg-blue-900/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                                  <Plus className="w-4 h-4" />
+                                </div>
+                                <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400">Create</span>
+                              </button>
+
+                              {userCustomStickers.map(s => {
+                                const isFav = favoriteStickers.some(f => f.id === s.id);
+                                return (
+                                  <div
+                                    key={s.id}
+                                    className="group/custom relative p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-center cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-slate-200/60 dark:border-white/10 bg-white dark:bg-white/[0.02]"
+                                    onClick={() => {
+                                      if (s.imageUrl) {
+                                        handleSendCustomSticker({ imageUrl: s.imageUrl, label: s.label });
+                                      } else if (s.emoji) {
+                                        handleSendSticker({ emoji: s.emoji, label: s.label });
+                                      }
+                                    }}
+                                    title={s.label}
+                                  >
+                                    {s.imageUrl ? (
+                                      <img src={s.imageUrl} alt={s.label} className="w-10 h-10 object-contain mx-auto rounded-lg" />
+                                    ) : (
+                                      <span className="text-3xl block">{s.emoji || '🎨'}</span>
+                                    )}
+                                    <span className="text-[9px] font-semibold text-slate-700 dark:text-slate-200 truncate block mt-0.5">
+                                      {s.label}
+                                    </span>
+
+                                    {/* Action buttons on card */}
+                                    <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover/custom:opacity-100 transition-opacity">
+                                      <button
+                                        type="button"
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          handleToggleFavoriteSticker(s);
+                                        }}
+                                        className="p-1 rounded-full bg-white/90 dark:bg-black/70 text-slate-400 hover:text-amber-500 shadow-xs cursor-pointer"
+                                        title={isFav ? 'Remove favorite' : 'Add to favorites'}
+                                      >
+                                        <Star className={`w-3 h-3 ${isFav ? 'fill-amber-500 text-amber-500' : ''}`} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          if (confirm(`Delete sticker "${s.label}"?`)) {
+                                            handleDeleteCustomSticker(s.id);
+                                          }
+                                        }}
+                                        className="p-1 rounded-full bg-white/90 dark:bg-black/70 text-slate-400 hover:text-rose-500 shadow-xs cursor-pointer"
+                                        title="Delete sticker"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -3156,6 +3654,44 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <span>Message Details</span>
             </button>
 
+            {/* If message is a sticker, offer Save / Star to Favorites */}
+            {(contextMenu.msg.content.startsWith(STICKER_PREFIX) ||
+              contextMenu.msg.content.startsWith(STICKER_IMG_PREFIX)) && (() => {
+              const msg = contextMenu.msg;
+              let isFav = false;
+              if (msg.content.startsWith(STICKER_PREFIX)) {
+                const parts = msg.content.slice(STICKER_PREFIX.length, -2).split(':');
+                isFav = favoriteStickers.some(f => f.emoji === parts[0]);
+              } else if (msg.content.startsWith(STICKER_IMG_PREFIX)) {
+                const contentBody = msg.content.slice(STICKER_IMG_PREFIX.length, -2);
+                const firstColon = contentBody.indexOf(':');
+                const imgUrl = firstColon !== -1 ? contentBody.slice(0, firstColon) : contentBody;
+                isFav = favoriteStickers.some(f => f.imageUrl === imgUrl);
+              }
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (msg.content.startsWith(STICKER_PREFIX)) {
+                      const parts = msg.content.slice(STICKER_PREFIX.length, -2).split(':');
+                      handleToggleFavoriteSticker({ emoji: parts[0], label: parts[1] || 'Sticker', stickerType: 'fellowship' });
+                    } else if (msg.content.startsWith(STICKER_IMG_PREFIX)) {
+                      const contentBody = msg.content.slice(STICKER_IMG_PREFIX.length, -2);
+                      const firstColon = contentBody.indexOf(':');
+                      const imgUrl = firstColon !== -1 ? contentBody.slice(0, firstColon) : contentBody;
+                      const label = firstColon !== -1 ? contentBody.slice(firstColon + 1) : 'Sticker';
+                      handleToggleFavoriteSticker({ imageUrl: imgUrl, label, stickerType: 'custom' });
+                    }
+                    setContextMenu(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer text-amber-600 dark:text-amber-400"
+                >
+                  <Star className={`w-4 h-4 ${isFav ? 'fill-amber-500 text-amber-500' : 'text-amber-500'}`} />
+                  <span>{isFav ? 'Remove from Sticker Favorites' : 'Save to Sticker Favorites'}</span>
+                </button>
+              );
+            })()}
+
             <button
               type="button"
               onClick={() => {
@@ -3338,6 +3874,70 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* =========================================================================
+          GROUP INFO & SETTINGS MODAL (TELEGRAM / WHATSAPP STYLE)
+      ========================================================================= */}
+      <GroupInfoModal
+        isOpen={isGroupInfoModalOpen}
+        onClose={() => setIsGroupInfoModalOpen(false)}
+        groupId={officialGroup?.id || 'fni_official_community'}
+        group={officialGroup}
+        onGroupUpdated={updatedGroup => setOfficialGroup(updatedGroup)}
+        messages={communityMessages}
+        allMembers={allMembers}
+        tutorList={tutorList}
+        currentUser={currentUser}
+        isAdmin={isAdmin}
+        onStartVoiceCall={handleStartVoiceCall}
+        onStartVideoCall={handleStartVideoCall}
+        onOpenMessageSearch={() => {
+          setIsGroupInfoModalOpen(false);
+        }}
+        onSelectMemberProfile={m => {
+          setIsGroupInfoModalOpen(false);
+          setSelectedUserProfile({
+            id: m.id,
+            fullName: m.full_name || m.name,
+            role: m.role,
+            avatarUrl: m.avatar_url || m.photo_url,
+            cellName: m.cell_name || m.cell,
+            phone: m.phone_number || m.phone,
+            email: m.email,
+          });
+        }}
+        onExitGroup={() => {
+          setIsGroupInfoModalOpen(false);
+          handleBackToHome();
+        }}
+        onDeleteGroup={() => {
+          setIsGroupInfoModalOpen(false);
+          handleBackToHome();
+        }}
+      />
+
+      {/* =========================================================================
+          CUSTOM STICKER CREATOR MODAL
+      ========================================================================= */}
+      <StickerCreatorModal
+        isOpen={isStickerCreatorOpen}
+        onClose={() => setIsStickerCreatorOpen(false)}
+        onSaveSticker={async newSticker => {
+          if (!currentUser?.id) return;
+          const res = await MessagingService.saveUserCustomSticker(currentUser.id, newSticker);
+          if (res.success && res.sticker) {
+            setUserCustomStickers(prev => [res.sticker!, ...prev.filter(s => s.id !== res.sticker!.id)]);
+            setFavoriteStickers(MessagingService.getFavoriteStickers(currentUser.id));
+          }
+        }}
+        onSendStickerImmediately={async newSticker => {
+          if (newSticker.imageUrl) {
+            await handleSendCustomSticker({ imageUrl: newSticker.imageUrl, label: newSticker.label });
+          } else if (newSticker.emoji) {
+            await handleSendSticker({ emoji: newSticker.emoji, label: newSticker.label });
+          }
+        }}
+      />
     </div>
   );
 };

@@ -512,6 +512,37 @@ export interface MessageReactionParticipant {
   createdAt: string;
 }
 
+export interface GroupPermissions {
+  send_messages: 'all' | 'admins';
+  send_media: 'all' | 'admins';
+  send_docs: 'all' | 'admins';
+  send_links: 'all' | 'admins';
+  add_members: 'all' | 'admins';
+  edit_group_info: 'all' | 'admins';
+  pin_messages: 'all' | 'admins_mods' | 'admins';
+  start_calls: 'all' | 'admins';
+}
+
+export interface UserGroupPreferences {
+  userId: string;
+  groupId: string;
+  isMuted: boolean;
+  mutedUntil?: string | null;
+  notifyMentions: boolean;
+  notifyAnnouncements: boolean;
+}
+
+export interface CustomSticker {
+  id: string;
+  userId?: string;
+  stickerType: 'custom' | 'favorite' | 'recent' | 'fellowship';
+  imageUrl?: string;
+  emoji?: string;
+  label: string;
+  usageCount?: number;
+  createdAt?: string;
+}
+
 export interface CommunityGroup {
   id: string;
   name: string;
@@ -529,6 +560,14 @@ export interface CommunityGroup {
   createdAt?: string;
   updated_at: string;
   updatedAt?: string;
+  permissions?: GroupPermissions;
+  announcement_mode?: boolean;
+  invite_code?: string;
+  require_approval?: boolean;
+  disappearing_messages?: string;
+  meeting_schedule?: string;
+  meeting_location?: string;
+  oversight_contact?: string;
 }
 
 export interface CommunityGroupMember {
