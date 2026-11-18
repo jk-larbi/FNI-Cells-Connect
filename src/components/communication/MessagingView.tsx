@@ -1685,7 +1685,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     } catch (error) {
       console.error('Could not stop voice recording:', error);
       setSendError('The recording could not be completed. Please try again.');
-      recorder.stream?.getTracks().forEach(track => track.stop());
+      stream?.getTracks().forEach(track => track.stop());
       mediaRecorderRef.current = null;
       setIsRecordingVoice(false);
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
