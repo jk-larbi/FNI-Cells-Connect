@@ -189,14 +189,36 @@ export class MessagingService {
     return SupabaseService.savePrivateChatPreference(viewerUid, '*', { clearedAt: new Date().toISOString(), deletedAt: null });
   }
 
-  static async clearCommunityHistory(viewerUid: string): Promise<boolean> {
+  static async clearCommunityHistory(viewerUid: string, forEveryone: boolean = false): Promise<boolean> {
     if (!supabase || !isSupabaseConfigured) return false;
-    const { error } = await supabase.from('community_chat_preferences').upsert(
-      { user_id: viewerUid, cleared_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-    if (error) { console.warn('Community history clear failed:', error.message); return false; }
-    return true;
+    try {
+      // 1. Try dedicated RPC
+      const { error: rpcError } = await supabase.rpc('fni_clear_community_chat_history', { p_for_everyone: forEveryone });
+      if (!rpcError) {
+        setStored(STORAGE_KEYS.COMMUNITY, []);
+        return true;
+      }
+
+      // 2. Direct fallback
+      if (forEveryone) {
+        await supabase
+          .from('community_messages')
+          .update({ deleted_for_everyone_at: new Date().toISOString() })
+          .is('deleted_for_everyone_at', null);
+      } else {
+        const { data: authData } = await supabase.auth.getUser();
+        const effectiveUid = authData.user?.id || viewerUid;
+        await supabase.from('community_chat_preferences').upsert(
+          { user_id: effectiveUid, cleared_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
+      }
+      setStored(STORAGE_KEYS.COMMUNITY, []);
+      return true;
+    } catch (e) {
+      console.warn('Community history clear failed:', e);
+      return false;
+    }
   }
 
   static async hideCommunityMessageForUser(viewerUid: string, messageId: string): Promise<boolean> {
@@ -412,11 +434,53 @@ export class MessagingService {
     return res;
   }
 
-  static async clearPrivateConversation(viewerUid: string, conversationId: string): Promise<boolean> {
-    return SupabaseService.savePrivateChatPreference(viewerUid, conversationId, {
-      clearedAt: new Date().toISOString(),
-      deletedAt: null,
-    });
+  static async clearPrivateConversation(viewerUid: string, conversationId: string, forEveryone: boolean = false): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+    try {
+      // 1. Try dedicated RPC
+      const { error: rpcError } = await supabase.rpc('fni_clear_private_chat_history', {
+        p_conversation_id: conversationId,
+        p_for_everyone: forEveryone,
+      });
+      if (!rpcError) {
+        // Clear local storage entries for this conversation
+        const stored = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
+        const filtered = stored.filter(m => !(
+          (m.senderUid === viewerUid && m.recipientUid === conversationId) ||
+          (m.senderUid === conversationId && m.recipientUid === viewerUid)
+        ));
+        setStored(STORAGE_KEYS.PRIVATE, filtered);
+        return true;
+      }
+
+      // 2. Direct fallback
+      const { data: authData } = await supabase.auth.getUser();
+      const effectiveUid = authData.user?.id || viewerUid;
+
+      if (forEveryone) {
+        await supabase
+          .from('private_messages')
+          .update({ deleted_for_everyone_at: new Date().toISOString() })
+          .is('deleted_for_everyone_at', null)
+          .or(`and(sender_uid.eq.${viewerUid},recipient_uid.eq.${conversationId}),and(sender_uid.eq.${conversationId},recipient_uid.eq.${viewerUid})`);
+      }
+
+      await SupabaseService.savePrivateChatPreference(effectiveUid, conversationId, {
+        clearedAt: new Date().toISOString(),
+        deletedAt: null,
+      });
+
+      const stored = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
+      const filtered = stored.filter(m => !(
+        (m.senderUid === viewerUid && m.recipientUid === conversationId) ||
+        (m.senderUid === conversationId && m.recipientUid === viewerUid)
+      ));
+      setStored(STORAGE_KEYS.PRIVATE, filtered);
+      return true;
+    } catch (e) {
+      console.warn('Private conversation clear failed:', e);
+      return false;
+    }
   }
 
   static async deletePrivateConversation(viewerUid: string, conversationId: string): Promise<boolean> {

@@ -211,7 +211,7 @@ export class CallSignalingService {
   }
 
   // ---------------------------------------------------------------------------
-  // 6. FETCH CALL HISTORY
+  // 6. FETCH & MANAGE CALL HISTORY
   // ---------------------------------------------------------------------------
   static async getCallHistory(userId: string): Promise<CallHistoryRecord[]> {
     if (!supabase) return [];
@@ -228,6 +228,49 @@ export class CallSignalingService {
     } catch (e) {
       console.warn('Failed to load call history:', e);
       return [];
+    }
+  }
+
+  static async clearCallHistory(userId: string): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      // 1. Try dedicated RPC
+      const { error: rpcError } = await supabase.rpc('fni_clear_call_history');
+      if (!rpcError) return true;
+
+      // 2. Direct delete fallback
+      const { error } = await supabase
+        .from('call_history')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn('Failed to clear call history:', e);
+      return false;
+    }
+  }
+
+  static async deleteCallRecord(recordId: string, userId: string): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      // 1. Try dedicated RPC
+      const { error: rpcError } = await supabase.rpc('fni_delete_call_record', { p_record_id: recordId });
+      if (!rpcError) return true;
+
+      // 2. Direct delete fallback
+      const { error } = await supabase
+        .from('call_history')
+        .delete()
+        .eq('id', recordId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn('Failed to delete call record:', e);
+      return false;
     }
   }
 

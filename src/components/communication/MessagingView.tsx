@@ -382,6 +382,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [deleteForBoth, setDeleteForBoth] = useState<boolean>(true);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  // Clear Chat History States
+  const [chatToClear, setChatToClear] = useState<{ id: string; name: string } | null>(null);
+  const [showClearChatModal, setShowClearChatModal] = useState<boolean>(false);
+  const [isClearingChat, setIsClearingChat] = useState<boolean>(false);
+  const [clearChatForEveryone, setClearChatForEveryone] = useState<boolean>(false);
+
   // DOM Refs
   const messageStreamRef = useRef<HTMLDivElement | null>(null);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -391,6 +397,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   useBackHandler(() => {
     if (contextMenu !== null) {
       setContextMenu(null);
+      return true;
+    }
+    if (showClearChatModal) {
+      setShowClearChatModal(false);
+      setChatToClear(null);
+      setClearChatForEveryone(false);
       return true;
     }
     if (deleteTargetMessage !== null) {
@@ -453,6 +465,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     return false;
   }, Boolean(
     contextMenu !== null ||
+    showClearChatModal ||
+    deleteTargetMessage !== null ||
     isPinnedModalOpen ||
     isReactionModalOpen ||
     isMessageDetailsModalOpen ||
@@ -1070,6 +1084,36 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       console.error('Failed to delete message:', err);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // FNI Clear Chat History Handler
+  const handleConfirmClearChat = async () => {
+    if (!currentUser?.id || !chatToClear) return;
+    setIsClearingChat(true);
+    try {
+      if (chatToClear.id === 'community') {
+        const ok = await MessagingService.clearCommunityHistory(currentUser.id, clearChatForEveryone);
+        if (ok && selectedChatId === 'community') {
+          setCommunityMessages([]);
+        }
+      } else {
+        const ok = await MessagingService.clearPrivateConversation(currentUser.id, chatToClear.id, clearChatForEveryone);
+        if (ok && selectedChatId === chatToClear.id) {
+          setPrivateMessages(prev => prev.filter(m => !(
+            (m.senderUid === currentUser.id && m.recipientUid === chatToClear.id) ||
+            (m.senderUid === chatToClear.id && m.recipientUid === currentUser.id)
+          )));
+        }
+      }
+      await loadActiveMessages();
+      setShowClearChatModal(false);
+      setChatToClear(null);
+      setClearChatForEveryone(false);
+    } catch (err: any) {
+      alert(err?.message || 'Could not clear chat history.');
+    } finally {
+      setIsClearingChat(false);
     }
   };
 
@@ -2301,6 +2345,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           </button>
                         </>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveChatActionMenuId(null);
+                          setChatToClear({ id: c.id, name: c.name });
+                          setClearChatForEveryone(false);
+                          setShowClearChatModal(true);
+                        }}
+                        className="w-full px-3 py-1.5 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold cursor-pointer border-t border-slate-100 dark:border-white/5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Clear History</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2775,9 +2833,22 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       type="button"
                       onClick={() => {
                         setShowChatOptionsMenu(false);
+                        setChatToClear({ id: selectedChatId || 'community', name: activeContact?.name || 'this conversation' });
+                        setClearChatForEveryone(false);
+                        setShowClearChatModal(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2.5 font-semibold text-rose-600 dark:text-rose-400 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4 text-rose-500" />
+                      <span>Clear Chat History</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowChatOptionsMenu(false);
                         handleBackToHome();
                       }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold text-rose-600"
+                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold text-slate-600 dark:text-slate-400"
                     >
                       <X className="w-4 h-4" />
                       <span>Close Conversation</span>
@@ -4292,6 +4363,81 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   <span>Deleting...</span>
                 ) : (
                   <span>{deleteForBoth ? 'Delete for Both' : 'Delete for Me'}</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          FNI CLEAR CHAT HISTORY MODAL (CLEAR FOR SELF VS CLEAR FOR EVERYONE)
+      ========================================================================= */}
+      {showClearChatModal && chatToClear && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white dark:bg-[#182533] rounded-3xl border border-slate-200/80 dark:border-white/10 max-w-sm w-full p-6 shadow-2xl space-y-4 animate-scaleIn text-slate-900 dark:text-white"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Clear chat history?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {chatToClear.id === 'community'
+                    ? 'FNI Community Fellowship'
+                    : `Chat with ${chatToClear.name}`}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Are you sure you want to clear message history for this chat? This action cannot be undone.
+            </p>
+
+            {/* Checkbox for "Also clear for everyone" if admin in community, or "Also delete for recipient" in private */}
+            {(chatToClear.id !== 'community' || isAdmin) && (
+              <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer text-xs select-none">
+                <input
+                  type="checkbox"
+                  checked={clearChatForEveryone}
+                  onChange={e => setClearChatForEveryone(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 dark:border-slate-600 dark:bg-slate-700 cursor-pointer"
+                />
+                <span className="font-medium text-slate-700 dark:text-slate-200">
+                  {chatToClear.id === 'community'
+                    ? 'Clear for everyone in fellowship (Admin)'
+                    : `Also delete messages for ${chatToClear.name}`}
+                </span>
+              </label>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+              <button
+                type="button"
+                disabled={isClearingChat}
+                onClick={() => {
+                  setShowClearChatModal(false);
+                  setChatToClear(null);
+                  setClearChatForEveryone(false);
+                }}
+                className="px-4 py-2 rounded-2xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isClearingChat}
+                onClick={handleConfirmClearChat}
+                className="px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              >
+                {isClearingChat ? (
+                  <span>Clearing...</span>
+                ) : (
+                  <span>{clearChatForEveryone ? 'Clear for Everyone' : 'Clear for Me'}</span>
                 )}
               </button>
             </div>

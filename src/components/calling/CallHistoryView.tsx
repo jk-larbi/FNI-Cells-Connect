@@ -18,6 +18,7 @@ import {
   User,
   Shield,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import { CreateMeetingModal } from './CreateMeetingModal';
 
@@ -30,6 +31,9 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
   const { startDirectCall } = useCall();
   const [history, setHistory] = useState<CallHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClearing, setIsClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'missed' | 'incoming' | 'outgoing'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
@@ -38,6 +42,10 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
 
   // Back handler support
   useBackHandler(() => {
+    if (showClearConfirm) {
+      setShowClearConfirm(false);
+      return true;
+    }
     if (isMeetingModalOpen) {
       setIsMeetingModalOpen(false);
       return true;
@@ -47,7 +55,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
       return true;
     }
     return false;
-  }, Boolean(isMeetingModalOpen || onBack));
+  }, Boolean(showClearConfirm || isMeetingModalOpen || onBack));
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -125,6 +133,41 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
     );
   };
 
+  const handleClearAllHistory = async () => {
+    if (!currentUser?.id) return;
+    setIsClearing(true);
+    try {
+      const ok = await CallSignalingService.clearCallHistory(currentUser.id);
+      if (ok) {
+        setHistory([]);
+        setShowClearConfirm(false);
+      } else {
+        alert('Could not clear call history. Please try again.');
+      }
+    } catch (e: any) {
+      alert(e?.message || 'Could not clear call history.');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!currentUser?.id) return;
+    setDeletingRecordId(recordId);
+    try {
+      const ok = await CallSignalingService.deleteCallRecord(recordId, currentUser.id);
+      if (ok) {
+        setHistory(prev => prev.filter(r => r.id !== recordId));
+      } else {
+        alert('Could not delete call record.');
+      }
+    } catch (e: any) {
+      alert(e?.message || 'Could not delete call record.');
+    } finally {
+      setDeletingRecordId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
       {/* Top Header */}
@@ -144,6 +187,18 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          {history.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(true)}
+              disabled={isClearing}
+              className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              title="Clear all call history"
+            >
+              <Trash2 className="w-4 h-4 text-rose-500" />
+              <span>{isClearing ? 'Clearing...' : 'Clear History'}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setIsMeetingModalOpen(true)}
@@ -327,14 +382,14 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
                     </div>
                   </div>
 
-                  {/* Right: Quick Action Buttons (Redial) */}
+                  {/* Right: Quick Action Buttons (Redial & Delete) */}
                   <div className="flex items-center gap-2 shrink-0">
                     {record.peer_id && (
                       <>
                         <button
                           type="button"
                           onClick={() => handleRedial(record, 'voice')}
-                          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
                           title="Call back (Voice)"
                         >
                           <Phone className="w-4 h-4" />
@@ -342,13 +397,22 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
                         <button
                           type="button"
                           onClick={() => handleRedial(record, 'video')}
-                          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
                           title="Call back (Video)"
                         >
                           <Video className="w-4 h-4" />
                         </button>
                       </>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRecord(record.id)}
+                      disabled={deletingRecordId === record.id}
+                      className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Delete call record"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               );
@@ -356,6 +420,41 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
           </div>
         )}
       </div>
+
+      {/* Clear Call History Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/70 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-[#162235] border border-slate-200 dark:border-white/10 shadow-2xl p-5 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Clear Call History?</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                This will remove all {history.length} call and meeting logs from your account. This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                disabled={isClearing}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleClearAllHistory}
+                disabled={isClearing}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {isClearing ? 'Clearing...' : 'Clear All'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Meeting Modal */}
       {isMeetingModalOpen && (
