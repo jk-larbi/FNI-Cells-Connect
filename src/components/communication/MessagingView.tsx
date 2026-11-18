@@ -6,12 +6,21 @@ import { MessagingService } from '../../services/messagingService';
 import { supabase } from '../../lib/supabase';
 import { CallHistoryView } from '../calling/CallHistoryView';
 import { CommunicationSettingsModal } from './CommunicationSettingsModal';
+import { MentionAutocompleteDropdown, MentionUser } from './MentionAutocompleteDropdown';
+import { PinnedMessagesModal } from './PinnedMessagesModal';
+import { ReactionDetailsModal } from './ReactionDetailsModal';
+import { MessageDetailsModal } from './MessageDetailsModal';
+import { ForwardMessageModal, ForwardDestination } from './ForwardMessageModal';
+import { UserProfileModal } from './UserProfileModal';
+import { OfficialGroupManagementModal } from './OfficialGroupManagementModal';
 import {
   PrivateMessage,
   CommunityMessage,
   MessageReply,
   ChatAttachment,
   ChatPoll,
+  UserPinnedChat,
+  CommunityGroup,
 } from '../../types';
 import {
   MessageSquare,
@@ -53,6 +62,13 @@ import {
   UserX,
   Sparkles,
   Shield,
+  Copy,
+  Forward,
+  Info,
+  ArrowUp,
+  ArrowDown,
+  ShieldCheck,
+  List,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -137,6 +153,49 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimerRef = useRef<any>(null);
 
+  // --- TELEGRAM-INSPIRED MESSAGING UPGRADE STATE ---
+  // Pinned Chats
+  const [userPinnedChats, setUserPinnedChats] = useState<UserPinnedChat[]>([]);
+  const [activeChatActionMenuId, setActiveChatActionMenuId] = useState<string | null>(null);
+
+  // Multi-Pinned Messages
+  const [activePinnedIndex, setActivePinnedIndex] = useState(0);
+  const [isPinnedModalOpen, setIsPinnedModalOpen] = useState(false);
+
+  // User Mentions (@)
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionStartIndex, setMentionStartIndex] = useState<number>(-1);
+  const [mentionedUids, setMentionedUids] = useState<string[]>([]);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<any | null>(null);
+
+  // Swipe to Reply
+  const [swipingMessageId, setSwipingMessageId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const touchStartXRef = useRef<number>(0);
+  const touchStartYRef = useRef<number>(0);
+
+  // Message Reactions & Details
+  const [isReactionModalOpen, setIsReactionModalOpen] = useState(false);
+  const [reactionModalMessageId, setReactionModalMessageId] = useState<string>('');
+  const [reactionModalEmoji, setReactionModalEmoji] = useState<string | undefined>(undefined);
+  const [isMessageDetailsModalOpen, setIsMessageDetailsModalOpen] = useState(false);
+  const [messageDetailsTarget, setMessageDetailsTarget] = useState<CommunityMessage | PrivateMessage | null>(null);
+
+  // Forwarding Messages
+  const [isForwardModalOpen, setIsForwardModalOpen] = useState(false);
+  const [forwardTargetMessage, setForwardTargetMessage] = useState<CommunityMessage | PrivateMessage | null>(null);
+
+  // Official Group Management
+  const [isOfficialGroupModalOpen, setIsOfficialGroupModalOpen] = useState(false);
+  const [officialGroup, setOfficialGroup] = useState<CommunityGroup | null>(null);
+
+  // Telegram Floating Context Menu
+  const [contextMenu, setContextMenu] = useState<{
+    msg: CommunityMessage | PrivateMessage;
+    x: number;
+    y: number;
+  } | null>(null);
+
   // Top Audio Player Bar (Image 1 PC Mode)
   const [activeAudioPlayer, setActiveAudioPlayer] = useState<{
     title: string;
@@ -164,11 +223,36 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const messageStreamRef = useRef<HTMLDivElement | null>(null);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Back button handler:
-  // 1. Closes modals if open
-  // 2. Returns from an open conversation to the Communication Hub Home Page
-  // 3. From the Communication Hub Home Page, returns to the previous view/dashboard
+  // Back button handler
   useBackHandler(() => {
+    if (contextMenu !== null) {
+      setContextMenu(null);
+      return true;
+    }
+    if (isPinnedModalOpen) {
+      setIsPinnedModalOpen(false);
+      return true;
+    }
+    if (isReactionModalOpen) {
+      setIsReactionModalOpen(false);
+      return true;
+    }
+    if (isMessageDetailsModalOpen) {
+      setIsMessageDetailsModalOpen(false);
+      return true;
+    }
+    if (isForwardModalOpen) {
+      setIsForwardModalOpen(false);
+      return true;
+    }
+    if (selectedUserProfile !== null) {
+      setSelectedUserProfile(null);
+      return true;
+    }
+    if (isOfficialGroupModalOpen) {
+      setIsOfficialGroupModalOpen(false);
+      return true;
+    }
     if (isSettingsModalOpen) {
       setIsSettingsModalOpen(false);
       return true;
@@ -191,7 +275,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       return true;
     }
     return false;
-  }, Boolean(isSettingsModalOpen || showCallHistoryModal || isPollModalOpen || selectedChatId !== null || onBack));
+  }, Boolean(
+    contextMenu !== null ||
+    isPinnedModalOpen ||
+    isReactionModalOpen ||
+    isMessageDetailsModalOpen ||
+    isForwardModalOpen ||
+    selectedUserProfile !== null ||
+    isOfficialGroupModalOpen ||
+    isSettingsModalOpen ||
+    showCallHistoryModal ||
+    isPollModalOpen ||
+    selectedChatId !== null ||
+    onBack
+  ));
 
   // Handle back from an open conversation
   const handleBackToHome = () => {
@@ -241,10 +338,33 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // ---------------------------------------------------------------------------
   // 1. INITIALIZATION & DIRECTORY LOADING
   // ---------------------------------------------------------------------------
+  const loadPinnedChats = async () => {
+    if (!currentUser?.id) return;
+    try {
+      const pins = await MessagingService.getUserPinnedChats(currentUser.id);
+      setUserPinnedChats(pins);
+    } catch (e) {
+      console.warn('Pinned chats load notice:', e);
+    }
+  };
+
+  const loadOfficialGroup = async () => {
+    try {
+      const group = await MessagingService.getOfficialCommunityGroup();
+      if (group) setOfficialGroup(group);
+    } catch (e) {
+      console.warn('Official group load notice:', e);
+    }
+  };
+
   useEffect(() => {
     async function loadDirectory() {
       try {
-        const directory = await MessagingService.getMemberDirectory();
+        const [directory] = await Promise.all([
+          MessagingService.getMemberDirectory(),
+          loadPinnedChats(),
+          loadOfficialGroup(),
+        ]);
         if (directory) {
           const eligible = directory.filter(
             m => m.role === 'tutor' || m.role === 'cell_leader' || m.role === 'admin' || m.role === 'super_admin'
@@ -259,6 +379,58 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
     loadDirectory();
   }, [currentUser?.id]);
+
+  const handleTogglePinChat = async (chatId: string) => {
+    if (!currentUser?.id) return;
+    const isPinned =
+      userPinnedChats.some(p => (p.chatId || (p as any).chat_id) === chatId) ||
+      (chatId === 'community' && userPinnedChats.length === 0);
+    if (isPinned) {
+      await MessagingService.unpinChat(currentUser.id, chatId);
+    } else {
+      await MessagingService.pinChat(currentUser.id, chatId, userPinnedChats.length);
+    }
+    const updated = await MessagingService.getUserPinnedChats(currentUser.id);
+    setUserPinnedChats(updated);
+    setActiveChatActionMenuId(null);
+  };
+
+  const handleMovePinnedChat = async (chatId: string, direction: 'up' | 'down') => {
+    if (!currentUser?.id) return;
+    let list = [...userPinnedChats];
+    if (list.length === 0) {
+      list = [
+        {
+          id: 'comm',
+          user_id: currentUser.id,
+          chat_id: 'community',
+          order_index: 0,
+          pinned_at: new Date().toISOString(),
+          userId: currentUser.id,
+          chatId: 'community',
+          orderIndex: 0,
+          pinnedAt: new Date().toISOString(),
+        },
+      ];
+    }
+    const sorted = [...list].sort(
+      (a, b) => (a.orderIndex ?? (a as any).order_index ?? 0) - (b.orderIndex ?? (b as any).order_index ?? 0)
+    );
+    const idx = sorted.findIndex(p => (p.chatId || (p as any).chat_id) === chatId);
+    if (idx === -1) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= sorted.length) return;
+
+    const temp = sorted[idx];
+    sorted[idx] = sorted[targetIdx];
+    sorted[targetIdx] = temp;
+
+    const orderedIds = sorted.map(p => p.chatId || (p as any).chat_id);
+    await MessagingService.reorderPinnedChats(currentUser.id, orderedIds);
+    const updated = await MessagingService.getUserPinnedChats(currentUser.id);
+    setUserPinnedChats(updated);
+    setActiveChatActionMenuId(null);
+  };
 
   // Deep linking sync
   useEffect(() => {
@@ -333,6 +505,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   }, [selectedChatId, communityMessages.length, privateMessages.length]);
 
+  // Candidates for @mention autocomplete
+  const mentionCandidates: MentionUser[] = useMemo(() => {
+    return tutorList.map(t => ({
+      id: t.id,
+      fullName: t.full_name || t.name || 'FNI Tutor',
+      cellName: t.cell_name || t.cell,
+      role: t.role,
+      avatarUrl: t.avatar_url || t.photo_url,
+    }));
+  }, [tutorList]);
+
   // ---------------------------------------------------------------------------
   // 3. CONTACT LIST GENERATION (TELEGRAM CHAT LIST)
   // Saved Messages is moved into Communication Settings per requirements
@@ -340,14 +523,25 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const contacts: ChatContact[] = useMemo(() => {
     const list: ChatContact[] = [];
 
-    // 1. Themelios Class - FNI (Fellowship Community Chat)
+    // Map personal pinned order
+    const pinnedMap = new Map<string, number>();
+    userPinnedChats.forEach((p, idx) => {
+      const cid = p.chatId || (p as any).chat_id;
+      const order = p.orderIndex ?? (p as any).order_index ?? idx;
+      pinnedMap.set(cid, order);
+    });
+
+    // 1. Official FNI Community Group
     const lastComm = communityMessages[communityMessages.length - 1];
+    const groupName = officialGroup?.name || 'Themelios Class - FNI Community';
+    const isCommPinned = pinnedMap.has('community') || userPinnedChats.length === 0;
+
     list.push({
       id: 'community',
-      name: 'Themelios Class - FNI',
-      role: 'Fellowship Community Forum',
-      cellName: 'All Cells & Leaders',
-      isPinned: true,
+      name: groupName,
+      role: 'Official Ministerial Community',
+      cellName: 'All Active Fellowship Tutors',
+      isPinned: isCommPinned,
       type: 'community',
       lastMessage: lastComm
         ? `${lastComm.senderName}: ${lastComm.content.slice(0, 42)}`
@@ -360,22 +554,38 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
     // 2. Registered Tutors & Leadership Direct Chats
     tutorList.forEach(peer => {
+      const isPeerPinned = pinnedMap.has(peer.id);
       list.push({
         id: peer.id,
-        name: peer.role === 'admin' || peer.role === 'super_admin' ? 'FNI Leadership Directorate' : peer.full_name,
+        name: peer.role === 'admin' || peer.role === 'super_admin' ? 'FNI Leadership Directorate' : (peer.full_name || peer.name),
         role: peer.role === 'admin' ? 'Church Administrator' : 'Fellowship Tutor',
         cellName: peer.cell_name || 'Cell Leader',
-        avatarUrl: peer.avatar_url,
+        avatarUrl: peer.avatar_url || peer.photo_url,
         isOnline: peer.is_active || true,
         type: 'direct',
+        isPinned: isPeerPinned,
         lastMessage: 'Tap to start direct private conversation',
         lastMessageTime: '',
         unreadCount: 0,
       });
     });
 
-    return list;
-  }, [communityMessages, tutorList]);
+    // Sort: pinned first (by order_index), then unpinned
+    return list.sort((a, b) => {
+      const aPinned = pinnedMap.has(a.id) || (a.id === 'community' && userPinnedChats.length === 0);
+      const bPinned = pinnedMap.has(b.id) || (b.id === 'community' && userPinnedChats.length === 0);
+      if (aPinned && bPinned) {
+        const orderA = pinnedMap.get(a.id) ?? (a.id === 'community' ? -1 : 999);
+        const orderB = pinnedMap.get(b.id) ?? (b.id === 'community' ? -1 : 999);
+        return orderA - orderB;
+      }
+      if (aPinned) return -1;
+      if (bPinned) return 1;
+      if (a.id === 'community') return -1;
+      if (b.id === 'community') return 1;
+      return 0;
+    });
+  }, [communityMessages, tutorList, userPinnedChats, officialGroup]);
 
   // Filtered contacts based on folder and search query
   const filteredContacts = useMemo(() => {
@@ -411,10 +621,138 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Active messages array
   const currentMessages = selectedChatId === 'community' ? communityMessages : privateMessages;
 
-  // Active pinned message in current conversation
-  const pinnedMessage = useMemo(() => {
-    return currentMessages.slice().reverse().find(m => m.isPinned);
+  // Active pinned messages in current conversation (Multiple pinned messages supported)
+  const allPinnedMessages = useMemo(() => {
+    return currentMessages.filter(m => m.isPinned);
   }, [currentMessages]);
+
+  useEffect(() => {
+    if (activePinnedIndex >= allPinnedMessages.length) {
+      setActivePinnedIndex(Math.max(0, allPinnedMessages.length - 1));
+    }
+  }, [allPinnedMessages.length]);
+
+  const currentPinnedBannerMessage = allPinnedMessages[activePinnedIndex] || null;
+
+  const handleCyclePinnedMessage = () => {
+    if (allPinnedMessages.length === 0) return;
+    const nextIdx = (activePinnedIndex + 1) % allPinnedMessages.length;
+    setActivePinnedIndex(nextIdx);
+    const targetMsg = allPinnedMessages[nextIdx];
+    if (targetMsg) scrollToMessageId(targetMsg.id);
+  };
+
+  // Composer Mention detection
+  const handleComposerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setInputText(text);
+
+    const cursorPos = e.target.selectionStart || 0;
+    const textBeforeCursor = text.substring(0, cursorPos);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (atIndex !== -1 && (atIndex === 0 || /\s/.test(textBeforeCursor[atIndex - 1]))) {
+      const query = textBeforeCursor.substring(atIndex + 1);
+      if (!/\s/.test(query)) {
+        setMentionQuery(query);
+        setMentionStartIndex(atIndex);
+        return;
+      }
+    }
+    setMentionQuery(null);
+  };
+
+  const handleSelectMention = (user: MentionUser) => {
+    if (mentionStartIndex === -1) return;
+    const cursorPos = composerInputRef.current?.selectionStart || (mentionStartIndex + (mentionQuery?.length || 0) + 1);
+    const before = inputText.substring(0, mentionStartIndex);
+    const after = inputText.substring(cursorPos);
+    const updated = `${before}@${user.fullName} ${after}`;
+    setInputText(updated);
+    if (!mentionedUids.includes(user.id)) {
+      setMentionedUids([...mentionedUids, user.id]);
+    }
+    setMentionQuery(null);
+    setTimeout(() => {
+      composerInputRef.current?.focus();
+    }, 50);
+  };
+
+  // Swipe to Reply touch handlers
+  const handleTouchStart = (msgId: string, e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+    setSwipingMessageId(msgId);
+    setSwipeOffset(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!swipingMessageId) return;
+    const diffX = e.touches[0].clientX - touchStartXRef.current;
+    const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
+    if (diffY > 30) {
+      setSwipeOffset(0);
+      return;
+    }
+    if (diffX < 0) {
+      setSwipeOffset(Math.max(-80, diffX));
+    }
+  };
+
+  const handleTouchEnd = (msg: CommunityMessage | PrivateMessage) => {
+    if (swipeOffset < -45) {
+      setReplyToMessage({
+        id: msg.id,
+        senderName: msg.senderName,
+        senderUid: msg.senderUid,
+        content: msg.content.slice(0, 100),
+      });
+      composerInputRef.current?.focus();
+    }
+    setSwipingMessageId(null);
+    setSwipeOffset(0);
+  };
+
+  // Context Menu trigger
+  const handleMessageContextMenu = (e: React.MouseEvent, msg: CommunityMessage | PrivateMessage) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const x = Math.min(e.clientX, window.innerWidth - 240);
+    const y = Math.min(e.clientY, window.innerHeight - 340);
+    setContextMenu({ msg, x, y });
+  };
+
+  // Forwarding execution
+  const handleForwardToTarget = async (dest: ForwardDestination) => {
+    if (!forwardTargetMessage || !currentUser?.id) return;
+    const forwardContent = `Forwarded message:\n"${forwardTargetMessage.content}"`;
+
+    if (dest.type === 'community') {
+      await MessagingService.sendCommunityMessage({
+        senderUid: currentUser.id,
+        senderName: currentUser.full_name || 'FNI Leader',
+        senderRole: currentUser.role,
+        cellName: currentUser.cell_name,
+        content: forwardContent,
+        attachments: forwardTargetMessage.attachments,
+      });
+    } else {
+      await MessagingService.sendPrivateMessage({
+        senderUid: currentUser.id,
+        senderName: currentUser.full_name || 'FNI Leader',
+        senderRole: currentUser.role,
+        recipientUid: dest.id,
+        recipientName: dest.name,
+        cellId: currentUser.cell_id,
+        cellName: currentUser.cell_name,
+        content: forwardContent,
+        attachments: forwardTargetMessage.attachments,
+      });
+    }
+    setIsForwardModalOpen(false);
+    setForwardTargetMessage(null);
+    await loadActiveMessages();
+  };
 
   // ---------------------------------------------------------------------------
   // 4. SENDING MESSAGES, MEDIA, STICKERS & POLLS
@@ -445,6 +783,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           content: text || (uploadedAttachments.length > 0 ? `Shared ${uploadedAttachments.length} file(s)` : ''),
           category: 'general',
           replyTo: replyToMessage || undefined,
+          mentions: mentionedUids.length > 0 ? mentionedUids : undefined,
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
         });
       } else {
@@ -461,6 +800,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           cellName: currentUser.cell_name,
           content: text || (uploadedAttachments.length > 0 ? `Shared ${uploadedAttachments.length} file(s)` : ''),
           replyTo: replyToMessage || undefined,
+          mentions: mentionedUids.length > 0 ? mentionedUids : undefined,
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
         });
       }
@@ -468,6 +808,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setInputText('');
       setStagedFiles([]);
       setReplyToMessage(null);
+      setMentionQuery(null);
+      setMentionedUids([]);
       await loadActiveMessages();
     } catch (err: any) {
       setSendError(err?.message || 'Message could not be sent.');
@@ -676,12 +1018,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // ---------------------------------------------------------------------------
   // 6. PINNING & UNPINNING
   // ---------------------------------------------------------------------------
-  const handleTogglePin = async (msg: CommunityMessage | PrivateMessage) => {
+  const handleTogglePin = async (msg: CommunityMessage | PrivateMessage, notify = false) => {
     setOpenMessageMenuId(null);
+    setContextMenu(null);
+    const pinnerDetails = {
+      uid: currentUser.id,
+      name: currentUser.full_name || 'FNI Leader',
+      content: msg.content,
+      recipientUid: 'recipientUid' in msg ? (msg.senderUid === currentUser.id ? msg.recipientUid : msg.senderUid) : undefined,
+    };
     if (selectedChatId === 'community') {
-      await MessagingService.setCommunityMessagePin(msg.id, !msg.isPinned);
+      await MessagingService.setCommunityMessagePin(msg.id, !msg.isPinned, notify, pinnerDetails);
     } else {
-      await MessagingService.setPrivateMessagePin(msg.id, currentUser.id, !msg.isPinned);
+      await MessagingService.setPrivateMessagePin(msg.id, currentUser.id, !msg.isPinned, notify, pinnerDetails);
     }
     await loadActiveMessages();
   };
@@ -689,6 +1038,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Reactions
   const handleAddReaction = async (msgId: string, emoji: string) => {
     setOpenMessageMenuId(null);
+    setContextMenu(null);
     if (selectedChatId === 'community') {
       await MessagingService.reactToCommunityMessage(msgId, emoji, currentUser.id, currentUser.full_name);
     } else {
@@ -793,7 +1143,60 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     return supabase?.storage.from('fni-chat-media').getPublicUrl(att.path).data.publicUrl || att.path;
   };
 
-  // Render Formatted Message Body
+  // Render Formatted Message Body with Clickable Mentions
+  const renderMessageTextWithMentions = (text: string) => {
+    if (!text) return null;
+    const mentionRegex = /@([A-Za-z0-9_.\- ]+?)(?=[.,!?:;]?(?:\s|$))/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      const matchedName = match[1].trim();
+      const member = allMembers.find(
+        m => (m.full_name || m.name || '').toLowerCase() === matchedName.toLowerCase()
+      );
+
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      if (member) {
+        parts.push(
+          <button
+            key={`mention-${match.index}`}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedUserProfile({
+                id: member.id,
+                fullName: member.full_name || member.name,
+                role: member.role,
+                avatarUrl: member.avatar_url || member.photo_url,
+                cellName: member.cell_name,
+                phone: member.phone_number || member.phone,
+                email: member.email,
+              });
+            }}
+            className="inline-flex items-center text-blue-600 dark:text-blue-400 font-bold hover:underline bg-blue-50/90 dark:bg-blue-900/40 px-1 py-0.2 rounded-md mx-0.5 cursor-pointer"
+          >
+            @{matchedName}
+          </button>
+        );
+      } else {
+        parts.push(match[0]);
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts;
+  };
+
   const renderMessageContent = (msg: CommunityMessage | PrivateMessage) => {
     if (msg.content.startsWith(POLL_PREFIX)) {
       return renderPollCard(msg.id, msg.content);
@@ -807,7 +1210,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         </div>
       );
     }
-    return <span className="whitespace-pre-wrap break-words">{msg.content}</span>;
+    return <span className="whitespace-pre-wrap break-words">{renderMessageTextWithMentions(msg.content)}</span>;
   };
 
   // Filtered tutors for Home Page discovery
@@ -927,20 +1330,21 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-white/5">
             {filteredContacts.map(c => {
               const isSelected = selectedChatId === c.id;
+              const isPinned = c.isPinned;
+              const isOfficialCommunity = c.id === 'community';
 
               return (
-                <button
+                <div
                   key={c.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedChatId(c.id);
-                    setMobileScreen('chat');
-                  }}
-                  className={`w-full flex items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
+                  className={`group relative w-full flex items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
                     isSelected
                       ? 'bg-blue-50 dark:bg-blue-950/40 border-l-4 border-l-blue-600'
                       : 'hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
+                  onClick={() => {
+                    setSelectedChatId(c.id);
+                    setMobileScreen('chat');
+                  }}
                 >
                   {/* Avatar Circle */}
                   <div className="relative shrink-0">
@@ -959,9 +1363,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   {/* Contact Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                        {c.name}
-                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                          {c.name}
+                        </span>
+                        {isOfficialCommunity && (
+                          <span title="Official FNI Community" className="shrink-0">
+                            <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+                          </span>
+                        )}
+                      </div>
                       <span className="text-[10px] text-slate-400 shrink-0 ml-1">
                         {c.lastMessageTime}
                       </span>
@@ -971,10 +1382,66 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                         {c.lastMessage}
                       </p>
-                      {c.isPinned && <Pin className="w-3 h-3 text-slate-400 shrink-0" />}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isPinned && (
+                          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300">
+                            <Pin className="w-2.5 h-2.5 fill-current" />
+                          </span>
+                        )}
+                        {/* Chat Options trigger */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveChatActionMenuId(activeChatActionMenuId === c.id ? null : c.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 transition-opacity"
+                          title="Chat Options"
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </button>
+
+                  {/* Dropdown Menu for Chat Actions (Pin / Move) */}
+                  {activeChatActionMenuId === c.id && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-2 top-10 z-30 w-44 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-xl py-1 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePinChat(c.id)}
+                        className="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2 font-semibold"
+                      >
+                        <Pin className="w-3.5 h-3.5 text-blue-500" />
+                        <span>{isPinned ? 'Unpin from Top' : 'Pin to Top'}</span>
+                      </button>
+
+                      {isPinned && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleMovePinnedChat(c.id, 'up')}
+                            className="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Move Up</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMovePinnedChat(c.id, 'down')}
+                            className="w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Move Down</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               );
             })}
 
@@ -1244,12 +1711,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </div>
 
                 <div className="min-w-0">
-                  <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                    {activeContact?.name || 'FNI Chat'}
-                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                      {activeContact?.name || 'FNI Chat'}
+                    </h3>
+                    {selectedChatId === 'community' && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20" title="Official Ministerial Community">
+                        <ShieldCheck className="w-3 h-3 text-amber-500" />
+                        <span>Official</span>
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400">
                     {activeContact?.type === 'community'
-                      ? `${allMembers.length || 12} members, active fellowship`
+                      ? `${allMembers.length || 12} active tutors enrolled`
                       : activeContact?.cellName || 'last seen recently'}
                   </p>
                 </div>
@@ -1284,7 +1759,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                 {/* Chat Options Dropdown */}
                 {showChatOptionsMenu && (
-                  <div className="absolute right-0 top-10 z-30 w-48 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-xl py-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn">
+                  <div className="absolute right-0 top-10 z-30 w-52 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-xl py-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn">
                     <button
                       type="button"
                       onClick={() => {
@@ -1307,6 +1782,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <Video className="w-4 h-4 text-blue-500" />
                       <span>Video Call</span>
                     </button>
+                    {isAdmin && selectedChatId === 'community' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowChatOptionsMenu(false);
+                          setIsOfficialGroupModalOpen(true);
+                        }}
+                        className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold text-amber-600 dark:text-amber-400"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Manage Official Group</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -1334,37 +1822,56 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             </div>
 
-            {/* Pinned Message Bar */}
-            {pinnedMessage && (
+            {/* Multi-Pinned Messages Bar */}
+            {allPinnedMessages.length > 0 && currentPinnedBannerMessage && (
               <div
-                onClick={() => scrollToMessageId(pinnedMessage.id)}
-                className="px-4 py-2 bg-white/90 dark:bg-[#182533]/95 backdrop-blur-xs border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-3 text-xs z-10 shadow-2xs cursor-pointer hover:bg-white dark:hover:bg-[#182533] transition-colors"
+                onClick={handleCyclePinnedMessage}
+                className="px-4 py-2 bg-white/90 dark:bg-[#182533]/95 backdrop-blur-xs border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-3 text-xs z-10 shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2938] transition-colors"
+                title="Tap to cycle through pinned messages"
               >
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-1 self-stretch rounded-full bg-blue-600 shrink-0" />
                   <Pin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <div className="min-w-0">
-                    <span className="font-bold text-[11px] text-blue-600 dark:text-blue-400 block">
-                      Pinned Message
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-[11px] text-blue-600 dark:text-blue-400 block">
+                        Pinned Message {allPinnedMessages.length > 1 ? `(${activePinnedIndex + 1}/${allPinnedMessages.length})` : ''}
+                      </span>
+                      {currentPinnedBannerMessage.pinnedByName && (
+                        <span className="text-[10px] text-slate-400">
+                          by {currentPinnedBannerMessage.pinnedByName}
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-slate-700 dark:text-slate-300 text-[11px]">
-                      {pinnedMessage.content.slice(0, 60)}
+                      {currentPinnedBannerMessage.content.slice(0, 65)}
                     </p>
                   </div>
                 </div>
-                {(isAdmin || pinnedMessage.senderUid === currentUser?.id) && (
-                  <button
-                    type="button"
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleTogglePin(pinnedMessage);
-                    }}
-                    className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600"
-                    title="Unpin message"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+
+                <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                  {allPinnedMessages.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsPinnedModalOpen(true)}
+                      className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-blue-600 text-[10px] font-bold flex items-center gap-1 px-1.5"
+                      title="View all pinned messages"
+                    >
+                      <List className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">All Pins</span>
+                    </button>
+                  )}
+                  {(isAdmin || currentPinnedBannerMessage.senderUid === currentUser?.id || selectedChatId !== 'community') && (
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePin(currentPinnedBannerMessage)}
+                      className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-rose-500"
+                      title="Unpin message"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1389,18 +1896,51 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     hour: '2-digit',
                     minute: '2-digit',
                   });
+                  const isSwiping = swipingMessageId === msg.id;
 
                   return (
                     <div
                       key={msg.id}
                       id={`msg-${msg.id}`}
-                      className={`group flex items-end gap-2 transition-all ${
+                      onTouchStart={e => handleTouchStart(msg.id, e)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={() => handleTouchEnd(msg)}
+                      onContextMenu={e => handleMessageContextMenu(e, msg)}
+                      className={`group relative flex items-end gap-2 select-none ${
                         isMine ? 'justify-end' : 'justify-start'
                       }`}
+                      style={{
+                        transform: isSwiping ? `translateX(${swipeOffset}px)` : 'none',
+                        transition: isSwiping ? 'none' : 'transform 0.2s ease',
+                      }}
                     >
+                      {/* Swipe to reply reveal indicator */}
+                      {isSwiping && swipeOffset < -20 && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md animate-scaleIn pointer-events-none z-10">
+                          <Reply className="w-4 h-4" />
+                        </div>
+                      )}
+
                       {/* Avatar for other users */}
                       {!isMine && (
-                        <div className="w-7 h-7 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-[10px] flex items-center justify-center shrink-0 mb-1 overflow-hidden">
+                        <div
+                          onClick={() => {
+                            const member = allMembers.find(m => m.id === msg.senderUid);
+                            if (member) {
+                              setSelectedUserProfile({
+                                id: member.id,
+                                fullName: member.full_name || member.name,
+                                role: member.role,
+                                avatarUrl: member.avatar_url || member.photo_url,
+                                cellName: member.cell_name,
+                                phone: member.phone_number || member.phone,
+                                email: member.email,
+                              });
+                            }
+                          }}
+                          className="w-7 h-7 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-[10px] flex items-center justify-center shrink-0 mb-1 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                          title="View user profile"
+                        >
                           {msg.senderName?.slice(0, 2).toUpperCase() || 'FN'}
                         </div>
                       )}
@@ -1413,8 +1953,24 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       >
                         {/* Sender header in community chats */}
                         {!isMine && selectedChatId === 'community' && (
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-black text-xs text-blue-600 dark:text-blue-400">
+                          <div
+                            onClick={() => {
+                              const member = allMembers.find(m => m.id === msg.senderUid);
+                              if (member) {
+                                setSelectedUserProfile({
+                                  id: member.id,
+                                  fullName: member.full_name || member.name,
+                                  role: member.role,
+                                  avatarUrl: member.avatar_url || member.photo_url,
+                                  cellName: member.cell_name,
+                                  phone: member.phone_number || member.phone,
+                                  email: member.email,
+                                });
+                              }
+                            }}
+                            className="flex items-center gap-2 mb-1 cursor-pointer"
+                          >
+                            <span className="font-black text-xs text-blue-600 dark:text-blue-400 hover:underline">
                               {msg.senderName}
                             </span>
                             {msg.cellName && (
@@ -1429,7 +1985,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         {msg.replyTo && (
                           <div
                             onClick={() => scrollToMessageId(msg.replyTo!.id)}
-                            className="mb-2 p-2 rounded-xl bg-black/5 dark:bg-black/20 border-l-4 border-blue-500 cursor-pointer text-[11px]"
+                            className="mb-2 p-2 rounded-xl bg-black/5 dark:bg-black/20 border-l-4 border-blue-500 cursor-pointer text-[11px] hover:bg-black/10 transition-colors"
                           >
                             <span className="font-bold text-blue-600 dark:text-blue-400 block">
                               {msg.replyTo.senderName}
@@ -1457,7 +2013,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => handlePlayAudio(fileUrl, att.name || 'Voice Note')}
-                                      className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
+                                      className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
                                     >
                                       <Play className="w-4 h-4 ml-0.5" />
                                     </button>
@@ -1498,6 +2054,55 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {renderMessageContent(msg)}
                         </div>
 
+                        {/* Telegram Reaction Pills */}
+                        {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5 pt-1">
+                            {Object.entries(msg.reactions).map(([emoji, userIds]) => {
+                              const hasMyReaction = currentUser?.id ? (userIds || []).includes(currentUser.id) : false;
+                              const count = (userIds || []).length;
+                              if (count === 0) return null;
+                              return (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddReaction(msg.id, emoji);
+                                  }}
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    setReactionModalMessageId(msg.id);
+                                    setReactionModalEmoji(emoji);
+                                    setIsReactionModalOpen(true);
+                                  }}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border transition-transform hover:scale-105 cursor-pointer ${
+                                    hasMyReaction
+                                      ? 'bg-blue-100 dark:bg-blue-950/70 border-blue-400 text-blue-700 dark:text-blue-300'
+                                      : 'bg-black/5 dark:bg-black/25 border-transparent text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                                  }`}
+                                  title="Click to toggle reaction, double-click for participants"
+                                >
+                                  <span>{emoji}</span>
+                                  <span className="text-[10px]">{count}</span>
+                                </button>
+                              );
+                            })}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReactionModalMessageId(msg.id);
+                                setReactionModalEmoji(undefined);
+                                setIsReactionModalOpen(true);
+                              }}
+                              className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1 py-0.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 font-semibold cursor-pointer"
+                              title="View reaction participants"
+                            >
+                              <Users className="w-3 h-3 inline mr-0.5" />
+                            </button>
+                          </div>
+                        )}
+
                         {/* Timestamp & Status info */}
                         <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70 select-none">
                           {msg.isPinned && <Pin className="w-2.5 h-2.5 mr-0.5" />}
@@ -1522,11 +2127,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             setReplyToMessage({
                               id: msg.id,
                               senderName: msg.senderName,
+                              senderUid: msg.senderUid,
                               content: msg.content.slice(0, 100),
                             });
                             composerInputRef.current?.focus();
                           }}
-                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white"
+                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
                           title="Reply"
                         >
                           <Reply className="w-3.5 h-3.5" />
@@ -1534,21 +2140,40 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleAddReaction(msg.id, '❤️')}
-                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white"
+                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
                           title="Heart"
                         >
                           ❤️
                         </button>
-                        {(isAdmin || msg.senderUid === currentUser?.id) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setForwardTargetMessage(msg);
+                            setIsForwardModalOpen(true);
+                          }}
+                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                          title="Forward message"
+                        >
+                          <Forward className="w-3.5 h-3.5" />
+                        </button>
+                        {(isAdmin || msg.senderUid === currentUser?.id || selectedChatId !== 'community') && (
                           <button
                             type="button"
                             onClick={() => handleTogglePin(msg)}
-                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white"
+                            className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
                             title={msg.isPinned ? 'Unpin' : 'Pin to top'}
                           >
                             <Pin className="w-3.5 h-3.5" />
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={e => handleMessageContextMenu(e, msg)}
+                          className="p-1 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs text-white cursor-pointer"
+                          title="More options"
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -1702,40 +2327,52 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   </button>
                 </div>
               ) : (
-                /* Signature Telegram composer input row */
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAttachmentMenu(v => !v)}
-                    className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer shrink-0"
-                    title="Attach file, photo or poll"
-                  >
-                    <Paperclip className="w-5 h-5" />
-                  </button>
-
-                  <div className="flex-1 rounded-full bg-slate-100 dark:bg-[#0c1421] border border-slate-200/80 dark:border-white/10 px-4 py-2 flex items-center gap-2">
-                    <textarea
-                      ref={composerInputRef}
-                      rows={1}
-                      value={inputText}
-                      onChange={e => setInputText(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      placeholder="Message"
-                      className="flex-1 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none max-h-24"
+                <div className="relative">
+                  {/* Floating Mention Autocomplete Dropdown */}
+                  {mentionQuery !== null && (
+                    <MentionAutocompleteDropdown
+                      isOpen={mentionQuery !== null}
+                      users={mentionCandidates}
+                      query={mentionQuery}
+                      onSelect={handleSelectMention}
+                      onClose={() => setMentionQuery(null)}
                     />
+                  )}
+
+                  {/* Signature Telegram composer input row */}
+                  <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setShowEmojiPicker(v => !v)}
-                      className="text-slate-400 hover:text-slate-600 dark:hover:text-white shrink-0 cursor-pointer"
+                      onClick={() => setShowAttachmentMenu(v => !v)}
+                      className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer shrink-0"
+                      title="Attach file, photo or poll"
                     >
-                      <Smile className="w-5 h-5" />
+                      <Paperclip className="w-5 h-5" />
                     </button>
-                  </div>
+
+                    <div className="flex-1 rounded-full bg-slate-100 dark:bg-[#0c1421] border border-slate-200/80 dark:border-white/10 px-4 py-2 flex items-center gap-2">
+                      <textarea
+                        ref={composerInputRef}
+                        rows={1}
+                        value={inputText}
+                        onChange={handleComposerChange}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                        placeholder="Message (type @ to mention a tutor)"
+                        className="flex-1 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none max-h-24"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojiPicker(v => !v)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-white shrink-0 cursor-pointer"
+                      >
+                        <Smile className="w-5 h-5" />
+                      </button>
+                    </div>
 
                   {inputText.trim() || stagedFiles.length > 0 ? (
                     <button
@@ -1756,7 +2393,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     </button>
                   )}
                 </form>
-              )}
+              </div>
+            )}
             </div>
           </div>
         )}
@@ -1917,6 +2555,214 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* =========================================================================
+          TELEGRAM FLOATING CONTEXT MENU
+      ========================================================================= */}
+      {contextMenu && (
+        <div
+          className="fixed inset-0 z-50 bg-black/10"
+          onClick={() => setContextMenu(null)}
+          onContextMenu={e => {
+            e.preventDefault();
+            setContextMenu(null);
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              left: Math.min(contextMenu.x, window.innerWidth - 240),
+              top: Math.min(contextMenu.y, window.innerHeight - 340),
+            }}
+            className="fixed z-50 w-56 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-2xl p-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn space-y-1"
+          >
+            {/* Quick Telegram Reaction Bar */}
+            <div className="flex items-center justify-between p-1.5 bg-slate-100 dark:bg-slate-800/60 rounded-xl overflow-x-auto">
+              {['👍', '❤️', '🔥', '😂', '👏', '🙏', '🎉', '🕊️', '💯'].map(emoji => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => handleAddReaction(contextMenu.msg.id, emoji)}
+                  className="hover:scale-125 transition-transform p-1 text-sm cursor-pointer"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setReplyToMessage({
+                  id: contextMenu.msg.id,
+                  senderName: contextMenu.msg.senderName,
+                  senderUid: contextMenu.msg.senderUid,
+                  content: contextMenu.msg.content.slice(0, 100),
+                });
+                setContextMenu(null);
+                composerInputRef.current?.focus();
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer"
+            >
+              <Reply className="w-4 h-4 text-blue-500" />
+              <span>Reply</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(contextMenu.msg.content);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer"
+            >
+              <Copy className="w-4 h-4 text-slate-500" />
+              <span>Copy Text</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setForwardTargetMessage(contextMenu.msg);
+                setIsForwardModalOpen(true);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer"
+            >
+              <Forward className="w-4 h-4 text-emerald-500" />
+              <span>Forward</span>
+            </button>
+
+            {(isAdmin || contextMenu.msg.senderUid === currentUser?.id || selectedChatId !== 'community') && (
+              <button
+                type="button"
+                onClick={() => {
+                  handleTogglePin(contextMenu.msg);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer"
+              >
+                <Pin className="w-4 h-4 text-amber-500" />
+                <span>{contextMenu.msg.isPinned ? 'Unpin Message' : 'Pin Message'}</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setMessageDetailsTarget(contextMenu.msg);
+                setIsMessageDetailsModalOpen(true);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer"
+            >
+              <Info className="w-4 h-4 text-purple-500" />
+              <span>Message Details</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          PINNED MESSAGES MODAL (BROWSE & UNPIN ALL)
+      ========================================================================= */}
+      <PinnedMessagesModal
+        isOpen={isPinnedModalOpen}
+        onClose={() => setIsPinnedModalOpen(false)}
+        pinnedMessages={allPinnedMessages}
+        conversationTitle={activeContact?.name || 'Conversation'}
+        canUnpin={isAdmin || selectedChatId !== 'community'}
+        onSelectMessage={(msgId: string) => scrollToMessageId(msgId)}
+        onUnpinMessage={(msgId: string) => {
+          const target = allPinnedMessages.find(m => m.id === msgId);
+          if (target) handleTogglePin(target);
+        }}
+      />
+
+      {/* =========================================================================
+          REACTION DETAILS MODAL (WHO REACTED WITH WHAT & WHEN)
+      ========================================================================= */}
+      <ReactionDetailsModal
+        isOpen={isReactionModalOpen}
+        onClose={() => setIsReactionModalOpen(false)}
+        messageId={reactionModalMessageId}
+        isCommunity={selectedChatId === 'community'}
+        initialEmoji={reactionModalEmoji}
+      />
+
+      {/* =========================================================================
+          MESSAGE DETAILS MODAL (STATUS, TIMESTAMPS, READ RECEIPTS)
+      ========================================================================= */}
+      <MessageDetailsModal
+        isOpen={isMessageDetailsModalOpen}
+        onClose={() => setIsMessageDetailsModalOpen(false)}
+        message={messageDetailsTarget}
+        isOutgoing={Boolean(messageDetailsTarget && messageDetailsTarget.senderUid === currentUser?.id)}
+        onForward={(msg) => {
+          setForwardTargetMessage(msg);
+          setIsForwardModalOpen(true);
+        }}
+        onCopy={(text: string) => navigator.clipboard.writeText(text)}
+      />
+
+      {/* =========================================================================
+          FORWARD MESSAGE MODAL
+      ========================================================================= */}
+      <ForwardMessageModal
+        isOpen={isForwardModalOpen}
+        onClose={() => {
+          setIsForwardModalOpen(false);
+          setForwardTargetMessage(null);
+        }}
+        message={forwardTargetMessage}
+        tutorList={tutorList}
+        onForwardToTarget={handleForwardToTarget}
+      />
+
+      {/* =========================================================================
+          USER PROFILE MODAL (CLICKABLE MENTIONS & AVATARS)
+      ========================================================================= */}
+      <UserProfileModal
+        isOpen={selectedUserProfile !== null}
+        onClose={() => setSelectedUserProfile(null)}
+        user={selectedUserProfile}
+        onStartPrivateChat={(tutorId: string) => {
+          setSelectedUserProfile(null);
+          setSelectedChatId(tutorId);
+          setMobileScreen('chat');
+        }}
+        onStartVoiceCall={(userId: string) => {
+          setSelectedUserProfile(null);
+          const targetUser = allMembers.find(m => m.id === userId) || tutorList.find(t => t.id === userId);
+          startDirectCall({
+            id: userId,
+            name: targetUser?.full_name || targetUser?.name || 'FNI Tutor',
+            avatar: targetUser?.avatar_url || targetUser?.photo_url,
+            cell: targetUser?.cell_name || targetUser?.cell,
+          }, 'voice');
+        }}
+        onStartVideoCall={(userId: string) => {
+          setSelectedUserProfile(null);
+          const targetUser = allMembers.find(m => m.id === userId) || tutorList.find(t => t.id === userId);
+          startDirectCall({
+            id: userId,
+            name: targetUser?.full_name || targetUser?.name || 'FNI Tutor',
+            avatar: targetUser?.avatar_url || targetUser?.photo_url,
+            cell: targetUser?.cell_name || targetUser?.cell,
+          }, 'video');
+        }}
+      />
+
+      {/* =========================================================================
+          OFFICIAL COMMUNITY GROUP MANAGEMENT MODAL (ADMIN ONLY)
+      ========================================================================= */}
+      <OfficialGroupManagementModal
+        isOpen={isOfficialGroupModalOpen}
+        onClose={() => setIsOfficialGroupModalOpen(false)}
+        onGroupChanged={async () => {
+          const grp = await MessagingService.getOfficialCommunityGroup();
+          setOfficialGroup(grp);
+        }}
+      />
     </div>
   );
 };

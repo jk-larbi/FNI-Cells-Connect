@@ -42,6 +42,11 @@ import {
   ReportingPeriod,
   SystemSettings,
   ReportStatus,
+  UserPinnedChat,
+  MessageReactionParticipant,
+  CommunityGroup,
+  CommunityGroupMember,
+  OfficialGroupHistoryRecord,
 } from '../types';
 
 // ==============================================================================
@@ -202,7 +207,12 @@ function mapPrivateMessageFromDb(row: any): PrivateMessage {
     replyTo: row.reply_to,
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
     reactions: {},
-    isPinned: false,
+    isPinned: Boolean(row.is_pinned),
+    pinnedAt: row.pinned_at || undefined,
+    pinnedBy: row.pinned_by || undefined,
+    pinnedByName: row.pinned_by_name || undefined,
+    pinnedNotify: Boolean(row.pinned_notify),
+    mentions: Array.isArray(row.mentions) ? row.mentions : [],
     deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
     editedAt: row.edited_at || undefined,
   };
@@ -227,6 +237,9 @@ function mapCommunityMessageFromDb(row: any): CommunityMessage {
     isPinned: Boolean(row.is_pinned),
     pinnedAt: row.pinned_at || undefined,
     pinnedBy: row.pinned_by || undefined,
+    pinnedByName: row.pinned_by_name || undefined,
+    pinnedNotify: Boolean(row.pinned_notify),
+    groupId: row.group_id || undefined,
   };
 }
 
@@ -1026,6 +1039,7 @@ export class SupabaseService {
       read_at: msg.readAt || null,
       reply_to: msg.replyTo || null,
       attachments: msg.attachments || [],
+      mentions: msg.mentions || [],
       deleted_for_everyone_at: msg.deletedForEveryoneAt || null,
     };
 
@@ -1065,22 +1079,34 @@ export class SupabaseService {
   ): Promise<boolean> {
     if (!this.isAvailable()) return false;
     try {
+      // Telegram-style: 1 active reaction per user per message
       const { data: existing, error: lookupError } = await supabase!
         .from('private_message_reactions')
-        .select('id')
+        .select('id, emoji')
         .eq('message_id', messageId)
         .eq('user_id', userId)
-        .eq('emoji', emoji)
         .maybeSingle();
       if (lookupError) throw lookupError;
       if (existing) {
-        const { error } = await supabase!
-          .from('private_message_reactions')
-          .delete()
-          .eq('id', existing.id);
-        if (error) throw error;
-        return true;
+        if (existing.emoji === emoji) {
+          // Toggle off: remove reaction
+          const { error } = await supabase!
+            .from('private_message_reactions')
+            .delete()
+            .eq('id', existing.id);
+          if (error) throw error;
+          return true;
+        } else {
+          // Replace with newly chosen emoji
+          const { error } = await supabase!
+            .from('private_message_reactions')
+            .update({ emoji, user_name: userName })
+            .eq('id', existing.id);
+          if (error) throw error;
+          return true;
+        }
       }
+      // Insert new reaction
       const { error } = await supabase!
         .from('private_message_reactions')
         .insert({ message_id: messageId, user_id: userId, user_name: userName, emoji });
@@ -1092,9 +1118,24 @@ export class SupabaseService {
     }
   }
 
-  static async setPrivateMessagePin(messageId: string, userId: string, pinned: boolean): Promise<boolean> {
+  static async setPrivateMessagePin(
+    messageId: string,
+    userId: string,
+    pinned: boolean
+  ): Promise<boolean> {
     if (!this.isAvailable()) return false;
     try {
+      // 1. Try modern RPC first
+      try {
+        await supabase!.rpc('set_private_message_pin', {
+          p_message_id: messageId,
+          p_pinned: pinned,
+        });
+      } catch (rpcErr) {
+        console.warn('RPC set_private_message_pin notice:', rpcErr);
+      }
+
+      // 2. Also keep private_message_pins table in sync
       if (pinned) {
         const { data: existing, error: lookupError } = await supabase!
           .from('private_message_pins')
@@ -1174,7 +1215,7 @@ export class SupabaseService {
 
   static async sendCommunityMessage(msg: CommunityMessage): Promise<boolean> {
     if (!this.isAvailable()) return false;
-    const payload = {
+    const payload: any = {
       id: msg.id,
       sender_uid: msg.senderUid,
       sender_name: msg.senderName,
@@ -1188,6 +1229,9 @@ export class SupabaseService {
       attachments: msg.attachments || [],
       deleted_for_everyone_at: msg.deletedForEveryoneAt || null,
     };
+    if (msg.groupId) {
+      payload.group_id = msg.groupId;
+    }
 
     try {
       const { error } = await supabase!.from('community_messages').insert(payload);
@@ -1222,23 +1266,34 @@ export class SupabaseService {
   ): Promise<boolean> {
     if (!this.isAvailable()) return false;
     try {
+      // Telegram-style: 1 active reaction per user per message
       const { data: existing, error: lookupError } = await supabase!
         .from('community_message_reactions')
-        .select('id')
+        .select('id, emoji')
         .eq('message_id', messageId)
         .eq('user_id', userId)
-        .eq('emoji', emoji)
         .maybeSingle();
       if (lookupError) return false;
 
       if (existing) {
-        const { error } = await supabase!
-          .from('community_message_reactions')
-          .delete()
-          .eq('id', existing.id);
-        return !error;
+        if (existing.emoji === emoji) {
+          // Toggle off: remove
+          const { error } = await supabase!
+            .from('community_message_reactions')
+            .delete()
+            .eq('id', existing.id);
+          return !error;
+        } else {
+          // Replace
+          const { error } = await supabase!
+            .from('community_message_reactions')
+            .update({ emoji, user_name: userName })
+            .eq('id', existing.id);
+          return !error;
+        }
       }
 
+      // Insert new
       const { error } = await supabase!
         .from('community_message_reactions')
         .insert({
@@ -1251,6 +1306,360 @@ export class SupabaseService {
     } catch (err) {
       console.warn('Community reaction sync notice:', err);
       return false;
+    }
+  }
+
+  static async setCommunityMessagePin(
+    messageId: string,
+    pinned: boolean,
+    notifyMembers?: boolean
+  ): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { error } = await supabase!.rpc('set_community_message_pin', {
+        p_message_id: messageId,
+        p_pinned: pinned,
+        p_notify: Boolean(notifyMembers),
+      });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('Community message pin update failed:', error);
+      return false;
+    }
+  }
+
+  static async getMessageReactionParticipants(
+    messageId: string,
+    isCommunity: boolean
+  ): Promise<MessageReactionParticipant[]> {
+    if (!this.isAvailable()) return [];
+    try {
+      const table = isCommunity ? 'community_message_reactions' : 'private_message_reactions';
+      const { data: reactions, error } = await supabase!
+        .from(table)
+        .select('id, message_id, user_id, user_name, emoji, created_at')
+        .eq('message_id', messageId);
+      if (error || !reactions) return [];
+
+      const userIds = [...new Set(reactions.map((r: any) => r.user_id))];
+      const profileMap = new Map<string, { avatarUrl?: string; role?: string }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase!
+          .from('profiles')
+          .select('id, photo_url, role')
+          .in('id', userIds);
+        (profiles || []).forEach((p: any) => {
+          profileMap.set(p.id, { avatarUrl: p.photo_url, role: p.role });
+        });
+      }
+
+      return reactions.map((r: any) => {
+        const prof = profileMap.get(r.user_id);
+        return {
+          id: r.id,
+          message_id: r.message_id,
+          user_id: r.user_id,
+          user_name: r.user_name || 'Member',
+          userId: r.user_id,
+          userName: r.user_name || 'Member',
+          avatarUrl: prof?.avatarUrl,
+          avatar_url: prof?.avatarUrl,
+          role: prof?.role,
+          emoji: r.emoji,
+          createdAt: r.created_at,
+          created_at: r.created_at,
+        };
+      });
+    } catch (err) {
+      console.warn('Could not fetch reaction participants:', err);
+      return [];
+    }
+  }
+
+  // --- User Pinned Chats ---
+  static async getUserPinnedChats(userId: string): Promise<UserPinnedChat[]> {
+    if (!this.isAvailable()) {
+      try {
+        const local = localStorage.getItem(`fni_pinned_chats_${userId}`);
+        return local ? JSON.parse(local) : [];
+      } catch {
+        return [];
+      }
+    }
+    try {
+      const { data, error } = await supabase!
+        .from('user_pinned_chats')
+        .select('*')
+        .eq('user_id', userId)
+        .order('order_index', { ascending: true })
+        .order('pinned_at', { ascending: false });
+      if (error) throw error;
+      const result: UserPinnedChat[] = (data || []).map((row: any) => ({
+        id: row.id,
+        user_id: row.user_id,
+        chat_id: row.chat_id,
+        order_index: row.order_index,
+        pinned_at: row.pinned_at,
+        userId: row.user_id,
+        chatId: row.chat_id,
+        orderIndex: row.order_index,
+        pinnedAt: row.pinned_at,
+      }));
+      try {
+        localStorage.setItem(`fni_pinned_chats_${userId}`, JSON.stringify(result));
+      } catch {}
+      return result;
+    } catch (err) {
+      console.warn('Could not load user pinned chats:', err);
+      try {
+        const local = localStorage.getItem(`fni_pinned_chats_${userId}`);
+        return local ? JSON.parse(local) : [];
+      } catch {
+        return [];
+      }
+    }
+  }
+
+  static async pinChat(userId: string, chatId: string, orderIndex?: number): Promise<boolean> {
+    try {
+      const currentPinned = await this.getUserPinnedChats(userId);
+      const nextIndex = orderIndex !== undefined ? orderIndex : currentPinned.length;
+      if (this.isAvailable()) {
+        const { error } = await supabase!
+          .from('user_pinned_chats')
+          .upsert(
+            {
+              user_id: userId,
+              chat_id: chatId,
+              order_index: nextIndex,
+              pinned_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id,chat_id' }
+          );
+        if (error) throw error;
+      }
+      const updated = currentPinned.filter(c => (c.chatId || c.chat_id) !== chatId);
+      updated.push({
+        id: `pin-${chatId}`,
+        user_id: userId,
+        chat_id: chatId,
+        order_index: nextIndex,
+        pinned_at: new Date().toISOString(),
+        userId,
+        chatId,
+        orderIndex: nextIndex,
+        pinnedAt: new Date().toISOString(),
+      });
+      localStorage.setItem(`fni_pinned_chats_${userId}`, JSON.stringify(updated));
+      return true;
+    } catch (err) {
+      console.warn('pinChat failed:', err);
+      return false;
+    }
+  }
+
+  static async unpinChat(userId: string, chatId: string): Promise<boolean> {
+    try {
+      if (this.isAvailable()) {
+        const { error } = await supabase!
+          .from('user_pinned_chats')
+          .delete()
+          .eq('user_id', userId)
+          .eq('chat_id', chatId);
+        if (error) throw error;
+      }
+      const current = await this.getUserPinnedChats(userId);
+      const updated = current.filter(c => (c.chatId || c.chat_id) !== chatId);
+      localStorage.setItem(`fni_pinned_chats_${userId}`, JSON.stringify(updated));
+      return true;
+    } catch (err) {
+      console.warn('unpinChat failed:', err);
+      return false;
+    }
+  }
+
+  static async reorderPinnedChats(
+    userId: string,
+    orderedChatIds: string[]
+  ): Promise<boolean> {
+    try {
+      if (this.isAvailable()) {
+        for (let idx = 0; idx < orderedChatIds.length; idx++) {
+          await supabase!
+            .from('user_pinned_chats')
+            .update({ order_index: idx })
+            .eq('user_id', userId)
+            .eq('chat_id', orderedChatIds[idx]);
+        }
+      }
+      const current = await this.getUserPinnedChats(userId);
+      const reordered = orderedChatIds.map((id, index) => {
+        const found = current.find(c => (c.chatId || c.chat_id) === id);
+        return found
+          ? { ...found, orderIndex: index, order_index: index }
+          : {
+              id: `pin-${id}`,
+              user_id: userId,
+              chat_id: id,
+              order_index: index,
+              pinned_at: new Date().toISOString(),
+              userId,
+              chatId: id,
+              orderIndex: index,
+              pinnedAt: new Date().toISOString(),
+            };
+      });
+      localStorage.setItem(`fni_pinned_chats_${userId}`, JSON.stringify(reordered));
+      return true;
+    } catch (err) {
+      console.warn('reorderPinnedChats failed:', err);
+      return false;
+    }
+  }
+
+  // --- Community Groups & Official Group Designation ---
+  static async getCommunityGroups(): Promise<CommunityGroup[]> {
+    if (!this.isAvailable()) {
+      return [{
+        id: 'themelios-community',
+        name: 'Themelios Class - FNI Community',
+        description: 'Official ministerial fellowship for all active FNI tutors and leaders',
+        is_official: true,
+        isOfficial: true,
+        category: 'official',
+        created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }];
+    }
+    try {
+      const { data, error } = await supabase!
+        .from('community_groups')
+        .select('*')
+        .order('is_official', { ascending: false })
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        avatar_url: row.avatar_url,
+        avatarUrl: row.avatar_url,
+        category: row.category,
+        is_official: Boolean(row.is_official),
+        isOfficial: Boolean(row.is_official),
+        created_by: row.created_by,
+        createdBy: row.created_by,
+        created_at: row.created_at,
+        createdAt: row.created_at,
+        updated_at: row.updated_at,
+        updatedAt: row.updated_at,
+      }));
+    } catch (err) {
+      console.warn('getCommunityGroups error:', err);
+      return [{
+        id: 'themelios-community',
+        name: 'Themelios Class - FNI Community',
+        description: 'Official ministerial fellowship for all active FNI tutors and leaders',
+        is_official: true,
+        isOfficial: true,
+        category: 'official',
+        created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }];
+    }
+  }
+
+  static async getOfficialCommunityGroup(): Promise<CommunityGroup | null> {
+    const groups = await this.getCommunityGroups();
+    return groups.find(g => g.is_official || g.isOfficial) || groups[0] || null;
+  }
+
+  static async getCommunityGroupMembers(groupId: string): Promise<CommunityGroupMember[]> {
+    if (!this.isAvailable()) return [];
+    try {
+      const { data, error } = await supabase!
+        .from('community_group_members')
+        .select('*')
+        .eq('group_id', groupId);
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        group_id: row.group_id,
+        groupId: row.group_id,
+        user_id: row.user_id,
+        userId: row.user_id,
+        role: row.role,
+        joined_at: row.joined_at,
+        joinedAt: row.joined_at,
+        is_active: Boolean(row.is_active),
+        isActive: Boolean(row.is_active),
+      }));
+    } catch (err) {
+      console.warn('getCommunityGroupMembers error:', err);
+      return [];
+    }
+  }
+
+  static async designateOfficialCommunityGroup(
+    newGroupId: string,
+    reason?: string
+  ): Promise<{ success: boolean; enrolledCount?: number; error?: string }> {
+    if (!this.isAvailable()) {
+      return { success: false, error: 'Database service unavailable' };
+    }
+    try {
+      const { data, error } = await supabase!.rpc('designate_official_community_group', {
+        p_new_group_id: newGroupId,
+        p_reason: reason || 'Administrative designation update',
+      });
+      if (error) throw error;
+      return {
+        success: true,
+        enrolledCount: data?.enrolledCount || 0,
+      };
+    } catch (err: any) {
+      console.error('designateOfficialCommunityGroup failed:', err);
+      return {
+        success: false,
+        error: err?.message || 'Failed to designate official community group',
+      };
+    }
+  }
+
+  static async getOfficialGroupHistory(): Promise<OfficialGroupHistoryRecord[]> {
+    if (!this.isAvailable()) return [];
+    try {
+      const { data, error } = await supabase!
+        .from('official_community_group_history')
+        .select('*')
+        .order('changed_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        previous_group_id: row.previous_group_id,
+        previousGroupId: row.previous_group_id,
+        previous_group_name: row.previous_group_name,
+        previousGroupName: row.previous_group_name,
+        new_group_id: row.new_group_id,
+        newGroupId: row.new_group_id,
+        new_group_name: row.new_group_name,
+        newGroupName: row.new_group_name,
+        changed_by_uid: row.changed_by_uid,
+        changedByUid: row.changed_by_uid,
+        changed_by_name: row.changed_by_name,
+        changedByName: row.changed_by_name,
+        changed_at: row.changed_at,
+        changedAt: row.changed_at,
+        reason: row.reason,
+      }));
+    } catch (err) {
+      console.warn('getOfficialGroupHistory error:', err);
+      return [];
     }
   }
 

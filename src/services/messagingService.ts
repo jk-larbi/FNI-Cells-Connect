@@ -1,6 +1,18 @@
 import { SupabaseService } from './supabaseService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { PrivateMessage, CommunityMessage, InvitationCode, UserRole, MessageReply, ChatAttachment } from '../types';
+import {
+  PrivateMessage,
+  CommunityMessage,
+  InvitationCode,
+  UserRole,
+  MessageReply,
+  ChatAttachment,
+  UserPinnedChat,
+  MessageReactionParticipant,
+  CommunityGroup,
+  CommunityGroupMember,
+  OfficialGroupHistoryRecord,
+} from '../types';
 import { AuthService } from './authService';
 import { CellService } from './cellService';
 
@@ -169,6 +181,7 @@ export class MessagingService {
     cellName?: string;
     content: string;
     replyTo?: MessageReply;
+    mentions?: string[];
     attachments?: ChatAttachment[];
   }): Promise<PrivateMessage> {
     if (data.recipientUid === 'admin' && data.senderRole !== 'tutor') {
@@ -199,6 +212,7 @@ export class MessagingService {
       createdAt: nowIso,
       isRead: false,
       replyTo: data.replyTo,
+      mentions: data.mentions || [],
       attachments: data.attachments || [],
     };
 
@@ -227,6 +241,34 @@ export class MessagingService {
         cellName: msg.cellName,
         content: msg.content,
       });
+
+      // Reply notification
+      if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
+        await NotificationService.notifyMessageReply({
+          messageId: msg.id,
+          senderUid: msg.senderUid,
+          senderName: msg.senderName,
+          recipientUid: data.replyTo.senderUid,
+          content: msg.content,
+          conversationTitle: 'Private Chat',
+        });
+      }
+
+      // Mention notifications
+      if (data.mentions && data.mentions.length > 0) {
+        for (const mentionUid of data.mentions) {
+          if (mentionUid !== data.senderUid) {
+            await NotificationService.notifyMention({
+              messageId: msg.id,
+              senderUid: msg.senderUid,
+              senderName: msg.senderName,
+              recipientUid: mentionUid,
+              content: msg.content,
+              conversationTitle: 'Private Chat',
+            });
+          }
+        }
+      }
     } catch (e) {
       console.warn('Private message notification dispatch notice:', e);
     }
@@ -301,8 +343,30 @@ export class MessagingService {
     return true;
   }
 
-  static async setPrivateMessagePin(messageId: string, userId: string, pinned: boolean): Promise<boolean> {
-    return SupabaseService.setPrivateMessagePin(messageId, userId, pinned);
+  static async setPrivateMessagePin(
+    messageId: string,
+    userId: string,
+    pinned: boolean,
+    notifyMembers = false,
+    pinnerDetails?: { uid: string; name: string; content?: string; recipientUid?: string }
+  ): Promise<boolean> {
+    const success = await SupabaseService.setPrivateMessagePin(messageId, userId, pinned);
+    if (success && pinned && notifyMembers && pinnerDetails?.recipientUid) {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyPinnedMessage({
+          messageId,
+          pinnerUid: pinnerDetails.uid,
+          pinnerName: pinnerDetails.name,
+          content: pinnerDetails.content || 'Pinned message',
+          conversationTitle: 'Private Chat',
+          targetUserId: pinnerDetails.recipientUid,
+        });
+      } catch (err) {
+        console.warn('Pinned notification dispatch notice:', err);
+      }
+    }
+    return success;
   }
 
   static async clearPrivateConversation(viewerUid: string, conversationId: string): Promise<boolean> {
@@ -439,6 +503,7 @@ export class MessagingService {
     category?: 'general' | 'announcement' | 'prayer_request' | 'testimony';
     replyTo?: MessageReply;
     mentions?: string[];
+    groupId?: string;
     attachments?: ChatAttachment[];
   }): Promise<CommunityMessage> {
     const id = `cmsg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -454,9 +519,10 @@ export class MessagingService {
       category: data.category || 'general',
       createdAt: nowIso,
       replyTo: data.replyTo,
-      mentions: data.mentions,
+      mentions: data.mentions || [],
       reactions: {},
       attachments: data.attachments || [],
+      groupId: data.groupId,
     };
 
     // A community post is only considered sent after the authoritative Supabase write succeeds.
@@ -483,6 +549,33 @@ export class MessagingService {
         content: msg.content,
         category: msg.category,
       });
+
+      if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
+        await NotificationService.notifyMessageReply({
+          messageId: msg.id,
+          senderUid: msg.senderUid,
+          senderName: msg.senderName,
+          recipientUid: data.replyTo.senderUid,
+          content: msg.content,
+          conversationTitle: 'Themelios Community',
+        });
+      }
+
+      if (data.mentions && data.mentions.length > 0) {
+        for (const mentionUid of data.mentions) {
+          if (mentionUid !== data.senderUid) {
+            await NotificationService.notifyMention({
+              messageId: msg.id,
+              senderUid: msg.senderUid,
+              senderName: msg.senderName,
+              recipientUid: mentionUid,
+              content: msg.content,
+              conversationTitle: 'Themelios Community',
+            });
+          }
+        }
+      }
+
       if (msg.category === 'announcement' && msg.senderRole !== 'tutor') {
         const { EmailNotificationService } = await import('./emailNotificationService');
         await EmailNotificationService.announcementPublished(msg.id);
@@ -494,16 +587,28 @@ export class MessagingService {
     return msg;
   }
 
-  static async setCommunityMessagePin(messageId: string, pinned: boolean): Promise<boolean> {
-    if (!supabase || !isSupabaseConfigured) return false;
-    try {
-      const { error } = await supabase.rpc('set_community_message_pin', { p_message_id: messageId, p_pinned: pinned });
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.warn('Community message pin update failed:', error);
-      return false;
+  static async setCommunityMessagePin(
+    messageId: string,
+    pinned: boolean,
+    notifyMembers = false,
+    pinnerDetails?: { uid: string; name: string; content?: string }
+  ): Promise<boolean> {
+    const success = await SupabaseService.setCommunityMessagePin(messageId, pinned, notifyMembers);
+    if (success && pinned && notifyMembers && pinnerDetails) {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyPinnedMessage({
+          messageId,
+          pinnerUid: pinnerDetails.uid,
+          pinnerName: pinnerDetails.name,
+          content: pinnerDetails.content || 'Pinned message',
+          conversationTitle: 'Themelios Community',
+        });
+      } catch (err) {
+        console.warn('Pinned notification dispatch notice:', err);
+      }
     }
+    return success;
   }
 
   static async getCommunityMessages(viewerUid?: string): Promise<CommunityMessage[]> {
@@ -684,5 +789,70 @@ export class MessagingService {
   static checkCommunityAccess(_tutorUid?: string, _userRole?: UserRole): boolean {
     // Open access for all authenticated fellowship tutors, leaders and users
     return true;
+  }
+
+  // --- Reaction Participants ---
+  static async getMessageReactionParticipants(
+    messageId: string,
+    isCommunity: boolean
+  ): Promise<MessageReactionParticipant[]> {
+    return SupabaseService.getMessageReactionParticipants(messageId, isCommunity);
+  }
+
+  // --- User Pinned Chats ---
+  static async getUserPinnedChats(userId: string): Promise<UserPinnedChat[]> {
+    return SupabaseService.getUserPinnedChats(userId);
+  }
+
+  static async pinChat(userId: string, chatId: string, orderIndex?: number): Promise<boolean> {
+    return SupabaseService.pinChat(userId, chatId, orderIndex);
+  }
+
+  static async unpinChat(userId: string, chatId: string): Promise<boolean> {
+    return SupabaseService.unpinChat(userId, chatId);
+  }
+
+  static async reorderPinnedChats(userId: string, orderedChatIds: string[]): Promise<boolean> {
+    return SupabaseService.reorderPinnedChats(userId, orderedChatIds);
+  }
+
+  // --- Official Community Groups ---
+  static async getCommunityGroups(): Promise<CommunityGroup[]> {
+    return SupabaseService.getCommunityGroups();
+  }
+
+  static async getOfficialCommunityGroup(): Promise<CommunityGroup | null> {
+    return SupabaseService.getOfficialCommunityGroup();
+  }
+
+  static async getCommunityGroupMembers(groupId: string): Promise<CommunityGroupMember[]> {
+    return SupabaseService.getCommunityGroupMembers(groupId);
+  }
+
+  static async designateOfficialCommunityGroup(
+    newGroupId: string,
+    reason?: string,
+    adminName = 'System Administrator'
+  ): Promise<{ success: boolean; enrolledCount?: number; error?: string }> {
+    const res = await SupabaseService.designateOfficialCommunityGroup(newGroupId, reason);
+    if (res.success) {
+      try {
+        const groups = await this.getCommunityGroups();
+        const target = groups.find(g => g.id === newGroupId);
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyOfficialGroupChange({
+          groupName: target?.name || 'New Official Group',
+          adminName,
+          reason,
+        });
+      } catch (err) {
+        console.warn('Failed to dispatch official group change notification:', err);
+      }
+    }
+    return res;
+  }
+
+  static async getOfficialGroupHistory(): Promise<OfficialGroupHistoryRecord[]> {
+    return SupabaseService.getOfficialGroupHistory();
   }
 }

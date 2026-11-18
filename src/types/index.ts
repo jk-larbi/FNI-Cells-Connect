@@ -401,6 +401,7 @@ export interface OfferingAggregation {
 export interface MessageReply {
   id: string;
   senderName: string;
+  senderUid?: string;
   content: string;
 }
 
@@ -448,8 +449,13 @@ export interface PrivateMessage {
   attachments?: ChatAttachment[];
   reactions?: { [emoji: string]: string[] };
   isPinned?: boolean;
+  pinnedAt?: string;
+  pinnedBy?: string;
+  pinnedByName?: string;
+  pinnedNotify?: boolean;
   deletedForEveryoneAt?: string;
   editedAt?: string;
+  mentions?: string[];
   poll?: ChatPoll;
 }
 
@@ -471,7 +477,88 @@ export interface CommunityMessage {
   isPinned?: boolean;
   pinnedAt?: string;
   pinnedBy?: string;
+  pinnedByName?: string;
+  pinnedNotify?: boolean;
+  groupId?: string;
   poll?: ChatPoll;
+}
+
+export interface UserPinnedChat {
+  id: string;
+  user_id: string;
+  chat_id: string;
+  order_index: number;
+  pinned_at: string;
+  userId?: string;
+  chatId?: string;
+  orderIndex?: number;
+  pinnedAt?: string;
+}
+
+export interface MessageReactionParticipant {
+  id?: string;
+  message_id?: string;
+  user_id?: string;
+  user_name?: string;
+  emoji: string;
+  created_at?: string;
+  userId: string;
+  userName: string;
+  avatarUrl?: string;
+  cellName?: string;
+  role?: string;
+  createdAt: string;
+}
+
+export interface CommunityGroup {
+  id: string;
+  name: string;
+  description?: string;
+  avatar_url?: string;
+  avatarUrl?: string;
+  category?: string;
+  is_official: boolean;
+  isOfficial?: boolean;
+  member_count?: number;
+  memberCount?: number;
+  created_by?: string;
+  createdBy?: string;
+  created_at: string;
+  createdAt?: string;
+  updated_at: string;
+  updatedAt?: string;
+}
+
+export interface CommunityGroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: 'admin' | 'moderator' | 'member' | string;
+  joined_at: string;
+  is_active: boolean;
+  groupId?: string;
+  userId?: string;
+  joinedAt?: string;
+  isActive?: boolean;
+}
+
+export interface OfficialGroupHistoryRecord {
+  id: string;
+  previous_group_id: string;
+  previous_group_name: string;
+  new_group_id: string;
+  new_group_name: string;
+  changed_by_uid: string;
+  changed_by_name: string;
+  changed_at: string;
+  reason?: string;
+  previousGroupId?: string;
+  previousGroupName?: string;
+  newGroupId?: string;
+  newGroupName?: string;
+  changedByUid?: string;
+  changedByName?: string;
+  changedAt?: string;
 }
 
 export interface InvitationCode {

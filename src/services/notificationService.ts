@@ -544,6 +544,125 @@ export class NotificationService {
   }
 
   /**
+   * 4b. TELEGRAM-STYLE MENTION NOTIFICATION
+   */
+  static async notifyMention(params: {
+    messageId: string;
+    senderUid: string;
+    senderName: string;
+    recipientUid: string;
+    content: string;
+    conversationTitle?: string;
+  }): Promise<void> {
+    if (params.senderUid === params.recipientUid) return; // Prevent self-mention alert
+    const idempotencyKey = `notif-mention-${params.messageId}-${params.recipientUid}`;
+    const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
+    await this.createNotification({
+      id: idempotencyKey,
+      idempotencyKey,
+      userId: params.recipientUid,
+      title: `${params.senderName} mentioned you in ${params.conversationTitle || 'chat'}`,
+      message: `"${preview}"`,
+      type: 'message_mention',
+      channel: 'in_app',
+      metadata: {
+        messageId: params.messageId,
+        senderUid: params.senderUid,
+        senderName: params.senderName,
+        category: 'messages',
+        targetTab: 'messages',
+      },
+    });
+  }
+
+  /**
+   * 4c. TELEGRAM-STYLE MESSAGE REPLY NOTIFICATION
+   */
+  static async notifyMessageReply(params: {
+    messageId: string;
+    senderUid: string;
+    senderName: string;
+    recipientUid: string;
+    content: string;
+    conversationTitle?: string;
+  }): Promise<void> {
+    if (params.senderUid === params.recipientUid) return;
+    const idempotencyKey = `notif-reply-${params.messageId}-${params.recipientUid}`;
+    const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
+    await this.createNotification({
+      id: idempotencyKey,
+      idempotencyKey,
+      userId: params.recipientUid,
+      title: `${params.senderName} replied to your message in ${params.conversationTitle || 'chat'}`,
+      message: `"${preview}"`,
+      type: 'message_reply',
+      channel: 'in_app',
+      metadata: {
+        messageId: params.messageId,
+        senderUid: params.senderUid,
+        senderName: params.senderName,
+        category: 'messages',
+        targetTab: 'messages',
+      },
+    });
+  }
+
+  /**
+   * 4d. PINNED MESSAGE NOTIFICATION (When pinner opts to notify members)
+   */
+  static async notifyPinnedMessage(params: {
+    messageId: string;
+    pinnerUid: string;
+    pinnerName: string;
+    content: string;
+    conversationTitle: string;
+    targetUserId?: string; // If private chat, single recipient; if omitted/undefined, 'all'
+  }): Promise<void> {
+    const idempotencyKey = `notif-pin-${params.messageId}-${Date.now()}`;
+    const preview = params.content.length > 90 ? `${params.content.substring(0, 90)}...` : params.content;
+    await this.createNotification({
+      id: idempotencyKey,
+      idempotencyKey,
+      userId: params.targetUserId || 'all',
+      title: `📌 ${params.pinnerName} pinned a message in ${params.conversationTitle}`,
+      message: `"${preview}"`,
+      type: 'community_message',
+      channel: 'in_app',
+      metadata: {
+        messageId: params.messageId,
+        pinnerUid: params.pinnerUid,
+        pinnerName: params.pinnerName,
+        category: 'messages',
+        targetTab: 'messages',
+      },
+    });
+  }
+
+  /**
+   * 4e. OFFICIAL COMMUNITY GROUP DESIGNATION CHANGE NOTIFICATION
+   */
+  static async notifyOfficialGroupChange(params: {
+    groupName: string;
+    adminName: string;
+    reason?: string;
+  }): Promise<void> {
+    const idempotencyKey = `notif-official-group-${Date.now()}`;
+    await this.createNotification({
+      id: idempotencyKey,
+      idempotencyKey,
+      userId: 'all',
+      title: `Official FNI Community Group Updated`,
+      message: `${params.adminName} designated "${params.groupName}" as the official community fellowship group for all tutors. ${params.reason ? `Reason: ${params.reason}` : ''}`,
+      type: 'announcement',
+      channel: 'in_app',
+      metadata: {
+        category: 'messages',
+        targetTab: 'messages',
+      },
+    });
+  }
+
+  /**
    * 5. ADMIN → TUTOR: Teaching Notes Publication
    */
   static async notifyTeachingNotes(params: {
