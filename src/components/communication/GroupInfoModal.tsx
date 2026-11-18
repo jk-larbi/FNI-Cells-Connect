@@ -34,7 +34,6 @@ import {
   UserCheck,
   UserPlus,
   UserMinus,
-  Sparkles,
   Info,
   Sliders,
   CheckSquare,
@@ -766,7 +765,7 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                      <Sparkles className="w-5 h-5" />
+                      <Calendar className="w-5 h-5" />
                     </div>
                     <div>
                       <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Cell Fellowship & Meeting Schedule</h4>

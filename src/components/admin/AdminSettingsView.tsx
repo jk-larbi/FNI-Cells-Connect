@@ -24,7 +24,7 @@ import {
   History,
   User,
   Wheat,
-  Sparkles,
+  Award,
   Sliders,
 } from 'lucide-react';
 
@@ -249,29 +249,30 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
             </form>
           </div>
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
-            {/* Header Banner */}
-            <div className="p-6 bg-gradient-to-r from-[#142B4A]/5 via-white to-[#C6A45A]/5 border-b border-[#E3E8EF]">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white flex items-center justify-center shrink-0 shadow-sm ring-4 ring-[#142B4A]/10">
-                    <Compass className="w-5 h-5 text-[#C6A45A]" />
+          <div className="bg-white dark:bg-[#111c2d] rounded-2xl border border-[#E3E8EF] dark:border-white/10 shadow-sm overflow-hidden">
+            {/* Header Banner - High contrast luxury FNI executive styling */}
+            <div className="p-6 bg-gradient-to-r from-[#142B4A]/10 via-[#142B4A]/[0.03] to-[#C6A45A]/15 dark:from-[#142B4A]/60 dark:via-[#162235] dark:to-[#C6A45A]/20 border-b border-[#E3E8EF] dark:border-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#142B4A] to-[#203D63] text-white flex items-center justify-center shrink-0 shadow-md ring-4 ring-[#C6A45A]/20">
+                    <Compass className="w-6 h-6 text-[#C6A45A]" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold text-[#142B4A]">FNI Vision & Mission</h2>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#C6A45A] bg-[#C6A45A]/10 px-2 py-0.5 rounded-full border border-[#C6A45A]/20">
-                        <Sparkles className="w-3 h-3" /> Core Foundation
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg font-bold text-[#142B4A] dark:text-white">FNI Vision & Mission</h2>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#C6A45A] bg-[#C6A45A]/15 dark:bg-[#C6A45A]/25 px-2.5 py-0.5 rounded-full border border-[#C6A45A]/30">
+                        <Award className="w-3.5 h-3.5 text-[#C6A45A]" /> Core Foundation
                       </span>
                     </div>
-                    <p className="text-xs text-[#667085] mt-0.5">
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 font-normal leading-relaxed">
                       Apostolic mandate, spiritual vision, mission statement, and ministry harvest targets
                     </p>
                   </div>
                 </div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-[#475467] text-[11px] font-medium border border-slate-200 self-start sm:self-auto">
-                  <span className="text-[#C6A45A] font-bold">Habakkuk 2:2</span>
-                  <span>• Write the vision plainly</span>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-medium border border-slate-200/80 dark:border-white/10 shadow-2xs self-start sm:self-auto shrink-0">
+                  <span className="text-[#C6A45A] font-extrabold">Habakkuk 2:2</span>
+                  <span className="text-slate-400">•</span>
+                  <span>Write the vision plainly</span>
                 </div>
               </div>
             </div>
@@ -285,19 +286,19 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               )}
 
               {/* FNI Vision */}
-              <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-2 focus-within:border-[#142B4A] focus-within:ring-2 focus-within:ring-[#142B4A]/10 transition-all">
+              <div className="rounded-xl border border-[#E3E8EF] dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/[0.03] space-y-2 focus-within:border-[#142B4A] dark:focus-within:border-[#C6A45A] focus-within:ring-2 focus-within:ring-[#142B4A]/10 transition-all">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 font-bold text-[#142B4A]">
-                    <div className="w-6 h-6 rounded-lg bg-[#142B4A]/10 flex items-center justify-center text-[#142B4A]">
+                  <div className="flex items-center gap-2 font-bold text-[#142B4A] dark:text-white">
+                    <div className="w-6 h-6 rounded-lg bg-[#142B4A]/10 dark:bg-[#C6A45A]/20 flex items-center justify-center text-[#142B4A] dark:text-[#C6A45A]">
                       <Compass className="w-3.5 h-3.5" />
                     </div>
                     <span>FNI Vision</span>
                   </div>
-                  <span className="text-[10px] font-medium text-[#667085] tabular-nums">
+                  <span className="text-[10px] font-medium text-[#667085] dark:text-slate-400 tabular-nums">
                     {vision.length} characters
                   </span>
                 </div>
-                <p className="text-[11px] text-[#667085]">
+                <p className="text-[11px] text-[#667085] dark:text-slate-400">
                   The spiritual directive and long-term kingdom mandate revealed for Forerunners Network International.
                 </p>
                 <textarea
@@ -306,24 +307,24 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
                   onChange={e => setVision(e.target.value)}
                   placeholder="Enter the FNI Vision..."
                   required
-                  className="w-full p-3 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs leading-relaxed placeholder:text-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none transition-all shadow-sm"
+                  className="w-full p-3 rounded-lg border border-[#D0D5DD] dark:border-white/10 bg-white dark:bg-[#162235] text-[#182230] dark:text-white text-xs leading-relaxed placeholder:text-[#98A2B3] focus:border-[#142B4A] dark:focus:border-[#C6A45A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none transition-all shadow-sm"
                 />
               </div>
 
               {/* FNI Mission Statement */}
-              <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-2 focus-within:border-[#142B4A] focus-within:ring-2 focus-within:ring-[#142B4A]/10 transition-all">
+              <div className="rounded-xl border border-[#E3E8EF] dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/[0.03] space-y-2 focus-within:border-[#142B4A] dark:focus-within:border-[#C6A45A] focus-within:ring-2 focus-within:ring-[#142B4A]/10 transition-all">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 font-bold text-[#142B4A]">
-                    <div className="w-6 h-6 rounded-lg bg-[#23845B]/10 flex items-center justify-center text-[#23845B]">
+                  <div className="flex items-center gap-2 font-bold text-[#142B4A] dark:text-white">
+                    <div className="w-6 h-6 rounded-lg bg-[#23845B]/10 dark:bg-emerald-500/20 flex items-center justify-center text-[#23845B] dark:text-emerald-400">
                       <Target className="w-3.5 h-3.5" />
                     </div>
                     <span>FNI Mission Statement</span>
                   </div>
-                  <span className="text-[10px] font-medium text-[#667085] tabular-nums">
+                  <span className="text-[10px] font-medium text-[#667085] dark:text-slate-400 tabular-nums">
                     {mission.length} characters
                   </span>
                 </div>
-                <p className="text-[11px] text-[#667085]">
+                <p className="text-[11px] text-[#667085] dark:text-slate-400">
                   How the vision is practically deployed across cells, discipleship, evangelism, and leadership nurture.
                 </p>
                 <textarea
@@ -332,22 +333,22 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
                   onChange={e => setMission(e.target.value)}
                   placeholder="Enter the FNI Mission Statement..."
                   required
-                  className="w-full p-3 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs leading-relaxed placeholder:text-[#98A2B3] focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none transition-all shadow-sm"
+                  className="w-full p-3 rounded-lg border border-[#D0D5DD] dark:border-white/10 bg-white dark:bg-[#162235] text-[#182230] dark:text-white text-xs leading-relaxed placeholder:text-[#98A2B3] focus:border-[#142B4A] dark:focus:border-[#C6A45A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none transition-all shadow-sm"
                 />
               </div>
 
               {/* Target & Deadline Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Annual Soul-Winning Target */}
-                <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-3">
+                <div className="rounded-xl border border-[#E3E8EF] dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/[0.03] space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 font-bold text-[#142B4A]">
+                    <div className="flex items-center gap-2 font-bold text-[#142B4A] dark:text-white">
                       <div className="w-6 h-6 rounded-lg bg-[#C6A45A]/15 flex items-center justify-center text-[#C6A45A]">
                         <Wheat className="w-3.5 h-3.5" />
                       </div>
                       <span>Annual Soul-Winning Target</span>
                     </div>
-                    <span className="text-[10px] font-bold text-[#C6A45A] bg-[#C6A45A]/10 px-2 py-0.5 rounded-full border border-[#C6A45A]/20 tabular-nums">
+                    <span className="text-[10px] font-bold text-[#C6A45A] bg-[#C6A45A]/10 dark:bg-[#C6A45A]/20 px-2 py-0.5 rounded-full border border-[#C6A45A]/20 tabular-nums">
                       {Number(target || 0).toLocaleString()} Souls
                     </span>
                   </div>
@@ -357,13 +358,13 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
                     onChange={e => setTarget(Number(e.target.value))}
                     min={1}
                     required
-                    className="w-full p-2.5 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs font-semibold tabular-nums focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none shadow-sm"
+                    className="w-full p-2.5 rounded-lg border border-[#D0D5DD] dark:border-white/10 bg-white dark:bg-[#162235] text-[#182230] dark:text-white text-xs font-semibold tabular-nums focus:border-[#142B4A] dark:focus:border-[#C6A45A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none shadow-sm"
                   />
                   <div className="pt-1">
                     <button
                       type="button"
                       onClick={() => setShowTargetConfigModal(true)}
-                      className="w-full py-2 px-3 rounded-lg border border-[#C6A45A]/30 bg-white hover:bg-[#C6A45A]/5 text-[#142B4A] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                      className="w-full py-2 px-3 rounded-lg border border-[#C6A45A]/30 bg-white dark:bg-[#162235] hover:bg-[#C6A45A]/5 dark:hover:bg-[#C6A45A]/10 text-[#142B4A] dark:text-[#C6A45A] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
                     >
                       <Sliders className="w-3 h-3 text-[#C6A45A]" />
                       <span>Configure 16 Cells Target Breakdown</span>
@@ -372,15 +373,15 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
                 </div>
 
                 {/* Reporting Cutoff Deadline */}
-                <div className="rounded-xl border border-[#E3E8EF] p-4 bg-slate-50/50 space-y-3">
+                <div className="rounded-xl border border-[#E3E8EF] dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/[0.03] space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 font-bold text-[#142B4A]">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <div className="flex items-center gap-2 font-bold text-[#142B4A] dark:text-white">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                         <Clock className="w-3.5 h-3.5" />
                       </div>
                       <span>Reporting Cutoff Deadline</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 bg-white dark:bg-white/10 px-2 py-0.5 rounded border border-slate-200 dark:border-white/10">
                       GMT (Africa/Accra)
                     </span>
                   </div>
@@ -390,17 +391,17 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
                     onChange={e => setDeadline(e.target.value)}
                     required
                     placeholder="e.g. Sunday at 6:00 PM Ghana Time"
-                    className="w-full p-2.5 rounded-lg border border-[#D0D5DD] bg-white text-[#182230] text-xs font-semibold focus:border-[#142B4A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none shadow-sm"
+                    className="w-full p-2.5 rounded-lg border border-[#D0D5DD] dark:border-white/10 bg-white dark:bg-[#162235] text-[#182230] dark:text-white text-xs font-semibold focus:border-[#142B4A] dark:focus:border-[#C6A45A] focus:ring-1 focus:ring-[#142B4A] focus:outline-none shadow-sm"
                   />
-                  <p className="text-[10px] text-[#667085] leading-relaxed">
+                  <p className="text-[10px] text-[#667085] dark:text-slate-400 leading-relaxed">
                     Standard: Sunday 6:00 PM Ghana Time. After this deadline, cell reports are marked as late.
                   </p>
                 </div>
               </div>
 
               {/* Form Action */}
-              <div className="pt-2 flex items-center justify-between border-t border-[#E3E8EF]">
-                <span className="text-[11px] text-[#667085]">
+              <div className="pt-2 flex items-center justify-between border-t border-[#E3E8EF] dark:border-white/10">
+                <span className="text-[11px] text-[#667085] dark:text-slate-400">
                   Updates take effect across all tutor dashboards and reports immediately.
                 </span>
                 <button

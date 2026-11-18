@@ -1965,26 +1965,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   <span>FNI Communication</span>
                 </div>
               </div>
-
-              {/* Action Icons */}
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsModalOpen(true)}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors cursor-pointer"
-                  title="Communication Settings"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsModalOpen(true)}
-                  className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
-                  title="Discover Registered Tutors"
-                >
-                  <Users className="w-4 h-4" />
-                </button>
-              </div>
             </div>
 
             {/* Pill Search Input with Telegram-style Compose Button */}
