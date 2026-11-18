@@ -1945,7 +1945,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                       {/* Chat Bubble */}
                       <div
-                        className={`relative max-w-[85%] sm:max-w-[70%] p-3 text-xs transition-shadow ${
+                        className={`relative w-fit min-w-0 max-w-[85%] sm:max-w-[70%] p-3 text-left text-xs leading-relaxed [overflow-wrap:anywhere] transition-shadow ${
                           isMine ? 'telegram-bubble-outgoing' : 'telegram-bubble-incoming'
                         }`}
                       >
