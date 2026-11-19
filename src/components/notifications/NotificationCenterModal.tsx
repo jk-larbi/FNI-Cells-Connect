@@ -573,12 +573,12 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     >
       <div className="fni-notification-center space-y-4 text-slate-800 dark:text-slate-100">
         {/* Top Header Mode Tabs */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#26384d] pb-2 gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#26384d] pb-2.5 gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             <button
               type="button"
               onClick={() => setActiveTab('inbox')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'inbox'
                   ? 'bg-[#142B4A] text-white shadow-xs'
                   : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
@@ -593,12 +593,25 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               )}
             </button>
 
+            <button
+              type="button"
+              onClick={() => setActiveTab('settings')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'settings'
+                  ? 'bg-[#142B4A] text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>Settings</span>
+            </button>
+
             {isAdmin && (
               <>
                 <button
                   type="button"
                   onClick={() => setActiveTab('broadcast')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
                     activeTab === 'broadcast'
                       ? 'bg-[#142B4A] text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
@@ -611,7 +624,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 <button
                   type="button"
                   onClick={() => setActiveTab('history')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
                     activeTab === 'history'
                       ? 'bg-[#142B4A] text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
@@ -622,19 +635,6 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 </button>
               </>
             )}
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('settings')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'settings'
-                  ? 'bg-[#142B4A] text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5 text-[#C6A45A]" />
-              <span>Settings</span>
-            </button>
           </div>
 
           {/* Quick Mark Read / Clear Actions for Inbox */}
@@ -1099,6 +1099,79 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     <span>Disable Push</span>
                   </button>
                 )}
+              </div>
+
+              {/* Multi-Device Ecosystem Architecture Breakdown */}
+              <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
+                <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Supported Notification Systems Across All Devices</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Multi-Device Active
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                  {/* Android APK */}
+                  <div className={`p-2.5 rounded-xl border ${
+                    Capacitor.isNativePlatform()
+                      ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0c1626]'
+                  } space-y-1`}>
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold flex items-center gap-1 text-slate-800 dark:text-slate-200">
+                        <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Android Phones</span>
+                      </div>
+                      {Capacitor.isNativePlatform() && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold">This Device</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                      Capacitor Native APK + Firebase FCM HTTP v1. Dual high-importance channels with system vibration and audio.
+                    </p>
+                  </div>
+
+                  {/* iPhone & iPad */}
+                  <div className={`p-2.5 rounded-xl border ${
+                    isIosDevice()
+                      ? 'border-blue-300 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0c1626]'
+                  } space-y-1`}>
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold flex items-center gap-1 text-slate-800 dark:text-slate-200">
+                        <Smartphone className="w-3.5 h-3.5 text-blue-500" />
+                        <span>iPhone &amp; iPad</span>
+                      </div>
+                      {isIosDevice() && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[9px] font-bold">This Device</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                      iOS 16.4+ Home Screen PWA via Apple Push (APNs). Standalone full-screen with lock-screen alerts &amp; badge count.
+                    </p>
+                  </div>
+
+                  {/* Desktop & Web */}
+                  <div className={`p-2.5 rounded-xl border ${
+                    !Capacitor.isNativePlatform() && !isIosDevice()
+                      ? 'border-indigo-300 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0c1626]'
+                  } space-y-1`}>
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold flex items-center gap-1 text-slate-800 dark:text-slate-200">
+                        <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>Desktop &amp; Laptop</span>
+                      </div>
+                      {!Capacitor.isNativePlatform() && !isIosDevice() && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[9px] font-bold">This Device</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                      W3C Web Push with VAPID authentication. Real-time background service worker alerts and audio synthesizers.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

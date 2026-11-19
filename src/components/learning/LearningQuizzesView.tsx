@@ -1007,29 +1007,30 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 4. ADMIN MODAL: REDESIGNED QUIZ BUILDER                                   */}
       {/* ========================================================================= */}
       {isQuizFormOpen && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-6 max-h-[92vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/70 backdrop-blur-sm flex sm:items-center sm:justify-center p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-4xl w-full p-4 sm:p-7 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-6 h-full sm:h-auto sm:max-h-[92vh] flex flex-col pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0">
-              <div>
-                <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider">
+            <div className="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0">
+              <div className="min-w-0 pr-2">
+                <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider block">
                   Quiz Authoring Suite
                 </span>
-                <h3 className="text-base sm:text-lg font-bold text-[#142B4A] dark:text-white">
+                <h3 className="text-base sm:text-lg font-bold text-[#142B4A] dark:text-white truncate">
                   {editingQuiz ? 'Edit Quiz' : 'Create New Assessment'}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsQuizFormOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-[#182230] cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-[#182230] dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 cursor-pointer transition-colors shrink-0"
+                aria-label="Close Quiz Builder"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Builder Tabs */}
-            <div className="flex items-center gap-1 overflow-x-auto py-2.5 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2.5 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0 -mx-1 px-1">
               {[
                 { id: 'general', label: '1. General Info' },
                 { id: 'mcq', label: `2. MCQs (${mcqQuestions.length})` },
@@ -1040,10 +1041,10 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                   key={tab.id}
                   type="button"
                   onClick={() => setBuilderTab(tab.id as any)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition-all ${
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-1.5 ${
                     builderTab === tab.id
                       ? 'bg-[#142B4A] text-white shadow-2xs'
-                      : 'text-[#667085] hover:bg-slate-100 dark:hover:bg-slate-800'
+                      : 'bg-slate-100 dark:bg-slate-800/60 text-[#667085] dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   {tab.label}
@@ -1328,10 +1329,10 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
                         {/* Marking Method Switcher */}
                         <div className="pt-1">
-                          <span className="text-[10px] font-bold text-[#667085] uppercase tracking-wider block mb-1">
+                          <span className="text-[10px] font-bold text-[#667085] uppercase tracking-wider block mb-1.5">
                             Marking Method:
                           </span>
-                          <div className="flex items-center gap-2">
+                          <div className="grid grid-cols-2 gap-2">
                             <button
                               type="button"
                               onClick={() => {
@@ -1341,7 +1342,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                                   return c;
                                 });
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                                 isAuto
                                   ? 'bg-[#142B4A] text-white shadow-2xs'
                                   : 'bg-white dark:bg-[#111c2d] border border-slate-300 dark:border-slate-700 text-[#667085]'
@@ -1360,7 +1361,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                                   return c;
                                 });
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                                 !isAuto
                                   ? 'bg-[#142B4A] text-white shadow-2xs'
                                   : 'bg-white dark:bg-[#111c2d] border border-slate-300 dark:border-slate-700 text-[#667085]'
@@ -1374,13 +1375,13 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
                         {/* Automatic Marking Fields */}
                         {isAuto ? (
-                          <div className="space-y-2.5 p-3 rounded-xl bg-white dark:bg-[#111c2d] border border-slate-200 dark:border-slate-700">
+                          <div className="space-y-3 p-3.5 rounded-2xl bg-white dark:bg-[#111c2d] border border-slate-200 dark:border-slate-700 shadow-xs">
                             <div>
-                              <label className="block text-[11px] font-bold text-[#182230] dark:text-white mb-1">
+                              <label className="block text-xs font-bold text-[#182230] dark:text-white mb-1">
                                 Expected / Model Answer *
                               </label>
                               <textarea
-                                rows={2}
+                                rows={3}
                                 value={q.expected_answer || ''}
                                 onChange={e => {
                                   const val = e.target.value;
@@ -1391,16 +1392,16 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                                   });
                                 }}
                                 placeholder="Enter the exact or primary model answer..."
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437]"
+                                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[11px] font-bold text-[#182230] dark:text-white mb-1">
+                              <label className="block text-xs font-bold text-[#182230] dark:text-white mb-1">
                                 Acceptable Alternative Answers (One per line)
                               </label>
                               <textarea
-                                rows={2}
+                                rows={3}
                                 value={(q.acceptable_alternatives || []).join('\n')}
                                 onChange={e => {
                                   const lines = e.target.value.split('\n');
@@ -1410,13 +1411,13 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                                     return c;
                                   });
                                 }}
-                                placeholder="Alternative acceptable phrasing 1&#10;Alternative acceptable phrasing 2"
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437]"
+                                placeholder="Enter acceptable alternative phrasing (e.g. repentance and turning to God)..."
+                                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[11px] font-bold text-[#182230] dark:text-white mb-1">
+                              <label className="block text-xs font-bold text-[#182230] dark:text-white mb-1">
                                 Relevant Keywords (Comma-separated)
                               </label>
                               <input
@@ -1431,9 +1432,9 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                                   });
                                 }}
                                 placeholder="e.g. faith, righteousness, grace, salvation"
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437]"
+                                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
                               />
-                              <p className="text-[10px] text-[#667085] mt-1">
+                              <p className="text-[11px] text-[#667085] mt-1">
                                 The system analyzes keyword presence and awards proportional marks. Admin can review and override anytime.
                               </p>
                             </div>
@@ -1638,8 +1639,8 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Sticky Summary Bar & Footer Actions */}
-            <div className="pt-3 border-t border-[#E3E8EF] dark:border-[#26384d] flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-3 text-xs">
+            <div className="pt-3.5 sm:pt-4 border-t border-[#E3E8EF] dark:border-[#26384d] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 bg-white/95 dark:bg-[#111c2d]/95 backdrop-blur-md">
+              <div className="flex items-center justify-between sm:justify-start gap-3 text-xs px-1">
                 <span className="font-bold text-[#667085]">
                   MCQ: <strong className="text-[#142B4A] dark:text-white">{mcqTotalPoints} pts</strong>
                 </span>
@@ -1653,11 +1654,11 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-3 sm:flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsQuizFormOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-3 py-2.5 sm:px-4 sm:py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-center cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
@@ -1665,18 +1666,18 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                   type="button"
                   disabled={isSavingQuiz}
                   onClick={() => handleSaveQuiz('draft')}
-                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                  className="px-3 py-2.5 sm:px-4 sm:py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 text-center cursor-pointer transition-colors disabled:opacity-50"
                 >
-                  Save as Draft
+                  Save Draft
                 </button>
                 <button
                   type="button"
                   disabled={isSavingQuiz}
                   onClick={() => handleSaveQuiz('published')}
-                  className="px-5 py-2 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 sm:px-5 sm:py-2 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
                 >
                   <Send className="w-3.5 h-3.5 text-[#C6A45A]" />
-                  <span>{isSavingQuiz ? 'Saving...' : 'Publish Quiz'}</span>
+                  <span>{isSavingQuiz ? 'Saving...' : 'Publish'}</span>
                 </button>
               </div>
             </div>
@@ -1688,8 +1689,8 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 5. TUTOR RUNNER MODAL: TAKING A QUIZ                                      */}
       {/* ========================================================================= */}
       {activeQuizForTest && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-3xl w-full p-5 sm:p-7 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-6 max-h-[92vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/70 backdrop-blur-sm flex sm:items-center sm:justify-center p-0 sm:p-5 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-3xl w-full p-4 sm:p-7 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-6 h-full sm:h-auto sm:max-h-[92vh] flex flex-col pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {/* Top Bar: Title, Attempts, Countdown & Auto-save */}
             <div className="pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] flex flex-wrap items-center justify-between gap-3 shrink-0">
               <div>
@@ -1922,8 +1923,8 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 7. CANDIDATE RESULTS MODAL (AFTER SUBMISSION / VIEW RESULT)               */}
       {/* ========================================================================= */}
       {viewingAttempt && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-8 max-h-[90vh] overflow-y-auto custom-scrollbar space-y-4">
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex sm:items-center sm:justify-center p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-2xl w-full p-4 sm:p-8 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-8 h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto custom-scrollbar space-y-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF] dark:border-[#26384d]">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider">
@@ -1996,8 +1997,8 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 8. ADMIN MODAL: MANUAL GRADING & REVIEW INTERFACE                         */}
       {/* ========================================================================= */}
       {gradingAttempt && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl max-w-3xl w-full p-5 sm:p-7 shadow-floating border border-[#E3E8EF] dark:border-[#26384d] my-6 max-h-[92vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex sm:items-center sm:justify-center p-0 sm:p-5 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-3xl w-full p-4 sm:p-7 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-6 h-full sm:h-auto sm:max-h-[92vh] flex flex-col pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider">

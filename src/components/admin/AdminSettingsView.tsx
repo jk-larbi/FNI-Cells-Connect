@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { PushNotificationService } from '../../services/pushNotificationService';
+import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
+import { Capacitor } from '@capacitor/core';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { ReportService } from '../../services/reportService';
@@ -30,6 +34,12 @@ import {
   Sliders,
   FileCheck,
   Flame,
+  Smartphone,
+  Layers,
+  VolumeX,
+  RefreshCw,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface AdminSettingsViewProps {
@@ -38,6 +48,16 @@ interface AdminSettingsViewProps {
 
 export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) => {
   const { currentUser, changePassword, updateAvatar, updateProfileDetails } = useAuth();
+  const {
+    pushPermission,
+    isPushSupported,
+    isPushEnabled,
+    requestPushPermission,
+    disablePushNotifications,
+  } = useNotifications();
+  const [isAdminPushLoading, setIsAdminPushLoading] = useState(false);
+  const [adminPushNotice, setAdminPushNotice] = useState<string | null>(null);
+
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [activeTab, setActiveTab] = useState<'system' | 'security' | 'audit'>('system');
@@ -612,6 +632,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
             </form>
           </div>
 
+          {/* Email Notifications */}
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
             <div>
               <h3 className="text-sm font-bold text-[#182230]">Email Notifications</h3>
@@ -625,6 +646,291 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
               <button type="submit" disabled={isSavingEmail} className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold disabled:opacity-60">{isSavingEmail ? 'Saving...' : 'Save Notification Email'}</button>
             </form>
+          </div>
+
+          {/* Device Push Notifications Delivery & Testing (All Devices) */}
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-[#182230] flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4 text-[#C6A45A]" />
+                  <span>Operating System Push Notifications</span>
+                </h3>
+                <p className="text-xs text-[#667085] mt-0.5">
+                  Real operating system notifications on Android phones, iPhones, iPads, and desktop computers.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {Capacitor.isNativePlatform() && (
+                  <button
+                    type="button"
+                    onClick={() => PushNotificationService.openDeviceNotificationSettings()}
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-[#C6A45A]" />
+                    <span>Device Settings</span>
+                  </button>
+                )}
+
+                {isPushEnabled && (
+                  <button
+                    type="button"
+                    disabled={isAdminPushLoading}
+                    onClick={async () => {
+                      setIsAdminPushLoading(true);
+                      try {
+                        const res = await PushNotificationService.sendTestPush();
+                        if (res.success) {
+                          setAdminPushNotice('Test push notification dispatched.');
+                        } else {
+                          setAdminPushNotice(res.error || 'Failed to dispatch test push.');
+                        }
+                        setTimeout(() => setAdminPushNotice(null), 5000);
+                      } catch (err: any) {
+                        setAdminPushNotice(err.message || 'Failed to dispatch notification.');
+                      } finally {
+                        setIsAdminPushLoading(false);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#1a3860] flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <BellRing className="w-3.5 h-3.5 text-[#C6A45A]" />
+                    <span>Test Push</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {adminPushNotice && (
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>{adminPushNotice}</span>
+              </div>
+            )}
+
+            {/* iOS Browser Tab Warning */}
+            {isIosDevice() && !isStandaloneMode() && !Capacitor.isNativePlatform() && (
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 space-y-2 text-xs text-amber-900">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-bold">Home Screen Required on iPhone &amp; iPad</div>
+                    <p className="text-[11px] leading-relaxed mt-0.5">
+                      Apple requires adding FNI Cells Connect to your Home Screen on iOS 16.4+ to deliver notifications.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => triggerIosInstallGuide()}
+                  className="w-full py-1.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>How to Add to Home Screen</span>
+                </button>
+              </div>
+            )}
+
+            {/* Current Device Detection Status Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="text-[11px] text-slate-500 font-medium">Current Platform Detection</div>
+                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                  {Capacitor.isNativePlatform() ? (
+                    <>
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Android Native APK (FCM HTTP v1)</span>
+                    </>
+                  ) : isIosDevice() ? (
+                    <>
+                      <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+                      <span>iOS / iPadOS {isStandaloneMode() ? 'Home Screen PWA' : 'Safari Browser'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Desktop / Web Browser</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  {Capacitor.isNativePlatform()
+                    ? 'Dual high-importance channels (Updates + Calls)'
+                    : isIosDevice()
+                    ? isStandaloneMode()
+                      ? 'Apple Web Push enabled with APNs lock-screen audio'
+                      : 'Requires Home Screen installation on iOS'
+                    : 'Web Push (VAPID) with browser system alerts'}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="text-[11px] text-slate-500 font-medium">OS Permission &amp; Subscription</div>
+                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                  {pushPermission === 'granted' && isPushEnabled ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-emerald-700">Active &amp; Subscribed</span>
+                    </>
+                  ) : pushPermission === 'denied' ? (
+                    <>
+                      <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                      <span className="text-rose-600">Blocked in Device Settings</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-amber-600">Permission Pending</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  {pushPermission === 'granted' && isPushEnabled
+                    ? 'Device token synchronized with Supabase'
+                    : pushPermission === 'denied'
+                    ? 'Enable notifications in device settings'
+                    : 'Tap below to enable push notifications on this device'}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <div>
+              {!isPushEnabled ? (
+                <button
+                  type="button"
+                  disabled={isAdminPushLoading}
+                  onClick={async () => {
+                    if (isIosDevice() && !isStandaloneMode() && !Capacitor.isNativePlatform()) {
+                      triggerIosInstallGuide();
+                      return;
+                    }
+                    setIsAdminPushLoading(true);
+                    try {
+                      const res = await requestPushPermission();
+                      if (res?.success) {
+                        setAdminPushNotice('Push notifications enabled and registered with Supabase.');
+                      } else if (res?.error) {
+                        setAdminPushNotice(res.error);
+                      }
+                      setTimeout(() => setAdminPushNotice(null), 6000);
+                    } catch (err: any) {
+                      setAdminPushNotice(err.message || 'Could not enable push.');
+                    } finally {
+                      setIsAdminPushLoading(false);
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#142B4A] hover:bg-[#1a3860] text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isAdminPushLoading ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#C6A45A]" />
+                      <span>Registering Token...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+                      <span>Enable Push Notifications on this Device</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isAdminPushLoading}
+                  onClick={async () => {
+                    setIsAdminPushLoading(true);
+                    try {
+                      await disablePushNotifications();
+                      setAdminPushNotice('Push notifications disabled.');
+                      setTimeout(() => setAdminPushNotice(null), 4000);
+                    } catch (err: any) {
+                      setAdminPushNotice(err.message || 'Could not disable notifications.');
+                    } finally {
+                      setIsAdminPushLoading(false);
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Disable Push Notifications</span>
+                </button>
+              )}
+            </div>
+
+            {/* Multi-Device Ecosystem Architecture Breakdown */}
+            <div className="pt-3 border-t border-slate-200 space-y-2">
+              <div className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                <span>Multi-Device Architecture: Active Across All Platforms</span>
+                <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Active Everywhere
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                {/* Android APK */}
+                <div className={`p-2.5 rounded-xl border ${
+                  Capacitor.isNativePlatform()
+                    ? 'border-emerald-300 bg-emerald-50/60'
+                    : 'border-slate-200 bg-slate-50'
+                } space-y-1`}>
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold flex items-center gap-1 text-slate-800">
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Android Mobile (APK)</span>
+                    </div>
+                    {Capacitor.isNativePlatform() && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[9px] font-bold">This Device</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-tight">
+                    Capacitor Native APK + FCM HTTP v1. Dual high-importance channels with system vibration and audio.
+                  </p>
+                </div>
+
+                {/* iPhone & iPad */}
+                <div className={`p-2.5 rounded-xl border ${
+                  isIosDevice()
+                    ? 'border-blue-300 bg-blue-50/60'
+                    : 'border-slate-200 bg-slate-50'
+                } space-y-1`}>
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold flex items-center gap-1 text-slate-800">
+                      <Smartphone className="w-3.5 h-3.5 text-blue-500" />
+                      <span>iPhone &amp; iPad (PWA)</span>
+                    </div>
+                    {isIosDevice() && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 text-[9px] font-bold">This Device</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-tight">
+                    iOS 16.4+ Home Screen PWA via Apple Push (APNs). Standalone full-screen with lock-screen alerts &amp; badge count.
+                  </p>
+                </div>
+
+                {/* Desktop & Web */}
+                <div className={`p-2.5 rounded-xl border ${
+                  !Capacitor.isNativePlatform() && !isIosDevice()
+                    ? 'border-indigo-300 bg-indigo-50/60'
+                    : 'border-slate-200 bg-slate-50'
+                } space-y-1`}>
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold flex items-center gap-1 text-slate-800">
+                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Desktop &amp; Laptop</span>
+                    </div>
+                    {!Capacitor.isNativePlatform() && !isIosDevice() && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[9px] font-bold">This Device</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-tight">
+                    W3C Web Push with VAPID authentication. Real-time background service worker alerts and audio synthesizers.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Administrator Profile Photo */}

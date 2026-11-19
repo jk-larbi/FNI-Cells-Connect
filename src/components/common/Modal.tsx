@@ -9,6 +9,7 @@ interface ModalProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
+  fullScreenOnMobile?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth,
   size,
+  fullScreenOnMobile = true,
 }) => {
   const effectiveMaxWidth = maxWidth || size || 'lg';
   useEffect(() => {
@@ -48,15 +50,23 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto custom-scrollbar overscroll-contain">
-      <div className="flex min-h-screen items-center justify-center p-3 sm:p-6 text-center">
+      <div className={`flex min-h-screen ${fullScreenOnMobile ? 'items-stretch sm:items-center p-0 sm:p-6' : 'items-center p-3 sm:p-6'} justify-center text-center`}>
         <div
           className="fixed inset-0 bg-navy-950/60 backdrop-blur-xs transition-opacity"
           onClick={onClose}
         />
         <div
-          className={`relative transform overflow-hidden rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] text-left shadow-2xl transition-all sm:my-8 w-full ${maxWidthClasses[effectiveMaxWidth]} border border-slate-200/80 dark:border-white/10 flex flex-col max-h-[92vh]`}
+          className={`relative transform overflow-hidden ${
+            fullScreenOnMobile
+              ? 'rounded-none sm:rounded-3xl m-0 sm:my-8 h-dvh sm:h-auto max-h-none sm:max-h-[92vh] border-0 sm:border'
+              : 'rounded-3xl sm:my-8 max-h-[92vh] border'
+          } fni-glass-card bg-white dark:bg-[#111c2d] text-left shadow-2xl transition-all w-full ${maxWidthClasses[effectiveMaxWidth]} border-slate-200/80 dark:border-white/10 flex flex-col`}
         >
-          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 px-4 py-3.5 sm:px-6 sm:py-4 bg-slate-50/80 dark:bg-[#172437] shrink-0">
+          <div
+            className={`flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 px-4 py-3.5 sm:px-6 sm:py-4 bg-slate-50/80 dark:bg-[#172437] shrink-0 ${
+              fullScreenOnMobile ? 'pt-[max(0.875rem,env(safe-area-inset-top))] sm:pt-4' : ''
+            }`}
+          >
             <div className="flex items-center gap-3 min-w-0">
               <div className="hidden sm:flex items-center gap-1.5 shrink-0" title="Window controls">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 shadow-2xs" />
@@ -76,7 +86,13 @@ export const Modal: React.FC<ModalProps> = ({
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar overscroll-contain flex-1">{children}</div>
+          <div
+            className={`p-4 sm:p-6 overflow-y-auto custom-scrollbar overscroll-contain flex-1 ${
+              fullScreenOnMobile ? 'pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6' : ''
+            }`}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
