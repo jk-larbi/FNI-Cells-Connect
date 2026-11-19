@@ -3033,55 +3033,60 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             )}
 
-            {/* Multi-Pinned Messages Bar (Left-Bar Accent Layout) */}
+            {/* Telegram-style Pinned Message Floating Bar */}
             {allPinnedMessages.length > 0 && currentPinnedBannerMessage && (
-              <div
-                onClick={handleCyclePinnedMessage}
-                className="px-4 py-2 bg-white dark:bg-[#17212b] border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-3 text-xs z-10 shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1f2b38] transition-colors select-none"
-                title="Tap to cycle through pinned messages"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-[3px] self-stretch rounded-full bg-[#2AABEE] shrink-0" />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-[11px] text-[#2AABEE] block">
-                        Pinned Message {allPinnedMessages.length > 1 ? `(${activePinnedIndex + 1}/${allPinnedMessages.length})` : ''}
-                      </span>
-                      {currentPinnedBannerMessage.pinnedByName && (
-                        <span className="text-[10px] text-slate-400">
-                          by {currentPinnedBannerMessage.pinnedByName}
-                        </span>
-                      )}
-                    </div>
-                    <p className="truncate text-slate-800 dark:text-slate-200 text-xs">
-                      {currentPinnedBannerMessage.content.slice(0, 75)}
-                    </p>
-                  </div>
-                </div>
+              <div className="px-2.5 sm:px-4 py-1.5 shrink-0 z-20">
+                <div
+                  onClick={handleCyclePinnedMessage}
+                  className="rounded-2xl bg-white/95 dark:bg-[#17212b]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs px-3.5 py-2 flex items-center justify-between gap-3 text-xs cursor-pointer hover:bg-white dark:hover:bg-[#1f2b38] transition-all select-none group"
+                  title="Tap to jump to pinned message"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {/* Vertical Cyan Accent Bar */}
+                    <div className="w-[3px] self-stretch rounded-full bg-[#2AABEE] shrink-0 min-h-[30px]" />
 
-                <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-                  <Pin className="w-4 h-4 text-slate-400 hover:text-[#2AABEE]" />
-                  {allPinnedMessages.length > 1 && (
+                    {/* Text Details */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-xs text-[#2AABEE] tracking-tight block">
+                          Pinned Message{allPinnedMessages.length > 1 ? ` (${activePinnedIndex + 1}/${allPinnedMessages.length})` : ''}
+                        </span>
+                      </div>
+                      <p className="truncate text-slate-800 dark:text-slate-100 text-xs sm:text-[13px] font-normal leading-snug mt-0.5">
+                        {currentPinnedBannerMessage.content}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Actions */}
+                  <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                    {allPinnedMessages.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsPinnedModalOpen(true)}
+                        className="p-1 rounded-full text-slate-400 hover:text-[#2AABEE] hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                        title="View all pinned messages"
+                        aria-label="View all pinned messages"
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => setIsPinnedModalOpen(true)}
-                      className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-[#2AABEE] text-[10px] font-bold flex items-center gap-1 px-1.5"
-                      title="View all pinned messages"
+                      onClick={() => {
+                        if (canPin) {
+                          handleTogglePin(currentPinnedBannerMessage);
+                        } else {
+                          setActivePinnedIndex(prev => (prev + 1) % allPinnedMessages.length);
+                        }
+                      }}
+                      className="p-1 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                      title={canPin ? "Unpin message" : "Dismiss pinned message"}
+                      aria-label="Unpin or dismiss message"
                     >
-                      <List className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">All Pins</span>
+                      <X className="w-4 h-4" />
                     </button>
-                  )}
-                  {canPin && (
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePin(currentPinnedBannerMessage)}
-                      className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-rose-500"
-                      title="Unpin message"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
