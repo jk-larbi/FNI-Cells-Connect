@@ -12,6 +12,7 @@ import { PasswordRecoveryView } from './components/auth/PasswordRecoveryView';
 import { supabase } from './lib/supabase';
 import { ThemeProvider } from './context/ThemeContext';
 import { ThemeToggle } from './components/layout/ThemeToggle';
+import { IosInstallGuide } from './components/pwa/IosInstallGuide';
 
 const MainContent: React.FC = () => {
   const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
@@ -109,6 +110,7 @@ export const App: React.FC = () => {
         <NotificationProvider>
           <CallProvider>
             <MainContent />
+            <IosInstallGuide />
           </CallProvider>
         </NotificationProvider>
       </AuthProvider>

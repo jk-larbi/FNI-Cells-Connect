@@ -2011,3 +2011,31 @@ img,video,canvas { max-width: 100%; }
   aside[class*="fixed"] { box-shadow: 1px 0 0 var(--fni-border); }
   header { min-height: 60px; }
 }
+
+/* ==========================================================================
+   FNI CELLS CONNECT — iOS PWA STANDALONE OPTIMIZATIONS
+   ========================================================================== */
+@media all and (display-mode: standalone) {
+  /* Prevent browser-style rubber-banding on document body */
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Retain text selection for messages, inputs, forms and content areas */
+  input, textarea, [contenteditable="true"], .selectable-text, .fni-message-text {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
+}
+
+/* iOS Safe Area Helper Utilities */
+.pt-safe { padding-top: max(0.5rem, env(safe-area-inset-top)); }
+.pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+.pl-safe { padding-left: env(safe-area-inset-left); }
+.pr-safe { padding-right: env(safe-area-inset-right); }
+.mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+

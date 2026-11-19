@@ -1,13 +1,49 @@
 {
+  "id": "/FNI-Cells-Connect/",
   "name": "FNI Cells Connect",
-  "short_name": "FNI Connect",
+  "short_name": "FNI Cells",
   "description": "Forerunners Network International cell leadership and ministry connection platform.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "orientation": "any",
+  "background_color": "#0c1626",
   "theme_color": "#142B4A",
+  "categories": [
+    "lifestyle",
+    "productivity",
+    "social"
+  ],
   "icons": [
-    { "src": "./fni-official-logo.jpg", "sizes": "any", "type": "image/jpeg", "purpose": "any" }
+    {
+      "src": "./apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./fni-official-logo.jpg",
+      "sizes": "640x640",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
   ]
 }

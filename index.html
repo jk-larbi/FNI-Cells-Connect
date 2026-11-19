@@ -2,22 +2,109 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="180x180" href="%BASE_URL%apple-touch-icon.png" />
     <link rel="icon" type="image/jpeg" href="%BASE_URL%fni-official-logo.jpg" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content" />
-    <meta name="theme-color" content="#173B8F" />
+    <meta name="theme-color" content="#142B4A" />
+    <meta name="msapplication-TileColor" content="#142B4A" />
     <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FNI Cells" />
+    <meta name="application-name" content="FNI Cells Connect" />
     <meta name="format-detection" content="telephone=no" />
     <title>FNI CELLS CONNECT | Forerunners Network International</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      /* Standalone iOS startup shell styling - zero white flash on launch */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #0c1626;
+        color: #ffffff;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #fni-initial-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 35%, #142B4A 0%, #0c1626 70%);
+        z-index: 99999;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        box-sizing: border-box;
+      }
+      #fni-initial-splash .splash-logo {
+        width: 88px;
+        height: 88px;
+        border-radius: 24px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(198, 164, 90, 0.35);
+        object-fit: cover;
+        margin-bottom: 20px;
+        animation: fniPulse 2s ease-in-out infinite;
+      }
+      #fni-initial-splash .splash-title {
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #ffffff;
+        margin: 0 0 4px 0;
+      }
+      #fni-initial-splash .splash-subtitle {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: #C6A45A;
+        margin: 0 0 24px 0;
+      }
+      #fni-initial-splash .splash-bar {
+        width: 120px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+      }
+      #fni-initial-splash .splash-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 40%;
+        background: linear-gradient(90deg, #C6A45A, #e0b865);
+        border-radius: 999px;
+        animation: fniProgress 1.4s ease-in-out infinite;
+      }
+      @keyframes fniProgress {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(350%); }
+      }
+      @keyframes fniPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.02); opacity: 0.95; }
+      }
+    </style>
   </head>
   <body class="bg-canvas text-slate-800 antialiased font-sans selection:bg-gold-100 selection:text-navy-900 min-h-screen">
-    <div id="root"></div>
+    <div id="root">
+      <div id="fni-initial-splash" aria-label="Loading FNI Cells Connect">
+        <img class="splash-logo" src="%BASE_URL%apple-touch-icon.png" alt="FNI Logo" />
+        <h1 class="splash-title">FNI Cells Connect</h1>
+        <p class="splash-subtitle">Forerunners Network International</p>
+        <div class="splash-bar" aria-hidden="true"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

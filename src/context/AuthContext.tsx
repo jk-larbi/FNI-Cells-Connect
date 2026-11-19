@@ -81,8 +81,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch {
           if (isMounted) {
-            setCurrentUser(GUEST_PROFILE);
-            setIsLoggedOut(true);
+            // If network request failed (e.g. offline/reconnection in standalone iOS app),
+            // preserve the authenticated session from local cache instead of kicking the user out
+            const cached = AuthService.getCurrentProfile();
+            if (cached && cached.id) {
+              setCurrentUser(cached);
+              setIsLoggedOut(false);
+            } else {
+              setCurrentUser(GUEST_PROFILE);
+              setIsLoggedOut(true);
+            }
           }
         }
       } else {

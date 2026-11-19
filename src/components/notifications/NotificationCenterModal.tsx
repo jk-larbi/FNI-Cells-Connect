@@ -28,6 +28,7 @@ import {
   ExternalLink,
   ShieldCheck,
   CheckCircle2,
+  Smartphone,
   XCircle,
   Trash2,
   Search,
@@ -43,6 +44,7 @@ import {
   Layers,
   ChevronDown,
 } from 'lucide-react';
+import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
 import {
   NotificationItem,
   NotificationCategory,
@@ -661,6 +663,22 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 <p className="mt-2 text-[11px] text-blue-800 dark:text-blue-200 bg-blue-50 dark:bg-blue-950/50 p-2 rounded-xl border border-blue-200 dark:border-blue-900/60">
                   {pushStatusMessage}
                 </p>
+              )}
+
+              {!isPushSupported && isIosDevice() && !isStandaloneMode() && (
+                <div className="mt-2.5 p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center justify-between gap-2">
+                  <div className="text-[11px] text-amber-900 dark:text-amber-200">
+                    <span className="font-bold">iOS Push Setup:</span> Add to your iPhone Home Screen to receive instant background push notifications.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerIosInstallGuide()}
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-[#142B4A] text-white text-[10px] font-bold flex items-center gap-1 hover:bg-[#203D63] transition-colors cursor-pointer"
+                  >
+                    <Smartphone className="w-3 h-3 text-[#C6A45A]" />
+                    <span>View Guide</span>
+                  </button>
+                </div>
               )}
             </div>
 

@@ -296,8 +296,8 @@ export class PushNotificationService {
         body: {
           action: 'register',
           subscription: subscription.toJSON(),
-          device: navigator.userAgent,
-          platform: (navigator as any).userAgentData?.platform || navigator.platform || 'Web',
+          device: isAppleHomeScreenApp() ? 'iPhone / iPad (FNI Home Screen App)' : navigator.userAgent,
+          platform: isAppleMobileWeb() ? 'iOS PWA' : ((navigator as any).userAgentData?.platform || navigator.platform || 'Web'),
         },
       });
       if (registerError || !registerData?.success) {
