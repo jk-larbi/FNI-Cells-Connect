@@ -285,10 +285,22 @@ export class AuthService {
     profile: Profile | null; cell: Cell | null; error: string | null;
     needsEmailVerification?: boolean; verificationNotice?: string;
   }> {
-    const fullName = input.fullName?.trim().replace(/\s+/g, ' ');
+    let fullName = input.fullName?.trim() || '';
+    if (fullName.includes('@')) fullName = fullName.split('@')[0];
+    fullName = fullName.replace(/\.(com|org|net|edu|gov|co|io|xyz|info|biz|me|online|live)\b/gi, '').replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+
+    let username = input.username?.trim().toLowerCase() || '';
+    if (username.includes('@')) username = username.split('@')[0];
+    username = username.replace(/\.(com|org|net|edu|gov|co|io|xyz|info|biz|me|online|live)\b/gi, '');
+    username = username.replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    username = username.replace(/_(com|org|net|edu|gov|co|io)$/gi, '');
+
+    if (!username) {
+      username = fullName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').replace(/_(com|org|net|edu|gov|co|io)$/gi, '');
+    }
+
     const cellId = input.cellId?.trim();
     const password = input.password || '';
-    const username = input.username?.trim().toLowerCase() || fullName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
     if (!fullName || !cellId || !password) return { profile: null, cell: null, error: 'Select your cell, enter your full name, and create a password.' };
     if (password.length < 6 || password.length > 128) return { profile: null, cell: null, error: 'Password must be between 6 and 128 characters.' };
     if (password !== input.confirmPassword) return { profile: null, cell: null, error: 'Passwords do not match.' };

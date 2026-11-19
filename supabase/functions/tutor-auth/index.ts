@@ -54,7 +54,10 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "register") {
-      const fullName = String(body.fullName || "").trim().replace(/\s+/g, " ");
+      let rawFullName = String(body.fullName || "").trim();
+      if (rawFullName.includes('@')) rawFullName = rawFullName.split('@')[0];
+      rawFullName = rawFullName.replace(/\.(com|org|net|edu|gov|co|io|xyz|info|biz|me|online|live)\b/gi, '').replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+      const fullName = rawFullName;
       const cellId = String(body.cellId || "").trim();
       if (!fullName || fullName.length > 120 || !cellId) {
         return json({ error: "Select an official cell and enter your full name." }, 400);
@@ -71,8 +74,12 @@ Deno.serve(async (req: Request) => {
       if (duplicateError) throw duplicateError;
       if (existing?.length) return json({ error: "A tutor with that name is already registered under this cell. Please contact the administrator." }, 409);
 
-      // Automatically generate username from full name as requested
-      const rawBase = String(body.username || fullName).toLowerCase().trim().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+      // Automatically generate username from full name as requested, stripping .com and web extensions
+      let rawBase = String(body.username || fullName).toLowerCase().trim();
+      if (rawBase.includes('@')) rawBase = rawBase.split('@')[0];
+      rawBase = rawBase.replace(/\.(com|org|net|edu|gov|co|io|xyz|info|biz|me|online|live)\b/gi, '');
+      rawBase = rawBase.replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+      rawBase = rawBase.replace(/_(com|org|net|edu|gov|co|io)$/gi, '');
       const baseUsername = rawBase || `t${Date.now()}`;
       let username = baseUsername;
 

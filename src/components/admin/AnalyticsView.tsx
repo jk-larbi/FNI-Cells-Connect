@@ -39,6 +39,7 @@ import {
   Target,
 } from 'lucide-react';
 import { SoulTargetSettingsModal } from './SoulTargetSettingsModal';
+import { CoreFoundationModal } from './CoreFoundationModal';
 import {
   BarChart,
   Bar,
@@ -107,6 +108,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   // Right sidebar tab: 'activities' or 'tutors'
   const [sidebarTab, setSidebarTab] = useState<'activities' | 'tutors'>('activities');
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
+  const [isCoreFoundationModalOpen, setIsCoreFoundationModalOpen] = useState(false);
   const [deadlineSettings, setDeadlineSettings] = useState(DeadlineService.getDeadlineSettingsSync());
 
   useEffect(() => {
@@ -777,15 +779,26 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsTargetModalOpen(true)}
-                  className="px-2.5 py-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] hover:bg-[#C6A45A]/25 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                  title="Configure Soul Targets for 16 Cells"
-                >
-                  <Target className="w-3 h-3" />
-                  <span>Target Settings</span>
-                </button>
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsCoreFoundationModalOpen(true)}
+                    className="px-2.5 py-1 rounded-lg bg-[#142B4A]/10 dark:bg-white/10 text-[#142B4A] dark:text-slate-200 hover:bg-[#142B4A]/20 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Configure FNI Vision, Mission & Apostolic Mandate"
+                  >
+                    <Compass className="w-3 h-3 text-[#C6A45A]" />
+                    <span>Core Foundation</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsTargetModalOpen(true)}
+                    className="px-2.5 py-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] hover:bg-[#C6A45A]/25 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Configure Soul Targets for 16 Cells"
+                  >
+                    <Target className="w-3 h-3" />
+                    <span>Target Settings</span>
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4">
@@ -1491,6 +1504,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
         isOpen={isTargetModalOpen}
         onClose={() => setIsTargetModalOpen(false)}
         onUpdated={() => { void loadData(false); }}
+      />
+
+      {/* Core Foundation Settings Modal */}
+      <CoreFoundationModal
+        isOpen={isCoreFoundationModalOpen}
+        onClose={() => setIsCoreFoundationModalOpen(false)}
+        onSaved={() => { void loadData(false); }}
       />
     </div>
   );

@@ -48,10 +48,29 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
-  // Automatically derive clean @username from full name
+  // Helper to sanitize full name: strictly removes .com, domains, @ emails, and special symbols
+  const sanitizeFullName = (val: string) => {
+    let cleaned = val;
+    // Strip email address part if pasted
+    if (cleaned.includes('@')) {
+      cleaned = cleaned.split('@')[0];
+    }
+    // Remove web/domain extensions: .com, .org, .net, etc.
+    cleaned = cleaned.replace(/\.(com|org|net|edu|gov|co|io|xyz|info|biz|me|online|live)\b/gi, '');
+    // Replace dots with space and allow only letters, spaces, hyphens, and apostrophes
+    cleaned = cleaned.replace(/\./g, ' ').replace(/[^a-zA-Z\s'-]/g, '');
+    // Collapse multiple consecutive spaces
+    return cleaned.replace(/\s+/g, ' ');
+  };
+
+  // Automatically derive clean @username from full name without any .com or domain artifacts
   const derivedUsername = useMemo(() => {
-    const clean = regFullName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-    return clean ? `@${clean}` : '';
+    let clean = regFullName.toLowerCase().trim();
+    if (clean.includes('@')) clean = clean.split('@')[0];
+    clean = clean.replace(/\.(com|org|net|edu|gov|co|io|xyz|info|biz|me|online|live)\b/gi, '');
+    clean = clean.replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    clean = clean.replace(/_(com|org|net|edu|gov|co|io)$/gi, '');
+    return clean || '';
   }, [regFullName]);
 
   // Tutor Login state
@@ -109,8 +128,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
       return;
     }
 
-    if (!regFullName.trim()) {
-      setErrorMessage('Please enter your full name.');
+    const cleanName = sanitizeFullName(regFullName).trim();
+    if (!cleanName || cleanName.length < 2) {
+      setErrorMessage('Please enter your full name (letters and spaces only, no .com or email).');
       return;
     }
 
@@ -131,9 +151,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
     setIsLoading(true);
     try {
-      const cleanUsername = regFullName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      const cleanUsername = derivedUsername || cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').replace(/_(com|org|net)$/gi, '');
       const res = await registerTutor({
-        fullName: regFullName.trim(),
+        fullName: cleanName,
         username: cleanUsername,
         password: regPassword,
         confirmPassword: regConfirmPassword,
@@ -391,7 +411,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     </label>
                     {derivedUsername && (
                       <span className="text-[11px] font-bold text-[#142B4A] bg-[#142B4A]/5 px-2 py-0.5 rounded-md border border-[#C6A45A]/30">
-                        Username: {derivedUsername}
+                        Username: <span className="text-[#C6A45A]">@{derivedUsername}</span>
                       </span>
                     )}
                   </div>
@@ -402,13 +422,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       required
                       maxLength={120}
                       value={regFullName}
-                      onChange={e => setRegFullName(e.target.value)}
+                      onChange={e => setRegFullName(sanitizeFullName(e.target.value))}
                       placeholder="Enter your full name (e.g. Grace Mensah)"
                       className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
                     />
                   </div>
                   <p className="text-[10px] text-[#667085] mt-1">
-                    Your full name will automatically be your username {derivedUsername ? `(${derivedUsername})` : ''}.
+                    Your full name will automatically be your username {derivedUsername ? `(@${derivedUsername})` : ''}. No .com or email required.
                   </p>
                 </div>
 
