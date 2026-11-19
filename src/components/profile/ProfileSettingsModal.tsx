@@ -1205,8 +1205,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 {/* 9. Messages & Communications */}
                 <div className="p-4 flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-bold text-[#182230] dark:text-white">Messages & Communications</div>
-                    <div className="text-[11px] text-slate-400">Direct 1-on-1 messages, community chat replies and mentions</div>
+                    <div className="text-xs font-bold text-[#182230] dark:text-white">Direct 1-on-1 Messages</div>
+                    <div className="text-[11px] text-slate-400">Direct private messages in Communication Hub</div>
                   </div>
                   <button
                     type="button"
@@ -1226,7 +1226,91 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   </button>
                 </div>
 
-                {/* 10. Administrative Broadcasts */}
+                {/* 10. Group Chats & Channels */}
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#182230] dark:text-white">Group Chats & Cell Channels</div>
+                    <div className="text-[11px] text-slate-400">Messages sent in fellowship cells and group spaces</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleNotif('groupMessages')}
+                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      notifPrefs.groupMessages !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                        notifPrefs.groupMessages !== false ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 11. Voice & Video Calls */}
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#182230] dark:text-white">Voice & Video Calls</div>
+                    <div className="text-[11px] text-slate-400">Incoming calls, group meetings, and missed calls (Channel: FNI Calls)</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleNotif('calls')}
+                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      notifPrefs.calls !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                        notifPrefs.calls !== false ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 12. Sound & Chimes */}
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#182230] dark:text-white">Notification Sound & Chimes</div>
+                    <div className="text-[11px] text-slate-400">Play audio chime tones for incoming notifications</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleNotif('soundEnabled')}
+                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      notifPrefs.soundEnabled !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                        notifPrefs.soundEnabled !== false ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 13. Haptic Vibration */}
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#182230] dark:text-white">Device Vibration</div>
+                    <div className="text-[11px] text-slate-400">Vibrate mobile phone when permitted by system profile</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleNotif('vibrationEnabled')}
+                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      notifPrefs.vibrationEnabled !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                        notifPrefs.vibrationEnabled !== false ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 14. Administrative Broadcasts */}
                 <div className="p-4 flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#182230] dark:text-white">Administrative Broadcasts</div>

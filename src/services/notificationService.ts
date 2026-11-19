@@ -23,7 +23,12 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: UserNotificationPreferences = {
   meetings: true,
   cellAnnouncements: true,
   messages: true,
+  groupMessages: true,
+  calls: true,
   adminBroadcasts: true,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  mutedConversations: {},
   // Backward compatibility keys
   assignmentNotifications: true,
   quizNotifications: true,
@@ -200,8 +205,19 @@ export class NotificationService {
         }
         if (category === 'communication') {
           if (n.type === 'direct_message' && (prefs.messages === false || prefs.privateMessages === false)) return false;
+          if ((n.type === 'community_message' || (n.type as string) === 'group_message' || (n.type as string) === 'group_mention') && prefs.groupMessages === false) return false;
+          if ((n.type === 'incoming_call' || n.type === 'missed_call') && prefs.calls === false) return false;
           if ((n.type === 'announcement' || n.type === 'teaching_notes') && (prefs.cellAnnouncements === false)) return false;
           if (n.type === 'broadcast' && prefs.adminBroadcasts === false) return false;
+
+          // Check individual conversation mute settings
+          const convId = n.metadata?.conversationId || (n.metadata?.senderUid && n.type === 'direct_message' ? n.metadata.senderUid : null);
+          if (convId && prefs.mutedConversations?.[convId]?.isMuted) {
+            const muteInfo = prefs.mutedConversations[convId];
+            if (!muteInfo.mutedUntil || new Date(muteInfo.mutedUntil).getTime() > Date.now()) {
+              return false;
+            }
+          }
         }
       }
 

@@ -70,20 +70,51 @@ async function getFcmAccessToken(): Promise<{ token: string; projectId: string }
 }
 async function sendFcm(token: string, payload: { title: string; body: string; data?: Record<string, unknown> }) {
   const credentials = await getFcmAccessToken();
+  const isCall = payload.data?.type === "incoming_call" || payload.data?.type === "missed_call" || payload.data?.category === "calls";
+  const channelId = isCall ? "fni_calls" : String(payload.data?.channelId || "fni_updates");
+
   const data = Object.fromEntries(Object.entries(payload.data || {}).map(([key, value]) => [
     key, typeof value === "string" ? value : JSON.stringify(value ?? ""),
   ]));
+
   const response = await fetch(`https://fcm.googleapis.com/v1/projects/${credentials.projectId}/messages:send`, {
     method: "POST",
     headers: { Authorization: `Bearer ${credentials.token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       message: {
         token,
-        notification: { title: payload.title.slice(0, 140), body: payload.body.slice(0, 500) },
-        data,
+        notification: {
+          title: payload.title.slice(0, 140),
+          body: payload.body.slice(0, 500)
+        },
+        data: {
+          ...data,
+          channelId,
+          sound: "default",
+          priority: isCall ? "high" : "normal",
+        },
         android: {
           priority: "HIGH",
-          notification: { channel_id: "fni_updates", sound: "default" },
+          notification: {
+            channel_id: isCall ? "fni_calls" : "fni_updates", // Standard notification channel_id: "fni_updates"
+            sound: "default",
+            default_sound: true,
+            default_vibrate_timings: true,
+            notification_priority: isCall ? "PRIORITY_MAX" : "PRIORITY_HIGH",
+            visibility: "PUBLIC",
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              alert: {
+                title: payload.title.slice(0, 140),
+                body: payload.body.slice(0, 500),
+              },
+              sound: "default",
+              badge: 1,
+            },
+          },
         },
       },
     }),
@@ -261,6 +292,8 @@ Deno.serve(async req => {
         title: "FNI CELLS CONNECT Test Alert",
         body: "Background push notifications are working on this device.",
         tag: `fni-test-${Date.now()}`,
+        sound: "default",
+        vibrate: [200, 100, 200],
         data: { targetTab: "notifications" },
         timestamp: new Date().toISOString(),
       });
@@ -413,10 +446,13 @@ Deno.serve(async req => {
     const staleIds: string[] = [];
     if (webDevices.length) {
       const { server } = await getPushServer();
+      const isCall = deliveryMetadata?.type === "incoming_call" || deliveryMetadata?.type === "missed_call" || deliveryMetadata?.category === "calls";
       const payload = JSON.stringify({
         title: String(notification.title).slice(0, 140),
         body: String(notification.message).slice(0, 500),
         tag: String(notification.id).slice(0, 120),
+        sound: "default",
+        vibrate: isCall ? [300, 100, 300, 100, 300] : [200, 100, 200],
         data: deliveryMetadata,
         timestamp: notification.created_at || new Date().toISOString(),
       });

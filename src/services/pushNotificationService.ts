@@ -360,19 +360,25 @@ export class PushNotificationService {
     try {
       await PushNotifications.createChannel({
         id: 'fni_updates',
-        name: 'FNI Updates',
-        description: 'Messages, reports and important FNI activity',
+        name: 'General FNI Notifications',
+        description: 'Messages, group chats, announcements, events, reports, and system updates',
         importance: 5,
+        visibility: 1, // VISIBILITY_PUBLIC: Show on lock screen
         sound: 'default',
         vibration: true,
+        lights: true,
+        lightColor: '#C6A45A',
       });
       await PushNotifications.createChannel({
         id: 'fni_calls',
         name: 'FNI Calls & Meetings',
-        description: 'Incoming voice/video calls and cell meetings',
+        description: 'Incoming voice and video calls, missed calls, and live fellowship meetings',
         importance: 5,
+        visibility: 1, // VISIBILITY_PUBLIC: Show on lock screen
         sound: 'default',
         vibration: true,
+        lights: true,
+        lightColor: '#C6A45A',
       });
     } catch (e) {
       console.warn('Could not initialize native Android notification channels:', e);
@@ -394,6 +400,38 @@ export class PushNotificationService {
       return () => { void received.remove(); void action.remove(); };
     }
     return null;
+  }
+
+  static openDeviceNotificationSettings(): void {
+    if (typeof window === 'undefined') return;
+    if (isNativeAndroid()) {
+      try {
+        window.location.href = 'intent:#Intent;action=android.settings.APP_NOTIFICATION_SETTINGS;end';
+      } catch {
+        alert('To configure notification channels, open Android Settings > Apps > FNI Cells Connect > Notifications.');
+      }
+    } else if (isAppleMobileWeb()) {
+      alert('To configure notification sounds and banners on iPhone, open Settings > Notifications > FNI Cells.');
+    } else {
+      alert('To manage notification sound and banner permissions, click the lock or tune icon in your browser address bar next to the URL and ensure Notifications is set to "Allow".');
+    }
+  }
+
+  static getChannelInfo(): Array<{ id: string; name: string; description: string; importance: string }> {
+    return [
+      {
+        id: 'fni_updates',
+        name: 'General FNI Notifications',
+        description: 'Messages, group chats, announcements, events, reports, and system updates',
+        importance: 'High (Sound & Banner)',
+      },
+      {
+        id: 'fni_calls',
+        name: 'FNI Calls & Meetings',
+        description: 'Incoming voice and video calls, missed calls, and live fellowship meetings',
+        importance: 'Urgent / High (Ringing Sound & Vibration)',
+      },
+    ];
   }
 
   static showLocalNotification(

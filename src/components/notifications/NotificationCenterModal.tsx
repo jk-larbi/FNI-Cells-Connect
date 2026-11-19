@@ -8,6 +8,8 @@ import { PushNotificationService } from '../../services/pushNotificationService'
 import { CellService } from '../../services/cellService';
 import { MessagingService } from '../../services/messagingService';
 import {
+  NotificationService,
+  DEFAULT_NOTIFICATION_PREFERENCES,
   getNotificationPriority,
   getNotificationCategory,
 } from '../../services/notificationService';
@@ -43,14 +45,22 @@ import {
   History,
   Layers,
   ChevronDown,
+  Sliders,
+  Volume2,
+  VolumeX,
+  Vibrate,
+  Phone,
+  Settings,
 } from 'lucide-react';
 import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
+import { NotificationAudio } from '../../utils/notificationAudio';
 import {
   NotificationItem,
   NotificationCategory,
   NotificationPriority,
   Cell,
   AdminBroadcastRecord,
+  UserNotificationPreferences,
 } from '../../types';
 
 interface NotificationCenterModalProps {
@@ -118,8 +128,51 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
   const { currentUser, isAdmin } = useAuth();
 
-  // Active view: 'inbox' | 'broadcast' | 'history'
-  const [activeTab, setActiveTab] = useState<'inbox' | 'broadcast' | 'history'>('inbox');
+  // Active view: 'inbox' | 'settings' | 'broadcast' | 'history'
+  const [activeTab, setActiveTab] = useState<'inbox' | 'settings' | 'broadcast' | 'history'>('inbox');
+
+  // Notification Preferences State
+  const [notifPrefs, setNotifPrefs] = useState<UserNotificationPreferences>(() =>
+    currentUser?.id ? NotificationService.getUserNotificationPreferences(currentUser.id) : DEFAULT_NOTIFICATION_PREFERENCES
+  );
+  const [prefsNotice, setPrefsNotice] = useState<string | null>(null);
+
+  const handleTogglePref = (key: keyof UserNotificationPreferences) => {
+    if (!currentUser?.id) return;
+    const updated = {
+      ...notifPrefs,
+      [key]: !notifPrefs[key],
+    };
+    setNotifPrefs(updated);
+    NotificationService.saveUserNotificationPreferences(currentUser.id, updated);
+    setPrefsNotice('Notification preferences saved.');
+    setTimeout(() => setPrefsNotice(null), 3000);
+  };
+
+  const handleTestChime = () => {
+    NotificationAudio.playChime('general');
+  };
+
+  const handleTestVibration = () => {
+    NotificationAudio.triggerVibration([200, 100, 200]);
+  };
+
+  const handleUnmuteConversation = (convId: string) => {
+    if (!currentUser?.id) return;
+    const currentMuted = { ...(notifPrefs.mutedConversations || {}) };
+    delete currentMuted[convId];
+    const updated = {
+      ...notifPrefs,
+      mutedConversations: currentMuted,
+    };
+    setNotifPrefs(updated);
+    NotificationService.saveUserNotificationPreferences(currentUser.id, updated);
+    try {
+      localStorage.removeItem(`fni_user_group_prefs:${convId}`);
+    } catch {}
+    setPrefsNotice('Conversation unmuted.');
+    setTimeout(() => setPrefsNotice(null), 3000);
+  };
 
   // Filtering states
   const [filterMode, setFilterMode] = useState<
@@ -568,6 +621,19 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 </button>
               </>
             )}
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('settings')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'settings'
+                  ? 'bg-[#142B4A] text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <span>Settings</span>
+            </button>
           </div>
 
           {/* Quick Mark Read / Clear Actions for Inbox */}
@@ -791,6 +857,393 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     </div>
                   )}
                 </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* TAB: SYSTEM NOTIFICATION & SOUND SETTINGS                           */}
+        {/* =================================================================== */}
+        {activeTab === 'settings' && (
+          <div className="space-y-4">
+            {prefsNotice && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>{prefsNotice}</span>
+              </div>
+            )}
+
+            {/* Device OS & Channel Status */}
+            <div className="bg-white dark:bg-[#142238] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-[#26384d] space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-[#142B4A]/10 dark:bg-white/10 text-[#142B4A] dark:text-[#C6A45A]">
+                    <Smartphone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#142B4A] dark:text-white">Operating System Notification Delivery</h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Native channels, background sync, and system alert permissions
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {Capacitor.isNativePlatform() ? (
+                    <button
+                      type="button"
+                      onClick={() => PushNotificationService.openDeviceNotificationSettings()}
+                      className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#1c2e44] text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-[#C6A45A]" />
+                      <span>Open Device Settings</span>
+                    </button>
+                  ) : null}
+
+                  {isPushSupported && (
+                    <button
+                      type="button"
+                      disabled={isRequestingPush}
+                      onClick={async () => {
+                        setIsRequestingPush(true);
+                        try {
+                          const res = await PushNotificationService.sendTestPush();
+                          if (res.success) {
+                            setPushStatusMessage('Test push notification dispatched.');
+                          } else {
+                            setPushStatusMessage(res.error || 'Failed to dispatch test push.');
+                          }
+                          setTimeout(() => setPushStatusMessage(null), 4000);
+                        } catch (err: any) {
+                          setPushStatusMessage(err.message || 'Failed to dispatch test notification.');
+                        } finally {
+                          setIsRequestingPush(false);
+                        }
+                      }}
+                      className="px-2.5 py-1.5 rounded-xl bg-[#142B4A] text-white text-[11px] font-bold hover:bg-[#1a3860] flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <BellRing className="w-3.5 h-3.5 text-[#C6A45A]" />
+                      <span>Test Push</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {pushStatusMessage && (
+                <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-200 text-xs">
+                  {pushStatusMessage}
+                </div>
+              )}
+
+              {/* Status details grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c1626] border border-slate-200 dark:border-slate-800 space-y-1">
+                  <div className="text-[11px] text-slate-500 font-medium">Platform Environment</div>
+                  <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    {Capacitor.isNativePlatform() ? (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Android Native APK (FCM HTTP v1)</span>
+                      </>
+                    ) : isIosDevice() ? (
+                      <>
+                        <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+                        <span>iOS / iPadOS {isStandaloneMode() ? 'PWA (Installed Home Screen)' : 'Browser Tab'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Desktop / Web Browser</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {Capacitor.isNativePlatform()
+                      ? 'Configured with dual high-importance channels (Updates + Calls)'
+                      : isIosDevice()
+                      ? isStandaloneMode()
+                        ? 'Apple Web Push enabled with APNs system sound'
+                        : 'Web Push requires adding FNI Cells Connect to Home Screen'
+                      : 'Web Push (VAPID) enabled with browser notification audio'}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c1626] border border-slate-200 dark:border-slate-800 space-y-1">
+                  <div className="text-[11px] text-slate-500 font-medium">OS Permission State</div>
+                  <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    {pushPermission === 'granted' ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-emerald-700 dark:text-emerald-400">Granted & Active</span>
+                      </>
+                    ) : pushPermission === 'denied' ? (
+                      <>
+                        <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                        <span className="text-rose-600 dark:text-rose-400">Blocked in Device Settings</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-amber-600 dark:text-amber-400">Permission Not Requested</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {pushPermission === 'granted'
+                      ? 'System notifications permitted by operating system'
+                      : 'Please enable notifications in device settings to receive alerts'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sound & Vibration Controls */}
+            <div className="bg-white dark:bg-[#142238] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-[#26384d] space-y-3">
+              <h3 className="text-sm font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
+                <Volume2 className="w-4 h-4 text-[#C6A45A]" />
+                <span>Sound & Vibration Alert Settings</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Configure foreground synthesizer sound effects and device haptic vibrations. Respects phone silent mode and system volume.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Sound Toggle */}
+                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0c1626] flex items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      {notifPrefs.soundEnabled !== false ? (
+                        <Volume2 className="w-4 h-4 text-[#C6A45A]" />
+                      ) : (
+                        <VolumeX className="w-4 h-4 text-slate-400" />
+                      )}
+                      <span>Notification Sound</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Play audible chimes for incoming messages and alerts
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTestChime}
+                      className="mt-1 text-[11px] font-bold text-[#142B4A] dark:text-[#C6A45A] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Volume2 className="w-3 h-3" />
+                      <span>Play Sample Chime</span>
+                    </button>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.soundEnabled !== false}
+                    onChange={() => handleTogglePref('soundEnabled')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+
+                {/* Vibration Toggle */}
+                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0c1626] flex items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Vibrate className="w-4 h-4 text-emerald-500" />
+                      <span>Device Vibration</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Vibrate supported mobile phones on notification arrival
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTestVibration}
+                      className="mt-1 text-[11px] font-bold text-[#142B4A] dark:text-[#C6A45A] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Vibrate className="w-3 h-3" />
+                      <span>Test Vibration Pulse</span>
+                    </button>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.vibrationEnabled !== false}
+                    onChange={() => handleTogglePref('vibrationEnabled')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notification Delivery Channels & Categories */}
+            <div className="bg-white dark:bg-[#142238] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-[#26384d] space-y-3">
+              <h3 className="text-sm font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
+                <Sliders className="w-4 h-4 text-blue-500" />
+                <span>Notification Categories & Delivery Scope</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Choose which types of activities generate alerts. Inactive categories will be silenced.
+              </p>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 pt-1 text-xs">
+                {/* Messages */}
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-blue-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">Direct Private Messages</div>
+                      <div className="text-[11px] text-slate-500">One-on-one communication hub messages</div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.messages}
+                    onChange={() => handleTogglePref('messages')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+
+                {/* Group Messages */}
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-indigo-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">Group Chats & Cell Channels</div>
+                      <div className="text-[11px] text-slate-500">Messages posted in cell groups and tutor channels</div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.groupMessages !== false}
+                    onChange={() => handleTogglePref('groupMessages')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+
+                {/* Incoming Calls */}
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">Voice & Video Calls</div>
+                      <div className="text-[11px] text-slate-500">Incoming calls, group meetings, and missed call alerts (Channel: FNI Calls)</div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.calls !== false}
+                    onChange={() => handleTogglePref('calls')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+
+                {/* Cell Announcements */}
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <BellRing className="w-4 h-4 text-[#C6A45A] shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">Cell Announcements</div>
+                      <div className="text-[11px] text-slate-500">Official fellowship notices and schedule updates</div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.cellAnnouncements}
+                    onChange={() => handleTogglePref('cellAnnouncements')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+
+                {/* Reports */}
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-amber-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">Cell & Evangelism Reports</div>
+                      <div className="text-[11px] text-slate-500">Submission confirmations, deadlines, and approvals</div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.reports}
+                    onChange={() => handleTogglePref('reports')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+
+                {/* Meetings */}
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-purple-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">Weekly Cell Meetings</div>
+                      <div className="text-[11px] text-slate-500">Meeting reminders and schedule changes</div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.meetings}
+                    onChange={() => handleTogglePref('meetings')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+
+                {/* Broadcasts */}
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Send className="w-4 h-4 text-rose-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">Administrative Broadcasts</div>
+                      <div className="text-[11px] text-slate-500">High-priority leadership announcements and directives</div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.adminBroadcasts}
+                    onChange={() => handleTogglePref('adminBroadcasts')}
+                    className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Muted Conversations */}
+            <div className="bg-white dark:bg-[#142238] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-[#26384d] space-y-3">
+              <h3 className="text-sm font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
+                <VolumeX className="w-4 h-4 text-slate-400" />
+                <span>Muted Conversations & Groups</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Chats and fellowship channels you have muted. Notifications from muted conversations are silenced.
+              </p>
+
+              {Object.keys(notifPrefs.mutedConversations || {}).length === 0 ? (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#0c1626] border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500">
+                  No conversations are currently muted. All active chats deliver standard notifications.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {Object.entries(notifPrefs.mutedConversations || {}).map(([convId, muteInfo]) => {
+                    const isPermanent = !muteInfo.mutedUntil;
+                    const isExpired = muteInfo.mutedUntil ? new Date(muteInfo.mutedUntil).getTime() < Date.now() : false;
+                    const dateStr = muteInfo.mutedUntil ? new Date(muteInfo.mutedUntil).toLocaleString() : 'Permanent';
+                    const convName = muteInfo.name || `Conversation (${convId.slice(0, 8)}...)`;
+
+                    return (
+                      <div key={convId} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                        <div>
+                          <div className="font-bold text-slate-800 dark:text-slate-200">
+                            {convName}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {isExpired ? 'Mute expired' : `Muted until: ${dateStr}`}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUnmuteConversation(convId)}
+                          className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1a2c42] text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 cursor-pointer"
+                        >
+                          Unmute
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>

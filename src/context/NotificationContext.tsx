@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import {
   NotificationItem,
@@ -7,8 +7,9 @@ import {
   NotificationPriority,
   AdminBroadcastRecord,
 } from '../types';
-import { NotificationService } from '../services/notificationService';
+import { NotificationService, getNotificationPriority } from '../services/notificationService';
 import { PushNotificationService } from '../services/pushNotificationService';
+import { NotificationAudio } from '../utils/notificationAudio';
 import { useAuth } from './AuthContext';
 
 export interface ReminderLogEntry {
@@ -144,6 +145,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return () => { cancelled = true; };
   }, [currentUser?.id]);
 
+  const seenNotificationIdsRef = useRef<Set<string>>(new Set());
+  const isInitialLoadRef = useRef(true);
+
   // Real-time subscription to notifications for the current authenticated user
   useEffect(() => {
     if (!currentUser) {
@@ -155,7 +159,45 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       currentUser.id,
       currentUser.role,
       (userNotifs) => {
+        // If this is the initial emission, just seed seen set
+        if (isInitialLoadRef.current) {
+          isInitialLoadRef.current = false;
+          userNotifs.forEach(n => seenNotificationIdsRef.current.add(n.id));
+          setNotifications(userNotifs);
+          return;
+        }
+
+        // Detect newly arrived notifications in the foreground
+        let hasNewAlert = false;
+        let highestPriority: 'urgent' | 'important' | 'general' = 'general';
+
+        for (const n of userNotifs) {
+          if (!seenNotificationIdsRef.current.has(n.id)) {
+            seenNotificationIdsRef.current.add(n.id);
+            if (!n.is_read && n.metadata?.senderUid !== currentUser.id) {
+              hasNewAlert = true;
+              const prio = getNotificationPriority(n);
+              if (prio === 'urgent') {
+                highestPriority = 'urgent';
+              } else if (prio === 'important' && highestPriority !== 'urgent') {
+                highestPriority = 'important';
+              }
+            }
+          }
+        }
+
         setNotifications(userNotifs);
+
+        // If app is currently visible in foreground, trigger sound & vibration
+        if (hasNewAlert && typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          const prefs = NotificationService.getUserNotificationPreferences(currentUser.id);
+          if (prefs.soundEnabled !== false && prefs.inAppNotifications !== false) {
+            NotificationAudio.playChime(highestPriority);
+          }
+          if (prefs.vibrationEnabled !== false && prefs.inAppNotifications !== false) {
+            NotificationAudio.triggerVibration(highestPriority === 'urgent' ? [200, 100, 200, 100, 200] : [120, 80, 120]);
+          }
+        }
       }
     );
 

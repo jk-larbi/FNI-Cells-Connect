@@ -111,7 +111,12 @@ export interface UserNotificationPreferences {
   meetings?: boolean;
   cellAnnouncements?: boolean;
   messages?: boolean;
+  groupMessages?: boolean;
+  calls?: boolean;
   adminBroadcasts?: boolean;
+  soundEnabled?: boolean;
+  vibrationEnabled?: boolean;
+  mutedConversations?: Record<string, { isMuted: boolean; mutedUntil: string | null; name?: string }>;
   // Backward compatibility fields
   assignmentNotifications?: boolean;
   quizNotifications?: boolean;

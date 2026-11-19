@@ -138,6 +138,7 @@ self.addEventListener('push', event => {
       }
 
       const title = payload.title || 'FNI Cells Connect';
+      const isCall = payload.data?.type === 'incoming_call' || payload.data?.category === 'calls';
       const options = {
         body: payload.body || 'You have a new FNI update.',
         icon: payload.icon || `${FNI_SCOPE}apple-touch-icon.png`,
@@ -146,6 +147,9 @@ self.addEventListener('push', event => {
         renotify: Boolean(payload.renotify),
         data: payload.data || {},
         timestamp: payload.timestamp || Date.now(),
+        sound: payload.sound || 'default',
+        vibrate: payload.vibrate || (isCall ? [300, 100, 300, 100, 300] : [200, 100, 200]),
+        silent: false,
       };
 
       // Set App Badge if supported on iOS/macOS/desktop
