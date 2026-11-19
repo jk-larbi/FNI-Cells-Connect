@@ -258,9 +258,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Navigation State
   // When no conversation is selected (selectedChatId === null), the FNI Communication Home Page is shown
-  // On desktop view (width >= 768px), default to 'saved_messages' for split view
+  // On desktop view (width >= 768px), default to 'community' (Main Fellowship Chat) for split view (matching PC reference)
   const [selectedChatId, setSelectedChatId] = useState<string | null>(
-    initialConversationId || (typeof window !== 'undefined' && window.innerWidth >= 768 ? 'saved_messages' : null)
+    initialConversationId || (typeof window !== 'undefined' && window.innerWidth >= 768 ? 'community' : null)
   );
   const [mobileScreen, setMobileScreen] = useState<'list' | 'chat'>(initialConversationId ? 'chat' : 'list');
   const [activeFolderId, setActiveFolderId] = useState<string>('all');
@@ -553,9 +553,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       return true;
     }
     if (selectedChatId !== null) {
-      setSelectedChatId(null);
-      setMobileScreen('list');
-      return true;
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        if (selectedChatId !== 'community') {
+          setSelectedChatId('community');
+          return true;
+        }
+      } else {
+        setSelectedChatId(null);
+        setMobileScreen('list');
+        return true;
+      }
     }
     if (onBack) {
       onBack();
@@ -581,10 +588,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     onBack
   ));
 
-  // Handle back from an open conversation
+  // Handle back from an open conversation (On PC, falls back to the main community fellowship chat)
   const handleBackToHome = () => {
-    setSelectedChatId(null);
-    setMobileScreen('list');
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setSelectedChatId('community');
+    } else {
+      setSelectedChatId(null);
+      setMobileScreen('list');
+    }
   };
 
   // Calling integration
@@ -775,12 +786,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setInputText(draft);
   }, [currentUser?.id]);
 
-  // Deep linking sync
+  // Deep linking sync & PC default split-view auto-selection
   useEffect(() => {
     if (initialConversationId) {
       openConversation(initialConversationId);
+    } else if (typeof window !== 'undefined' && window.innerWidth >= 768 && !selectedChatId) {
+      openConversation('community');
     }
-  }, [initialConversationId, openConversation]);
+  }, [initialConversationId, selectedChatId, openConversation]);
 
   // ---------------------------------------------------------------------------
   // 2. MESSAGES LOADING & REALTIME SYNC (OPTIMIZED BACKGROUND STALE-WHILE-REVALIDATE)
