@@ -95,10 +95,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Notifications */}
         <button
           onClick={onOpenNotifications}
-          className="relative p-2 sm:p-2.5 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#667085] dark:text-slate-300 hover:text-[#142B4A] dark:hover:text-white transition-colors border border-[#E3E8EF] dark:border-[#26384d]"
+          className="relative p-2 sm:p-2.5 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#00A3E0] dark:text-[#38BDF8] hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors border border-[#E3E8EF] dark:border-[#26384d]"
           title="Notifications & Dispatches"
         >
-          <Bell className="w-4 h-4" />
+          <Bell className="w-4 h-4 text-[#00A3E0] dark:text-[#38BDF8]" />
           {unreadCount > 0 && (
             <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C74646] text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
               {unreadCount > 9 ? '9+' : unreadCount}

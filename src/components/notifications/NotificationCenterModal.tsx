@@ -409,6 +409,31 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     }
   };
 
+  const getCategoryBoxClass = (cat: string) => {
+    switch (cat) {
+      case 'reports':
+        return 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60';
+      case 'assignments':
+        return 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60';
+      case 'quizzes':
+        return 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60';
+      case 'learning':
+        return 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60';
+      case 'cells':
+        return 'bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800/60';
+      case 'leadership':
+        return 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60';
+      case 'meetings':
+        return 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60';
+      case 'communication':
+        return 'bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/60';
+      case 'system':
+        return 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60';
+      default:
+        return 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60';
+    }
+  };
+
   // Render priority badge
   const renderPriorityBadge = (priority: NotificationPriority) => {
     if (priority === 'urgent') {
@@ -473,7 +498,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         {/* Top Header Row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="p-1.5 rounded-xl bg-white dark:bg-[#203248] border border-slate-200 dark:border-[#314660] shadow-2xs">
+            <div className={`p-1.5 rounded-xl border shadow-2xs shrink-0 flex items-center justify-center ${getCategoryBoxClass(getNotificationCategory(n))}`}>
               {getCategoryIcon(n)}
             </div>
             <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
@@ -584,10 +609,10 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
-              <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <Bell className="w-3.5 h-3.5 text-[#00A3E0] dark:text-[#38BDF8]" />
               <span>Inbox</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-[#C6A45A] text-navy-950 text-[10px] font-extrabold">
+                <span className="px-1.5 py-0.2 rounded-full bg-[#C74646] text-white text-[10px] font-extrabold">
                   {unreadCount}
                 </span>
               )}
@@ -602,7 +627,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
-              <Sliders className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <Sliders className="w-3.5 h-3.5 text-[#FF8E25] dark:text-[#FDBA74]" />
               <span>Settings</span>
             </button>
 
@@ -617,7 +642,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                       : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
-                  <Send className="w-3.5 h-3.5 text-blue-400" />
+                  <Send className="w-3.5 h-3.5 text-[#2AABEE] dark:text-[#38BDF8]" />
                   <span>Send Broadcast</span>
                 </button>
 
@@ -630,7 +655,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                       : 'bg-slate-100 dark:bg-[#1a2c42] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
-                  <History className="w-3.5 h-3.5 text-purple-400" />
+                  <History className="w-3.5 h-3.5 text-[#10B981] dark:text-[#34D399]" />
                   <span>Delivery History</span>
                 </button>
               </>

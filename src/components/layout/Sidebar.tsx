@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { AppNavTab } from '../../types';
+import { ICON_STYLES, IconColorKey } from '../../utils/iconColors';
 import {
   LayoutDashboard,
   Calendar,
@@ -88,59 +89,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [currentTab]);
 
   // Administrator Navigation
-  const adminNavItems = [
-    { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'cells-dropdown' as any, label: 'Cells', icon: Building, isExpandable: true },
-    { id: 'reports-dropdown' as any, label: 'Reports', icon: FileCheck, isExpandable: true },
-    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true },
-    { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame },
-    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
-    { id: 'finance' as AppNavTab, label: 'Offering', icon: DollarSign },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
-    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone },
-    { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3 },
-    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
-    { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings },
+  const adminNavItems: { id: AppNavTab | 'cells-dropdown' | 'reports-dropdown'; label: string; icon: any; isExpandable?: boolean; badge?: number; colorKey: IconColorKey }[] = [
+    { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard, colorKey: 'gold' },
+    { id: 'cells-dropdown', label: 'Cells', icon: Building, isExpandable: true, colorKey: 'teal' },
+    { id: 'reports-dropdown', label: 'Reports', icon: FileCheck, isExpandable: true, colorKey: 'emerald' },
+    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true, colorKey: 'purple' },
+    { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame, colorKey: 'flame' },
+    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck, colorKey: 'teal' },
+    { id: 'finance' as AppNavTab, label: 'Offering', icon: DollarSign, colorKey: 'emerald' },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare, colorKey: 'azure' },
+    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone, colorKey: 'purple' },
+    { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3, colorKey: 'blue' },
+    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount, colorKey: 'sky' },
+    { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings, colorKey: 'slate' },
   ];
 
   // Tutor Navigation
-  const tutorNavItems = [
-    { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: LayoutDashboard },
-    { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building },
-    { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: FileText },
-    { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: Flame },
-    { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: FileCheck },
-    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true },
-    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: Users },
-    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare },
-    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone },
-    { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: History },
-    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount },
-    { id: 'my-account' as AppNavTab, label: 'My Account', icon: User },
+  const tutorNavItems: { id: AppNavTab; label: string; icon: any; isExpandable?: boolean; badge?: number; colorKey: IconColorKey }[] = [
+    { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: LayoutDashboard, colorKey: 'gold' },
+    { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building, colorKey: 'teal' },
+    { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: FileText, colorKey: 'emerald' },
+    { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: Flame, colorKey: 'flame' },
+    { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: FileCheck, colorKey: 'emerald' },
+    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true, colorKey: 'purple' },
+    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: Users, colorKey: 'teal' },
+    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck, colorKey: 'teal' },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare, colorKey: 'azure' },
+    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone, colorKey: 'purple' },
+    { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: History, colorKey: 'blue' },
+    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount, colorKey: 'sky' },
+    { id: 'my-account' as AppNavTab, label: 'My Account', icon: User, colorKey: 'teal' },
   ];
 
   // Submodules
-  const cellsSubItems = [
-    { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building },
-    { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users },
-    { id: 'cell-location-history' as AppNavTab, label: 'Cell Location History', icon: MapPin },
+  const cellsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
+    { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building, colorKey: 'teal' },
+    { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users, colorKey: 'teal' },
+    { id: 'cell-location-history' as AppNavTab, label: 'Cell Location History', icon: MapPin, colorKey: 'cyan' },
   ];
 
-  const reportsSubItems = [
-    { id: 'report-review' as AppNavTab, label: 'Review', icon: FileCheck },
-    { id: 'report-history' as AppNavTab, label: 'Report History', icon: History },
-    { id: 'report-deadlines' as AppNavTab, label: 'Deadline Settings', icon: Clock },
+  const reportsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
+    { id: 'report-review' as AppNavTab, label: 'Review', icon: FileCheck, colorKey: 'emerald' },
+    { id: 'report-history' as AppNavTab, label: 'Report History', icon: History, colorKey: 'blue' },
+    { id: 'report-deadlines' as AppNavTab, label: 'Deadline Settings', icon: Clock, colorKey: 'flame' },
   ];
 
-  const learningSubItems = [
-    { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: LayoutDashboard },
-    { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: BookOpen },
-    { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: FileCheck2 },
-    { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: Users },
-    { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: BarChart3 },
-    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: Calendar },
-    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: Library },
+  const learningSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
+    { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: LayoutDashboard, colorKey: 'purple' },
+    { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: BookOpen, colorKey: 'amber' },
+    { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: FileCheck2, colorKey: 'orange' },
+    { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: Users, colorKey: 'teal' },
+    { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: BarChart3, colorKey: 'blue' },
+    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: Calendar, colorKey: 'cyan' },
+    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: Library, colorKey: 'amber' },
   ];
 
   const navItems = isAdmin ? adminNavItems : tutorNavItems;
@@ -262,7 +263,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         if (isCells) onSelectTab('cell-management');
                         else if (isReports) onSelectTab('report-review');
                         else if (isLearning) onSelectTab('learning-portal');
-                        else onSelectTab(item.id);
+                        else onSelectTab(item.id as AppNavTab);
                         onCloseMobile();
                       }}
                       className={`relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-150 cursor-pointer ${
@@ -272,7 +273,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }`}
                       aria-label={item.label}
                     >
-                      <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-[#C6A45A]' : ''}`} />
+                      <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${isActive ? 'bg-white/10 text-[#C6A45A]' : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`} transition-colors`}>
+                        <Icon className="w-4 h-4 shrink-0" />
+                      </span>
                       {item.badge && item.badge > 0 ? (
                         <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#C74646] ring-2 ring-white dark:ring-[#0d1624]" />
                       ) : null}
@@ -311,7 +314,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
                       >
-                        <Building className={`w-4 h-4 shrink-0 ${isCellsActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          isCellsActive
+                            ? 'bg-white/15 text-[#C6A45A]'
+                            : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
+                        } transition-colors`}>
+                          <Building className="w-4 h-4 shrink-0" />
+                        </span>
                         <span className="truncate">Cells</span>
                       </button>
 
@@ -351,7 +360,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                               }`}
                             >
-                              <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
+                              <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+                                isSubActive
+                                  ? 'bg-[#142B4A]/15 text-[#C6A45A]'
+                                  : `${ICON_STYLES[sub.colorKey].bg} ${ICON_STYLES[sub.colorKey].text}`
+                              } transition-colors`}>
+                                <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                              </span>
                               <span className="truncate">{sub.label}</span>
                             </button>
                           );
@@ -382,7 +397,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
                       >
-                        <FileCheck className={`w-4 h-4 shrink-0 ${isReportsActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          isReportsActive
+                            ? 'bg-white/15 text-[#C6A45A]'
+                            : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
+                        } transition-colors`}>
+                          <FileCheck className="w-4 h-4 shrink-0" />
+                        </span>
                         <span className="truncate">Reports</span>
                       </button>
 
@@ -422,7 +443,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                               }`}
                             >
-                              <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
+                              <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+                                isSubActive
+                                  ? 'bg-[#142B4A]/15 text-[#C6A45A]'
+                                  : `${ICON_STYLES[sub.colorKey].bg} ${ICON_STYLES[sub.colorKey].text}`
+                              } transition-colors`}>
+                                <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                              </span>
                               <span className="truncate">{sub.label}</span>
                             </button>
                           );
@@ -453,7 +480,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
                       >
-                        <GraduationCap className={`w-4 h-4 shrink-0 ${isLearningActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          isLearningActive
+                            ? 'bg-white/15 text-[#C6A45A]'
+                            : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
+                        } transition-colors`}>
+                          <GraduationCap className="w-4 h-4 shrink-0" />
+                        </span>
                         <span className="truncate">Learning Portal</span>
                       </button>
 
@@ -493,7 +526,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                               }`}
                             >
-                              <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-[#C6A45A]' : 'text-slate-400'}`} />
+                              <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+                                isSubActive
+                                  ? 'bg-[#142B4A]/15 text-[#C6A45A]'
+                                  : `${ICON_STYLES[sub.colorKey].bg} ${ICON_STYLES[sub.colorKey].text}`
+                              } transition-colors`}>
+                                <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                              </span>
                               <span className="truncate">{sub.label}</span>
                             </button>
                           );
@@ -509,7 +548,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => {
-                    onSelectTab(item.id);
+                    onSelectTab(item.id as AppNavTab);
                     onCloseMobile();
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
@@ -519,7 +558,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#C6A45A]' : 'text-slate-500 dark:text-slate-400'}`} />
+                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                      isActive
+                        ? 'bg-white/15 text-[#C6A45A]'
+                        : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
+                    } transition-colors`}>
+                      <Icon className="w-4 h-4 shrink-0" />
+                    </span>
                     <span className="truncate">{item.label}</span>
                   </div>
                   {item.badge && item.badge > 0 ? (

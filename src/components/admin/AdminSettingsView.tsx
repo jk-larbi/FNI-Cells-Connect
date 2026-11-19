@@ -13,6 +13,7 @@ import { SystemSettings, AuditLog } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { SoulTargetSettingsModal } from './SoulTargetSettingsModal';
+import { ICON_STYLES } from '../../utils/iconColors';
 import {
   Settings,
   Shield,
@@ -273,33 +274,39 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       </div>
 
       {/* Tabs */}
-      <div className="bg-[#E3E8EF] p-1 rounded-2xl flex items-center text-xs font-bold text-[#667085] max-w-md">
+      <div className="bg-[#E3E8EF] dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold text-[#667085] dark:text-slate-400 max-w-md">
         <button
           onClick={() => setActiveTab('system')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'system' ? 'bg-white text-[#182230] shadow-sm' : 'hover:text-[#182230]'
+          className={`flex-1 py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'system' ? 'bg-white dark:bg-[#142B4A] text-[#182230] dark:text-white shadow-sm' : 'hover:text-[#182230] dark:hover:text-white'
           }`}
         >
-          <Settings className="w-3.5 h-3.5 text-[#142B4A]" />
-          Ministry Settings
+          <span className="w-5 h-5 rounded-md flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+            <Settings className="w-3.5 h-3.5" />
+          </span>
+          <span>Ministry Settings</span>
         </button>
         <button
           onClick={() => setActiveTab('security')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'security' ? 'bg-white text-[#182230] shadow-sm' : 'hover:text-[#182230]'
+          className={`flex-1 py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'security' ? 'bg-white dark:bg-[#142B4A] text-[#182230] dark:text-white shadow-sm' : 'hover:text-[#182230] dark:hover:text-white'
           }`}
         >
-          <Shield className="w-3.5 h-3.5 text-[#C6A45A]" />
-          Admin Security
+          <span className="w-5 h-5 rounded-md flex items-center justify-center bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shrink-0">
+            <Shield className="w-3.5 h-3.5" />
+          </span>
+          <span>Admin Security</span>
         </button>
         <button
           onClick={() => setActiveTab('audit')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'audit' ? 'bg-white text-[#182230] shadow-sm' : 'hover:text-[#182230]'
+          className={`flex-1 py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'audit' ? 'bg-white dark:bg-[#142B4A] text-[#182230] dark:text-white shadow-sm' : 'hover:text-[#182230] dark:hover:text-white'
           }`}
         >
-          <History className="w-3.5 h-3.5 text-[#23845B]" />
-          Audit Trail
+          <span className="w-5 h-5 rounded-md flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+            <History className="w-3.5 h-3.5" />
+          </span>
+          <span>Audit Trail</span>
         </button>
       </div>
 
@@ -308,7 +315,9 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
         <div className="space-y-5 max-w-2xl">
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 flex items-center justify-center shrink-0"><User className="w-5 h-5 text-[#142B4A]" /></div>
+              <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
+                <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              </div>
               <div><h2 className="text-sm font-bold text-[#142B4A]">Your Administrator Profile</h2><p className="text-xs text-[#667085] mt-1">Set the administrator's full name and unique username. The username is also used for future administrator sign-ins.</p></div>
             </div>
             <form onSubmit={handleSaveAdministratorProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -624,7 +633,15 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {activeTab === 'security' && (
         <div className="space-y-6 max-w-md">
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
-            <div><h3 className="text-sm font-bold text-[#182230]">Administrator Profile</h3><p className="text-xs text-[#667085] mt-0.5">Set the name and unique username shown across FNI. The username can be used with the existing password to sign in.</p></div>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
+                <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#182230]">Administrator Profile</h3>
+                <p className="text-xs text-[#667085] mt-0.5">Set the name and unique username shown across FNI. The username can be used with the existing password to sign in.</p>
+              </div>
+            </div>
             <form onSubmit={handleSaveAdministratorProfile} className="space-y-3 text-xs">
               {profileSaveNotice && <div className={`p-3 rounded-xl border-l-4 font-semibold ${profileSaveNotice.isError ? 'bg-[#FFF5F5] border-[#C74646] text-[#C74646]' : 'bg-emerald-50 border-[#23845B] text-[#23845B]'}`}>{profileSaveNotice.text}</div>}
               <div><label className="block font-bold text-[#182230] mb-1">Full name</label><input type="text" required minLength={2} maxLength={80} value={profileFullName} onChange={e => setProfileFullName(e.target.value)} placeholder="Enter your full name" className="w-full p-2.5 rounded-xl border border-[#E3E8EF] focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none" /></div>
@@ -635,9 +652,14 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
 
           {/* Email Notifications */}
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
-            <div>
-              <h3 className="text-sm font-bold text-[#182230]">Email Notifications</h3>
-              <p className="text-xs text-[#667085] mt-0.5">Choose where new report alerts should be sent. You can change this address anytime.</p>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 flex items-center justify-center shrink-0">
+                <Bell className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#182230]">Email Notifications</h3>
+                <p className="text-xs text-[#667085] mt-0.5">Choose where new report alerts should be sent. You can change this address anytime.</p>
+              </div>
             </div>
             <form onSubmit={handleSaveNotificationEmail} className="space-y-3 text-xs">
               {emailSaveNotice && <div className={`p-3 rounded-xl border-l-4 font-semibold ${emailSaveNotice.isError ? 'bg-[#FFF5F5] border-[#C74646] text-[#C74646]' : 'bg-emerald-50 border-[#23845B] text-[#23845B]'}`}>{emailSaveNotice.text}</div>}
@@ -652,14 +674,18 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           {/* Device Push Notifications Delivery & Testing (All Devices) */}
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <h3 className="text-sm font-bold text-[#182230] flex items-center gap-1.5">
-                  <Smartphone className="w-4 h-4 text-[#C6A45A]" />
-                  <span>Operating System Push Notifications</span>
-                </h3>
-                <p className="text-xs text-[#667085] mt-0.5">
-                  Real operating system notifications on Android phones, iPhones, iPads, and desktop computers.
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[#182230] flex items-center gap-1.5">
+                    <span>Operating System Push Notifications</span>
+                  </h3>
+                  <p className="text-xs text-[#667085] mt-0.5">
+                    Real operating system notifications on Android phones, iPhones, iPads, and desktop computers.
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -961,11 +987,16 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           </div>
 
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-sm font-bold text-[#182230]">Change Administrator Password</h3>
-              <p className="text-xs text-[#667085] mt-0.5">
-                Secure your leadership account. Passwords persist across deployments.
-              </p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#182230]">Change Administrator Password</h3>
+                <p className="text-xs text-[#667085] mt-0.5">
+                  Secure your leadership account. Passwords persist across deployments.
+                </p>
+              </div>
             </div>
 
           <form onSubmit={handlePasswordChange} className="space-y-3.5 text-xs">
@@ -1042,11 +1073,16 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {/* TAB 3: AUDIT TRAIL */}
       {activeTab === 'audit' && (
         <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
-          <div className="py-4 px-6 border-b border-[#E3E8EF]">
-            <h3 className="text-sm font-bold text-[#182230]">System Security & Activity Audit Trail</h3>
-            <p className="text-xs text-[#667085] mt-0.5">
-              Immutable log of administrative decisions, report reviews, and user registrations.
-            </p>
+          <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center shrink-0">
+              <History className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[#182230]">System Security & Activity Audit Trail</h3>
+              <p className="text-xs text-[#667085] mt-0.5">
+                Immutable log of administrative decisions, report reviews, and user registrations.
+              </p>
+            </div>
           </div>
 
           <div className="divide-y divide-[#E3E8EF] max-h-96 overflow-y-auto custom-scrollbar">

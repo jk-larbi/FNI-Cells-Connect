@@ -2910,16 +2910,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                 {/* Chat Options Dropdown */}
                 {showChatOptionsMenu && (
-                  <div className="absolute right-0 top-10 z-30 w-52 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-xl py-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn">
+                  <div className="absolute right-0 top-10 z-30 w-56 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-xl p-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn space-y-0.5">
                     <button
                       type="button"
                       onClick={() => {
                         setShowChatOptionsMenu(false);
                         handleStartVoiceCall();
                       }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold"
+                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
                     >
-                      <Phone className="w-4 h-4 text-emerald-500" />
+                      <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/50 dark:border-emerald-800/40">
+                        <Phone className="w-3.5 h-3.5" />
+                      </span>
                       <span>Voice Call</span>
                     </button>
                     <button
@@ -2928,9 +2930,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         setShowChatOptionsMenu(false);
                         handleStartVideoCall();
                       }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold"
+                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
                     >
-                      <Video className="w-4 h-4 text-blue-500" />
+                      <span className="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-200/50 dark:border-purple-800/40">
+                        <Video className="w-3.5 h-3.5" />
+                      </span>
                       <span>Video Call</span>
                     </button>
                     {selectedChatId === 'community' && (
@@ -2940,9 +2944,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           setShowChatOptionsMenu(false);
                           setIsGroupInfoModalOpen(true);
                         }}
-                        className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold text-blue-600 dark:text-blue-400"
+                        className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
                       >
-                        <Info className="w-4 h-4" />
+                        <span className="w-6 h-6 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-200/50 dark:border-teal-800/40">
+                          <Info className="w-3.5 h-3.5" />
+                        </span>
                         <span>Group Info & Settings</span>
                       </button>
                     )}
@@ -2953,9 +2959,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           setShowChatOptionsMenu(false);
                           setIsOfficialGroupModalOpen(true);
                         }}
-                        className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold text-amber-600 dark:text-amber-400"
+                        className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
                       >
-                        <ShieldCheck className="w-4 h-4" />
+                        <span className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-[#C6A45A] flex items-center justify-center shrink-0 border border-amber-200/50 dark:border-amber-800/40">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                        </span>
                         <span>Manage Official Group</span>
                       </button>
                     )}
@@ -2965,9 +2973,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         setShowChatOptionsMenu(false);
                         setIsSettingsModalOpen(true);
                       }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold"
+                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
                     >
-                      <Settings className="w-4 h-4 text-purple-500" />
+                      <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-slate-700/50">
+                        <Settings className="w-3.5 h-3.5" />
+                      </span>
                       <span>Settings & History</span>
                     </button>
                     <button
@@ -2978,9 +2988,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         setClearChatForEveryone(false);
                         setShowClearChatModal(true);
                       }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2.5 font-semibold text-rose-600 dark:text-rose-400 cursor-pointer"
+                      className="w-full px-2.5 py-1.5 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl flex items-center gap-2.5 font-semibold text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
                     >
-                      <Trash2 className="w-4 h-4 text-rose-500" />
+                      <span className="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200/50 dark:border-rose-800/40">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </span>
                       <span>Clear Chat History</span>
                     </button>
                     <button
@@ -2989,9 +3001,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         setShowChatOptionsMenu(false);
                         handleBackToHome();
                       }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2.5 font-semibold text-slate-600 dark:text-slate-400"
+                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
                     >
-                      <X className="w-4 h-4" />
+                      <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-slate-700/50">
+                        <X className="w-3.5 h-3.5" />
+                      </span>
                       <span>Close Conversation</span>
                     </button>
                   </div>

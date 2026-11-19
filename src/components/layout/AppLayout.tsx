@@ -16,6 +16,7 @@ import {
   Bell,
   GraduationCap,
 } from 'lucide-react';
+import { ICON_STYLES, IconColorKey } from '../../utils/iconColors';
 import { LocationSharingPanel } from '../location/LocationSharingPanel';
 
 // Administrator Portal Views
@@ -544,22 +545,23 @@ export const AppLayout: React.FC = () => {
       >
         {(isAdmin
           ? [
-              { id: 'dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard },
-              { id: 'cell-management' as AppNavTab, label: 'Cells', icon: Building },
-              { id: 'report-review' as AppNavTab, label: 'Reports', icon: FileCheck },
-              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
-              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap },
+              { id: 'dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard, colorKey: 'gold' as IconColorKey },
+              { id: 'cell-management' as AppNavTab, label: 'Cells', icon: Building, colorKey: 'teal' as IconColorKey },
+              { id: 'report-review' as AppNavTab, label: 'Reports', icon: FileCheck, colorKey: 'emerald' as IconColorKey },
+              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare, colorKey: 'azure' as IconColorKey },
+              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap, colorKey: 'purple' as IconColorKey },
             ]
           : [
-              { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard },
-              { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building },
-              { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Report', icon: PlusCircle },
-              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare },
-              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap },
+              { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard, colorKey: 'gold' as IconColorKey },
+              { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building, colorKey: 'teal' as IconColorKey },
+              { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Report', icon: PlusCircle, colorKey: 'emerald' as IconColorKey },
+              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare, colorKey: 'azure' as IconColorKey },
+              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap, colorKey: 'purple' as IconColorKey },
             ]
         ).map(item => {
           const Icon = item.icon;
           const active = effectiveTab === item.id || (item.id === 'learning-portal' && effectiveTab.startsWith('learning-'));
+          const style = ICON_STYLES[item.colorKey];
           return (
             <button
               key={item.id}
@@ -571,12 +573,12 @@ export const AppLayout: React.FC = () => {
               }`}
             >
               <span className={`flex h-7 w-10 items-center justify-center rounded-xl transition-all ${
-                active ? 'bg-[#142B4A]/[0.08] dark:bg-white/10' : ''
+                active ? `${style.bg} ${style.text}` : ''
               }`}>
-                <Icon className={`h-5 w-5 ${active ? 'text-[#C6A45A]' : ''}`} />
+                <Icon className={`h-5 w-5 ${active ? style.text : `${style.text} opacity-75`}`} />
               </span>
               <span className="truncate max-w-[56px] text-center">{item.label}</span>
-              {active && <span className="absolute bottom-0.5 h-0.5 w-7 rounded-full bg-[#C6A45A]" />}
+              {active && <span className={`absolute bottom-0.5 h-0.5 w-7 rounded-full ${style.badge.split(' ')[0]}`} />}
             </button>
           );
         })}

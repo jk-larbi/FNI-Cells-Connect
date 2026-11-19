@@ -15,6 +15,7 @@ import { NotificationAudio } from '../../utils/notificationAudio';
 import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
 import { Capacitor } from '@capacitor/core';
 import { AppUpdateSettingsSection } from '../settings/AppUpdateSettingsSection';
+import { ICON_STYLES } from '../../utils/iconColors';
 import {
   User,
   Mail,
@@ -712,12 +713,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <User className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.teal.bg} ${ICON_STYLES.teal.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <User className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#182230] dark:text-white">Manage Profile</div>
-                      <div className="text-[11px] text-slate-400">Name, phone, email & cell information</div>
+                      <div className="text-[11px] text-slate-400">Name, phone, email &amp; cell information</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -730,12 +731,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <Lock className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.blue.bg} ${ICON_STYLES.blue.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <Lock className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Password & Security</div>
-                      <div className="text-[11px] text-slate-400">Change password, active sessions & sign out other devices</div>
+                      <div className="text-xs font-bold text-[#182230] dark:text-white">Password &amp; Security</div>
+                      <div className="text-[11px] text-slate-400">Change password, active sessions &amp; sign out other devices</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -748,12 +749,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <Bell className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.sky.bg} ${ICON_STYLES.sky.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <Bell className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#182230] dark:text-white">Notifications</div>
-                      <div className="text-[11px] text-slate-400">Deadlines, assignments, quizzes, announcements & chimes</div>
+                      <div className="text-[11px] text-slate-400">Deadlines, assignments, quizzes, announcements &amp; chimes</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -764,7 +765,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             {/* GROUP 2: CHAT & PREFERENCES */}
             <div className="space-y-2">
               <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2">
-                Chat & Appearance
+                Chat &amp; Appearance
               </div>
               <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
                 
@@ -775,12 +776,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <Palette className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.pink.bg} ${ICON_STYLES.pink.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <Palette className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#182230] dark:text-white">Chat Wallpaper</div>
-                      <div className="text-[11px] text-slate-400">Custom wallpapers, solid colors & bubble contrast preview</div>
+                      <div className="text-[11px] text-slate-400">Custom wallpapers, solid colors &amp; bubble contrast preview</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -793,11 +794,11 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <Sun className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.orange.bg} ${ICON_STYLES.orange.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <Sun className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Theme & Appearance</div>
+                      <div className="text-xs font-bold text-[#182230] dark:text-white">Theme &amp; Appearance</div>
                       <div className="text-[11px] text-slate-400">Light mode, dark mode, or system default</div>
                     </div>
                   </div>
@@ -811,12 +812,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <Clock className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.cyan.bg} ${ICON_STYLES.cyan.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <Clock className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Language & Time</div>
-                      <div className="text-[11px] text-slate-400">Ghana Time (Africa/Accra / UTC+0), formats & language</div>
+                      <div className="text-xs font-bold text-[#182230] dark:text-white">Language &amp; Time</div>
+                      <div className="text-[11px] text-slate-400">Ghana Time (Africa/Accra / UTC+0), formats &amp; language</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -827,7 +828,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             {/* GROUP 3: SUPPORT & POLICIES */}
             <div className="space-y-2">
               <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2">
-                Support & Policies
+                Support &amp; Policies
               </div>
               <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
                 
@@ -838,8 +839,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <RefreshCw className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.indigo.bg} ${ICON_STYLES.indigo.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <RefreshCw className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-1.5">
@@ -861,12 +862,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <HelpCircle className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.purple.bg} ${ICON_STYLES.purple.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <HelpCircle className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Help & Support</div>
-                      <div className="text-[11px] text-slate-400">FAQ guides, contacts & reporting assistance</div>
+                      <div className="text-xs font-bold text-[#182230] dark:text-white">Help &amp; Support</div>
+                      <div className="text-[11px] text-slate-400">FAQ guides, contacts &amp; reporting assistance</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -879,12 +880,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.emerald.bg} ${ICON_STYLES.emerald.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <ShieldCheck className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#182230] dark:text-white">Privacy Policy</div>
-                      <div className="text-[11px] text-slate-400">Data retention & cell record isolation</div>
+                      <div className="text-[11px] text-slate-400">Data retention &amp; cell record isolation</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -897,12 +898,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.amber.bg} ${ICON_STYLES.amber.text} flex items-center justify-center shrink-0 shadow-2xs`}>
+                      <FileText className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#182230] dark:text-white">Terms of Service</div>
-                      <div className="text-[11px] text-slate-400">Reporting guidelines & code of conduct</div>
+                      <div className="text-[11px] text-slate-400">Reporting guidelines &amp; code of conduct</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -921,7 +922,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center shrink-0">
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.flame.bg} ${ICON_STYLES.flame.text} flex items-center justify-center shrink-0 shadow-2xs`}>
                       <AlertTriangle className="w-4 h-4" />
                     </div>
                     <div>
@@ -943,7 +944,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center shrink-0">
+                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.flame.bg} ${ICON_STYLES.flame.text} flex items-center justify-center shrink-0 shadow-2xs`}>
                       <LogOut className="w-4 h-4" />
                     </div>
                     <div>
