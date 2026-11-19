@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Region, Cell, ReportingPeriod, Profile, UserRole, CellReport } from '../../types';
+import { Region, Cell, ReportingPeriod, Profile, UserRole, CellReport, AccountDeactivationRequest } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { AuthService } from '../../services/authService';
 import { SupabaseService } from '../../services/supabaseService';
+import { UserSettingsService } from '../../services/userSettingsService';
 import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
@@ -25,12 +26,19 @@ import {
   FileSpreadsheet,
   Phone,
   Trash2,
+  UserX,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 
 export const AdminManagementView: React.FC = () => {
   const { currentUser, deleteUserAccount } = useAuth();
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods' | 'deactivations'>('users');
+  const [deactivationRequests, setDeactivationRequests] = useState<AccountDeactivationRequest[]>([]);
+  const [isLoadingDeactivations, setIsLoadingDeactivations] = useState(false);
+  const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [users, setUsers] = useState<Profile[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -100,22 +108,61 @@ export const AdminManagementView: React.FC = () => {
 
   useEffect(() => {
     async function loadData() {
-      const [r, c, p, remoteUsers] = await Promise.all([
+      const [r, c, p, remoteUsers, deactList] = await Promise.all([
         ReportService.getRegions(),
         ReportService.getCells(),
         ReportService.getPeriods(),
         SupabaseService.getProfiles(),
+        UserSettingsService.getPendingDeactivationRequests(),
       ]);
       setRegions(r);
       setCells(c.filter(cell => !cell.is_archived));
       setPeriods(p);
       setUsers(remoteUsers || AuthService.getAllProfiles());
+      setDeactivationRequests(deactList);
       if (r.length > 0) {
         setNewCell(prev => ({ ...prev, region_id: r[0].id }));
       }
     }
     loadData();
   }, []);
+
+  const loadDeactivations = async () => {
+    setIsLoadingDeactivations(true);
+    try {
+      const list = await UserSettingsService.getPendingDeactivationRequests();
+      setDeactivationRequests(list);
+    } finally {
+      setIsLoadingDeactivations(false);
+    }
+  };
+
+  const handleReviewDeactivation = async (requestId: string, decision: 'approved' | 'declined') => {
+    if (!currentUser?.id) return;
+    const verb = decision === 'approved' ? 'approve' : 'decline';
+    const confirmation = window.confirm(
+      decision === 'approved'
+        ? 'Are you sure you want to approve this account deactivation? The user profile will be deactivated, while all historical reports, offerings, and attendance records will remain preserved.'
+        : 'Are you sure you want to decline this account deactivation request?'
+    );
+    if (!confirmation) return;
+
+    setReviewingRequestId(requestId);
+    try {
+      const note = adminNotes[requestId];
+      const res = await UserSettingsService.reviewDeactivationRequest(requestId, currentUser.id, decision, note);
+      if (!res.success) {
+        window.alert(res.error || 'Failed to review deactivation request.');
+      } else {
+        await loadDeactivations();
+        const remoteUsers = await SupabaseService.getProfiles();
+        if (remoteUsers) setUsers(remoteUsers);
+        window.alert(`Deactivation request ${decision} successfully.`);
+      }
+    } finally {
+      setReviewingRequestId(null);
+    }
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -246,10 +293,10 @@ export const AdminManagementView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Tab Navigation header */}
-      <div className="flex items-center gap-2 border-b border-slate-200/70 pb-3 text-xs font-bold">
+      <div className="flex items-center gap-2 border-b border-slate-200/70 pb-3 text-xs font-bold overflow-x-auto">
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-xl transition-all ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
             activeTab === 'users'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -259,7 +306,7 @@ export const AdminManagementView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('cells')}
-          className={`px-4 py-2 rounded-xl transition-all ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
             activeTab === 'cells'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -269,7 +316,7 @@ export const AdminManagementView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('regions')}
-          className={`px-4 py-2 rounded-xl transition-all ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
             activeTab === 'regions'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -279,13 +326,28 @@ export const AdminManagementView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('periods')}
-          className={`px-4 py-2 rounded-xl transition-all ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
             activeTab === 'periods'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
           }`}
         >
           Cycles ({periods.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('deactivations')}
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeTab === 'deactivations'
+              ? 'bg-navy-900 text-white shadow-card'
+              : 'text-slate-500 hover:text-navy-900 hover:bg-white'
+          }`}
+        >
+          <span>Deactivation Requests</span>
+          {deactivationRequests.filter(r => r.status === 'pending').length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+              {deactivationRequests.filter(r => r.status === 'pending').length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -294,7 +356,15 @@ export const AdminManagementView: React.FC = () => {
         {/* Top Section Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-extrabold tracking-tight text-navy-950">
-            {activeTab === 'users' ? 'Users' : activeTab === 'cells' ? 'Cell Fellowships' : activeTab === 'regions' ? 'Territories' : 'Reporting Cycles'}
+            {activeTab === 'users'
+              ? 'Users'
+              : activeTab === 'cells'
+              ? 'Cell Fellowships'
+              : activeTab === 'regions'
+              ? 'Territories'
+              : activeTab === 'periods'
+              ? 'Reporting Cycles'
+              : 'Account Deactivation Requests'}
           </h2>
         </div>
 
@@ -713,18 +783,181 @@ export const AdminManagementView: React.FC = () => {
           </div>
         )}
 
-        {/* Numbered Pagination footer matching screenshot */}
-        <div className="flex items-center justify-center gap-1.5 pt-4 border-t border-slate-100">
-          <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 text-xs">
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-          <button className="w-7 h-7 rounded-lg text-xs font-semibold bg-navy-900 text-white">1</button>
-          <button className="w-7 h-7 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100">2</button>
-          <button className="w-7 h-7 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100">3</button>
-          <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 text-xs">
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        {/* Deactivation Requests Tab */}
+        {activeTab === 'deactivations' && (
+          <div className="space-y-6">
+            {/* Stat Cards for Deactivations */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <StatCard
+                title="Pending Review"
+                value={deactivationRequests.filter(r => r.status === 'pending').length}
+                subtitle="Awaiting action"
+                icon={<Clock className="w-5 h-5 text-amber-500" />}
+                isActive={true}
+              />
+              <StatCard
+                title="Approved"
+                value={deactivationRequests.filter(r => r.status === 'approved').length}
+                subtitle="Accounts deactivated"
+                icon={<UserX className="w-5 h-5 text-rose-500" />}
+                isActive={false}
+              />
+              <StatCard
+                title="Declined"
+                value={deactivationRequests.filter(r => r.status === 'declined').length}
+                subtitle="Requests rejected"
+                icon={<XCircle className="w-5 h-5 text-slate-400" />}
+                isActive={false}
+              />
+              <StatCard
+                title="Total Submissions"
+                value={deactivationRequests.length}
+                subtitle="Historical audit log"
+                icon={<Shield className="w-5 h-5 text-navy-600" />}
+                isActive={false}
+              />
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-xs text-amber-900 flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">FNI Ministerial Record Preservation Policy:</span>{' '}
+                Approving an account deactivation safely sets the leader's account status to inactive. All historical cell reports, weekly attendance data, offering returns, and ministry records remain permanently archived and attributed.
+              </div>
+            </div>
+
+            {/* Requests List */}
+            {isLoadingDeactivations ? (
+              <div className="py-12 text-center text-slate-400 text-xs">Loading deactivation requests...</div>
+            ) : deactivationRequests.length === 0 ? (
+              <div className="py-12 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                <div className="font-bold text-slate-700 text-xs">No Deactivation Requests</div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  All cell leader and field accounts are in good standing.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {deactivationRequests.map(req => {
+                  const isPending = req.status === 'pending';
+                  const isApproved = req.status === 'approved';
+                  const isDeclined = req.status === 'declined';
+
+                  return (
+                    <div
+                      key={req.id}
+                      className="p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-slate-300 transition-all shadow-xs space-y-3 text-xs"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-navy-900 text-gold-400 font-bold flex items-center justify-center text-xs shadow-xs">
+                            {req.userName.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-navy-950 text-sm flex items-center gap-2">
+                              <span>{req.userName}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-slate-100 text-slate-600 capitalize">
+                                {req.role.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              Assigned Cell: <span className="font-semibold text-slate-700">{req.cellName || 'None'}</span> • Submitted: {new Date(req.createdAt).toLocaleDateString()} at {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          {isPending && (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Pending Review
+                            </span>
+                          )}
+                          {isApproved && (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                              <UserX className="w-3 h-3" /> Deactivated
+                            </span>
+                          )}
+                          {isDeclined && (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Declined
+                            </span>
+                          )}
+                          {req.status === 'cancelled' && (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-400 border border-slate-200">
+                              Cancelled by User
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Reason */}
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-700">
+                        <span className="font-semibold text-slate-900 block mb-0.5">Stated Reason:</span>
+                        <p className="italic">{req.reason || 'No specific reason provided.'}</p>
+                      </div>
+
+                      {/* Admin Notes / Review Information */}
+                      {req.adminNotes && (
+                        <div className="p-2.5 rounded-xl bg-slate-100/70 text-[11px] text-slate-600">
+                          <span className="font-semibold text-slate-800">Admin Note: </span>
+                          <span>{req.adminNotes}</span>
+                          {req.reviewedAt && (
+                            <span className="text-slate-400 ml-2">({new Date(req.reviewedAt).toLocaleDateString()})</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Pending Action Controls */}
+                      {isPending && (
+                        <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                          <input
+                            type="text"
+                            placeholder="Optional administrator note or guidance..."
+                            value={adminNotes[req.id] || ''}
+                            onChange={e => setAdminNotes({ ...adminNotes, [req.id]: e.target.value })}
+                            className="flex-1 text-xs rounded-xl border border-slate-200 px-3 py-1.5 focus:ring-1 focus:ring-navy-600"
+                          />
+                          <div className="flex items-center gap-2 justify-end">
+                            <button
+                              onClick={() => handleReviewDeactivation(req.id, 'declined')}
+                              disabled={reviewingRequestId === req.id}
+                              className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs hover:bg-slate-100 transition-colors disabled:opacity-50"
+                            >
+                              Decline
+                            </button>
+                            <button
+                              onClick={() => handleReviewDeactivation(req.id, 'approved')}
+                              disabled={reviewingRequestId === req.id}
+                              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-colors disabled:opacity-50 shadow-xs"
+                            >
+                              {reviewingRequestId === req.id ? 'Processing...' : 'Approve Deactivation'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Numbered Pagination footer matching screenshot (shown on standard listing tabs) */}
+        {activeTab !== 'deactivations' && (
+          <div className="flex items-center justify-center gap-1.5 pt-4 border-t border-slate-100">
+            <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 text-xs">
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button className="w-7 h-7 rounded-lg text-xs font-semibold bg-navy-900 text-white">1</button>
+            <button className="w-7 h-7 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100">2</button>
+            <button className="w-7 h-7 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100">3</button>
+            <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 text-xs">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Creation Modal */}

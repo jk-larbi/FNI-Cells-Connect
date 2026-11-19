@@ -155,6 +155,32 @@ export interface UserGeneralPreferences {
   timezone: string; // 'Africa/Accra'
 }
 
+export interface UserSettings {
+  userId: string;
+  notificationPreferences?: UserNotificationPreferences;
+  chatWallpapers?: Record<string, string>;
+  generalPreferences?: UserGeneralPreferences;
+  themePreference?: 'light' | 'dark' | 'system';
+  updatedAt?: string;
+}
+
+export type DeactivationRequestStatus = 'pending' | 'approved' | 'declined' | 'cancelled';
+
+export interface AccountDeactivationRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  cellName?: string;
+  role: string;
+  reason?: string;
+  status: DeactivationRequestStatus;
+  adminNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Profile {
   id: string;
   supabase_user_id?: string;

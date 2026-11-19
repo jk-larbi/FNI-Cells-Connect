@@ -147,7 +147,7 @@ export class NotificationService {
   }
 
   /**
-   * Save user notification preferences persistently
+   * Save user notification preferences persistently (local cache + Supabase sync)
    */
   static saveUserNotificationPreferences(userId: string, prefs: UserNotificationPreferences): void {
     if (!userId) return;
@@ -156,6 +156,13 @@ export class NotificationService {
     } catch (e) {
       console.warn('Failed to save notification preferences', e);
     }
+
+    // Sync to Supabase user_settings in background
+    import('./userSettingsService')
+      .then(({ UserSettingsService }) => {
+        UserSettingsService.saveUserSettings(userId, { notificationPreferences: prefs }).catch(() => {});
+      })
+      .catch(() => {});
   }
 
   /**
