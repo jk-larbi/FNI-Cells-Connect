@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useBackHandler } from '../../hooks/useBackHandler';
@@ -390,6 +391,98 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const messageStreamRef = useRef<HTMLDivElement | null>(null);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const cameraFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Cross-device composer state & refs
+  const [editingMessage, setEditingMessage] = useState<{ id: string; content: string; scope: 'private' | 'community' } | null>(null);
+  const isSubmittingRef = useRef<boolean>(false);
+  const lastSendTimestampRef = useRef<number>(0);
+  const chatDraftsRef = useRef<Record<string, string>>({});
+  const prevSelectedChatIdRef = useRef<string | null>(selectedChatId);
+
+  // Cross-platform mobile vs. desktop environment detector
+  const isMobileEnvironment = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    try {
+      if (Capacitor.isNativePlatform()) return true;
+    } catch {
+      // fallback
+    }
+    const ua = (navigator.userAgent || navigator.vendor || (window as any).opera || '').toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /android/.test(ua);
+    const isMobileUa = /mobile|webos|blackberry|iemobile|opera mini/i.test(ua);
+    if (isIos || isAndroid || isMobileUa) return true;
+    if ((navigator as any).userAgentData?.mobile === true) return true;
+    try {
+      const hasCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      const hasFine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+      const hasTouch = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+      if (hasCoarse && !hasFine && hasTouch) return true;
+    } catch {
+      // ignore
+    }
+    return false;
+  };
+
+  // Preserve in-progress drafts when switching between chats
+  useEffect(() => {
+    const prevId = prevSelectedChatIdRef.current;
+    const currId = selectedChatId;
+
+    if (prevId !== currId) {
+      if (prevId) {
+        chatDraftsRef.current[prevId] = inputText;
+      }
+      if (currId) {
+        const restored = chatDraftsRef.current[currId] || '';
+        setInputText(restored);
+      } else {
+        setInputText('');
+      }
+      setEditingMessage(null);
+      prevSelectedChatIdRef.current = currId;
+    }
+  }, [selectedChatId]);
+
+  // Dynamically resize composer textarea with min/max height limits (24px - 128px)
+  useEffect(() => {
+    const textarea = composerInputRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(Math.max(textarea.scrollHeight, 24), 128);
+    textarea.style.height = `${newHeight}px`;
+  }, [inputText]);
+
+  // Cross-device keyboard handler for the composer textarea
+  const handleComposerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // If mention query is open or IME is composing (e.g. CJK / autocorrect suggestions), let it process
+    if (mentionQuery !== null || e.nativeEvent.isComposing) {
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      const isMobile = isMobileEnvironment();
+
+      if (isMobile) {
+        // Mobile platform (iPhone/iPad Safari, Home Screen PWA, Android APK, Android Chrome, tablets):
+        // Return / Enter MUST insert a new line in the message.
+        // Do NOT send the message.
+        // Allowing default behaviour naturally inserts \n without dismissing the on-screen keyboard.
+        return;
+      }
+
+      // Desktop platforms (Windows PC, macOS, Linux):
+      if (e.shiftKey) {
+        // Shift + Enter: Insert a new line
+        return;
+      }
+
+      // Enter alone, or Ctrl+Enter / Cmd+Enter: Send message
+      e.preventDefault();
+      if (isSending || isSubmittingRef.current) return;
+      handleSendMessage();
+    }
+  };
 
   // Back button handler
   useBackHandler(() => {
@@ -1481,19 +1574,44 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if (e) e.preventDefault();
     if (!selectedChatId) return;
 
+    // Prevent duplicate rapid submissions (double-click, fast Enter key repeat)
+    const now = Date.now();
+    if (now - lastSendTimestampRef.current < 350) {
+      return;
+    }
+    if (isSending || isSubmittingRef.current) {
+      return;
+    }
+
     const text = inputText.trim();
     if (!text && stagedFiles.length === 0) return;
 
+    isSubmittingRef.current = true;
+    lastSendTimestampRef.current = now;
     setIsSending(true);
     setSendError(null);
 
     try {
+      // 1. If currently editing an existing message, perform edit update
+      if (editingMessage) {
+        await MessagingService.editMessage(editingMessage.id, editingMessage.scope, text);
+        setEditingMessage(null);
+        setInputText('');
+        if (selectedChatId) {
+          chatDraftsRef.current[selectedChatId] = '';
+        }
+        await loadActiveMessages();
+        return;
+      }
+
+      // 2. Upload attachments if present
       const uploadedAttachments: ChatAttachment[] = [];
       for (const file of stagedFiles) {
         const att = await MessagingService.uploadChatAttachment(currentUser?.id || 'guest', file);
         if (att) uploadedAttachments.push(att);
       }
 
+      // 3. Dispatch to community or private channel
       if (selectedChatId === 'community') {
         await MessagingService.sendCommunityMessage({
           senderUid: currentUser.id,
@@ -1526,6 +1644,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       }
 
       setInputText('');
+      if (selectedChatId) {
+        chatDraftsRef.current[selectedChatId] = '';
+      }
       setStagedFiles([]);
       setReplyToMessage(null);
       setMentionQuery(null);
@@ -1535,6 +1656,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setSendError(err?.message || 'Message could not be sent.');
     } finally {
       setIsSending(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -3757,8 +3879,40 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     />
                   )}
 
-                  {/* Mobile composer input row matching reference */}
-                  <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                  {/* Editing Banner */}
+                  {editingMessage && (
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl mb-2 text-xs animate-fadeIn">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Edit3 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="font-bold text-amber-700 dark:text-amber-400">Editing Message:</span>
+                        <span className="text-slate-600 dark:text-slate-300 truncate max-w-[200px] sm:max-w-xs">{editingMessage.content}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingMessage(null);
+                          setInputText('');
+                        }}
+                        className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                        title="Cancel editing"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Mobile & Desktop composer input row */}
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      // Prevent accidental implicit form submission from virtual keyboards on mobile
+                      if (isMobileEnvironment()) {
+                        return;
+                      }
+                      handleSendMessage();
+                    }}
+                    className="flex items-center gap-2"
+                  >
                     <button
                       type="button"
                       onClick={() => setShowAttachmentMenu(v => !v)}
@@ -3768,20 +3922,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <Paperclip className="w-5 h-5" />
                     </button>
 
-                    <div className="flex-1 rounded-full bg-slate-100 dark:bg-[#242f3d] border border-slate-200/80 dark:border-white/10 px-4 py-2 flex items-center gap-2">
+                    <div className="flex-1 rounded-2xl bg-slate-100 dark:bg-[#242f3d] border border-slate-200/80 dark:border-white/10 px-4 py-1.5 flex items-center gap-2 min-h-[44px]">
                       <textarea
                         ref={composerInputRef}
                         rows={1}
                         value={inputText}
                         onChange={handleComposerChange}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                          }
-                        }}
-                        placeholder="Message"
-                        className="flex-1 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none max-h-24 leading-snug"
+                        onKeyDown={handleComposerKeyDown}
+                        placeholder={editingMessage ? "Edit message..." : "Message"}
+                        className="flex-1 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none max-h-32 leading-snug py-1"
                       />
                       <button
                         type="button"
@@ -3816,14 +3965,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     </button>
 
                     {/* Circular Mic/Send Button (#2AABEE from reference) */}
-                    {inputText.trim() || stagedFiles.length > 0 ? (
+                    {inputText.trim() || stagedFiles.length > 0 || editingMessage ? (
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={() => handleSendMessage()}
                         disabled={isSending}
-                        className="w-10 h-10 rounded-full bg-[#2AABEE] hover:bg-[#2297d3] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer"
-                        title="Send message"
+                        className="w-10 h-10 rounded-full bg-[#2AABEE] hover:bg-[#2297d3] text-white flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
+                        title={editingMessage ? "Save edit" : "Send message"}
                       >
-                        <Send className="w-4 h-4 ml-0.5 text-white" />
+                        {editingMessage ? (
+                          <Check className="w-4 h-4 text-white" />
+                        ) : (
+                          <Send className="w-4 h-4 ml-0.5 text-white" />
+                        )}
                       </button>
                     ) : (
                       <button
@@ -4075,6 +4229,32 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <Copy className="w-4 h-4 text-slate-500" />
               <span>Copy Text</span>
             </button>
+
+            {/* Edit Message option (sender only) */}
+            {contextMenu.msg.senderUid === currentUser?.id &&
+              !contextMenu.msg.content.startsWith(STICKER_PREFIX) &&
+              !contextMenu.msg.content.startsWith(STICKER_IMG_PREFIX) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const msgToEdit = contextMenu.msg;
+                    setEditingMessage({
+                      id: msgToEdit.id,
+                      content: msgToEdit.content,
+                      scope: selectedChatId === 'community' ? 'community' : 'private',
+                    });
+                    setInputText(msgToEdit.content);
+                    setContextMenu(null);
+                    setTimeout(() => {
+                      composerInputRef.current?.focus();
+                    }, 50);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left font-semibold cursor-pointer text-amber-600 dark:text-amber-400"
+                >
+                  <Edit3 className="w-4 h-4 text-amber-500" />
+                  <span>Edit Message</span>
+                </button>
+              )}
 
             <button
               type="button"
