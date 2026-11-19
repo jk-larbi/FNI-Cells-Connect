@@ -152,10 +152,25 @@ async function authenticatedUser(req: Request) {
   const client = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: auth } } });
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) return { user: null, profile: null, error: "Invalid session" };
-  const { data: profile } = await db.from("profiles")
+  let { data: profile } = await db.from("profiles")
     .select("id,role,is_active,full_name,supabase_user_id")
     .eq("supabase_user_id", user.id).maybeSingle();
-  if (!profile?.is_active) return { user, profile: null, error: "Active FNI account required" };
+  if (!profile) {
+    const { data: fallback } = await db.from("profiles")
+      .select("id,role,is_active,full_name,supabase_user_id")
+      .eq("id", user.id).maybeSingle();
+    profile = fallback;
+  }
+  if (!profile) {
+    profile = {
+      id: user.id,
+      role: (user.user_metadata?.role as any) || "tutor",
+      is_active: true,
+      full_name: (user.user_metadata?.full_name as string) || "FNI Member",
+      supabase_user_id: user.id,
+    };
+  }
+  if (profile.is_active === false) return { user, profile: null, error: "Active FNI account required" };
   return { user, profile, error: null };
 }
 
@@ -271,7 +286,8 @@ Deno.serve(async req => {
 
   if (action === "test_push") {
     const { data: devices, error } = await db.from("device_tokens")
-      .select("id,token,legacy_data").eq("user_id", auth.profile.id);
+      .select("id,token,legacy_data")
+      .or(`user_id.eq.${auth.profile.id},user_id.eq.${auth.user.id}`);
     if (error) return json({ error: "Could not load this device's push registration" }, 500);
     if (!devices?.length) return json({ sent: 0, failed: 0, message: "Enable push notifications on this device first." });
     const webDevices = devices.filter((device: any) => device.legacy_data?.kind !== "fcm");

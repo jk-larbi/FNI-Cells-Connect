@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { useTheme, ThemePreference } from '../../context/ThemeContext';
 import { NotificationService, DEFAULT_NOTIFICATION_PREFERENCES } from '../../services/notificationService';
+import { PushNotificationService } from '../../services/pushNotificationService';
 import { UserSettingsService } from '../../services/userSettingsService';
 import {
   UserNotificationPreferences,
@@ -10,7 +12,7 @@ import {
 } from '../../types';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { NotificationAudio } from '../../utils/notificationAudio';
-import { isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
+import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
 import { Capacitor } from '@capacitor/core';
 import {
   User,
@@ -29,6 +31,7 @@ import {
   Trash2,
   Palette,
   Bell,
+  BellRing,
   Sun,
   Moon,
   Laptop,
@@ -45,13 +48,16 @@ import {
   Upload,
   RefreshCw,
   X,
+  XCircle,
   AlertTriangle,
   Send,
   MessageSquare,
   Volume2,
+  VolumeX,
   Vibrate,
   Layers,
   Check,
+  Settings,
 } from 'lucide-react';
 
 export interface ProfileSettingsProps {
@@ -171,7 +177,17 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
   const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
 
-  // 3. Notification Preferences State
+  // 3. Notification Preferences & Push State
+  const {
+    pushPermission,
+    isPushSupported,
+    isPushEnabled,
+    requestPushPermission,
+    disablePushNotifications,
+  } = useNotifications();
+  const [isPushLoading, setIsPushLoading] = useState(false);
+  const [pushStatusNotice, setPushStatusNotice] = useState<string | null>(null);
+
   const [notifPrefs, setNotifPrefs] = useState<UserNotificationPreferences>(() =>
     currentUser?.id ? NotificationService.getUserNotificationPreferences(currentUser.id) : DEFAULT_NOTIFICATION_PREFERENCES
   );
@@ -1306,18 +1322,211 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 />
               </div>
 
-              {/* Device Push Notifications */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Device Push Notifications</div>
-                  <div className="text-[11px] text-slate-400">Receive alerts when the app is in background or device is locked</div>
+              {/* Device Push Notifications Interactive Section */}
+              <div className="p-4 space-y-3 bg-slate-50/60 dark:bg-[#0f1a2a]/60">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-1.5">
+                      <Smartphone className="w-3.5 h-3.5 text-[#C6A45A]" />
+                      <span>Device Push Notifications</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Receive alerts when FNI Cells Connect is closed, in the background, or screen is locked
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {Capacitor.isNativePlatform() && (
+                      <button
+                        type="button"
+                        onClick={() => PushNotificationService.openDeviceNotificationSettings()}
+                        className="px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Settings className="w-3 h-3 text-[#C6A45A]" />
+                        <span>Settings</span>
+                      </button>
+                    )}
+
+                    {isPushEnabled && (
+                      <button
+                        type="button"
+                        disabled={isPushLoading}
+                        onClick={async () => {
+                          setIsPushLoading(true);
+                          try {
+                            const res = await PushNotificationService.sendTestPush();
+                            if (res.success) {
+                              setPushStatusNotice('Test push notification dispatched.');
+                            } else {
+                              setPushStatusNotice(res.error || 'Failed to dispatch test push.');
+                            }
+                            setTimeout(() => setPushStatusNotice(null), 5000);
+                          } catch (err: any) {
+                            setPushStatusNotice(err.message || 'Failed to send test push.');
+                          } finally {
+                            setIsPushLoading(false);
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-[#142B4A] text-white text-[10px] font-bold hover:bg-[#1a3860] flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        <BellRing className="w-3 h-3 text-[#C6A45A]" />
+                        <span>Test Push</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.devicePushNotifications !== false}
-                  onChange={() => handleToggleNotif('devicePushNotifications')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
+
+                {pushStatusNotice && (
+                  <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-200 text-[11px] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>{pushStatusNotice}</span>
+                  </div>
+                )}
+
+                {/* iOS Browser Tab Warning */}
+                {isIosDevice() && !isStandaloneMode() && !Capacitor.isNativePlatform() && (
+                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div className="text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed">
+                        <span className="font-bold">Home Screen Required on iOS: </span>
+                        Apple requires FNI Cells Connect to be installed on your Home Screen (iOS 16.4+) to receive push notifications.
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => triggerIosInstallGuide()}
+                      className="w-full py-1.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span>How to Add to Home Screen</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Permission Denied Callout */}
+                {pushPermission === 'denied' && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-[11px] text-rose-900 dark:text-rose-200 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      <span>Notifications Blocked in Settings</span>
+                    </div>
+                    <p className="text-[10px] text-rose-700 dark:text-rose-300">
+                      Please go to your device Settings &gt; Notifications &gt; FNI Cells and toggle "Allow Notifications" on.
+                    </p>
+                  </div>
+                )}
+
+                {/* Badges row */}
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-0.5">
+                    <div className="text-[10px] text-slate-400 font-medium">Environment</div>
+                    <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      {Capacitor.isNativePlatform() ? (
+                        <>
+                          <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                          <span>Android APK</span>
+                        </>
+                      ) : isIosDevice() ? (
+                        <>
+                          <Smartphone className="w-3 h-3 text-blue-400" />
+                          <span>iOS {isStandaloneMode() ? 'Home Screen' : 'Browser'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Layers className="w-3 h-3 text-indigo-400" />
+                          <span>Desktop / Web</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-0.5">
+                    <div className="text-[10px] text-slate-400 font-medium">Subscription State</div>
+                    <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      {pushPermission === 'granted' && isPushEnabled ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          <span className="text-emerald-700 dark:text-emerald-400">Subscribed</span>
+                        </>
+                      ) : pushPermission === 'denied' ? (
+                        <>
+                          <XCircle className="w-3 h-3 text-rose-500" />
+                          <span className="text-rose-600 dark:text-rose-400">Blocked</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-3 h-3 text-amber-500" />
+                          <span className="text-amber-600 dark:text-amber-400">Not Enabled</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action button */}
+                <div className="pt-1">
+                  {!isPushEnabled ? (
+                    <button
+                      type="button"
+                      disabled={isPushLoading}
+                      onClick={async () => {
+                        if (isIosDevice() && !isStandaloneMode() && !Capacitor.isNativePlatform()) {
+                          triggerIosInstallGuide();
+                          return;
+                        }
+                        setIsPushLoading(true);
+                        try {
+                          const res = await requestPushPermission();
+                          if (res?.success) {
+                            setPushStatusNotice('Push notifications enabled and registered with Supabase.');
+                          } else if (res?.error) {
+                            setPushStatusNotice(res.error);
+                          }
+                          setTimeout(() => setPushStatusNotice(null), 6000);
+                        } catch (err: any) {
+                          setPushStatusNotice(err.message || 'Could not enable push.');
+                        } finally {
+                          setIsPushLoading(false);
+                        }
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-[#142B4A] hover:bg-[#1a3860] text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {isPushLoading ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#C6A45A]" />
+                          <span>Registering Token...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+                          <span>Enable Push Notifications</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={isPushLoading}
+                      onClick={async () => {
+                        setIsPushLoading(true);
+                        try {
+                          await disablePushNotifications();
+                          setPushStatusNotice('Push notifications disabled.');
+                          setTimeout(() => setPushStatusNotice(null), 4000);
+                        } catch (err: any) {
+                          setPushStatusNotice(err.message || 'Could not disable notifications.');
+                        } finally {
+                          setIsPushLoading(false);
+                        }
+                      }}
+                      className="w-full py-2 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Disable Push Notifications</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Reports */}

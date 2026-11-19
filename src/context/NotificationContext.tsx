@@ -74,6 +74,7 @@ interface NotificationContextType {
   ) => boolean;
   triggerBatchReminders: (targetPeriod: string) => number;
   requestPushPermission: () => Promise<{ success: boolean; token?: string; error?: string }>;
+  disablePushNotifications: () => Promise<void>;
   clearNavigationTarget: () => void;
   handleNotificationClick: (notif: NotificationItem, onNavigate?: (tab: string, meta?: any) => void) => void;
 }
@@ -435,6 +436,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return res;
   };
 
+  const disablePushNotifications = async (): Promise<void> => {
+    if (!currentUser?.id) return;
+    await PushNotificationService.unregisterDeviceToken(currentUser.id);
+    setIsPushEnabled(false);
+    setPushPermission(await PushNotificationService.getPermissionStateAsync());
+  };
+
   const clearNavigationTarget = () => {
     setActiveNavigationTarget(null);
   };
@@ -566,6 +574,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         sendCellReminder,
         triggerBatchReminders,
         requestPushPermission,
+        disablePushNotifications,
         clearNavigationTarget,
         handleNotificationClick,
       }}

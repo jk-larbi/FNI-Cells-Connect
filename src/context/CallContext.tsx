@@ -143,6 +143,9 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
         if (activeSession && activeSession.id === session.id) {
+          if (session.status === 'accepted' || session.status === 'connected') {
+            setActiveSession(prev => prev ? { ...prev, status: 'connected', answered_at: session.answered_at || prev.answered_at } : null);
+          }
           if (['declined', 'busy', 'ended'].includes(session.status)) {
             endCall();
           }
@@ -186,6 +189,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setConnectionState(state);
           if (state === 'connected') {
             CallSignalingService.stopRingtone();
+            setActiveSession(prev => prev ? { ...prev, status: 'connected' } : null);
           } else if (state === 'disconnected' || state === 'failed') {
             CallSignalingService.playCallEndedTone();
           }
@@ -200,10 +204,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
             remoteAudioRef.current.play().catch(() => {});
           }
 
+          const hasVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
           setRemoteParticipants(prev => {
             const exists = prev.find(p => p.id === participantId);
             if (exists) {
-              return prev.map(p => (p.id === participantId ? { ...p, stream } : p));
+              return prev.map(p => (p.id === participantId ? { ...p, stream, isVideoEnabled: hasVideo } : p));
             }
             return [
               ...prev,
@@ -211,6 +216,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: participantId,
                 name: participantId,
                 stream,
+                isVideoEnabled: hasVideo,
               },
             ];
           });
@@ -398,7 +404,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!incomingSession || !currentUser) return;
 
     CallSignalingService.stopRingtone();
-    const session = incomingSession;
+    const session = { ...incomingSession, status: 'connected' as const, answered_at: new Date().toISOString() };
     setIncomingSession(null);
     setActiveSession(session);
     setCallDuration(0);

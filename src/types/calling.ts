@@ -4,6 +4,7 @@ export type CallStatus =
   | 'initiating'
   | 'ringing'
   | 'accepted'
+  | 'connected'
   | 'declined'
   | 'busy'
   | 'missed'

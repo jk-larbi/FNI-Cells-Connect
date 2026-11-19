@@ -74,48 +74,123 @@ export const ActiveVideoCallModal: React.FC = () => {
     };
   }, []);
 
-  const isCalling =
-    !remoteStream ||
-    remoteStream.getVideoTracks().length === 0 ||
-    connectionState === 'initiating' ||
-    connectionState === 'connecting' ||
-    activeSession?.status === 'ringing';
+  // Call connection state helpers
+  const isCallConnected =
+    connectionState === 'connected' ||
+    activeSession?.status === 'connected' ||
+    activeSession?.status === 'accepted';
 
-  // Attach remote video stream
-  useEffect(() => {
-    const el = remoteVideoRef.current;
+  const isCalling = !isCallConnected;
+
+  // Check whether remote participant has published and enabled a video track
+  const hasRemoteVideo = Boolean(
+    remoteStream &&
+    remoteStream.getVideoTracks().length > 0 &&
+    remoteStream.getVideoTracks().some(t => t.enabled && t.readyState === 'live')
+  );
+
+  const hasLocalVideo = Boolean(
+    isVideoEnabled &&
+    localStream &&
+    localStream.getVideoTracks().length > 0 &&
+    localStream.getVideoTracks().some(t => t.enabled && t.readyState === 'live')
+  );
+
+  // Dedicated callback ref for remote video element - ensures instant attachment as soon as element is mounted
+  const setRemoteVideoEl = (el: HTMLVideoElement | null) => {
+    remoteVideoRef.current = el;
     if (el) {
-      if (remoteStream) {
-        el.srcObject = remoteStream;
-        el.play().catch(() => {});
+      const stream = isSwapped ? localStream : remoteStream;
+      if (stream && stream.getVideoTracks().length > 0) {
+        if (el.srcObject !== stream) {
+          el.srcObject = stream;
+        }
+        const p = el.play();
+        if (p !== undefined) {
+          p.catch(() => {
+            el.muted = true;
+            el.play().catch(() => {});
+          });
+        }
       } else {
         el.srcObject = null;
       }
     }
-  }, [remoteStream, isSwapped]);
+  };
 
-  // Attach local video stream
+  // Dedicated callback ref for local PiP video element
+  const setLocalPipVideoEl = (el: HTMLVideoElement | null) => {
+    localVideoRef.current = el;
+    if (el) {
+      const stream = isSwapped ? remoteStream : localStream;
+      if (stream && stream.getVideoTracks().length > 0) {
+        if (el.srcObject !== stream) {
+          el.srcObject = stream;
+        }
+        const p = el.play();
+        if (p !== undefined) {
+          p.catch(() => {
+            el.muted = true;
+            el.play().catch(() => {});
+          });
+        }
+      } else {
+        el.srcObject = null;
+      }
+    }
+  };
+
+  // Also maintain useEffect to sync when streams, swap, or connection state changes
   useEffect(() => {
-    // 1. PiP preview when in active call
+    if (remoteVideoRef.current) {
+      const stream = isSwapped ? localStream : remoteStream;
+      if (stream && stream.getVideoTracks().length > 0) {
+        if (remoteVideoRef.current.srcObject !== stream) {
+          remoteVideoRef.current.srcObject = stream;
+        }
+        const p = remoteVideoRef.current.play();
+        if (p !== undefined) {
+          p.catch(() => {
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.muted = true;
+              remoteVideoRef.current.play().catch(() => {});
+            }
+          });
+        }
+      } else {
+        remoteVideoRef.current.srcObject = null;
+      }
+    }
+
     if (localVideoRef.current) {
-      if (localStream) {
-        localVideoRef.current.srcObject = localStream;
-        localVideoRef.current.play().catch(() => {});
+      const stream = isSwapped ? remoteStream : localStream;
+      if (stream && stream.getVideoTracks().length > 0) {
+        if (localVideoRef.current.srcObject !== stream) {
+          localVideoRef.current.srcObject = stream;
+        }
+        const p = localVideoRef.current.play();
+        if (p !== undefined) {
+          p.catch(() => {
+            if (localVideoRef.current) {
+              localVideoRef.current.muted = true;
+              localVideoRef.current.play().catch(() => {});
+            }
+          });
+        }
       } else {
         localVideoRef.current.srcObject = null;
       }
     }
 
-    // 2. Fullscreen local camera preview when placing/waiting for call
-    if (callingLocalVideoRef.current) {
-      if (localStream) {
+    if (callingLocalVideoRef.current && isCalling) {
+      if (localStream && localStream.getVideoTracks().length > 0) {
         callingLocalVideoRef.current.srcObject = localStream;
         callingLocalVideoRef.current.play().catch(() => {});
       } else {
         callingLocalVideoRef.current.srcObject = null;
       }
     }
-  }, [localStream, isCalling, isSwapped]);
+  }, [remoteStream, localStream, isSwapped, isCallConnected, hasRemoteVideo, hasLocalVideo, isCalling]);
 
   // Auto-hide controls after inactivity
   useEffect(() => {
@@ -186,25 +261,28 @@ export const ActiveVideoCallModal: React.FC = () => {
     >
       {/* ── 1. BACKGROUND VIDEO (FULL VIEWPORT EDGE-TO-EDGE) ── */}
       <div className="absolute inset-0 w-full h-full bg-slate-950 flex items-center justify-center overflow-hidden pointer-events-none">
-        {/* If in active call and remote video is connected */}
-        {!isCalling ? (
-          (isSwapped ? (isVideoEnabled && localStream) : remoteStream) ? (
+        {/* If in active call and connected */}
+        {isCallConnected ? (
+          (isSwapped ? hasLocalVideo : hasRemoteVideo) ? (
             <video
-              ref={isSwapped ? localVideoRef : remoteVideoRef}
+              ref={setRemoteVideoEl}
               autoPlay
               playsInline
               muted={isSwapped}
               className={`w-full h-full ${isFillScreen ? 'object-cover' : 'object-contain'} ${isSwapped ? 'transform -scale-x-100' : ''}`}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 text-slate-300 p-6 text-center">
+            <div className="flex flex-col items-center justify-center gap-4 text-slate-300 p-6 text-center pointer-events-auto">
               <div className="relative">
                 <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#142B4A] to-[#203D63] border-4 border-[#C6A45A]/40 flex items-center justify-center text-3xl font-black text-white shadow-2xl">
-                  {peerName.slice(0, 2).toUpperCase()}
+                  {(isSwapped ? myShortName : peerName).slice(0, 2).toUpperCase()}
                 </div>
               </div>
-              <h2 className="text-xl font-black text-white tracking-tight">{peerName}</h2>
-              <span className="text-xs text-slate-400 font-medium">Camera turned off</span>
+              <h2 className="text-xl font-black text-white tracking-tight">{isSwapped ? myName : peerName}</h2>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-white/10 text-xs font-semibold text-slate-300">
+                <VideoOff className="w-3.5 h-3.5 text-slate-400" />
+                <span>Camera turned off</span>
+              </div>
             </div>
           )
         ) : (
@@ -324,9 +402,9 @@ export const ActiveVideoCallModal: React.FC = () => {
             }}
             title="Tap to swap with main video"
           >
-            {(isSwapped ? remoteStream : (isVideoEnabled && localStream)) ? (
+            {(isSwapped ? hasRemoteVideo : hasLocalVideo) ? (
               <video
-                ref={isSwapped ? remoteVideoRef : localVideoRef}
+                ref={setLocalPipVideoEl}
                 autoPlay
                 playsInline
                 muted={!isSwapped}

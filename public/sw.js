@@ -209,7 +209,23 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
-// 6. Push Subscription Change Event
+// 6. Push Subscription Change Event (iOS Web Push auto-renewal)
 self.addEventListener('pushsubscriptionchange', event => {
-  event.waitUntil(Promise.resolve());
+  event.waitUntil(
+    (async () => {
+      try {
+        const options = event.oldSubscription ? event.oldSubscription.options : { userVisibleOnly: true };
+        const newSub = await self.registration.pushManager.subscribe(options);
+        const windows = await self.clients.matchAll({ type: 'window' });
+        for (const client of windows) {
+          client.postMessage({
+            type: 'FNI_PUSH_SUBSCRIPTION_CHANGED',
+            subscription: newSub.toJSON(),
+          });
+        }
+      } catch (err) {
+        console.warn('[FNI SW] Push subscription renewal notice:', err);
+      }
+    })()
+  );
 });

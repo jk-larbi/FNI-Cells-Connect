@@ -10,29 +10,62 @@ export interface PushPreferences {
   notifyOnNotes: boolean;
 }
 
+export interface PushDiagnosticStatus {
+  isAndroidNative: boolean;
+  isAppleDevice: boolean;
+  isAppleHomeScreen: boolean;
+  isStandalone: boolean;
+  isHttps: boolean;
+  hasServiceWorker: boolean;
+  hasPushManager: boolean;
+  hasNotification: boolean;
+  permission: NotificationPermission | 'unsupported';
+  isSupported: boolean;
+  isSubscribed: boolean;
+  supportMessage: string | null;
+  actionRequired: 'install_pwa' | 'open_settings' | 'enable' | 'active' | 'unsupported';
+}
+
 const STORAGE_KEYS = { PREFERENCES_PREFIX: 'fni_push_pref_', TOKEN_PREFIX: 'fni_fcm_token_' };
 const FUNCTION_NAME = 'fni-web-push';
 let pendingClickData: any = null;
 
-const isNativeAndroid = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
-const isAppleMobileWeb = (): boolean => {
+export const isNativeAndroid = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+
+export const isAppleMobileWeb = (): boolean => {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent || '';
   return /iPhone|iPad|iPod/.test(ua) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 };
-const isAppleHomeScreenApp = (): boolean =>
+
+export const isAppleHomeScreenApp = (): boolean =>
   isAppleMobileWeb() &&
   ((navigator as any).standalone === true ||
     window.matchMedia?.('(display-mode: standalone)').matches === true);
-const supportsAppleWebPushVersion = (): boolean => {
+
+export const supportsAppleWebPushVersion = (): boolean => {
   if (!isAppleMobileWeb()) return true;
-  const match = (navigator.userAgent || '').match(/OS (\d+)[_.](\d+)/);
-  if (!match) return true;
+  const ua = navigator.userAgent || '';
+  const match = ua.match(/OS (\d+)[_.](\d+)/) || ua.match(/Version\/(\d+)[_.](\d+)/);
+  if (!match) return ('PushManager' in window && 'Notification' in window);
   const major = Number(match[1]);
   const minor = Number(match[2]);
   return major > 16 || (major === 16 && minor >= 4);
 };
+
+export function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 async function saveNativeToken(userId: string, token: string): Promise<void> {
   const { data, error } = await supabase.functions.invoke(FUNCTION_NAME, {
@@ -239,6 +272,66 @@ export class PushNotificationService {
     });
   }
 
+  static async getDiagnosticStatus(userId?: string): Promise<PushDiagnosticStatus> {
+    const isAndroid = isNativeAndroid();
+    const isApple = isAppleMobileWeb();
+    const isApplePwa = isAppleHomeScreenApp();
+    const isPwa = isApplePwa || (typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)').matches === true);
+    const hasSW = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+    const hasPM = typeof window !== 'undefined' && 'PushManager' in window;
+    const hasNotif = typeof window !== 'undefined' && 'Notification' in window;
+    const isHttps = typeof window !== 'undefined' && window.isSecureContext;
+
+    let permission: NotificationPermission | 'unsupported' = 'unsupported';
+    if (isAndroid) {
+      try {
+        const p = await PushNotifications.checkPermissions();
+        permission = p.receive === 'granted' ? 'granted' : p.receive === 'denied' ? 'denied' : 'default';
+      } catch {
+        permission = 'default';
+      }
+    } else if (hasNotif) {
+      permission = Notification.permission;
+    }
+
+    const isSupported = this.isPushSupported();
+    let isSubscribed = false;
+    try {
+      isSubscribed = await this.hasActiveSubscription(userId);
+    } catch {}
+
+    let actionRequired: PushDiagnosticStatus['actionRequired'] = 'enable';
+    const supportMessage = this.getSupportMessage();
+
+    if (isSubscribed && permission === 'granted') {
+      actionRequired = 'active';
+    } else if (isApple && !isApplePwa) {
+      actionRequired = 'install_pwa';
+    } else if (permission === 'denied') {
+      actionRequired = 'open_settings';
+    } else if (!isSupported) {
+      actionRequired = 'unsupported';
+    } else {
+      actionRequired = 'enable';
+    }
+
+    return {
+      isAndroidNative: isAndroid,
+      isAppleDevice: isApple,
+      isAppleHomeScreen: isApplePwa,
+      isStandalone: isPwa,
+      isHttps,
+      hasServiceWorker: hasSW,
+      hasPushManager: hasPM,
+      hasNotification: hasNotif,
+      permission,
+      isSupported,
+      isSubscribed,
+      supportMessage,
+      actionRequired,
+    };
+  }
+
   static async hasActiveSubscription(userId?: string): Promise<boolean> {
     if (isNativeAndroid()) {
       return Boolean(userId && localStorage.getItem(`${STORAGE_KEYS.TOKEN_PREFIX}${userId}`));
@@ -255,43 +348,79 @@ export class PushNotificationService {
   static async requestPermissionAndRegister(
     userId: string,
     _role: string = 'tutor'
-  ): Promise<{ success: boolean; token?: string; error?: string }> {
+  ): Promise<{ success: boolean; token?: string; error?: string; actionRequired?: string }> {
     try {
       if (isNativeAndroid()) {
         let permission = await PushNotifications.checkPermissions();
         if (permission.receive !== 'granted') permission = await PushNotifications.requestPermissions();
         if (permission.receive !== 'granted') {
-          return { success: false, error: 'Notification permission was not granted. Enable notifications for FNI Cells Connect in Android Settings.' };
+          return {
+            success: false,
+            error: 'Notification permission was not granted. Enable notifications for FNI Cells Connect in Android Settings.',
+            actionRequired: 'open_settings',
+          };
         }
         const token = await this.registerNativeToken(userId);
         return { success: true, token };
       }
-      if (!this.isPushSupported()) {
-        return { success: false, error: this.getSupportMessage() || 'Background push is unavailable on this browser. In-app alerts remain available.' };
+
+      if (isAppleMobileWeb() && !isAppleHomeScreenApp()) {
+        return {
+          success: false,
+          error: 'On iPhone and iPad, Apple Web Push requires adding FNI Cells Connect to your Home Screen. Tap Share (square with arrow) at the bottom of Safari and select "Add to Home Screen".',
+          actionRequired: 'install_pwa',
+        };
       }
+
+      if (!this.isPushSupported()) {
+        return {
+          success: false,
+          error: this.getSupportMessage() || 'Background push is unavailable on this browser. In-app alerts remain available.',
+          actionRequired: 'unsupported',
+        };
+      }
+
+      if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+        return {
+          success: false,
+          error: isAppleMobileWeb()
+            ? 'Notifications are blocked in iPhone Settings. Open Settings > Notifications > FNI Cells and enable "Allow Notifications".'
+            : 'Notifications are blocked in browser settings. Enable notification permission in your browser address bar settings.',
+          actionRequired: 'open_settings',
+        };
+      }
+
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        return { success: false, error: `Notification permission was not granted (${permission}). Allow notifications in your browser settings.` };
+        return {
+          success: false,
+          error: permission === 'denied'
+            ? 'Notification permission was denied. Allow notifications in device or browser settings.'
+            : 'Notification permission was not granted.',
+          actionRequired: permission === 'denied' ? 'open_settings' : 'enable',
+        };
       }
+
       const registration = await this.registerServiceWorker();
       try { await registration.update(); } catch {}
       await navigator.serviceWorker.ready;
+
       const { data: keyData, error: keyError } = await supabase.functions.invoke(FUNCTION_NAME, {
         body: { action: 'get_public_key' },
       });
       if (keyError || !keyData?.publicKey) {
-        throw new Error(keyData?.error || keyError?.message || 'Push server is not configured yet. Please try again later.');
+        throw new Error(keyData?.error || keyError?.message || 'Push server key is not available. Please try again.');
       }
+
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
-        const padding = '='.repeat((4 - (keyData.publicKey.length % 4)) % 4);
-        const raw = atob((keyData.publicKey + padding).replace(/-/g, '+').replace(/_/g, '/'));
-        const applicationServerKey = Uint8Array.from(raw, char => char.charCodeAt(0));
+        const applicationServerKey = urlBase64ToUint8Array(keyData.publicKey);
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: applicationServerKey as BufferSource,
         });
       }
+
       const { data: registerData, error: registerError } = await supabase.functions.invoke(FUNCTION_NAME, {
         body: {
           action: 'register',
@@ -300,9 +429,17 @@ export class PushNotificationService {
           platform: isAppleMobileWeb() ? 'iOS PWA' : ((navigator as any).userAgentData?.platform || navigator.platform || 'Web'),
         },
       });
+
       if (registerError || !registerData?.success) {
-        throw new Error(registerData?.error || registerError?.message || 'Could not register this device with FNI.');
+        throw new Error(registerData?.error || registerError?.message || 'Could not register push subscription with FNI server.');
       }
+
+      // Verify the subscription was created and is active
+      const verifiedSub = await registration.pushManager.getSubscription();
+      if (!verifiedSub) {
+        throw new Error('Device push subscription could not be confirmed.');
+      }
+
       this.setPreferences(userId, { pushEnabled: true });
       return { success: true, token: 'web-push-subscription' };
     } catch (error: any) {

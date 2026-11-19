@@ -42,6 +42,7 @@ export class LivekitCallingService {
   private currentFacingMode: 'user' | 'environment' = 'user';
   private connectionState: CallConnectionState = 'idle';
   private callbacks: CallingServiceCallbacks = {};
+  private remoteStreams: Map<string, MediaStream> = new Map();
 
   // Direct WebRTC mesh fallback members
   private isMeshMode = false;
@@ -196,14 +197,30 @@ export class LivekitCallingService {
 
     // Wire LiveKit Events
     this.room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-      if (track.kind === Track.Kind.Video || track.kind === Track.Kind.Audio) {
-        const stream = new MediaStream([track.mediaStreamTrack]);
-        this.callbacks.onRemoteTrackSubscribed?.(participant.identity, track.mediaStreamTrack, stream);
+      const pid = participant.identity;
+      let participantStream = this.remoteStreams.get(pid);
+      if (!participantStream) {
+        participantStream = new MediaStream();
+        this.remoteStreams.set(pid, participantStream);
       }
+
+      // If a track of this kind already exists in this stream, remove it first
+      const existingTrack = participantStream.getTracks().find(t => t.kind === track.kind);
+      if (existingTrack) {
+        participantStream.removeTrack(existingTrack);
+      }
+      participantStream.addTrack(track.mediaStreamTrack);
+
+      this.callbacks.onRemoteTrackSubscribed?.(pid, track.mediaStreamTrack, participantStream);
     });
 
     this.room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-      this.callbacks.onRemoteTrackUnsubscribed?.(participant.identity, track.mediaStreamTrack);
+      const pid = participant.identity;
+      const participantStream = this.remoteStreams.get(pid);
+      if (participantStream) {
+        participantStream.removeTrack(track.mediaStreamTrack);
+      }
+      this.callbacks.onRemoteTrackUnsubscribed?.(pid, track.mediaStreamTrack);
     });
 
     this.room.on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
@@ -219,6 +236,7 @@ export class LivekitCallingService {
     });
 
     this.room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+      this.remoteStreams.delete(participant.identity);
       this.callbacks.onParticipantLeft?.(participant.identity);
     });
 
@@ -236,6 +254,32 @@ export class LivekitCallingService {
 
     // Connect to room
     await this.room.connect(tokenData.serverUrl, tokenData.token);
+
+    // Immediately process any participants/tracks already present in the room upon connection
+    for (const remoteParticipant of this.room.remoteParticipants.values()) {
+      const pid = remoteParticipant.identity;
+      this.callbacks.onParticipantJoined?.({
+        id: pid,
+        name: remoteParticipant.name || pid,
+      });
+
+      for (const publication of remoteParticipant.trackPublications.values()) {
+        if (publication.track && publication.isSubscribed) {
+          const track = publication.track;
+          let participantStream = this.remoteStreams.get(pid);
+          if (!participantStream) {
+            participantStream = new MediaStream();
+            this.remoteStreams.set(pid, participantStream);
+          }
+          const existingTrack = participantStream.getTracks().find(t => t.kind === track.kind);
+          if (existingTrack) {
+            participantStream.removeTrack(existingTrack);
+          }
+          participantStream.addTrack(track.mediaStreamTrack);
+          this.callbacks.onRemoteTrackSubscribed?.(pid, track.mediaStreamTrack, participantStream);
+        }
+      }
+    }
 
     // Publish local tracks
     if (this.localStream) {
@@ -282,10 +326,20 @@ export class LivekitCallingService {
       });
     }
 
-    // Remote Track Handler
+    // Remote Track Handler - accumulate into unified remote stream
     pc.ontrack = event => {
-      const remoteStream = event.streams[0] || new MediaStream([event.track]);
-      this.callbacks.onRemoteTrackSubscribed?.(remoteUid, event.track, remoteStream);
+      let participantStream = this.remoteStreams.get(remoteUid);
+      if (!participantStream) {
+        participantStream = new MediaStream();
+        this.remoteStreams.set(remoteUid, participantStream);
+      }
+      const existingTrack = participantStream.getTracks().find(t => t.kind === event.track.kind);
+      if (existingTrack) {
+        participantStream.removeTrack(existingTrack);
+      }
+      participantStream.addTrack(event.track);
+
+      this.callbacks.onRemoteTrackSubscribed?.(remoteUid, event.track, participantStream);
     };
 
     pc.oniceconnectionstatechange = () => {
@@ -529,6 +583,16 @@ export class LivekitCallingService {
       this.room = null;
     }
 
+    // Clean up all remote streams
+    this.remoteStreams.forEach(stream => {
+      stream.getTracks().forEach(track => {
+        try {
+          track.stop();
+        } catch {}
+      });
+    });
+    this.remoteStreams.clear();
+
     // Close PeerConnection & Signaling
     if (this.peerConnection) {
       try {
@@ -543,6 +607,14 @@ export class LivekitCallingService {
       } catch {}
       this.signalingChannel = null;
     }
+  }
+
+  getRemoteStream(participantId?: string): MediaStream | null {
+    if (participantId) {
+      return this.remoteStreams.get(participantId) || null;
+    }
+    const first = this.remoteStreams.values().next();
+    return first.value || null;
   }
 
   getLocalStream(): MediaStream | null {

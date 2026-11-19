@@ -123,6 +123,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     isPushSupported,
     isPushEnabled,
     requestPushPermission,
+    disablePushNotifications,
     handleNotificationClick,
   } = useNotifications();
 
@@ -875,7 +876,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
             )}
 
             {/* Device OS & Channel Status */}
-            <div className="bg-white dark:bg-[#142238] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-[#26384d] space-y-3">
+            <div className="bg-white dark:bg-[#142238] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-[#26384d] space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-xl bg-[#142B4A]/10 dark:bg-white/10 text-[#142B4A] dark:text-[#C6A45A]">
@@ -884,24 +885,24 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   <div>
                     <h3 className="text-sm font-bold text-[#142B4A] dark:text-white">Operating System Notification Delivery</h3>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Native channels, background sync, and system alert permissions
+                      Native channels, Web Push (VAPID/APNs), background delivery and device permissions
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {Capacitor.isNativePlatform() ? (
+                  {Capacitor.isNativePlatform() && (
                     <button
                       type="button"
                       onClick={() => PushNotificationService.openDeviceNotificationSettings()}
                       className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#1c2e44] text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
                     >
                       <Settings className="w-3.5 h-3.5 text-[#C6A45A]" />
-                      <span>Open Device Settings</span>
+                      <span>Device Settings</span>
                     </button>
-                  ) : null}
+                  )}
 
-                  {isPushSupported && (
+                  {isPushEnabled && (
                     <button
                       type="button"
                       disabled={isRequestingPush}
@@ -914,7 +915,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                           } else {
                             setPushStatusMessage(res.error || 'Failed to dispatch test push.');
                           }
-                          setTimeout(() => setPushStatusMessage(null), 4000);
+                          setTimeout(() => setPushStatusMessage(null), 5000);
                         } catch (err: any) {
                           setPushStatusMessage(err.message || 'Failed to dispatch test notification.');
                         } finally {
@@ -931,13 +932,50 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               </div>
 
               {pushStatusMessage && (
-                <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-200 text-xs">
-                  {pushStatusMessage}
+                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>{pushStatusMessage}</span>
+                </div>
+              )}
+
+              {/* iOS Browser Tab Warning & Install Callout */}
+              {isIosDevice() && !isStandaloneMode() && !Capacitor.isNativePlatform() && (
+                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1 text-xs text-amber-900 dark:text-amber-200">
+                      <div className="font-bold">iOS Web Push Requires Home Screen Installation</div>
+                      <p className="text-[11px] leading-relaxed">
+                        Apple Web Push (APNs) only operates when FNI Cells Connect is added to your Home Screen on iOS 16.4+. Normal Safari tabs cannot receive background notifications.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerIosInstallGuide()}
+                    className="w-full py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>View Home Screen Installation Guide</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Permission Denied Callout */}
+              {pushPermission === 'denied' && (
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 space-y-1 text-xs text-rose-900 dark:text-rose-200">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>Push Notifications Blocked in Device Settings</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed">
+                    Notification permissions were denied. To receive ministry alerts, please open your device's Settings &gt; Notifications &gt; FNI Cells and toggle "Allow Notifications" on.
+                  </p>
                 </div>
               )}
 
               {/* Status details grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c1626] border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="text-[11px] text-slate-500 font-medium">Platform Environment</div>
                   <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
@@ -960,22 +998,22 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   </div>
                   <div className="text-[10px] text-slate-400">
                     {Capacitor.isNativePlatform()
-                      ? 'Configured with dual high-importance channels (Updates + Calls)'
+                      ? 'Dual high-importance channels (Updates + Calls)'
                       : isIosDevice()
                       ? isStandaloneMode()
                         ? 'Apple Web Push enabled with APNs system sound'
-                        : 'Web Push requires adding FNI Cells Connect to Home Screen'
-                      : 'Web Push (VAPID) enabled with browser notification audio'}
+                        : 'Web Push requires adding to Home Screen'
+                      : 'Web Push (VAPID) enabled with system audio'}
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c1626] border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="text-[11px] text-slate-500 font-medium">OS Permission State</div>
+                  <div className="text-[11px] text-slate-500 font-medium">OS Permission &amp; Subscription</div>
                   <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    {pushPermission === 'granted' ? (
+                    {pushPermission === 'granted' && isPushEnabled ? (
                       <>
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-emerald-700 dark:text-emerald-400">Granted & Active</span>
+                        <span className="text-emerald-700 dark:text-emerald-400">Subscribed &amp; Active</span>
                       </>
                     ) : pushPermission === 'denied' ? (
                       <>
@@ -985,16 +1023,82 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     ) : (
                       <>
                         <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                        <span className="text-amber-600 dark:text-amber-400">Permission Not Requested</span>
+                        <span className="text-amber-600 dark:text-amber-400">Permission Pending</span>
                       </>
                     )}
                   </div>
                   <div className="text-[10px] text-slate-400">
-                    {pushPermission === 'granted'
-                      ? 'System notifications permitted by operating system'
-                      : 'Please enable notifications in device settings to receive alerts'}
+                    {pushPermission === 'granted' && isPushEnabled
+                      ? 'Device token synchronized with Supabase'
+                      : pushPermission === 'denied'
+                      ? 'Please enable notifications in device settings'
+                      : 'Explicit user tap required to grant push permission'}
                   </div>
                 </div>
+              </div>
+
+              {/* Action Buttons Row */}
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                {!isPushEnabled ? (
+                  <button
+                    type="button"
+                    disabled={isRequestingPush}
+                    onClick={async () => {
+                      if (isIosDevice() && !isStandaloneMode() && !Capacitor.isNativePlatform()) {
+                        triggerIosInstallGuide();
+                        return;
+                      }
+                      setIsRequestingPush(true);
+                      try {
+                        const res = await requestPushPermission();
+                        if (res?.success) {
+                          setPushStatusMessage('Push notifications enabled and registered with Supabase.');
+                        } else if (res?.error) {
+                          setPushStatusMessage(res.error);
+                        }
+                        setTimeout(() => setPushStatusMessage(null), 6000);
+                      } catch (err: any) {
+                        setPushStatusMessage(err.message || 'Could not enable push notifications.');
+                      } finally {
+                        setIsRequestingPush(false);
+                      }
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-[#142B4A] hover:bg-[#1a3860] text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isRequestingPush ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#C6A45A]" />
+                        <span>Registering Device Token...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+                        <span>Enable Push Notifications</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isRequestingPush}
+                    onClick={async () => {
+                      setIsRequestingPush(true);
+                      try {
+                        await disablePushNotifications();
+                        setPushStatusMessage('Push notifications disabled.');
+                        setTimeout(() => setPushStatusMessage(null), 4000);
+                      } catch (err: any) {
+                        setPushStatusMessage(err.message || 'Could not disable notifications.');
+                      } finally {
+                        setIsRequestingPush(false);
+                      }
+                    }}
+                    className="py-2 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Disable Push</span>
+                  </button>
+                )}
               </div>
             </div>
 
