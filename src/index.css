@@ -2039,3 +2039,33 @@ img,video,canvas { max-width: 100%; }
 .pr-safe { padding-right: env(safe-area-inset-right); }
 .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
 
+/* ==========================================================================
+   FNI CELLS CONNECT — MOBILE KEYBOARD SNUG FIT & CHAT COMPOSER STYLING
+   ========================================================================== */
+.fni-messaging-route {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .fni-messaging-route .fni-app-body,
+  .fni-messaging-route .fni-app-main {
+    height: 100%;
+    overflow: hidden;
+    padding: 0 !important;
+  }
+}
+
+/* Eliminate harsh yellow focus ring on composer textarea */
+.fni-chat-composer textarea,
+.fni-chat-composer textarea:focus,
+.fni-chat-composer textarea:focus-visible,
+html.dark .fni-chat-composer textarea:focus,
+html.dark .fni-chat-composer textarea:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  border-color: transparent !important;
+}
+

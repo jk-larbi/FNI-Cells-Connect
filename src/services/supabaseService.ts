@@ -997,6 +997,89 @@ export class SupabaseService {
     }
   }
 
+  /**
+   * High-performance targeted query for a single direct conversation.
+   * Fetches only the active conversation's messages up to limit (default 50)
+   * in a single fast query with parallel reactions and pins.
+   */
+  static async getDirectConversationMessages(
+    userA: string,
+    userB: string,
+    options?: { limit?: number; before?: string; isAdmin?: boolean }
+  ): Promise<PrivateMessage[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const limit = Math.min(options?.limit || 50, 100);
+      let query = supabase!.from('private_messages').select('*');
+
+      if (options?.isAdmin) {
+        query = query.or(
+          `and(sender_uid.eq.${userA},recipient_uid.in.('admin',${userB})),and(sender_uid.eq.${userB},recipient_uid.eq.${userA})`
+        );
+      } else if (userB === 'admin') {
+        query = query.or(
+          `and(sender_uid.eq.${userA},recipient_uid.eq.admin),and(recipient_uid.eq.${userA},sender_role.in.(admin,super_admin,national_admin))`
+        );
+      } else if (userA === userB) {
+        query = query.eq('sender_uid', userA).eq('recipient_uid', userA);
+      } else {
+        query = query.or(
+          `and(sender_uid.eq.${userA},recipient_uid.eq.${userB}),and(sender_uid.eq.${userB},recipient_uid.eq.${userA})`
+        );
+      }
+
+      if (options?.before) {
+        query = query.lt('created_at', options.before);
+      }
+
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        // Fall back gracefully to full query if custom PostgREST filter is restricted
+        return this.getPrivateMessages(userA, userB);
+      }
+
+      const rows = (data || []).reverse();
+      const messages = rows.map(mapPrivateMessageFromDb);
+      if (!messages.length) return messages;
+
+      const messageIds = messages.map(m => m.id);
+
+      // Fetch reactions and pins concurrently in single bounded requests
+      const [reactionsRes, pinsRes] = await Promise.all([
+        supabase!
+          .from('private_message_reactions')
+          .select('message_id,user_id,user_name,emoji')
+          .in('message_id', messageIds),
+        supabase!
+          .from('private_message_pins')
+          .select('message_id')
+          .eq('user_id', userB || userA)
+          .in('message_id', messageIds),
+      ]);
+
+      const groupedReactions = new Map<string, Record<string, string[]>>();
+      (reactionsRes.data || []).forEach(row => {
+        const reactions = groupedReactions.get(row.message_id) || {};
+        reactions[row.emoji] = [...(reactions[row.emoji] || []), row.user_name];
+        groupedReactions.set(row.message_id, reactions);
+      });
+
+      const pinnedIds = new Set<string>((pinsRes.data || []).map(r => r.message_id));
+
+      return messages.map(message => ({
+        ...message,
+        reactions: groupedReactions.get(message.id) || message.reactions || {},
+        isPinned: pinnedIds.has(message.id) || Boolean(message.isPinned),
+      }));
+    } catch (err) {
+      console.warn('getDirectConversationMessages fallback:', err);
+      return this.getPrivateMessages(userA, userB);
+    }
+  }
+
   static async getPrivateChatPreference(
     userUid: string,
     conversationId: string
@@ -1314,6 +1397,54 @@ export class SupabaseService {
       }));
     } catch (err) {
       return null;
+    }
+  }
+
+  /**
+   * Fast targeted query for community messages with bounded limit (default 50).
+   */
+  static async getCommunityMessagesOptimized(options?: { limit?: number; before?: string }): Promise<CommunityMessage[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const limit = Math.min(options?.limit || 50, 100);
+      let query = supabase!.from('community_messages').select('*');
+
+      if (options?.before) {
+        query = query.lt('created_at', options.before);
+      }
+
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        return this.getCommunityMessages();
+      }
+
+      const rows = (data || []).reverse();
+      const messages = rows.map(mapCommunityMessageFromDb);
+      if (!messages.length) return messages;
+
+      const messageIds = messages.map(m => m.id);
+      const { data: reactionRows } = await supabase!
+        .from('community_message_reactions')
+        .select('message_id,user_id,user_name,emoji')
+        .in('message_id', messageIds);
+
+      const grouped = new Map<string, Record<string, string[]>>();
+      (reactionRows || []).forEach(row => {
+        const reactions = grouped.get(row.message_id) || {};
+        reactions[row.emoji] = [...(reactions[row.emoji] || []), row.user_name];
+        grouped.set(row.message_id, reactions);
+      });
+
+      return messages.map(m => ({
+        ...m,
+        reactions: grouped.get(m.id) || m.reactions || {},
+      }));
+    } catch (err) {
+      console.warn('getCommunityMessagesOptimized fallback:', err);
+      return this.getCommunityMessages();
     }
   }
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Profile, TutorRegistrationInput, TutorLoginInput, AdminLoginInput } from '../types';
 import { AuthService } from '../services/authService';
+import { ConversationCacheService } from '../services/conversationCacheService';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const GUEST_PROFILE: Profile = {
@@ -281,6 +282,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteUserAccount = async (userId: string) => AuthService.deleteUserAccount(userId);
 
   const logout = async () => {
+    if (currentUser?.id) {
+      ConversationCacheService.clearUserCache(currentUser.id);
+    }
     await AuthService.signOut();
     setCurrentUser(GUEST_PROFILE);
     setIsLoggedOut(true);

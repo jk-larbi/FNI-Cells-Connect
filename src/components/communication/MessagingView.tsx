@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
@@ -18,6 +18,8 @@ import { GroupInfoModal } from './GroupInfoModal';
 import { StickerCreatorModal } from './StickerCreatorModal';
 import { ChatFolderModal, FOLDER_ICONS, FOLDER_COLORS } from './ChatFolderModal';
 import { IosEmojiPicker } from './IosEmojiPicker';
+import { useVisualViewport } from '../../hooks/useVisualViewport';
+import { ConversationCacheService } from '../../services/conversationCacheService';
 import {
   PrivateMessage,
   CommunityMessage,
@@ -278,6 +280,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Contacts / Directory
   const [allMembers, setAllMembers] = useState<any[]>([]);
   const [tutorList, setTutorList] = useState<any[]>([]);
+
+  // Visual Viewport tracking for mobile on-screen keyboard
+  const { height: viewportHeight, isKeyboardVisible } = useVisualViewport();
+  const [isLoadingChat, setIsLoadingChat] = useState<boolean>(false);
+  const loadRequestIdRef = useRef<number>(0);
 
   // Messages State
   const [communityMessages, setCommunityMessages] = useState<CommunityMessage[]>([]);
@@ -740,54 +747,113 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setActiveChatActionMenuId(null);
   };
 
+  const openConversation = useCallback((chatId: string) => {
+    setSelectedChatId(chatId);
+    setMobileScreen('chat');
+
+    const viewerId = currentUser?.id || 'guest';
+    if (chatId === 'community') {
+      const cached = ConversationCacheService.getMessages<CommunityMessage>(viewerId, 'community');
+      if (cached && cached.length > 0) {
+        setCommunityMessages(cached);
+        setIsLoadingChat(false);
+      } else {
+        setIsLoadingChat(true);
+      }
+    } else {
+      const targetId = chatId === 'saved_messages' ? viewerId : chatId;
+      const cached = ConversationCacheService.getMessages<PrivateMessage>(viewerId, targetId);
+      if (cached && cached.length > 0) {
+        setPrivateMessages(cached);
+        setIsLoadingChat(false);
+      } else {
+        setIsLoadingChat(true);
+      }
+    }
+
+    const draft = chatDraftsRef.current[chatId] || '';
+    setInputText(draft);
+  }, [currentUser?.id]);
+
   // Deep linking sync
   useEffect(() => {
     if (initialConversationId) {
-      setSelectedChatId(initialConversationId);
-      setMobileScreen('chat');
+      openConversation(initialConversationId);
     }
-  }, [initialConversationId]);
+  }, [initialConversationId, openConversation]);
 
   // ---------------------------------------------------------------------------
-  // 2. MESSAGES LOADING & REALTIME SYNC
+  // 2. MESSAGES LOADING & REALTIME SYNC (OPTIMIZED BACKGROUND STALE-WHILE-REVALIDATE)
   // ---------------------------------------------------------------------------
-  const loadActiveMessages = async () => {
-    if (!selectedChatId) return;
+  const loadActiveMessages = async (chatIdToLoad?: string) => {
+    const targetChatId = chatIdToLoad || selectedChatId;
+    if (!targetChatId || !currentUser?.id) return;
+
+    const currentRequestId = ++loadRequestIdRef.current;
+    const viewerId = currentUser.id;
+
     try {
-      if (selectedChatId === 'community') {
-        const msgs = await MessagingService.getCommunityMessages(currentUser?.id);
-        setCommunityMessages(msgs || []);
+      if (targetChatId === 'community') {
+        const msgs = await MessagingService.getCommunityMessages(viewerId);
+        if (currentRequestId === loadRequestIdRef.current) {
+          setCommunityMessages(msgs || []);
+          setIsLoadingChat(false);
+        }
       } else {
-        const targetId = selectedChatId === 'saved_messages' ? currentUser?.id : selectedChatId;
-        if (targetId && currentUser?.id) {
-          const msgs = await MessagingService.getPrivateConversation(
-            targetId,
-            currentUser.id,
-            targetId,
-            isAdmin
-          );
+        const targetId = targetChatId === 'saved_messages' ? viewerId : targetChatId;
+        const msgs = await MessagingService.getPrivateConversation(
+          targetId,
+          viewerId,
+          targetId,
+          isAdmin
+        );
+        if (currentRequestId === loadRequestIdRef.current) {
           setPrivateMessages(msgs || []);
-          await MessagingService.markPrivateMessagesRead(targetId, currentUser.id, targetId, isAdmin);
+          setIsLoadingChat(false);
+          await MessagingService.markPrivateMessagesRead(targetId, viewerId, targetId, isAdmin);
         }
       }
     } catch (e) {
       console.warn('Messages refresh exception:', e);
+      if (currentRequestId === loadRequestIdRef.current) {
+        setIsLoadingChat(false);
+      }
     }
   };
 
   useEffect(() => {
-    if (selectedChatId) {
-      loadActiveMessages();
+    if (!selectedChatId) return;
+
+    // Check cache immediately if not populated
+    const viewerId = currentUser?.id || 'guest';
+    if (selectedChatId === 'community') {
+      const cached = ConversationCacheService.getMessages<CommunityMessage>(viewerId, 'community');
+      if (cached && cached.length > 0) {
+        setCommunityMessages(cached);
+      } else {
+        setIsLoadingChat(true);
+      }
+    } else {
+      const targetId = selectedChatId === 'saved_messages' ? viewerId : selectedChatId;
+      const cached = ConversationCacheService.getMessages<PrivateMessage>(viewerId, targetId);
+      if (cached && cached.length > 0) {
+        setPrivateMessages(cached);
+      } else {
+        setIsLoadingChat(true);
+      }
     }
+
+    // Background stale-while-revalidate fetch
+    loadActiveMessages(selectedChatId);
 
     // Supabase Realtime channel for messages and personal chat folders
     const channel = supabase
-      ?.channel(`fni-messages-${currentUser?.id || 'guest'}`)
+      ?.channel(`fni-messages-${viewerId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_messages' }, () => {
-        if (selectedChatId === 'community') loadActiveMessages();
+        if (selectedChatId === 'community') loadActiveMessages('community');
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages' }, () => {
-        if (selectedChatId && selectedChatId !== 'community') loadActiveMessages();
+        if (selectedChatId && selectedChatId !== 'community') loadActiveMessages(selectedChatId);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_folders' }, () => {
         loadChatFolders();
@@ -797,15 +863,22 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       })
       .subscribe();
 
-    // High-reliability 3s fallback poller
+    // Responsive window focus listener: refresh when user returns to app tab
+    const handleFocus = () => {
+      if (selectedChatId) loadActiveMessages(selectedChatId);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Lightweight 15s fallback background sync (avoids hammering database every 3s)
     const pollTimer = setInterval(() => {
       if (selectedChatId) {
-        loadActiveMessages();
+        loadActiveMessages(selectedChatId);
       }
-    }, 3000);
+    }, 15000);
 
     return () => {
       if (channel && supabase) supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
       clearInterval(pollTimer);
     };
   }, [selectedChatId, currentUser?.id, isAdmin]);
@@ -1569,7 +1642,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   // ---------------------------------------------------------------------------
-  // 4. SENDING MESSAGES, MEDIA, STICKERS & POLLS
+  // 4. SENDING MESSAGES, MEDIA, STICKERS & POLLS (OPTIMISTIC INSTANT DISPATCH)
   // ---------------------------------------------------------------------------
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -1577,7 +1650,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
     // Prevent duplicate rapid submissions (double-click, fast Enter key repeat)
     const now = Date.now();
-    if (now - lastSendTimestampRef.current < 350) {
+    if (now - lastSendTimestampRef.current < 250) {
       return;
     }
     if (isSending || isSubmittingRef.current) {
@@ -1592,37 +1665,99 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     setIsSending(true);
     setSendError(null);
 
+    // Save snapshot of staged files & text before clearing
+    const stagedFilesSnapshot = [...stagedFiles];
+    const textSnapshot = text;
+    const replySnapshot = replyToMessage;
+    const mentionsSnapshot = [...mentionedUids];
+
+    // Optimistic temporary identifier & timestamp
+    const optimisticId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const nowIso = new Date().toISOString();
+    const messageContent = textSnapshot || (stagedFilesSnapshot.length > 0 ? `Shared ${stagedFilesSnapshot.length} file(s)` : '');
+
+    // 1. Immediately clear composer UI so typing feels completely instant (< 1ms)
+    setInputText('');
+    if (selectedChatId) {
+      chatDraftsRef.current[selectedChatId] = '';
+    }
+    setStagedFiles([]);
+    setReplyToMessage(null);
+    setMentionQuery(null);
+    setMentionedUids([]);
+    if (composerInputRef.current) {
+      composerInputRef.current.style.height = 'auto';
+    }
+
     try {
-      // 1. If currently editing an existing message, perform edit update
+      // If currently editing an existing message, perform edit update
       if (editingMessage) {
-        await MessagingService.editMessage(editingMessage.id, editingMessage.scope, text);
+        await MessagingService.editMessage(editingMessage.id, editingMessage.scope, textSnapshot);
         setEditingMessage(null);
-        setInputText('');
-        if (selectedChatId) {
-          chatDraftsRef.current[selectedChatId] = '';
-        }
         await loadActiveMessages();
         return;
       }
 
-      // 2. Upload attachments if present
+      // 2. Optimistic instant message creation
+      if (selectedChatId === 'community') {
+        const optimisticMsg: CommunityMessage = {
+          id: optimisticId,
+          senderUid: currentUser.id,
+          senderName: currentUser.full_name || 'FNI Leader',
+          senderRole: currentUser.role,
+          cellName: currentUser.cell_name,
+          content: messageContent,
+          category: 'general',
+          createdAt: nowIso,
+          replyTo: replySnapshot || undefined,
+          mentions: mentionsSnapshot.length > 0 ? mentionsSnapshot : undefined,
+        };
+
+        setCommunityMessages(prev => [...prev, optimisticMsg]);
+        ConversationCacheService.appendMessage(currentUser.id, 'community', optimisticMsg);
+      } else {
+        const recipientUid = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+        const recipient = allMembers.find(m => m.id === recipientUid);
+
+        const optimisticMsg: PrivateMessage = {
+          id: optimisticId,
+          senderUid: currentUser.id,
+          senderName: currentUser.full_name || 'FNI Leader',
+          senderRole: currentUser.role,
+          recipientUid,
+          recipientName: recipient?.full_name || (selectedChatId === 'saved_messages' ? 'Saved Messages' : 'FNI Member'),
+          cellId: currentUser.cell_id,
+          cellName: currentUser.cell_name,
+          content: messageContent,
+          createdAt: nowIso,
+          isRead: false,
+          replyTo: replySnapshot || undefined,
+          mentions: mentionsSnapshot.length > 0 ? mentionsSnapshot : undefined,
+        };
+
+        setPrivateMessages(prev => [...prev, optimisticMsg]);
+        const convId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+        ConversationCacheService.appendMessage(currentUser.id, convId, optimisticMsg);
+      }
+
+      // 3. Upload attachments if present
       const uploadedAttachments: ChatAttachment[] = [];
-      for (const file of stagedFiles) {
+      for (const file of stagedFilesSnapshot) {
         const att = await MessagingService.uploadChatAttachment(currentUser?.id || 'guest', file);
         if (att) uploadedAttachments.push(att);
       }
 
-      // 3. Dispatch to community or private channel
+      // 4. Dispatch confirmed message to Supabase
       if (selectedChatId === 'community') {
         await MessagingService.sendCommunityMessage({
           senderUid: currentUser.id,
           senderName: currentUser.full_name || 'FNI Leader',
           senderRole: currentUser.role,
           cellName: currentUser.cell_name,
-          content: text || (uploadedAttachments.length > 0 ? `Shared ${uploadedAttachments.length} file(s)` : ''),
+          content: messageContent,
           category: 'general',
-          replyTo: replyToMessage || undefined,
-          mentions: mentionedUids.length > 0 ? mentionedUids : undefined,
+          replyTo: replySnapshot || undefined,
+          mentions: mentionsSnapshot.length > 0 ? mentionsSnapshot : undefined,
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
         });
       } else {
@@ -1637,22 +1772,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           recipientName: recipient?.full_name || (selectedChatId === 'saved_messages' ? 'Saved Messages' : 'FNI Member'),
           cellId: currentUser.cell_id,
           cellName: currentUser.cell_name,
-          content: text || (uploadedAttachments.length > 0 ? `Shared ${uploadedAttachments.length} file(s)` : ''),
-          replyTo: replyToMessage || undefined,
-          mentions: mentionedUids.length > 0 ? mentionedUids : undefined,
+          content: messageContent,
+          replyTo: replySnapshot || undefined,
+          mentions: mentionsSnapshot.length > 0 ? mentionsSnapshot : undefined,
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
         });
       }
 
-      setInputText('');
-      if (selectedChatId) {
-        chatDraftsRef.current[selectedChatId] = '';
-      }
-      setStagedFiles([]);
-      setReplyToMessage(null);
-      setMentionQuery(null);
-      setMentionedUids([]);
-      await loadActiveMessages();
+      // Background sync confirmed message ID
+      loadActiveMessages(selectedChatId);
     } catch (err: any) {
       setSendError(err?.message || 'Message could not be sent.');
     } finally {
@@ -2206,7 +2334,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // 7. RENDER VIEW
   // ---------------------------------------------------------------------------
   return (
-    <div className="h-[100dvh] md:h-[calc(100vh-5rem)] flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-none md:rounded-3xl border-0 md:border border-slate-200/80 dark:border-white/10 shadow-none md:shadow-card">
+    <div
+      style={isMobileEnvironment() && viewportHeight ? { height: `${viewportHeight}px` } : undefined}
+      className="h-[100dvh] md:h-[calc(100vh-5rem)] flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-none md:rounded-3xl border-0 md:border border-slate-200/80 dark:border-white/10 shadow-none md:shadow-card transition-[height] duration-75"
+    >
       <div className="flex-1 flex overflow-hidden">
         {/* =====================================================================
             LEFT PANE: RECENT CONVERSATIONS & SEARCH (Desktop Left Sidebar / Mobile List View)
@@ -2378,8 +2509,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       : 'hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
                   onClick={() => {
-                    setSelectedChatId(c.id);
-                    setMobileScreen('chat');
+                    openConversation(c.id);
                   }}
                 >
                   {/* Avatar Circle */}
@@ -2615,8 +2745,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       >
                         <div
                           onClick={() => {
-                            setSelectedChatId(tutor.id);
-                            setMobileScreen('chat');
+                            openConversation(tutor.id);
                           }}
                           className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
                         >
@@ -2647,8 +2776,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedChatId(tutor.id);
-                              setMobileScreen('chat');
+                              openConversation(tutor.id);
                             }}
                             className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
                             title="Chat with Tutor"
@@ -2682,8 +2810,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedChatId('community');
-                    setMobileScreen('chat');
+                    openConversation('community');
                   }}
                   className="p-4 rounded-2xl bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 text-left hover:border-blue-500 transition-all shadow-2xs group cursor-pointer"
                 >
@@ -3110,7 +3237,22 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               ref={messageStreamRef}
               className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-3 sm:p-4 space-y-3 fni-chat-wallpaper"
             >
-              {currentMessages.length === 0 ? (
+              {isLoadingChat && currentMessages.length === 0 ? (
+                <div className="h-full flex flex-col justify-end p-4 space-y-3 animate-pulse">
+                  <div className="flex justify-start">
+                    <div className="h-10 w-44 rounded-2xl bg-white/20 dark:bg-white/10" />
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="h-12 w-60 rounded-2xl bg-[#007a66]/30 dark:bg-[#2b5278]/40" />
+                  </div>
+                  <div className="flex justify-start">
+                    <div className="h-14 w-52 rounded-2xl bg-white/20 dark:bg-white/10" />
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="h-9 w-36 rounded-2xl bg-[#007a66]/30 dark:bg-[#2b5278]/40" />
+                  </div>
+                </div>
+              ) : currentMessages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-white/90">
                   <div className="p-4 rounded-3xl bg-black/30 backdrop-blur-md max-w-sm space-y-2 border border-white/15">
                     <p className="font-bold text-sm">No messages here yet</p>
@@ -3472,9 +3614,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 MESSAGE COMPOSER (Appears ONLY when conversation is open)
             ================================================================= */}
             <div
-              className="p-3 bg-white dark:bg-[#182533] border-t border-slate-200/80 dark:border-white/10 shrink-0 z-30 relative"
+              className="p-2 sm:p-3 bg-white dark:bg-[#182533] border-t border-slate-200/80 dark:border-white/10 shrink-0 z-30 relative fni-chat-composer transition-[padding]"
               style={{
-                paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+                paddingBottom: isKeyboardVisible ? '6px' : 'max(0.5rem, env(safe-area-inset-bottom))',
+                paddingTop: isKeyboardVisible ? '6px' : '0.75rem',
               }}
             >
               {/* Emoji & Sticker Drawer (Docked cleanly above composer bar) */}
@@ -3892,6 +4035,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         onKeyDown={handleComposerKeyDown}
                         placeholder={editingMessage ? "Edit message..." : "Message"}
                         className="flex-1 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none max-h-32 leading-snug py-1"
+                        style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
                       />
                       <button
                         type="button"
@@ -4081,12 +4225,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         onClose={() => setIsSettingsModalOpen(false)}
         tutorList={tutorList}
         onSelectTutor={tutorId => {
-          setSelectedChatId(tutorId);
-          setMobileScreen('chat');
+          openConversation(tutorId);
         }}
         onOpenSavedMessages={() => {
-          setSelectedChatId('saved_messages');
-          setMobileScreen('chat');
+          openConversation('saved_messages');
         }}
       />
 
@@ -4373,8 +4515,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         user={selectedUserProfile}
         onStartPrivateChat={(tutorId: string) => {
           setSelectedUserProfile(null);
-          setSelectedChatId(tutorId);
-          setMobileScreen('chat');
+          openConversation(tutorId);
         }}
         onStartVoiceCall={(userId: string) => {
           setSelectedUserProfile(null);
