@@ -14,6 +14,7 @@ import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { NotificationAudio } from '../../utils/notificationAudio';
 import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
 import { Capacitor } from '@capacitor/core';
+import { AppUpdateSettingsSection } from '../settings/AppUpdateSettingsSection';
 import {
   User,
   Mail,
@@ -76,6 +77,7 @@ export type ProfileSection =
   | 'chat_wallpaper'
   | 'appearance'
   | 'general'
+  | 'app_updates'
   | 'help_support'
   | 'privacy_policy'
   | 'terms_of_service'
@@ -604,6 +606,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             {currentSection === 'chat_wallpaper' && 'Chat Wallpaper'}
             {currentSection === 'appearance' && 'Theme & Appearance'}
             {currentSection === 'general' && 'General Preferences'}
+            {currentSection === 'app_updates' && 'App Updates & Version'}
             {currentSection === 'help_support' && 'Help & Support'}
             {currentSection === 'privacy_policy' && 'Privacy Policy'}
             {currentSection === 'terms_of_service' && 'Terms of Service'}
@@ -828,6 +831,29 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </div>
               <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
                 
+                {/* App Updates & Version */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentSection('app_updates')}
+                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+                      <RefreshCw className="w-4 h-4 text-[#142B4A] dark:text-[#C6A45A]" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-1.5">
+                        <span>App Updates &amp; Version</span>
+                        <span className="px-1.5 py-0.5 rounded-full bg-[#142B4A]/10 dark:bg-white/10 text-[10px] font-black text-[#142B4A] dark:text-[#C6A45A]">
+                          v1.1.0
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-400">Check for updates, release notes &amp; install latest APK</div>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
                 {/* Help & Support */}
                 <button
                   type="button"
@@ -2115,6 +2141,15 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               <div className="text-xs font-bold text-[#142B4A] dark:text-white">FNI Cells Connect</div>
               <div className="text-[11px] text-slate-400">Version 1.0.0 (Build 2026.11)</div>
             </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            SECTION: APP UPDATES & VERSION
+        ========================================================================== */}
+        {currentSection === 'app_updates' && (
+          <div className="space-y-4">
+            <AppUpdateSettingsSection />
           </div>
         )}
 

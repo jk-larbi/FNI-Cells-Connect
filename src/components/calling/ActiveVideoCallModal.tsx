@@ -9,7 +9,10 @@ import {
   RotateCcw,
   X,
   ChevronLeft,
-  Pin,
+  Maximize2,
+  Minimize2,
+  Volume2,
+  VolumeX,
   MessageSquare,
   Signal,
   Send,
@@ -25,8 +28,10 @@ export const ActiveVideoCallModal: React.FC = () => {
     remoteStream,
     isMuted,
     isVideoEnabled,
+    isSpeakerOn,
     toggleMicrophone,
     toggleCamera,
+    toggleSpeaker,
     flipCamera,
     endCall,
     setIsCallMinimized,
@@ -39,7 +44,7 @@ export const ActiveVideoCallModal: React.FC = () => {
   const callingLocalVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const [controlsVisible, setControlsVisible] = useState(true);
-  const [isFillScreen, setIsFillScreen] = useState(true);
+  const [isFillScreen, setIsFillScreen] = useState(false);
   const [isSwapped, setIsSwapped] = useState(false);
   const [isInCallChatOpen, setIsInCallChatOpen] = useState(false);
   const [quickMessageText, setQuickMessageText] = useState('');
@@ -264,13 +269,34 @@ export const ActiveVideoCallModal: React.FC = () => {
         {/* If in active call and connected */}
         {isCallConnected ? (
           (isSwapped ? hasLocalVideo : hasRemoteVideo) ? (
-            <video
-              ref={setRemoteVideoEl}
-              autoPlay
-              playsInline
-              muted={isSwapped}
-              className={`w-full h-full ${isFillScreen ? 'object-cover' : 'object-contain'} ${isSwapped ? 'transform -scale-x-100' : ''}`}
-            />
+            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+              {/* Subtle ambient blur behind letterbox/pillarbox when in natural framing mode */}
+              {!isFillScreen && (
+                <video
+                  ref={el => {
+                    if (el) {
+                      const stream = isSwapped ? localStream : remoteStream;
+                      if (stream && el.srcObject !== stream) {
+                        el.srcObject = stream;
+                        el.play().catch(() => {});
+                      }
+                    }
+                  }}
+                  autoPlay
+                  playsInline
+                  muted
+                  aria-hidden="true"
+                  className={`absolute inset-0 w-full h-full object-cover filter blur-3xl opacity-30 pointer-events-none scale-110 ${isSwapped ? 'transform -scale-x-100' : ''}`}
+                />
+              )}
+              <video
+                ref={setRemoteVideoEl}
+                autoPlay
+                playsInline
+                muted
+                className={`relative z-10 w-full h-full ${isFillScreen ? 'object-cover' : 'object-contain'} ${isSwapped ? 'transform -scale-x-100' : ''}`}
+              />
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 text-slate-300 p-6 text-center pointer-events-auto">
               <div className="relative">
@@ -286,16 +312,31 @@ export const ActiveVideoCallModal: React.FC = () => {
             </div>
           )
         ) : (
-          /* While Calling / Ringing: Local camera takes over the ENTIRE background screen */
+          /* While Calling / Ringing: Local camera takes over background screen in natural framing */
           <>
             {isVideoEnabled && localStream ? (
-              <video
-                ref={callingLocalVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover transform -scale-x-100"
-              />
+              <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                <video
+                  ref={el => {
+                    if (el && localStream && el.srcObject !== localStream) {
+                      el.srcObject = localStream;
+                      el.play().catch(() => {});
+                    }
+                  }}
+                  autoPlay
+                  playsInline
+                  muted
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover filter blur-3xl opacity-25 pointer-events-none scale-110 transform -scale-x-100"
+                />
+                <video
+                  ref={callingLocalVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`relative z-10 w-full h-full ${isFillScreen ? 'object-cover' : 'object-contain'} transform -scale-x-100`}
+                />
+              </div>
             ) : (
               <div className="w-full h-full bg-gradient-to-b from-[#0B1528] via-[#142B4A] to-[#0A101D]" />
             )}
@@ -359,21 +400,22 @@ export const ActiveVideoCallModal: React.FC = () => {
           <span>{isCalling ? (activeSession.status === 'ringing' ? 'Ringing...' : 'Calling...') : formatTime(callDuration)}</span>
         </div>
 
-        {/* Right: Pin / Aspect Ratio Toggle Button */}
+        {/* Right: Natural Framing vs Zoomed Fill Toggle */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             setIsFillScreen(prev => !prev);
           }}
-          className={`interactive-control p-2 rounded-full backdrop-blur-md border transition-all active:scale-95 cursor-pointer shadow-lg ${
-            isFillScreen
-              ? 'bg-black/40 hover:bg-black/60 border-white/10 text-white'
-              : 'bg-sky-500 text-white border-sky-400'
+          className={`interactive-control inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md border transition-all active:scale-95 cursor-pointer shadow-lg text-xs font-semibold ${
+            !isFillScreen
+              ? 'bg-sky-500/90 text-white border-sky-400/50 shadow-sky-500/30'
+              : 'bg-black/40 hover:bg-black/60 border-white/10 text-white'
           }`}
-          title={isFillScreen ? 'Switch to Fit screen (letterbox)' : 'Switch to Fill screen'}
+          title={!isFillScreen ? 'Currently: Natural Framing (Head & Shoulders). Tap to Fill Screen' : 'Currently: Fill Screen (Zoomed). Tap for Natural Framing'}
         >
-          <Pin className="w-4 h-4" />
+          {isFillScreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          <span className="hidden sm:inline">{!isFillScreen ? 'Head & Shoulders' : 'Fill'}</span>
         </button>
       </div>
 
@@ -489,7 +531,24 @@ export const ActiveVideoCallModal: React.FC = () => {
             {isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
           </button>
 
-          {/* Button 4: In-Call Chat / Messages */}
+          {/* Button 4: Speakerphone / Audio Output Toggle */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSpeaker();
+            }}
+            className={`interactive-control w-12 h-12 rounded-full backdrop-blur-md flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-lg ${
+              isSpeakerOn
+                ? 'bg-sky-500 text-white border border-sky-400'
+                : 'bg-white/15 hover:bg-white/25 text-white/70 border border-white/20'
+            }`}
+            title={isSpeakerOn ? 'Speakerphone active' : 'Earpiece / Headset audio'}
+          >
+            {isSpeakerOn ? <Volume2 className="w-5 h-5 text-white" /> : <VolumeX className="w-5 h-5 text-white/70" />}
+          </button>
+
+          {/* Button 5: In-Call Chat / Messages */}
           <button
             type="button"
             onClick={(e) => {

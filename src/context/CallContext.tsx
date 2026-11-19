@@ -463,6 +463,13 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await CallSignalingService.endCall(activeSession, callDuration);
     }
 
+    if (remoteAudioRef.current) {
+      try {
+        remoteAudioRef.current.pause();
+        remoteAudioRef.current.srcObject = null;
+      } catch {}
+    }
+
     setActiveSession(null);
     setConnectionState('idle');
     setCallDuration(0);
@@ -497,10 +504,37 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await callingServiceRef.current.flipCamera();
   };
 
-  const toggleSpeaker = () => {
-    setIsSpeakerOn(prev => !prev);
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.muted = isSpeakerOn;
+  const toggleSpeaker = async () => {
+    const nextState = !isSpeakerOn;
+    setIsSpeakerOn(nextState);
+
+    const audioEl = remoteAudioRef.current;
+    if (!audioEl) return;
+
+    if (typeof (audioEl as any).setSinkId === 'function') {
+      try {
+        if (nextState) {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const speaker = devices.find(
+            d => d.kind === 'audiooutput' && (d.label.toLowerCase().includes('speaker') || d.deviceId === 'default')
+          );
+          if (speaker) {
+            await (audioEl as any).setSinkId(speaker.deviceId);
+          } else {
+            await (audioEl as any).setSinkId('default');
+          }
+        } else {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const earpiece = devices.find(
+            d => d.kind === 'audiooutput' && (d.label.toLowerCase().includes('earpiece') || d.label.toLowerCase().includes('headphone') || d.label.toLowerCase().includes('receiver'))
+          );
+          if (earpiece) {
+            await (audioEl as any).setSinkId(earpiece.deviceId);
+          }
+        }
+      } catch (err) {
+        console.warn('Audio output device selection not supported on this platform:', err);
+      }
     }
   };
 

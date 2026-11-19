@@ -2,6 +2,7 @@ import {
   Room,
   RoomEvent,
   VideoPresets,
+  AudioPresets,
   Track,
   RemoteParticipant,
   LocalParticipant,
@@ -149,16 +150,21 @@ export class LivekitCallingService {
     try {
       const constraints: MediaStreamConstraints = {
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+          autoGainControl: { ideal: true },
+          channelCount: { ideal: 1 },
+          sampleRate: { ideal: 48000 },
+          sampleSize: { ideal: 16 },
         },
         video:
           callType === 'video'
             ? {
-                facingMode: this.currentFacingMode,
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
+                facingMode: { ideal: this.currentFacingMode },
+                width: { ideal: 1280, max: 1920, min: 640 },
+                height: { ideal: 720, max: 1080, min: 360 },
+                aspectRatio: { ideal: 16 / 9 },
+                frameRate: { ideal: 30, max: 30, min: 24 },
               }
             : false,
       };
@@ -192,6 +198,22 @@ export class LivekitCallingService {
       dynacast: true,
       videoCaptureDefaults: {
         resolution: VideoPresets.h720.resolution,
+        facingMode: this.currentFacingMode,
+      },
+      publishDefaults: {
+        simulcast: true,
+        videoSimulcastLayers: [
+          VideoPresets.h180,
+          VideoPresets.h360,
+          VideoPresets.h720,
+        ],
+        videoEncoding: {
+          maxBitrate: 2_500_000,
+          maxFramerate: 30,
+        },
+        audioPreset: AudioPresets.speech,
+        dtx: true,
+        red: true,
       },
     });
 
@@ -281,13 +303,26 @@ export class LivekitCallingService {
       }
     }
 
-    // Publish local tracks
+    // Publish local tracks with high clarity HD settings and robust audio packet recovery
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {
         if (track.kind === 'audio') {
-          await this.room.localParticipant.publishTrack(track, { name: 'microphone' });
+          await this.room.localParticipant.publishTrack(track, {
+            name: 'microphone',
+            audioPreset: AudioPresets.speech,
+            dtx: true,
+            red: true,
+          });
         } else if (track.kind === 'video') {
-          await this.room.localParticipant.publishTrack(track, { name: 'camera' });
+          await this.room.localParticipant.publishTrack(track, {
+            name: 'camera',
+            simulcast: true,
+            videoEncoding: {
+              maxBitrate: 2_500_000,
+              maxFramerate: 30,
+            },
+            videoCodec: 'vp8',
+          });
         }
       }
     }
@@ -460,8 +495,10 @@ export class LivekitCallingService {
       const newConstraints: MediaStreamConstraints = {
         video: {
           facingMode: { exact: this.currentFacingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1280, max: 1920, min: 640 },
+          height: { ideal: 720, max: 1080, min: 360 },
+          aspectRatio: { ideal: 16 / 9 },
+          frameRate: { ideal: 30, max: 30, min: 24 },
         },
       };
 
@@ -471,7 +508,13 @@ export class LivekitCallingService {
       } catch {
         // Fallback without exact facingMode
         newStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: this.currentFacingMode },
+          video: {
+            facingMode: { ideal: this.currentFacingMode },
+            width: { ideal: 1280, max: 1920, min: 640 },
+            height: { ideal: 720, max: 1080, min: 360 },
+            aspectRatio: { ideal: 16 / 9 },
+            frameRate: { ideal: 30, max: 30, min: 24 },
+          },
         });
       }
 
@@ -500,10 +543,10 @@ export class LivekitCallingService {
   }
 
   // Switch audio output to speaker where supported (e.g. Chrome, Android Chrome)
-  async setAudioOutputDevice(audioElement: HTMLAudioElement, deviceId: string): Promise<boolean> {
-    if (typeof (audioElement as any).setSinkId === 'function') {
+  async setAudioOutputDevice(mediaElement: HTMLMediaElement, deviceId: string): Promise<boolean> {
+    if (typeof (mediaElement as any).setSinkId === 'function') {
       try {
-        await (audioElement as any).setSinkId(deviceId);
+        await (mediaElement as any).setSinkId(deviceId);
         return true;
       } catch (err) {
         console.warn('Unable to change audio output device:', err);

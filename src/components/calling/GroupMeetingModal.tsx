@@ -130,7 +130,7 @@ export const GroupMeetingModal: React.FC = () => {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover transform -scale-x-100"
+                  className="w-full h-full object-contain bg-slate-950 transform -scale-x-100"
                 />
               ) : (
                 <div className="flex flex-col items-center gap-2 text-slate-300">
@@ -166,7 +166,7 @@ export const GroupMeetingModal: React.FC = () => {
                       ref={el => {
                         if (el && participant.stream) el.srcObject = participant.stream;
                       }}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain bg-slate-950"
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-slate-300">

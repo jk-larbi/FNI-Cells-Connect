@@ -4,6 +4,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { PushNotificationService } from '../../services/pushNotificationService';
 import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
 import { Capacitor } from '@capacitor/core';
+import { AppUpdateSettingsSection } from '../settings/AppUpdateSettingsSection';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { ReportService } from '../../services/reportService';
@@ -932,6 +933,9 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
             </div>
           </div>
+
+          {/* Android Application Updates & Version Distribution */}
+          <AppUpdateSettingsSection />
 
           {/* Administrator Profile Photo */}
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">

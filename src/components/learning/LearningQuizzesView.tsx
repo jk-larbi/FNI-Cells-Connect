@@ -237,6 +237,10 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
   const grandTotalPoints = mcqTotalPoints + subjectiveTotalPoints;
 
+  // State for Subjective Question Alternative phrasing inputs
+  const [altInputByQuestion, setAltInputByQuestion] = useState<{ [qIndex: number]: string }>({});
+  const [showBulkAltByQuestion, setShowBulkAltByQuestion] = useState<{ [qIndex: number]: boolean }>({});
+
   // Open Quiz Builder Form
   const handleOpenCreateQuiz = async (q?: Quiz) => {
     if (q) {
@@ -1007,10 +1011,10 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 4. ADMIN MODAL: REDESIGNED QUIZ BUILDER                                   */}
       {/* ========================================================================= */}
       {isQuizFormOpen && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/70 backdrop-blur-sm flex sm:items-center sm:justify-center p-0 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-4xl w-full p-4 sm:p-7 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-6 h-full sm:h-auto sm:max-h-[92vh] flex flex-col pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="fixed inset-0 z-[100] bg-white dark:bg-[#0c1626] sm:bg-[#142B4A]/75 sm:backdrop-blur-md flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-4xl w-full h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0">
+            <div className="flex items-center justify-between px-4 sm:px-7 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3.5 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0 bg-white dark:bg-[#111c2d]">
               <div className="min-w-0 pr-2">
                 <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider block">
                   Quiz Authoring Suite
@@ -1030,7 +1034,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Builder Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2.5 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0 -mx-1 px-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-4 sm:px-7 py-2.5 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0 bg-slate-50/80 dark:bg-[#0e1726]/80">
               {[
                 { id: 'general', label: '1. General Info' },
                 { id: 'mcq', label: `2. MCQs (${mcqQuestions.length})` },
@@ -1044,7 +1048,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                   className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-1.5 ${
                     builderTab === tab.id
                       ? 'bg-[#142B4A] text-white shadow-2xs'
-                      : 'bg-slate-100 dark:bg-slate-800/60 text-[#667085] dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      : 'bg-white dark:bg-slate-800/80 text-[#667085] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/60'
                   }`}
                 >
                   {tab.label}
@@ -1053,7 +1057,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Content Body */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-5 custom-scrollbar pr-1">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-7 space-y-5 custom-scrollbar">
               {/* TAB 1: GENERAL INFO */}
               {builderTab === 'general' && (
                 <div className="space-y-4">
@@ -1396,24 +1400,111 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                               />
                             </div>
 
-                            <div>
-                              <label className="block text-xs font-bold text-[#182230] dark:text-white mb-1">
-                                Acceptable Alternative Answers (One per line)
-                              </label>
-                              <textarea
-                                rows={3}
-                                value={(q.acceptable_alternatives || []).join('\n')}
-                                onChange={e => {
-                                  const lines = e.target.value.split('\n');
-                                  setSubjectiveQuestions(prev => {
-                                    const c = [...prev];
-                                    c[idx].acceptable_alternatives = lines;
-                                    return c;
-                                  });
-                                }}
-                                placeholder="Enter acceptable alternative phrasing (e.g. repentance and turning to God)..."
-                                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
-                              />
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-xs font-bold text-[#182230] dark:text-white">
+                                  Acceptable Alternative Answers &amp; Phrasings
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowBulkAltByQuestion(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                  className="text-[11px] font-bold text-[#C6A45A] hover:underline cursor-pointer"
+                                >
+                                  {showBulkAltByQuestion[idx] ? 'Switch to Tag Chips' : 'Switch to Bulk Textarea'}
+                                </button>
+                              </div>
+
+                              {/* Chips display of acceptable alternatives */}
+                              {(q.acceptable_alternatives || []).length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#152338] border border-slate-200 dark:border-slate-800">
+                                  {(q.acceptable_alternatives || []).map((alt, aIdx) => (
+                                    <span
+                                      key={aIdx}
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold text-indigo-900 dark:text-indigo-200 shadow-2xs"
+                                    >
+                                      <span className="font-bold text-[#C6A45A]">{aIdx + 1}.</span>
+                                      <span>{alt}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSubjectiveQuestions(prev => {
+                                            const c = [...prev];
+                                            c[idx].acceptable_alternatives = (c[idx].acceptable_alternatives || []).filter((_, i) => i !== aIdx);
+                                            return c;
+                                          });
+                                        }}
+                                        className="text-indigo-400 hover:text-rose-600 transition-colors p-0.5 rounded cursor-pointer"
+                                        title="Remove phrasing"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Either Tag Add Input or Bulk Textarea */}
+                              {showBulkAltByQuestion[idx] ? (
+                                <textarea
+                                  rows={3}
+                                  value={(q.acceptable_alternatives || []).join('\n')}
+                                  onChange={e => {
+                                    const lines = e.target.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                                    setSubjectiveQuestions(prev => {
+                                      const c = [...prev];
+                                      c[idx].acceptable_alternatives = lines;
+                                      return c;
+                                    });
+                                  }}
+                                  placeholder="Enter one acceptable alternative per line..."
+                                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437] focus:outline-none focus:ring-2 focus:ring-[#C6A45A] font-mono leading-relaxed"
+                                />
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={altInputByQuestion[idx] || ''}
+                                    onChange={e => setAltInputByQuestion(prev => ({ ...prev, [idx]: e.target.value }))}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        const text = (altInputByQuestion[idx] || '').trim();
+                                        if (text) {
+                                          setSubjectiveQuestions(prev => {
+                                            const c = [...prev];
+                                            c[idx].acceptable_alternatives = [...(c[idx].acceptable_alternatives || []), text];
+                                            return c;
+                                          });
+                                          setAltInputByQuestion(prev => ({ ...prev, [idx]: '' }));
+                                        }
+                                      }
+                                    }}
+                                    placeholder="Type alternative phrasing (e.g. repentance and turning to God)..."
+                                    className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-[#F5F7FA] dark:bg-[#172437] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const text = (altInputByQuestion[idx] || '').trim();
+                                      if (text) {
+                                        setSubjectiveQuestions(prev => {
+                                          const c = [...prev];
+                                          c[idx].acceptable_alternatives = [...(c[idx].acceptable_alternatives || []), text];
+                                          return c;
+                                        });
+                                        setAltInputByQuestion(prev => ({ ...prev, [idx]: '' }));
+                                      }
+                                    }}
+                                    className="px-3 py-2.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 shrink-0"
+                                  >
+                                    <Plus className="w-3.5 h-3.5 text-[#C6A45A]" />
+                                    <span>Add Phrasing</span>
+                                  </button>
+                                </div>
+                              )}
+                              <p className="text-[10px] text-[#667085] dark:text-slate-400">
+                                Tutors submitting any of these matching phrases will automatically receive full marks.
+                              </p>
                             </div>
 
                             <div>
@@ -1639,16 +1730,16 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Sticky Summary Bar & Footer Actions */}
-            <div className="pt-3.5 sm:pt-4 border-t border-[#E3E8EF] dark:border-[#26384d] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 bg-white/95 dark:bg-[#111c2d]/95 backdrop-blur-md">
+            <div className="px-4 sm:px-7 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] border-t border-[#E3E8EF] dark:border-[#26384d] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 bg-white dark:bg-[#111c2d] shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
               <div className="flex items-center justify-between sm:justify-start gap-3 text-xs px-1">
-                <span className="font-bold text-[#667085]">
+                <span className="font-bold text-[#667085] dark:text-slate-400">
                   MCQ: <strong className="text-[#142B4A] dark:text-white">{mcqTotalPoints} pts</strong>
                 </span>
-                <span className="text-slate-300">&bull;</span>
-                <span className="font-bold text-[#667085]">
+                <span className="text-slate-300 dark:text-slate-600">&bull;</span>
+                <span className="font-bold text-[#667085] dark:text-slate-400">
                   Subjective: <strong className="text-[#142B4A] dark:text-white">{subjectiveTotalPoints} pts</strong>
                 </span>
-                <span className="text-slate-300">&bull;</span>
+                <span className="text-slate-300 dark:text-slate-600">&bull;</span>
                 <span className="font-bold text-[#142B4A] dark:text-white">
                   Total: <strong className="text-[#C6A45A] font-black">{grandTotalPoints} pts</strong>
                 </span>
@@ -1666,7 +1757,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                   type="button"
                   disabled={isSavingQuiz}
                   onClick={() => handleSaveQuiz('draft')}
-                  className="px-3 py-2.5 sm:px-4 sm:py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 text-center cursor-pointer transition-colors disabled:opacity-50"
+                  className="px-3 py-2.5 sm:px-4 sm:py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 text-center cursor-pointer transition-colors disabled:opacity-50 text-slate-700 dark:text-slate-200"
                 >
                   Save Draft
                 </button>
@@ -1689,10 +1780,10 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 5. TUTOR RUNNER MODAL: TAKING A QUIZ                                      */}
       {/* ========================================================================= */}
       {activeQuizForTest && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/70 backdrop-blur-sm flex sm:items-center sm:justify-center p-0 sm:p-5 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-3xl w-full p-4 sm:p-7 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-6 h-full sm:h-auto sm:max-h-[92vh] flex flex-col pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="fixed inset-0 z-[100] bg-white dark:bg-[#0c1626] sm:bg-[#142B4A]/75 sm:backdrop-blur-md flex flex-col sm:items-center sm:justify-center p-0 sm:p-5 overflow-hidden sm:overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-3xl w-full h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] overflow-hidden">
             {/* Top Bar: Title, Attempts, Countdown & Auto-save */}
-            <div className="pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="px-4 sm:px-7 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] flex flex-wrap items-center justify-between gap-3 shrink-0 bg-white dark:bg-[#111c2d]">
               <div>
                 <h3 className="font-bold text-base text-[#142B4A] dark:text-white">
                   {activeQuizForTest.title}
@@ -1723,7 +1814,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Questions Container */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-6 custom-scrollbar pr-1">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-7 py-4 space-y-6 custom-scrollbar">
               {/* SECTION 1: MCQs */}
               {activeQuestions.filter(q => q.section === 'mcq' || q.question_type === 'multiple_choice').length > 0 && (
                 <div className="space-y-4">
@@ -1834,7 +1925,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Bottom Submit Controls */}
-            <div className="pt-3 border-t border-[#E3E8EF] dark:border-[#26384d] flex items-center justify-between gap-3 shrink-0">
+            <div className="px-4 sm:px-7 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] border-t border-[#E3E8EF] dark:border-[#26384d] flex items-center justify-between gap-3 shrink-0 bg-white dark:bg-[#111c2d]">
               <span className="text-xs text-[#667085]">
                 {Object.keys(userAnswers).length} of {activeQuestions.length} answered
               </span>
@@ -1923,9 +2014,9 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 7. CANDIDATE RESULTS MODAL (AFTER SUBMISSION / VIEW RESULT)               */}
       {/* ========================================================================= */}
       {viewingAttempt && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex sm:items-center sm:justify-center p-0 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-2xl w-full p-4 sm:p-8 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-8 h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto custom-scrollbar space-y-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF] dark:border-[#26384d]">
+        <div className="fixed inset-0 z-[100] bg-white dark:bg-[#0c1626] sm:bg-[#142B4A]/75 sm:backdrop-blur-md flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-4 sm:px-7 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0 bg-white dark:bg-[#111c2d]">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider">
                   Quiz Assessment Result
@@ -1942,6 +2033,8 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            <div className="flex-1 overflow-y-auto p-4 sm:p-7 space-y-4 custom-scrollbar">
 
             {/* If Results are Released */}
             {viewingAttempt.results_released ? (
@@ -1989,6 +2082,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
                 </p>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
@@ -1997,9 +2091,9 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       {/* 8. ADMIN MODAL: MANUAL GRADING & REVIEW INTERFACE                         */}
       {/* ========================================================================= */}
       {gradingAttempt && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex sm:items-center sm:justify-center p-0 sm:p-5 overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-3xl w-full p-4 sm:p-7 shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] my-0 sm:my-6 h-full sm:h-auto sm:max-h-[92vh] flex flex-col pt-[max(1rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0">
+        <div className="fixed inset-0 z-[100] bg-white dark:bg-[#0c1626] sm:bg-[#142B4A]/75 sm:backdrop-blur-md flex flex-col sm:items-center sm:justify-center p-0 sm:p-5 overflow-hidden sm:overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-none sm:rounded-3xl max-w-3xl w-full h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col shadow-2xl border-0 sm:border border-[#E3E8EF] dark:border-[#26384d] overflow-hidden">
+            <div className="flex items-center justify-between px-4 sm:px-7 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3 border-b border-[#E3E8EF] dark:border-[#26384d] shrink-0 bg-white dark:bg-[#111c2d]">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#C6A45A] tracking-wider">
                   Admin Assessment Review
@@ -2018,7 +2112,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Questions to Grade */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-4 custom-scrollbar pr-1">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-7 py-4 space-y-4 custom-scrollbar">
               {Object.values(gradingQuestionGrades).map((g, idx) => (
                 <div
                   key={g.question_id || idx}
@@ -2119,7 +2213,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="pt-3 border-t border-[#E3E8EF] dark:border-[#26384d] flex items-center justify-end gap-2 shrink-0">
+            <div className="px-4 sm:px-7 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] border-t border-[#E3E8EF] dark:border-[#26384d] flex items-center justify-end gap-2 shrink-0 bg-white dark:bg-[#111c2d]">
               <button
                 type="button"
                 onClick={() => setGradingAttempt(null)}

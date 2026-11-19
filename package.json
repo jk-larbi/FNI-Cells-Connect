@@ -11,6 +11,7 @@
     "test:calling": "node scripts/test-calling-system.mjs",
     "test:notifications": "node scripts/test-notification-system.mjs",
     "test:android-fcm": "node scripts/test-android-fcm-integration.mjs",
+    "test:update": "node scripts/test-android-update-system.mjs",
     "test:fni": "node scripts/test-fni-system.mjs",
     "test:backend": "node scripts/test-backend.mjs",
     "test:firebase": "node scripts/test-firebase.mjs",

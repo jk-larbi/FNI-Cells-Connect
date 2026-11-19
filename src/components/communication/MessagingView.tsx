@@ -17,6 +17,7 @@ import { OfficialGroupManagementModal } from './OfficialGroupManagementModal';
 import { GroupInfoModal } from './GroupInfoModal';
 import { StickerCreatorModal } from './StickerCreatorModal';
 import { ChatFolderModal, FOLDER_ICONS, FOLDER_COLORS } from './ChatFolderModal';
+import { IosEmojiPicker } from './IosEmojiPicker';
 import {
   PrivateMessage,
   CommunityMessage,
@@ -3779,71 +3780,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        {/* Search Input for Emojis */}
-                        <div className="relative">
-                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                          <input
-                            type="text"
-                            value={emojiSearchQuery}
-                            onChange={e => setEmojiSearchQuery(e.target.value)}
-                            placeholder="Search emojis (pray, amen, cross, love...)"
-                            className="w-full pl-8 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
-                          />
-                          {emojiSearchQuery && (
-                            <button
-                              type="button"
-                              onClick={() => setEmojiSearchQuery('')}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Category Tabs */}
-                        {!emojiSearchQuery && (
-                          <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1 text-base">
-                            {EMOJI_CATEGORIES.map(cat => (
-                              <button
-                                key={cat.name}
-                                type="button"
-                                onClick={() => setSelectedEmojiCategory(cat.name)}
-                                className={`p-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
-                                  selectedEmojiCategory === cat.name
-                                    ? 'bg-blue-50 dark:bg-blue-900/40 ring-1 ring-blue-500 scale-105'
-                                    : 'hover:bg-slate-100 dark:hover:bg-white/5 opacity-70 hover:opacity-100'
-                                }`}
-                                title={cat.name}
-                              >
-                                <span>{cat.icon}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Emoji Grid */}
-                        <div className="max-h-56 overflow-y-auto custom-scrollbar p-1">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                            {emojiSearchQuery ? `Search Results (${filteredEmojis.length})` : selectedEmojiCategory}
-                          </div>
-                          <div className="grid grid-cols-8 gap-1">
-                            {filteredEmojis.map((emoji, eIdx) => (
-                              <button
-                                key={`${emoji}-${eIdx}`}
-                                type="button"
-                                onClick={() => handleInsertEmoji(emoji)}
-                                className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-lg flex items-center justify-center cursor-pointer transition-transform hover:scale-125 active:scale-90"
-                              >
-                                {emoji}
-                              </button>
-                            ))}
-                          </div>
-                          {filteredEmojis.length === 0 && (
-                            <p className="text-center text-slate-400 py-4 text-xs">No matching emojis found.</p>
-                          )}
-                        </div>
-                      </div>
+                      <IosEmojiPicker
+                        onSelectEmoji={handleInsertEmoji}
+                        onBackspace={handleEmojiBackspace}
+                        onClose={() => setShowEmojiPicker(false)}
+                        className="bg-transparent dark:bg-transparent border-0 p-0 shadow-none backdrop-blur-none"
+                      />
                     )}
                   </div>
                 </>

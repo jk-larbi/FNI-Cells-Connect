@@ -1,0 +1,20 @@
+{
+  "appId": "com.forerunnersnetwork.fnicellsconnect",
+  "appName": "FNI Cells Connect",
+  "latestVersion": "1.0.1",
+  "versionCode": 1000001,
+  "releaseDate": "2026-11-19T20:30:00Z",
+  "apkUrl": "https://github.com/jk-larbi/FNI-Cells-Connect/releases/latest/download/FNI-Cells-Connect-Android.apk",
+  "sha256": "",
+  "apkSize": "14.8 MB",
+  "minSupportedVersion": "1.0.0",
+  "isMandatory": false,
+  "releaseNotes": [
+    "Cross-device message input fix: Return inserts new lines on iPhone & Android, Enter sends on PC/Mac",
+    "Natural head-to-shoulders video call framing with ambient blurred backdrop",
+    "Crystal clear 720p/1080p HD video calling at 30 FPS with adaptive simulcast",
+    "Optimized voice clarity with Opus speech profile, echo cancellation, and speakerphone toggle",
+    "Apple iOS-style emoji keyboard with skin tones, instant search, and complete categories",
+    "Automatic background in-place Android APK update detection and installation"
+  ]
+}

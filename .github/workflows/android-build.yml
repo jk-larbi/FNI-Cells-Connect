@@ -163,6 +163,7 @@ jobs:
               "android.permission.FOREGROUND_SERVICE_LOCATION",
               "android.permission.POST_NOTIFICATIONS",
               "android.permission.RECORD_AUDIO",
+              "android.permission.REQUEST_INSTALL_PACKAGES",
           ]:
               if permission not in existing_permissions:
                   ET.SubElement(manifest_root, "uses-permission", {f"{{{android_ns}}}name": permission})
@@ -370,11 +371,43 @@ jobs:
           grep -q "mipmap/ic_launcher_round" /tmp/fni-apk-resources.txt
           echo "APK contains both configured FNI launcher icon resources."
 
-      - name: Publish permanent GitHub Release with APK
+      - name: Compute APK Checksum & Prepare Release Manifest
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk FNI-Cells-Connect-Android.apk
+          SHA256=$(sha256sum FNI-Cells-Connect-Android.apk | awk '{print $1}')
+          FILESIZE=$(stat -c%s FNI-Cells-Connect-Android.apk)
+          echo "APK SHA256: $SHA256"
+          echo "APK Size: $FILESIZE bytes"
+          python3 - <<PY
+          import json
+          from datetime import datetime, timezone
+          manifest = {
+              "appId": "com.forerunnersnetwork.fnicellsconnect",
+              "latestVersion": "${{ steps.version.outputs.version }}",
+              "versionCode": int("${{ steps.version.outputs.version_code }}"),
+              "apkUrl": "https://github.com/jk-larbi/FNI-Cells-Connect/releases/download/${{ steps.version.outputs.tag }}/FNI-Cells-Connect-Android.apk",
+              "sha256": "$SHA256",
+              "releaseDate": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+              "releaseNotes": [
+                  "Automatic in-app APK update system with background check and package installer",
+                  "iOS-style high-definition emoji keyboard across all messaging views",
+                  "Natural head-to-shoulders video framing and HD camera optimization",
+                  "Multi-device operating system notification status & sound testing",
+                  "Full-screen responsive Quiz Authoring Suite with discrete alternative answers"
+              ],
+              "minSupportedVersion": "1.0.0",
+              "isMandatory": False,
+              "apkSize": "$FILESIZE"
+          }
+          with open("fni-app-update.json", "w") as f:
+              json.dump(manifest, f, indent=2)
+          print("Generated release fni-app-update.json successfully.")
+          PY
+
+      - name: Publish permanent GitHub Release with APK and Update Manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk FNI-Cells-Connect-Android.apk
-          gh release create "${{ steps.version.outputs.tag }}" FNI-Cells-Connect-Android.apk \
+          gh release create "${{ steps.version.outputs.tag }}" FNI-Cells-Connect-Android.apk fni-app-update.json \
             --title "FNI Cells Connect ${{ steps.version.outputs.version }}" \
             --notes "FNI Cells Connect Android release ${{ steps.version.outputs.version }}. Download and install the APK to update the app."
