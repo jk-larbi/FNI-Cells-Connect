@@ -956,8 +956,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         try {
           const message = await MessagingService.getCommunityMessageById(messageId);
           if (!message || message.deletedForEveryoneAt) return;
+          if (message.senderUid !== viewerId && !allMembers.some(member => member.id === message.senderUid)) return;
+          if (MessagingService.getDeletedForSelfIds(viewerId).has(message.id)) return;
           setCommunityMessages(previous => {
-            const next = [...previous.filter(item => item.id !== message.id), message]
+            const existing = previous.find(item => item.id === message.id);
+            const mergedMessage = { ...message, reactions: message.reactions || existing?.reactions || {} };
+            const next = [...previous.filter(item => item.id !== message.id), mergedMessage]
               .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             ConversationCacheService.setMessages(viewerId, 'community', next);
             return next;
@@ -981,6 +985,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       try {
         const message = await MessagingService.getPrivateMessageById(messageId);
         if (!message || message.deletedForEveryoneAt) return;
+        if (MessagingService.getDeletedForSelfIds(viewerId).has(message.id)) return;
         const belongs = isAdmin
           ? ((message.senderUid === conversationId && (message.recipientUid === 'admin' || message.recipientUid === viewerId)) ||
              (message.senderUid === viewerId && message.recipientUid === conversationId))
@@ -988,7 +993,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
              (message.senderUid === conversationId && message.recipientUid === viewerId));
         if (!belongs) return;
         setPrivateMessages(previous => {
-          const next = [...previous.filter(item => item.id !== message.id), message]
+          const existing = previous.find(item => item.id === message.id);
+          const mergedMessage = { ...message, reactions: existing?.reactions || message.reactions || {} };
+          const next = [...previous.filter(item => item.id !== message.id), mergedMessage]
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
           ConversationCacheService.setMessages(viewerId, conversationId, next);
           return next;
