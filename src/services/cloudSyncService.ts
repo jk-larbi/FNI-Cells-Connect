@@ -41,6 +41,8 @@ export class CloudSyncService {
     'cell_leadership_history',
     'system_settings',
     'user_settings',
+    'chat_folders',
+    'chat_folder_conversations',
     'user_pinned_chats',
     'user_group_preferences',
     'user_custom_stickers',
