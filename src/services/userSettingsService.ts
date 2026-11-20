@@ -29,6 +29,7 @@ export class UserSettingsService {
   static async getUserSettings(userId: string): Promise<UserSettings | null> {
     if (!userId) return null;
 
+    let remoteLookupSucceeded = false;
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
@@ -37,6 +38,7 @@ export class UserSettingsService {
           .eq('user_id', userId)
           .maybeSingle();
 
+        if (!error) remoteLookupSucceeded = true;
         if (!error && data) {
           const settings: UserSettings = {
             userId: data.user_id,
@@ -68,10 +70,26 @@ export class UserSettingsService {
       }
     }
 
-    // Fallback to local storage
+    // Migrate this account's existing device preferences once the cloud lookup
+    // succeeds and confirms there is no row yet. Never overwrite a cloud row or
+    // push local cache while offline / when the lookup failed.
     try {
-      const cached = localStorage.getItem(`${USER_SETTINGS_CACHE_PREFIX}${userId}`);
-      if (cached) return JSON.parse(cached);
+      const cachedRaw = localStorage.getItem(`${USER_SETTINGS_CACHE_PREFIX}${userId}`);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw) as UserSettings;
+        if (remoteLookupSucceeded && supabase && isSupabaseConfigured) {
+          const { error } = await supabase.from('user_settings').upsert({
+            user_id: userId,
+            notification_preferences: cached.notificationPreferences || DEFAULT_NOTIFICATION_PREFERENCES,
+            chat_wallpapers: cached.chatWallpapers || {},
+            general_preferences: cached.generalPreferences || {},
+            theme_preference: ['light', 'dark', 'system'].includes(cached.themePreference as string) ? cached.themePreference : 'system',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id' });
+          if (error) console.warn('Could not migrate cached user preferences to Supabase:', error.message);
+        }
+        return cached;
+      }
     } catch {}
 
     return null;
