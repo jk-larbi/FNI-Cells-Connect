@@ -1493,7 +1493,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // FNI Message Deletion Handlers (Delete for Self vs Delete for Both)
   const handleOpenDeleteModal = (msg: CommunityMessage | PrivateMessage) => {
     setDeleteTargetMessage(msg);
-    setDeleteForBoth(true);
+    setDeleteForBoth(msg.senderUid === currentUser?.id || isAdmin);
     setContextMenu(null);
   };
 
@@ -1501,7 +1501,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if (!deleteTargetMessage || !currentUser?.id || !selectedChatId) return;
     const msg = deleteTargetMessage;
     const isCommunity = selectedChatId === 'community';
-    const forEveryone = deleteForBoth;
+    const forEveryone = deleteForBoth && (msg.senderUid === currentUser.id || isAdmin);
 
     // 1. Instant optimistic UI removal and modal dismissal (0ms latency, instant response)
     setDeleteTargetMessage(null);
@@ -2466,37 +2466,59 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // 6. PINNING & UNPINNING
   // ---------------------------------------------------------------------------
   const handleTogglePin = async (msg: CommunityMessage | PrivateMessage, notify = false) => {
-    if (isPinning) return;
+    if (isPinning || !currentUser?.id) return;
     setIsPinning(true);
     setOpenMessageMenuId(null);
     setContextMenu(null);
 
-    const actionLabel = msg.isPinned ? 'unpin' : 'pin';
+    const wasPinned = Boolean(msg.isPinned);
+    const actionLabel = wasPinned ? 'unpin' : 'pin';
+    const changedAt = new Date().toISOString();
+    const community = selectedChatId === 'community';
+    const optimisticPin = community
+      ? {
+          isPinned: !wasPinned,
+          pinnedAt: wasPinned ? undefined : changedAt,
+          pinnedBy: wasPinned ? undefined : currentUser.id,
+          pinnedByName: wasPinned ? undefined : (currentUser.full_name || 'FNI Member'),
+          pinnedNotify: wasPinned ? false : notify,
+        }
+      : null;
+
+    // Update the visible message and this user's cache immediately; the database
+    // RPC below is authoritative and Realtime synchronizes everyone else.
+    if (community && optimisticPin) {
+      setCommunityMessages(previous => previous.map(item => item.id === msg.id ? { ...item, ...optimisticPin } : item));
+      ConversationCacheService.updateMessage<CommunityMessage>(currentUser.id, 'community', msg.id, optimisticPin);
+    }
 
     try {
       const pinnerDetails = {
         uid: currentUser.id,
-        name: currentUser.full_name || 'FNI Leader',
+        name: currentUser.full_name || 'FNI Member',
         content: msg.content,
         recipientUid: 'recipientUid' in msg ? (msg.senderUid === currentUser.id ? msg.recipientUid : msg.senderUid) : undefined,
       };
 
-      let res: { success: boolean; error?: string };
-      if (selectedChatId === 'community') {
-        res = await MessagingService.setCommunityMessagePin(msg.id, !msg.isPinned, notify, pinnerDetails);
-      } else {
-        res = await MessagingService.setPrivateMessagePin(msg.id, currentUser.id, !msg.isPinned, notify, pinnerDetails);
-      }
+      const res = community
+        ? await MessagingService.setCommunityMessagePin(msg.id, !wasPinned, notify, pinnerDetails)
+        : await MessagingService.setPrivateMessagePin(msg.id, currentUser.id, !wasPinned, notify, pinnerDetails);
 
-      if (!res.success) {
-        const errorMsg = res.error || `Unable to ${actionLabel} message. Please check permissions and try again.`;
-        alert(errorMsg);
-        return;
-      }
+      if (!res.success) throw new Error(res.error || `Unable to ${actionLabel} message.`);
 
-      // Refresh messages only after successful persistence
-      await loadActiveMessages();
+      // Reconcile quietly after the immediate interaction has completed.
+      void loadActiveMessages();
     } catch (err: any) {
+      if (community) {
+        setCommunityMessages(previous => previous.map(item => item.id === msg.id ? { ...item, isPinned: wasPinned, pinnedAt: (msg as CommunityMessage).pinnedAt, pinnedBy: (msg as CommunityMessage).pinnedBy, pinnedByName: (msg as CommunityMessage).pinnedByName, pinnedNotify: (msg as CommunityMessage).pinnedNotify } : item));
+        ConversationCacheService.updateMessage<CommunityMessage>(currentUser.id, 'community', msg.id, {
+          isPinned: wasPinned,
+          pinnedAt: (msg as CommunityMessage).pinnedAt,
+          pinnedBy: (msg as CommunityMessage).pinnedBy,
+          pinnedByName: (msg as CommunityMessage).pinnedByName,
+          pinnedNotify: (msg as CommunityMessage).pinnedNotify,
+        });
+      }
       console.error('Error toggling pin:', err);
       alert(err?.message || `Failed to ${actionLabel} message. Please check your connection and try again.`);
     } finally {
@@ -5160,20 +5182,24 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               {deleteTargetMessage.content}
             </div>
 
-            {/* Checkbox for "Also delete for [User]" */}
-            <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer text-xs select-none">
-              <input
-                type="checkbox"
-                checked={deleteForBoth}
-                onChange={e => setDeleteForBoth(e.target.checked)}
-                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 dark:border-slate-600 dark:bg-slate-700"
-              />
-              <span className="font-medium text-slate-700 dark:text-slate-200">
-                {selectedChatId === 'community'
-                  ? 'Delete for everyone in fellowship'
-                  : `Also delete for ${activeContact?.name || 'recipient'}`}
-              </span>
-            </label>
+            {/* Authors may remove their own message for everyone, including when chatting with an admin. */}
+            {(deleteTargetMessage.senderUid === currentUser?.id || isAdmin) ? (
+              <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer text-xs select-none">
+                <input
+                  type="checkbox"
+                  checked={deleteForBoth}
+                  onChange={e => setDeleteForBoth(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 dark:border-slate-600 dark:bg-slate-700"
+                />
+                <span className="font-medium text-slate-700 dark:text-slate-200">
+                  {selectedChatId === 'community'
+                    ? 'Delete for everyone in fellowship'
+                    : `Also delete for ${activeContact?.name || 'recipient'}`}
+                </span>
+              </label>
+            ) : (
+              <p className="px-2 text-xs text-slate-500 dark:text-slate-400">This removes the message only from your chat.</p>
+            )}
 
             {/* Action buttons */}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
