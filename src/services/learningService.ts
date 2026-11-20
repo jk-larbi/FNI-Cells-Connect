@@ -588,6 +588,7 @@ export class LearningService {
         .from('learning_quiz_questions')
         .select('id,quiz_id,section,question_text,question_type,options,points,marking_method,created_at')
         .eq('quiz_id', quizId)
+        .eq('is_active', true)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
       return (data || []).map((d: any) => ({
