@@ -1571,10 +1571,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
     // 2. Persist in background without blocking UI
     try {
-      if (target.id === 'community') {
-        await MessagingService.clearCommunityHistory(currentUser.id, forEveryone);
-      } else {
-        await MessagingService.clearPrivateConversation(currentUser.id, target.id, forEveryone);
+      const cleared = target.id === 'community'
+        ? await MessagingService.clearCommunityHistory(currentUser.id, forEveryone)
+        : await MessagingService.clearPrivateConversation(currentUser.id, target.id, forEveryone);
+      if (!cleared) {
+        setSendError('Chat history could not be cleared. Please check your connection and try again.');
+        void loadActiveMessages(target.id);
       }
     } catch (err: any) {
       console.warn('Background chat clear notice:', err);
