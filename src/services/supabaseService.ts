@@ -1163,6 +1163,17 @@ export class SupabaseService {
     }
   }
 
+  static async getPrivateMessageById(messageId: string): Promise<PrivateMessage | null> {
+    if (!this.isAvailable() || !messageId) return null;
+    const { data, error } = await supabase!
+      .from('private_messages')
+      .select('*')
+      .eq('id', messageId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapPrivateMessageFromDb(data) : null;
+  }
+
   static async sendPrivateMessage(msg: PrivateMessage): Promise<boolean> {
     if (!this.isAvailable()) return false;
     const payload = {
@@ -1439,6 +1450,17 @@ export class SupabaseService {
       console.warn('getCommunityMessagesOptimized fallback:', err);
       return this.getCommunityMessages();
     }
+  }
+
+  static async getCommunityMessageById(messageId: string): Promise<CommunityMessage | null> {
+    if (!this.isAvailable() || !messageId) return null;
+    const { data, error } = await supabase!
+      .from('community_messages')
+      .select('*')
+      .eq('id', messageId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapCommunityMessageFromDb(data) : null;
   }
 
   static async sendCommunityMessage(msg: CommunityMessage): Promise<boolean> {
