@@ -57,6 +57,15 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
     load();
   }, [cell.id, currentLeaderId]);
 
+  useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || ['cells', 'cell_leadership_history'].includes(table)) void load();
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, [cell.id, currentLeaderId]);
+
   const save = async (leaderId: string | null) => {
     const action = leaderId === null ? 'dismiss the current leader' : 'change this cell\'s leader';
     if (!window.confirm(`Are you sure you want to ${action}? The cell\'s reports, members and other records will remain unchanged.`)) return;
