@@ -451,7 +451,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
         draft = null;
         session = await LearningService.startQuizAttempt(quiz.id);
       }
-      const questions = await LearningService.getQuizQuestions(quiz.id, true);
+      const questions = session.questions;
       setActiveQuestions(questions);
 
       const startIso = session.startedAt;
