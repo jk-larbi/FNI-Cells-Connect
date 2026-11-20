@@ -682,7 +682,7 @@ export class LearningService {
   }
 
   static async getQuizSession(quizId: string, sessionId?: string): Promise<{
-    sessionId: string; startedAt: string; expiresAt: string | null; answers: Record<string, any>; expired: boolean;
+    sessionId: string; startedAt: string; expiresAt: string | null; updatedAt: string; answers: Record<string, any>; expired: boolean;
   }> {
     return invokeQuizAction({ action: 'get_session', quizId, sessionId });
   }
