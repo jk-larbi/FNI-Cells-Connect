@@ -91,19 +91,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [currentTab]);
 
   // Administrator Navigation
-  const adminNavItems: { id: AppNavTab | 'cells-dropdown' | 'reports-dropdown'; label: string; icon: any; isExpandable?: boolean; badge?: number; colorKey: IconColorKey }[] = [
-    { id: 'dashboard' as AppNavTab, label: 'Dashboard', icon: LayoutDashboard, colorKey: 'gold' },
-    { id: 'cells-dropdown', label: 'Cells', icon: Building, isExpandable: true, colorKey: 'teal' },
-    { id: 'reports-dropdown', label: 'Reports', icon: FileCheck, isExpandable: true, colorKey: 'emerald' },
-    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true, colorKey: 'purple' },
-    { id: 'evangelism' as AppNavTab, label: 'Evangelism', icon: Flame, colorKey: 'flame' },
-    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck, colorKey: 'teal' },
-    { id: 'finance' as AppNavTab, label: 'Offering', icon: DollarSign, colorKey: 'emerald' },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare, colorKey: 'azure' },
-    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone, colorKey: 'purple' },
-    { id: 'analytics' as AppNavTab, label: 'Analytics', icon: BarChart3, colorKey: 'blue' },
-    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount, colorKey: 'sky' },
-    { id: 'settings' as AppNavTab, label: 'Settings', icon: Settings, colorKey: 'slate' },
+  // Keep the administrator drawer concise with dedicated section pages.
+  const adminNavItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, colorKey: 'gold' },
+    { id: 'cells-hub', label: 'Cells', icon: Building, colorKey: 'teal' },
+    { id: 'reports-hub', label: 'Reports', icon: FileCheck, colorKey: 'emerald' },
+    { id: 'ministry-hub', label: 'Ministry', icon: Flame, colorKey: 'flame' },
+    { id: 'more-hub', label: 'More', icon: Settings, colorKey: 'slate' },
   ];
 
   // Tutor Navigation
