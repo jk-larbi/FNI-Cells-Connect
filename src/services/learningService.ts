@@ -80,7 +80,14 @@ function writeLocal<T>(key: string, data: T): void {
 async function invokeQuizAction<T = any>(body: Record<string, unknown>): Promise<T> {
   if (!supabase) throw new Error('Secure quiz service is unavailable. Please check your connection.');
   const { data, error } = await supabase.functions.invoke('learning-portal', { body });
-  if (error) throw new Error((data as any)?.error || error.message || 'Quiz service request failed.');
+  if (error) {
+    let serverMessage = (data as any)?.error;
+    const response = (error as any)?.context;
+    if (!serverMessage && response && typeof response.json === 'function') {
+      try { serverMessage = (await response.json())?.error; } catch {}
+    }
+    throw new Error(serverMessage || error.message || 'Quiz service request failed.');
+  }
   if ((data as any)?.error) throw new Error((data as any).error);
   return data as T;
 }
