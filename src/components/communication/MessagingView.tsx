@@ -771,7 +771,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           setTutorList(previous => previous.map(member =>
             member.id === update.user_id ? { ...member, avatar_url: nextAvatar, photo_url: nextAvatar } : member
           ));
-          setSelectedUserProfile(previous =>
+          setSelectedUserProfile((previous: any) =>
             previous?.id === update.user_id ? { ...previous, avatarUrl: nextAvatar } : previous
           );
         }
