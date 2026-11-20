@@ -86,6 +86,7 @@ async function invokeQuizAction<T = any>(body: Record<string, unknown>): Promise
 }
 
 export class LearningService {
+  private static quizDraftTimers = new Map<string, ReturnType<typeof setTimeout>>();
   // ============================================================================
   // 1. ASSIGNMENTS
   // ============================================================================
@@ -675,7 +676,7 @@ export class LearningService {
   }
 
   static async startQuizAttempt(quizId: string, sessionId?: string): Promise<{
-    sessionId: string; startedAt: string; expiresAt: string | null; answers: Record<string, any>; expired: boolean;
+    sessionId: string; startedAt: string; expiresAt: string | null; updatedAt: string; answers: Record<string, any>; expired: boolean;
   }> {
     return invokeQuizAction({ action: 'start_attempt', quizId, sessionId });
   }
@@ -694,13 +695,20 @@ export class LearningService {
       localStorage.setItem(key, JSON.stringify({ answers, startedAt, sessionId, savedAt: Date.now() }));
     } catch (e) { console.warn('Error saving quiz draft locally:', e); }
     if (sessionId) {
-      try { await invokeQuizAction({ action: 'save_draft', quizId, sessionId, answers }); }
-      catch (e) { console.warn('Quiz draft is saved on this device but cloud sync is pending:', e); }
+      const key = 'fni_quiz_draft_' + quizId + '_' + tutorId;
+      const previous = this.quizDraftTimers.get(key);
+      if (previous) clearTimeout(previous);
+      const timer = setTimeout(async () => {
+        this.quizDraftTimers.delete(key);
+        try { await invokeQuizAction({ action: 'save_draft', quizId, sessionId, answers }); }
+        catch (e) { console.warn('Quiz draft is saved on this device but cloud sync is pending:', e); }
+      }, 500);
+      this.quizDraftTimers.set(key, timer);
     }
   }
 
   static getQuizDraftAnswers(quizId: string, tutorId: string): {
-    answers: Record<string, any>; startedAt: string; sessionId?: string;
+    answers: Record<string, any>; startedAt: string; sessionId?: string; savedAt?: number;
   } | null {
     try {
       const item = localStorage.getItem('fni_quiz_draft_' + quizId + '_' + tutorId);
@@ -710,7 +718,11 @@ export class LearningService {
   }
 
   static clearQuizDraftAnswers(quizId: string, tutorId: string) {
-    try { localStorage.removeItem('fni_quiz_draft_' + quizId + '_' + tutorId); } catch {}
+    const key = 'fni_quiz_draft_' + quizId + '_' + tutorId;
+    const timer = this.quizDraftTimers.get(key);
+    if (timer) clearTimeout(timer);
+    this.quizDraftTimers.delete(key);
+    try { localStorage.removeItem(key); } catch {}
   }
 
   static async submitQuizAttempt(data: {
