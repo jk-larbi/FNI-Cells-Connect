@@ -176,6 +176,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [currentUser?.id]);
 
+  // Scope offline write recovery to the signed-in FNI account on this device.
+  useEffect(() => {
+    import('../services/syncStateService').then(({ SyncStateService }) => {
+      SyncStateService.setDefaultClient(supabase);
+      SyncStateService.setActiveUserId(currentUser?.id || null);
+      SyncStateService.initLifecycleListeners();
+    });
+  }, [currentUser?.id]);
+
   // Keep this account's own profile photo synchronized across its signed-in devices.
   useEffect(() => {
     if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
