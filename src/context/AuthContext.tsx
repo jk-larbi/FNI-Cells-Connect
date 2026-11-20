@@ -158,7 +158,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Keep durable app data fresh across every device signed in to this account.
+  // Remove legacy local quiz answer/attempt caches as soon as a non-admin signs in.
+  // Administrator caches are retained so any locally authored legacy content is not silently discarded.
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const privilegedRoles = ['admin', 'super_admin', 'national_admin'];
+    if (!privilegedRoles.includes(String(currentUser.role || ''))) {
+      try {
+        localStorage.removeItem('fni_learning_quiz_questions_v2');
+        localStorage.removeItem('fni_learning_quiz_attempts_v2');
+      } catch {}
+    }
+  }, [currentUser?.id, currentUser?.role]);
+
+// Keep durable app data fresh across every device signed in to this account.
   useEffect(() => {
     if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
     let active = true;
