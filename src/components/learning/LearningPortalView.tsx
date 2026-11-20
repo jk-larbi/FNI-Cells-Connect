@@ -75,6 +75,22 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
     loadPortalData();
   }, [isAdmin, currentUser]);
 
+  // Refresh learning data when another signed-in device changes cloud-backed portal records.
+  useEffect(() => {
+    const handleLearningCloudChange = (event: Event) => {
+      const table = (event as CustomEvent<{ table?: string }>).detail?.table;
+      if (
+        !table ||
+        table === '*' ||
+        ['learning_assignments', 'learning_assignment_submissions', 'learning_events', 'learning_resources'].includes(table)
+      ) {
+        void loadPortalData();
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleLearningCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleLearningCloudChange);
+  }, [isAdmin, currentUser?.id]);
+
   useEffect(() => {
     if (initialSection) {
       setActiveSection(initialSection);

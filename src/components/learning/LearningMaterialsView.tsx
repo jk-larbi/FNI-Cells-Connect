@@ -39,6 +39,17 @@ export const LearningMaterialsView: React.FC = () => {
     loadResources();
   }, [isAdmin]);
 
+  useEffect(() => {
+    const handleLearningResourceChange = (event: Event) => {
+      const table = (event as CustomEvent<{ table?: string }>).detail?.table;
+      if (!table || table === '*' || table === 'learning_resources') {
+        void loadResources();
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleLearningResourceChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleLearningResourceChange);
+  }, [isAdmin]);
+
   const loadResources = async () => {
     setIsLoading(true);
     try {

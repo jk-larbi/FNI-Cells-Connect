@@ -47,6 +47,10 @@ export class CloudSyncService {
     'user_group_preferences',
     'user_custom_stickers',
     'account_deactivation_requests',
+    'learning_assignments',
+    'learning_assignment_submissions',
+    'learning_events',
+    'learning_resources',
   ] as const;
 
   static subscribe(userId: string, callback: (change: CloudDataChange) => void): () => void {
