@@ -21,7 +21,7 @@ assert.match(view, /navigator\.canShare\(\{ files: \[file\] \}\)/, 'web devices 
 assert.match(view, /link\.download = safeName/, 'web devices must have a direct download fallback');
 assert.match(view, /onContextMenu=\{e => e\.stopPropagation\(\)\}/, 'attachment controls must not trigger the message context menu');
 assert.match(view, /window\.open\(fileUrl, '_blank'/, 'documents must open for viewing');
-assert.match(view, /Save \\{att\.name \|\| 'document'\\}/, 'documents must have a save action');
+assert.match(view, /Save \$\{att\.name \|\| 'document'\}/, 'documents must have a save action');
 assert.match(view, /accept="image\/\*,video\/\*,audio\/\*/, 'the attachment picker must accept audio and video');
 assert.match(view, /const message: PrivateMessage = \{/, 'private Realtime rows must be mapped directly without a second fetch');
 assert.match(view, /const message: CommunityMessage = \{/, 'community Realtime rows must be mapped directly without a second fetch');
