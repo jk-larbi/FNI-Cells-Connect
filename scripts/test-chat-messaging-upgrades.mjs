@@ -53,3 +53,12 @@ assert.match(communityClearMigration, /if coalesce\(p_for_everyone, false\)/, 'c
 assert.match(communityClearMigration, /Administrator permission required to clear community chat for everyone/, 'only administrators may clear community history for everyone');
 assert.match(communityClearMigration, /insert into public\.community_chat_preferences \(user_id, cleared_at, updated_at\)/, 'personal clear must write only the current user preference');
 assert.match(communityClearMigration, /grant execute on function public\.fni_clear_community_chat_history\(boolean\) to authenticated/, 'authenticated members must use the secured clear RPC');
+
+const privatePinMigration = read('../supabase/migrations/20261120170000_private_message_participant_pin_rpc.sql');
+assert.match(supabase, /rpc\('set_private_message_pin'/, 'private message pinning must use the authoritative participant RPC');
+assert.doesNotMatch(supabase, /\.from\('private_messages'\)\s*\.update\(payload\)/, 'private message pinning must not rely on a client-side RLS update');
+assert.match(privatePinMigration, /security definer/i, 'private pin RPC must safely bypass table RLS after validating participants');
+assert.match(privatePinMigration, /v_profile_id is distinct from v_sender/, 'private pin RPC must validate sender participation');
+assert.match(privatePinMigration, /v_profile_id is distinct from v_recipient/, 'private pin RPC must validate recipient participation');
+assert.match(privatePinMigration, /return true;/, 'private pin RPC must return an explicit success result');
+console.log('Private message participant pinning regression checks passed.');
