@@ -32,6 +32,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return false;
   });
 
+  // Apply theme changes delivered from the signed-in account's Supabase settings.
+  useEffect(() => {
+    const handleRemoteSettings = (event: Event) => {
+      const settings = (event as CustomEvent).detail;
+      const preference = settings?.themePreference;
+      if (preference === 'light' || preference === 'dark' || preference === 'system') {
+        setThemePreferenceState(preference);
+      }
+    };
+    window.addEventListener('fni:user-settings-updated', handleRemoteSettings);
+    return () => window.removeEventListener('fni:user-settings-updated', handleRemoteSettings);
+  }, []);
+
   // Listen to system theme changes dynamically
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -58,13 +71,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setThemePreference = (pref: ThemePreference) => {
     setThemePreferenceState(pref);
+    window.dispatchEvent(new CustomEvent('fni:theme-preference-changed', { detail: pref }));
   };
 
   const toggleTheme = () => {
-    setThemePreferenceState(current => {
-      const effective = current === 'system' ? (systemIsDark ? 'dark' : 'light') : current;
-      return effective === 'dark' ? 'light' : 'dark';
-    });
+    const effective = themePreference === 'system' ? (systemIsDark ? 'dark' : 'light') : themePreference;
+    setThemePreference(effective === 'dark' ? 'light' : 'dark');
   };
 
   return (

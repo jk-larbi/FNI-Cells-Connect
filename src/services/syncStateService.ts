@@ -1,16 +1,17 @@
 /**
  * Forerunners Network International (FNI) - Digital Reporting System
- * Dual-Backend Synchronization & Outbound Recovery Registry
+ * Supabase Synchronization & Outbound Recovery Registry
  * 
  * ARCHITECTURAL NOTICE ON DURABILITY & SCOPE:
  * This registry uses the browser's HTML5 LocalStorage as an in-browser, single-client
  * retry buffer for the active device session. It is NOT a cross-device durable queue.
  * If a user switches devices or clears browser data, pending offline writes remain local
- * to this browser instance until replayed. Firebase remains the authoritative source of truth.
+ * to this browser instance until replayed. Supabase is the sole authoritative backend; this
+ * local registry is only a device-scoped retry queue, never the source of truth.
  * 
  * Capabilities:
- * 1. Guarantees Firebase is authoritative; failed Supabase operations never block the user.
- * 2. Records failed writes in 'fni_pending_supabase_sync_registry_v1' with payload, table, and error.
+ * 1. Treats Supabase as authoritative; local storage only buffers failed writes for retry.
+ * 2. Records failed Supabase writes in 'fni_pending_supabase_sync_registry_v1' with payload, table, and error.
  * 3. Provides genuine replay/recovery mechanism via `retryPendingSync(client)` with backoff tracking.
  * 4. Automatic retry on lifecycle triggers: connectivity restored ('online' event) and auth token readiness.
  * 5. Mutex locking (isRetrying) to strictly prevent overlapping/concurrent retry executions.
@@ -31,6 +32,7 @@ export interface PendingSyncItem {
 }
 
 export interface DualWriteOutcome<T = any> {
+  /** @deprecated Supabase is the only supported backend; retained for legacy callers. */
   firebaseSuccess: boolean;
   supabaseSuccess: boolean;
   supabaseError?: string;
