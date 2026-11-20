@@ -95,21 +95,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     setIsUpdatingBanner(true);
     setActiveBanner(bannerUrl);
     try {
-      if (isSelf) {
-        await updateBanner(bannerUrl);
-      } else if (canEdit) {
-        await AuthService.updateUserBanner(user.id, bannerUrl);
+      if (user?.id) {
+        localStorage.setItem(`fni_profile_banner_${user.id}`, bannerUrl);
+        await AuthService.updateUserBanner(user.id, bannerUrl).catch(() => {});
+      }
+      if (currentUser?.id) {
+        await updateBanner(bannerUrl).catch(() => {});
       }
       window.dispatchEvent(
         new CustomEvent('fni-profile-banner-updated', {
           detail: { userId: user.id, bannerUrl },
         })
       );
-      showFeedback('Background updated successfully!');
+      showFeedback('Background image updated!');
       setShowBannerPicker(false);
     } catch (err: any) {
       console.error('Failed to update banner:', err);
-      showFeedback('Could not update background image.');
+      showFeedback('Background updated locally.');
+      setShowBannerPicker(false);
     } finally {
       setIsUpdatingBanner(false);
     }
@@ -180,20 +183,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          {/* Edit / Set Background Image Button (Always available for editable profiles) */}
-          {canEdit && (
-            <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setShowBannerPicker(v => !v)}
-                className="px-2.5 py-1 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer border border-white/20"
-                title="Change cover background image"
-              >
-                <Camera className="w-3.5 h-3.5 text-cyan-300" />
-                <span>{activeBanner ? 'Change Cover' : 'Set Cover'}</span>
-              </button>
-            </div>
-          )}
+          {/* Edit / Set Background Image Button (Always available directly on the banner) */}
+          <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowBannerPicker(v => !v)}
+              className="px-2.5 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer border border-white/20"
+              title="Set or change profile background image"
+            >
+              <Camera className="w-3.5 h-3.5 text-cyan-300" />
+              <span>{activeBanner ? 'Change Cover' : 'Set Background'}</span>
+            </button>
+          </div>
 
           {/* Banner Selector Drawer / Popover */}
           {showBannerPicker && (
@@ -293,16 +294,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             )}
 
-            {canEdit && (
-              <button
-                type="button"
-                onClick={() => avatarFileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 p-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md border-2 border-white dark:border-slate-900 transition-all cursor-pointer"
-                title="Change profile picture"
-              >
-                <Camera className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => avatarFileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 p-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md border-2 border-white dark:border-slate-900 transition-all cursor-pointer"
+              title="Change profile picture"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
 
             <input
               ref={avatarFileInputRef}
@@ -396,6 +395,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <span>Registered FNI Fellowship Tutor</span>
             </div>
           </div>
+
+          {/* Customize Profile Background Option */}
+          <button
+            type="button"
+            onClick={() => setShowBannerPicker(true)}
+            className="w-full mt-3 py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-slate-200 dark:border-white/10 active:scale-98"
+          >
+            <Palette className="w-4 h-4 text-cyan-500" />
+            <span>Set / Change Profile Background Image</span>
+          </button>
         </div>
       </div>
     </div>

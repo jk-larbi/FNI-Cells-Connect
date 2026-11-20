@@ -394,13 +394,29 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   });
 
   useEffect(() => {
+    const applyColorsToCss = (bubble: string, wallpaper: string) => {
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-bg', bubble);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-text', getContrastingTextColor(bubble).text);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-time', getContrastingTextColor(bubble).time);
+      if (wallpaper) {
+        document.documentElement.style.setProperty('--fni-chat-wallpaper-bg', wallpaper);
+      }
+    };
+    applyColorsToCss(userBubbleColor, userWallpaperColor);
+
     const handleBubbleUpdate = (e: any) => {
       const col = e.detail?.color || localStorage.getItem('fni_bubble_color') || '#1b5e3f';
       setUserBubbleColor(col);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-bg', col);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-text', getContrastingTextColor(col).text);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-time', getContrastingTextColor(col).time);
     };
-    const handleWallpaperUpdate = () => {
-      const col = localStorage.getItem('fni_chat_wallpaper_color') || '';
+    const handleWallpaperUpdate = (e: any) => {
+      const col = e.detail?.color || localStorage.getItem('fni_chat_wallpaper_color') || '';
       setUserWallpaperColor(col);
+      if (col) {
+        document.documentElement.style.setProperty('--fni-chat-wallpaper-bg', col);
+      }
     };
 
     window.addEventListener('fni-bubble-color-updated', handleBubbleUpdate);
@@ -3179,6 +3195,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    setSettingsModalTab('appearance');
+                    setIsSettingsModalOpen(true);
+                  }}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-amber-500 cursor-pointer transition-colors"
+                  title="Chat Colors & Wallpaper (24 Colors)"
+                >
+                  <Palette className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowChatOptionsMenu(v => !v)}
                   className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
                   title="Options"
@@ -4176,7 +4203,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         <>
                           <div
                             className="fixed inset-0 z-40"
-                            onClick={() => setShowAttachmentMenu(false)}
+                            onClick={e => {
+                              e.stopPropagation();
+                              setShowAttachmentMenu(false);
+                            }}
                           />
                           <div
                             onClick={e => e.stopPropagation()}
@@ -4200,9 +4230,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                             <button
                               type="button"
-                              onClick={handleOpenPollModal}
-                              onTouchEnd={e => {
+                              onClick={e => {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 handleOpenPollModal(e);
                               }}
                               className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold text-left transition-colors active:scale-98 text-slate-800 dark:text-slate-100"
@@ -4295,8 +4325,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           POLL CREATION MODAL
       ========================================================================= */}
       {isPollModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-200/80 dark:border-white/10 max-w-md w-full max-h-[92dvh] flex flex-col p-5 sm:p-6 shadow-2xl space-y-4 my-auto overflow-hidden">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-fadeIn overflow-y-auto"
+          onClick={() => setIsPollModalOpen(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-200/80 dark:border-white/10 max-w-md w-full max-h-[90dvh] flex flex-col p-5 sm:p-6 shadow-2xl space-y-4 my-auto overflow-hidden text-slate-900 dark:text-white"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/10 shrink-0">
               <div className="flex items-center gap-2">
                 <BarChart2 className="w-5 h-5 text-blue-600" />

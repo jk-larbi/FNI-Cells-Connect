@@ -764,23 +764,41 @@ export const CommunicationSettingsModal: React.FC<CommunicationSettingsModalProp
                     </div>
                   </div>
 
-                  {/* Outgoing sample message */}
+                  {/* Outgoing sample message 1 (As shown in your screenshot) */}
                   <div className="flex justify-end">
                     <div
-                      className="max-w-[85%] rounded-2xl rounded-br-xs p-3 shadow-md text-xs transition-colors duration-200"
+                      className="rounded-2xl rounded-br-xs px-3.5 py-2 shadow-md text-xs transition-colors duration-200"
                       style={{
                         backgroundColor: bubbleColor,
                         color: getContrastingTextColor(bubbleColor).text,
                       }}
                     >
-                      <p className="leading-relaxed font-medium">
-                        It looks amazing! The custom bubble and wallpaper colors are live. 🕊️✨
-                      </p>
+                      <p className="leading-relaxed font-medium">heeyyy</p>
                       <div
-                        className="flex items-center justify-end gap-1 mt-1 text-[10px]"
+                        className="flex items-center justify-end gap-1 mt-0.5 text-[10px]"
                         style={{ color: getContrastingTextColor(bubbleColor).time }}
                       >
-                        <span>19:42</span>
+                        <span>09:30 PM</span>
+                        <span className="font-bold">✓✓</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Outgoing sample message 2 */}
+                  <div className="flex justify-end">
+                    <div
+                      className="rounded-2xl rounded-br-xs px-3.5 py-2 shadow-md text-xs transition-colors duration-200"
+                      style={{
+                        backgroundColor: bubbleColor,
+                        color: getContrastingTextColor(bubbleColor).text,
+                      }}
+                    >
+                      <p className="leading-relaxed font-medium">im goog</p>
+                      <div
+                        className="flex items-center justify-end gap-1 mt-0.5 text-[10px]"
+                        style={{ color: getContrastingTextColor(bubbleColor).time }}
+                      >
+                        <span>09:30 PM</span>
                         <span className="font-bold">✓✓</span>
                       </div>
                     </div>
