@@ -598,6 +598,7 @@ export class AuthService {
   static async updateUserAvatar(userId: string, avatarUrl: string): Promise<Profile> {
     const current = this.getCurrentProfile();
     if (!current) throw new Error('Unauthenticated');
+    if (userId !== current.id) throw new Error('You can only update your own profile picture.');
 
     const storedAvatarUrl = await SupabaseService.updateProfileAvatar(userId, avatarUrl);
     current.avatar_url = storedAvatarUrl || undefined;
@@ -609,6 +610,7 @@ export class AuthService {
   static async updateUserBanner(userId: string, bannerUrl: string): Promise<Profile> {
     const current = this.getCurrentProfile();
     if (!current) throw new Error('Unauthenticated');
+    if (userId !== current.id) throw new Error('You can only update your own profile banner.');
 
     current.banner_url = bannerUrl;
     this.setCurrentProfile(current);
@@ -632,6 +634,7 @@ export class AuthService {
   ): Promise<{ success: boolean; profile?: Profile; error?: string }> {
     const current = this.getCurrentProfile();
     if (!current || !userId) return { success: false, error: 'Unauthenticated.' };
+    if (userId !== current.id) return { success: false, error: 'You can only edit your own profile.' };
 
     const cleanName = data.full_name ? data.full_name.trim().replace(/\s+/g, ' ') : current.full_name;
     const cleanPhone = data.phone_number !== undefined ? data.phone_number.trim() : current.phone_number;
