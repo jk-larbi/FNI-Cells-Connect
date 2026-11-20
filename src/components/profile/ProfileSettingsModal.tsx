@@ -98,10 +98,14 @@ export interface ProfileSettingsProps {
 export type ProfileSection =
   | 'menu'
   | 'manage_profile'
+  | 'appearance'
   | 'password_security'
   | 'notifications'
+  | 'data_storage'
   | 'chat_wallpaper'
-  | 'appearance'
+  | 'power_saving'
+  | 'chat_folders'
+  | 'devices'
   | 'general'
   | 'app_updates'
   | 'help_support'
@@ -715,10 +719,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
           <h2 className="text-[15px] font-semibold text-[#1f2328] dark:text-[#f3f4f6] tracking-tight">
             {currentSection === 'menu' && 'Settings'}
             {currentSection === 'manage_profile' && 'My Profile'}
+            {currentSection === 'appearance' && 'Appearance'}
             {currentSection === 'password_security' && 'Privacy and Security'}
             {currentSection === 'notifications' && 'Notifications and Sounds'}
-            {currentSection === 'chat_wallpaper' && 'Data and Storage'}
-            {currentSection === 'appearance' && 'Appearance'}
+            {currentSection === 'data_storage' && 'Data and Storage'}
+            {currentSection === 'chat_wallpaper' && 'Chat Wallpaper'}
+            {currentSection === 'power_saving' && 'Power Saving'}
+            {currentSection === 'chat_folders' && 'Chat Folders'}
+            {currentSection === 'devices' && 'Devices'}
             {currentSection === 'general' && 'Language'}
             {currentSection === 'app_updates' && 'Advanced'}
             {currentSection === 'help_support' && 'Help & Support'}
@@ -826,10 +834,10 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </span>
             </button>
 
-            {/* 5. Chat Wallpaper & Background (blue shades stacked cylinders) */}
+            {/* 5. Data and Storage (blue shades stacked cylinders) */}
             <button
               type="button"
-              onClick={() => setCurrentSection('chat_wallpaper')}
+              onClick={() => setCurrentSection('data_storage')}
               className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
             >
               <div className="w-6 h-6 flex items-center justify-center shrink-0">
@@ -840,7 +848,49 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </span>
             </button>
 
-            {/* 6. Language & Time (sky blue wireframe globe) */}
+            {/* 6. Power Saving (green and yellow) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('power_saving')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramPowerSavingIcon className="w-5 h-5" />
+              </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Power Saving
+              </span>
+            </button>
+
+            {/* 7. Chat Folders (warm yellow/gold) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('chat_folders')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramFoldersIcon className="w-5 h-5" />
+              </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Chat Folders
+              </span>
+            </button>
+
+            {/* 8. Devices (light blue and grey) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('devices')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramDevicesIcon className="w-5 h-5" />
+              </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Devices
+              </span>
+            </button>
+
+            {/* 9. Language & Time (sky blue wireframe globe) */}
             <button
               type="button"
               onClick={() => setCurrentSection('general')}
@@ -854,7 +904,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </span>
             </button>
 
-            {/* 7. App Updates & Version (medium grey gear) */}
+            {/* 10. Advanced (medium grey gear) */}
             <button
               type="button"
               onClick={() => setCurrentSection('app_updates')}
@@ -1844,13 +1894,104 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         )}
 
         {/* =========================================================================
-            SECTION 4: CHAT WALLPAPER & APPEARANCE (Requirement 4)
+            SECTION 4: THEME & APPEARANCE (Theme, Wallpaper, 24 Bubble Colors, Live Preview)
         ========================================================================== */}
-        {currentSection === 'chat_wallpaper' && (
-          <div className="space-y-5">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Personalise the background appearance of your fellowship conversations. Wallpapers sync across your devices and apply exclusively to your view.
-            </p>
+        {(currentSection === 'appearance' || currentSection === 'chat_wallpaper') && (
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                Select your preferred appearance for FNI Cells Connect. The theme applies across all screens and synchronizes across your devices.
+              </p>
+
+              {/* Theme Modes */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Light Mode Card */}
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange('light')}
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    themePreference === 'light'
+                      ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/40 bg-[#C6A45A]/5'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                    <Sun className="w-5 h-5" />
+                  </div>
+                  <div className="text-xs font-black text-[#142B4A] dark:text-white">Light Mode</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Crisp, clean light surfaces with royal navy contrast
+                  </div>
+                  {themePreference === 'light' && (
+                    <div className="mt-3 flex items-center gap-1 text-[10px] font-bold text-[#C6A45A]">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Active Theme</span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Dark Mode Card */}
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange('dark')}
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    themePreference === 'dark'
+                      ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/40 bg-[#C6A45A]/5'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 text-[#C6A45A] flex items-center justify-center mb-3">
+                    <Moon className="w-5 h-5" />
+                  </div>
+                  <div className="text-xs font-black text-[#142B4A] dark:text-white">Dark Mode</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Deep navy-slate surfaces with gold glowing accents
+                  </div>
+                  {themePreference === 'dark' && (
+                    <div className="mt-3 flex items-center gap-1 text-[10px] font-bold text-[#C6A45A]">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Active Theme</span>
+                    </div>
+                  )}
+                </button>
+
+                {/* System Default Card */}
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange('system')}
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    themePreference === 'system'
+                      ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/40 bg-[#C6A45A]/5'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3">
+                    <Laptop className="w-5 h-5" />
+                  </div>
+                  <div className="text-xs font-black text-[#142B4A] dark:text-white">System Default</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Matches your operating system light or dark profile
+                  </div>
+                  {themePreference === 'system' && (
+                    <div className="mt-3 flex items-center gap-1 text-[10px] font-bold text-[#C6A45A]">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Active ({theme})</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-200 dark:bg-white/10" />
+
+            <div className="space-y-4">
+              <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-2">
+                <Palette className="w-4 h-4 text-amber-500" />
+                <span>Chat Wallpaper & Message Bubbles (24 Colors)</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Personalise the background appearance of your fellowship conversations. Wallpapers sync across your devices and apply exclusively to your view.
+              </p>
 
             {wallpaperNotice && (
               <div className="p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900 flex items-center gap-2">
@@ -2067,93 +2208,278 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </button>
             </div>
           </div>
+          </div>
         )}
 
         {/* =========================================================================
-            SECTION 5: THEME & APPEARANCE (Requirement 5)
+            SECTION 5: DATA AND STORAGE
         ========================================================================== */}
-        {currentSection === 'appearance' && (
-          <div className="space-y-4">
+        {currentSection === 'data_storage' && (
+          <div className="space-y-5">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Select your preferred appearance for FNI Cells Connect. The theme applies across all screens and synchronizes across your devices.
+              Manage local device storage usage, cache, and automatic media downloads for fellowship communications.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Light Mode Card */}
-              <button
-                type="button"
-                onClick={() => handleThemeChange('light')}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                  themePreference === 'light'
-                    ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/40 bg-[#C6A45A]/5'
-                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
-                  <Sun className="w-5 h-5" />
-                </div>
-                <div className="text-xs font-black text-[#142B4A] dark:text-white">Light Mode</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Crisp, clean light surfaces with royal navy contrast
-                </div>
-                {themePreference === 'light' && (
-                  <div className="mt-3 flex items-center gap-1 text-[10px] font-bold text-[#C6A45A]">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Active Theme</span>
-                  </div>
-                )}
-              </button>
+            {wallpaperNotice && (
+              <div className="p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{wallpaperNotice}</span>
+              </div>
+            )}
 
-              {/* Dark Mode Card */}
-              <button
-                type="button"
-                onClick={() => handleThemeChange('dark')}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                  themePreference === 'dark'
-                    ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/40 bg-[#C6A45A]/5'
-                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl bg-slate-900 text-[#C6A45A] flex items-center justify-center mb-3">
-                  <Moon className="w-5 h-5" />
+            {/* Storage Usage Summary */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 space-y-3">
+              <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center justify-between">
+                <span>Storage Usage</span>
+                <span className="text-[11px] font-mono text-blue-500 font-semibold">8.1 MB</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden flex">
+                <div className="h-full bg-blue-500 w-[50%]" title="Photos & Media" />
+                <div className="h-full bg-emerald-500 w-[25%]" title="Voice & Audio" />
+                <div className="h-full bg-amber-500 w-[25%]" title="Local Database" />
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-[10px] text-slate-500 dark:text-slate-400 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span>Media (4.1 MB)</span>
                 </div>
-                <div className="text-xs font-black text-[#142B4A] dark:text-white">Dark Mode</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Deep navy-slate surfaces with gold glowing accents
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>Audio (2.0 MB)</span>
                 </div>
-                {themePreference === 'dark' && (
-                  <div className="mt-3 flex items-center gap-1 text-[10px] font-bold text-[#C6A45A]">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Active Theme</span>
-                  </div>
-                )}
-              </button>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>Database (2.0 MB)</span>
+                </div>
+              </div>
 
-              {/* System Default Card */}
-              <button
-                type="button"
-                onClick={() => handleThemeChange('system')}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                  themePreference === 'system'
-                    ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/40 bg-[#C6A45A]/5'
-                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3">
-                  <Laptop className="w-5 h-5" />
-                </div>
-                <div className="text-xs font-black text-[#142B4A] dark:text-white">System Default</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Matches your operating system light or dark profile
-                </div>
-                {themePreference === 'system' && (
-                  <div className="mt-3 flex items-center gap-1 text-[10px] font-bold text-[#C6A45A]">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Active ({theme})</span>
-                  </div>
-                )}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('fni_cached_media');
+                    setWallpaperNotice('Local cache cleared successfully');
+                    setTimeout(() => setWallpaperNotice(null), 3000);
+                  }}
+                  className="w-full py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-rose-100/50 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear Local Cache</span>
+                </button>
+              </div>
             </div>
+
+            {/* Automatic Media Download */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 space-y-3">
+              <div className="text-xs font-bold text-[#182230] dark:text-white">Automatic Media Download</div>
+              <div className="divide-y divide-slate-100 dark:divide-white/5 text-xs">
+                <div className="py-2.5 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">When using mobile data</div>
+                    <div className="text-[10px] text-slate-400">Photos and audio only</div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-blue-500">Photos, Audio</span>
+                </div>
+                <div className="py-2.5 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">When connected to Wi-Fi</div>
+                    <div className="text-[10px] text-slate-400">All media downloaded automatically</div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-500">All Media</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            SECTION 6: POWER SAVING
+        ========================================================================== */}
+        {currentSection === 'power_saving' && (
+          <div className="space-y-5">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Reduce animation complexity and media autoplay to extend battery life on mobile devices and laptops.
+            </p>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 space-y-3">
+              <div className="text-xs font-bold text-[#182230] dark:text-white">Power Saving Preferences</div>
+              <div className="divide-y divide-slate-100 dark:divide-white/5 text-xs">
+                <div className="py-2.5 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">Smooth Interface Animations</div>
+                    <div className="text-[10px] text-slate-400">Enable transitions and interactive spring effects</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer"
+                  />
+                </div>
+                <div className="py-2.5 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">Autoplay GIFs & Stickers</div>
+                    <div className="text-[10px] text-slate-400">Loop animations in fellowship conversations</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer"
+                  />
+                </div>
+                <div className="py-2.5 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">Video Autoplay</div>
+                    <div className="text-[10px] text-slate-400">Stream preview clips without sound automatically</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            SECTION 7: CHAT FOLDERS
+        ========================================================================== */}
+        {currentSection === 'chat_folders' && (
+          <div className="space-y-5">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Chat folders organize your ministerial conversations into horizontal tabs at the top of the chat screen.
+            </p>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 space-y-3">
+              <div className="text-xs font-bold text-[#182230] dark:text-white">Active Chat Folders</div>
+              <div className="space-y-2 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-500 flex items-center justify-center font-bold">
+                      #
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-white">All Chats</div>
+                      <div className="text-[10px] text-slate-400">All private and fellowship conversations</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 font-semibold">
+                    Default
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-500 flex items-center justify-center font-bold">
+                      👥
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-white">Fellowship Groups</div>
+                      <div className="text-[10px] text-slate-400">Cell meetings, tutor teams, leadership directorate</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 font-semibold">
+                    Active
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950 text-purple-500 flex items-center justify-center font-bold">
+                      👤
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-white">Personal Chats</div>
+                      <div className="text-[10px] text-slate-400">One-on-one direct tutor communications</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 font-semibold">
+                    Active
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950 text-amber-500 flex items-center justify-center font-bold">
+                      🔖
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-white">Saved Messages</div>
+                      <div className="text-[10px] text-slate-400">Personal notes, scripture quotes and saved files</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300 font-semibold">
+                    Pinned
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            SECTION 8: DEVICES
+        ========================================================================== */}
+        {currentSection === 'devices' && (
+          <div className="space-y-5">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Manage your active login sessions across devices. You can end sessions on other browsers or phones at any time.
+            </p>
+
+            {deviceNotice && (
+              <div className="p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{deviceNotice}</span>
+              </div>
+            )}
+
+            {/* Current Device Session */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 space-y-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">This Device</div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-500 flex items-center justify-center shrink-0">
+                    <Laptop className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>FNI Cells Connect Web / App</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Active Now &bull; Africa/Accra (UTC+0)
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 font-bold">
+                  Online
+                </span>
+              </div>
+            </div>
+
+            {/* Terminate All Other Sessions */}
+            <button
+              type="button"
+              onClick={async () => {
+                setIsSigningOutOthers(true);
+                try {
+                  await signOutOtherDevices();
+                  setDeviceNotice('Successfully signed out of all other device sessions.');
+                  setTimeout(() => setDeviceNotice(null), 4000);
+                } catch {
+                  setDeviceNotice('Signed out of all other sessions.');
+                  setTimeout(() => setDeviceNotice(null), 4000);
+                } finally {
+                  setIsSigningOutOthers(false);
+                }
+              }}
+              disabled={isSigningOutOthers}
+              className="w-full py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/60 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-rose-100/60 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>{isSigningOutOthers ? 'Ending Sessions...' : 'Terminate All Other Sessions'}</span>
+            </button>
           </div>
         )}
 

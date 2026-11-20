@@ -83,7 +83,6 @@ import {
   List,
   ChevronLeft,
   User,
-  PanelRight,
   SquarePen,
   Menu,
   Delete as BackspaceIcon,
@@ -3167,31 +3166,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   title="Voice Call"
                 >
                   <Phone className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (selectedChatId === 'community') setIsGroupInfoModalOpen(true);
-                    else if (activeContact?.id && activeContact.id !== 'saved_messages') {
-                      const m = allMembers.find(mem => mem.id === activeContact.id) || tutorList.find(t => t.id === activeContact.id);
-                      if (m) {
-                        setSelectedUserProfile({
-                          id: m.id,
-                          fullName: m.full_name || m.name,
-                          role: m.role,
-                          avatarUrl: m.avatar_url || m.photo_url,
-                          bannerUrl: (m as any).banner_url || (m as any).bannerUrl || localStorage.getItem(`fni_profile_banner_${m.id}`) || (m.id === currentUser?.id ? currentUser?.banner_url : undefined),
-                          cellName: m.cell_name || m.cell,
-                          phone: m.phone_number || m.phone,
-                          email: m.email,
-                        });
-                      }
-                    }
-                  }}
-                  className="hidden sm:inline-flex p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
-                  title="Chat Info & Settings"
-                >
-                  <PanelRight className="w-5 h-5" />
                 </button>
                 <button
                   type="button"
