@@ -18,6 +18,23 @@ import {
   OUTGOING_BUBBLE_COLORS,
   PRESET_PROFILE_BANNERS,
 } from '../../constants/chatThemeConstants';
+import {
+  TelegramProfileIcon,
+  TelegramAppearanceIcon,
+  TelegramPrivacyIcon,
+  TelegramNotificationsIcon,
+  TelegramDataStorageIcon,
+  TelegramPowerSavingIcon,
+  TelegramFoldersIcon,
+  TelegramDevicesIcon,
+  TelegramLanguageIcon,
+  TelegramAdvancedIcon,
+  TelegramHelpIcon,
+  TelegramShieldPolicyIcon,
+  TelegramTermsIcon,
+  TelegramDeactivationIcon,
+  TelegramLogoutIcon,
+} from '../common/TelegramSettingsIcons';
 import { NotificationAudio } from '../../utils/notificationAudio';
 import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
 import { Capacitor } from '@capacitor/core';
@@ -672,15 +689,15 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const assignedCellTitle = isAdmin ? 'National Administration' : currentUser?.cell_name || 'Unassigned Cell';
 
   const content = (
-    <div className={`relative w-full ${inline ? 'max-w-2xl mx-auto' : 'max-w-xl my-auto max-h-[92vh] shadow-2xl'} bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-100 dark:border-[#26384d] overflow-hidden flex flex-col transition-all`}>
+    <div className={`relative w-full ${inline ? 'max-w-2xl mx-auto' : 'max-w-md my-auto max-h-[92vh] shadow-2xl'} bg-[#f0f2f5] dark:bg-[#17212b] rounded-2xl border border-[#e2e5e9] dark:border-white/10 overflow-hidden flex flex-col transition-all font-sans text-[#1f2328] dark:text-[#f3f4f6]`}>
       {/* HEADER BAR */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-[#26384d] bg-white dark:bg-[#111c2d] sticky top-0 z-20">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e2e5e9] dark:border-white/10 bg-[#f0f2f5] dark:bg-[#17212b] sticky top-0 z-20">
+        <div className="flex items-center gap-3">
           {currentSection !== 'menu' ? (
             <button
               type="button"
               onClick={() => setCurrentSection('menu')}
-              className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-full hover:bg-[#e8edf2] dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-colors"
               title="Back to Settings Menu"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -689,21 +706,21 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             <button
               type="button"
               onClick={onBack}
-              className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-full hover:bg-[#e8edf2] dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-colors"
               title="Back"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
           ) : null}
-          <h2 className="text-base sm:text-lg font-black text-[#142B4A] dark:text-white tracking-tight">
-            {currentSection === 'menu' && 'Profile Settings'}
-            {currentSection === 'manage_profile' && 'Manage Profile'}
-            {currentSection === 'password_security' && 'Password & Security'}
-            {currentSection === 'notifications' && 'Notification Preferences'}
-            {currentSection === 'chat_wallpaper' && 'Chat Wallpaper'}
-            {currentSection === 'appearance' && 'Theme & Appearance'}
-            {currentSection === 'general' && 'General Preferences'}
-            {currentSection === 'app_updates' && 'App Updates & Version'}
+          <h2 className="text-[15px] font-semibold text-[#1f2328] dark:text-[#f3f4f6] tracking-tight">
+            {currentSection === 'menu' && 'Settings'}
+            {currentSection === 'manage_profile' && 'My Profile'}
+            {currentSection === 'password_security' && 'Privacy and Security'}
+            {currentSection === 'notifications' && 'Notifications and Sounds'}
+            {currentSection === 'chat_wallpaper' && 'Data and Storage'}
+            {currentSection === 'appearance' && 'Appearance'}
+            {currentSection === 'general' && 'Language'}
+            {currentSection === 'app_updates' && 'Advanced'}
             {currentSection === 'help_support' && 'Help & Support'}
             {currentSection === 'privacy_policy' && 'Privacy Policy'}
             {currentSection === 'terms_of_service' && 'Terms of Service'}
@@ -715,348 +732,218 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            className="w-7 h-7 rounded-full hover:bg-[#e8edf2] dark:hover:bg-white/10 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
             title="Close Settings"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* MODAL BODY (Scrollable) */}
-      <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+      <div className={`flex-1 overflow-y-auto ${currentSection === 'menu' ? 'p-0 py-1' : 'p-5 sm:p-6 space-y-6'}`}>
 
         {/* =========================================================================
-            MENU VIEW: TOP HEADER & NAVIGATION GROUPS
+            MENU VIEW: EXACT TELEGRAM SETTINGS VISUAL REPLICATION
         ========================================================================== */}
         {currentSection === 'menu' && (
-          <div className="space-y-6">
-            
-            {/* 1. PROFILE SETTINGS HEADER (Requirement 1) */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-slate-50/80 dark:bg-[#152338] border border-slate-200/80 dark:border-[#26384d] flex items-center gap-4 shadow-xs">
-              {/* Avatar with photo uploader badge */}
-              <div className="relative shrink-0">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-[#142B4A] text-[#C6A45A] font-black text-xl flex items-center justify-center overflow-hidden shadow-md border-2 border-white dark:border-[#26384d]">
-                  {currentUser?.avatar_url ? (
-                    <img
-                      src={currentUser.avatar_url}
-                      alt={currentUser.full_name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    currentUser?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('') || 'FN'
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('manage_profile')}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#C6A45A] text-[#142B4A] flex items-center justify-center shadow-xs border border-white hover:scale-105 transition-transform cursor-pointer"
-                  title="Update profile photo"
-                >
-                  <Upload className="w-3 h-3" />
-                </button>
+          <div className="flex flex-col select-none">
+            {/* Top User Profile Header Row (Exact match to screenshot top row) */}
+            <div
+              onClick={() => setCurrentSection('manage_profile')}
+              className="w-full px-4 py-2.5 flex items-center gap-3.5 hover:bg-[#e8edf2] dark:hover:bg-white/5 cursor-pointer transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#2bb39c] text-white font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                {currentUser?.avatar_url ? (
+                  <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  currentUser?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'FN'
+                )}
               </div>
-
               <div className="flex-1 min-w-0">
-                <h3 className="text-base sm:text-lg font-black text-[#142B4A] dark:text-white truncate">
-                  {currentUser?.full_name || 'FNI Leader'}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                  {roleDisplayTitle}
-                </p>
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {/* Assigned Cell Badge */}
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#142B4A]/10 dark:bg-amber-400/10 text-[#142B4A] dark:text-amber-300 text-[10px] font-bold border border-[#142B4A]/20 dark:border-amber-400/20">
-                    {assignedCellTitle}
-                  </span>
-
-                  {/* Account Status Badge */}
-                  <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                      accountStatus === 'Active'
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                        : accountStatus === 'Pending'
-                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800'
-                        : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        accountStatus === 'Active'
-                          ? 'bg-emerald-500'
-                          : accountStatus === 'Pending'
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500'
-                      }`}
-                    />
-                    {accountStatus}
-                  </span>
-                </div>
+                <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6] truncate block">
+                  {currentUser?.full_name || 'My Account'}
+                </span>
               </div>
             </div>
 
-            {/* GROUP 1: ACCOUNT */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2">
-                Account
+            {/* Understated Separator */}
+            <div className="h-px bg-[#e2e5e9] dark:bg-white/10 my-1" />
+
+            {/* 1. My Profile / Manage Profile (teal/mint green) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('manage_profile')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramProfileIcon className="w-5 h-5" />
               </div>
-              <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
-                
-                {/* Manage Profile */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('manage_profile')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.teal.bg} ${ICON_STYLES.teal.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <User className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Manage Profile</div>
-                      <div className="text-[11px] text-slate-400">Name, phone, email &amp; cell information</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                My Profile
+              </span>
+            </button>
 
-                {/* Password & Security */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('password_security')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.blue.bg} ${ICON_STYLES.blue.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <Lock className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Password &amp; Security</div>
-                      <div className="text-[11px] text-slate-400">Change password, active sessions &amp; sign out other devices</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
-                {/* Notifications */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('notifications')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.sky.bg} ${ICON_STYLES.sky.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <Bell className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Notifications</div>
-                      <div className="text-[11px] text-slate-400">Deadlines, assignments, quizzes, announcements &amp; chimes</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+            {/* 2. Theme & Appearance (grey and orange paintbrush) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('appearance')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramAppearanceIcon className="w-5 h-5" />
               </div>
-            </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Appearance
+              </span>
+            </button>
 
-            {/* GROUP 2: CHAT & PREFERENCES */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2">
-                Chat &amp; Appearance
+            {/* 3. Password & Security (light blue and grey padlock) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('password_security')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramPrivacyIcon className="w-5 h-5" />
               </div>
-              <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
-                
-                {/* Chat Wallpaper */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('chat_wallpaper')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.pink.bg} ${ICON_STYLES.pink.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <Palette className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Chat Wallpaper</div>
-                      <div className="text-[11px] text-slate-400">Custom wallpapers, solid colors &amp; bubble contrast preview</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Privacy and Security
+              </span>
+            </button>
 
-                {/* Theme & Appearance */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('appearance')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.orange.bg} ${ICON_STYLES.orange.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <Sun className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Theme &amp; Appearance</div>
-                      <div className="text-[11px] text-slate-400">Light mode, dark mode, or system default</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
-                {/* General Preferences */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('general')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.cyan.bg} ${ICON_STYLES.cyan.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <Clock className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Language &amp; Time</div>
-                      <div className="text-[11px] text-slate-400">Ghana Time (Africa/Accra / UTC+0), formats &amp; language</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+            {/* 4. Notifications (royal blue bell) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('notifications')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramNotificationsIcon className="w-5 h-5" />
               </div>
-            </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Notifications and Sounds
+              </span>
+            </button>
 
-            {/* GROUP 3: SUPPORT & POLICIES */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2">
-                Support &amp; Policies
+            {/* 5. Chat Wallpaper & Background (blue shades stacked cylinders) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('chat_wallpaper')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramDataStorageIcon className="w-5 h-5" />
               </div>
-              <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
-                
-                {/* App Updates & Version */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('app_updates')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.indigo.bg} ${ICON_STYLES.indigo.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <RefreshCw className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-1.5">
-                        <span>App Updates &amp; Version</span>
-                        <span className="px-1.5 py-0.5 rounded-full bg-[#142B4A]/10 dark:bg-white/10 text-[10px] font-black text-[#142B4A] dark:text-[#C6A45A]">
-                          v1.1.0
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-400">Check for updates, release notes &amp; install latest APK</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Data and Storage
+              </span>
+            </button>
 
-                {/* Help & Support */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('help_support')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.purple.bg} ${ICON_STYLES.purple.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <HelpCircle className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Help &amp; Support</div>
-                      <div className="text-[11px] text-slate-400">FAQ guides, contacts &amp; reporting assistance</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
-                {/* Privacy Policy */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('privacy_policy')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.emerald.bg} ${ICON_STYLES.emerald.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <ShieldCheck className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Privacy Policy</div>
-                      <div className="text-[11px] text-slate-400">Data retention &amp; cell record isolation</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
-                {/* Terms of Service */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('terms_of_service')}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.amber.bg} ${ICON_STYLES.amber.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#182230] dark:text-white">Terms of Service</div>
-                      <div className="text-[11px] text-slate-400">Reporting guidelines &amp; code of conduct</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+            {/* 6. Language & Time (sky blue wireframe globe) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('general')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramLanguageIcon className="w-5 h-5" />
               </div>
-            </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Language
+              </span>
+            </button>
 
-            {/* GROUP 4: ACCOUNT ACTIONS */}
-            <div className="space-y-2 pt-2">
-              <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
-                
-                {/* Request Account Deactivation */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentSection('deactivate_account')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.flame.bg} ${ICON_STYLES.flame.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <AlertTriangle className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-rose-600 dark:text-rose-400">Request Account Deactivation</div>
-                      <div className="text-[10px] text-slate-400">
-                        {existingDeactRequest?.status === 'pending'
-                          ? 'Request pending administrator review'
-                          : 'Submit deactivation request for Admin review'}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </button>
-
-                {/* Secure Log Out (Requirement 7) */}
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl ${ICON_STYLES.flame.bg} ${ICON_STYLES.flame.text} flex items-center justify-center shrink-0 shadow-2xs`}>
-                      <LogOut className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-rose-600 dark:text-rose-400">Secure Log Out</div>
-                      <div className="text-[10px] text-slate-400">End session safely on this device</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </button>
+            {/* 7. App Updates & Version (medium grey gear) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('app_updates')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramAdvancedIcon className="w-5 h-5" />
               </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6] flex-1">
+                Advanced
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono pr-2">v1.1.0</span>
+            </button>
 
-              <div className="text-center text-[10px] text-slate-400 pt-2">
-                FNI Cells Connect &bull; Version 1.0.0 (Build 2026.11)
+            {/* Understated Separator */}
+            <div className="h-px bg-[#e2e5e9] dark:bg-white/10 my-1" />
+
+            {/* 8. Help & Support (violet/purple help circle) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('help_support')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramHelpIcon className="w-5 h-5" />
               </div>
-            </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Help &amp; Support
+              </span>
+            </button>
 
+            {/* 9. Privacy Policy (teal shield) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('privacy_policy')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramShieldPolicyIcon className="w-5 h-5" />
+              </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Privacy Policy
+              </span>
+            </button>
+
+            {/* 10. Terms of Service (warm amber document) */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('terms_of_service')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramTermsIcon className="w-5 h-5" />
+              </div>
+              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
+                Terms of Service
+              </span>
+            </button>
+
+            {/* Understated Separator */}
+            <div className="h-px bg-[#e2e5e9] dark:bg-white/10 my-1" />
+
+            {/* 11. Request Account Deactivation */}
+            <button
+              type="button"
+              onClick={() => setCurrentSection('deactivate_account')}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-rose-50/60 dark:hover:bg-rose-950/20"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramDeactivationIcon className="w-5 h-5" />
+              </div>
+              <span className="text-[14px] font-normal text-rose-600 dark:text-rose-400">
+                Request Account Deactivation
+              </span>
+            </button>
+
+            {/* 12. Log Out */}
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-rose-50/60 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400"
+            >
+              <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <TelegramLogoutIcon className="w-5 h-5" />
+              </div>
+              <span className="text-[14px] font-normal">
+                Log Out
+              </span>
+            </button>
           </div>
         )}
 
