@@ -39,7 +39,7 @@ assert.match(messaging, /getCommunityDeletedMessageIds\(\)/, 'community loads mu
 assert.match(messaging, /deletedMessageIds === null \? \[\]/, 'stale cache must not be merged if tombstones cannot be refreshed');
 assert.doesNotMatch(messaging, /message\.isPinned \|\| \(createdAt > cutoff/, 'personal history clearing must also hide older pinned messages');
 assert.match(messaging, /ConversationCacheService\.clearConversation\(viewerUid, 'community'\)/, 'community clear must clear only the current user cache');
-assert.match(supaR, /rpc\('set_community_message_pin'/, 'community pinning must use the authoritative RPC');
+assert.match(supabase, /rpc\('set_community_message_pin'/, 'community pinning must use the authoritative RPC');
 assert.match(communityMessagingMigration, /drop function if exists public\.set_community_message_pin\(text, boolean\)/, 'obsolete two-argument pin overload must be removed');
 assert.match(communityMessagingMigration, /drop index if exists public\.community_messages_one_pinned_idx/, 'community must support multiple pinned messages');
 assert.match(communityMessagingMigration, /v_sender is distinct from v_uid/, 'authors must be checked independently from administrator permissions');
