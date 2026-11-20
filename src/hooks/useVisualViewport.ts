@@ -68,6 +68,7 @@ export function useVisualViewport(): VisualViewportState {
       root.style.setProperty('--fni-visible-viewport-height', `${visualHeight}px`);
       root.style.setProperty('--fni-visual-viewport-offset-top', `${offsetTop}px`);
       root.style.setProperty('--fni-keyboard-height', `${keyboardHeight}px`);
+      root.style.setProperty('--fni-keyboard-visible', isKeyboardVisible ? '1' : '0');
 
       setState(previous => {
         if (
@@ -109,6 +110,7 @@ export function useVisualViewport(): VisualViewportState {
       root.style.removeProperty('--fni-visible-viewport-height');
       root.style.removeProperty('--fni-visual-viewport-offset-top');
       root.style.removeProperty('--fni-keyboard-height');
+      root.style.removeProperty('--fni-keyboard-visible');
     };
   }, []);
 
