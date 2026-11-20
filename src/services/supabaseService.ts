@@ -1280,79 +1280,14 @@ export class SupabaseService {
   ): Promise<{ success: boolean; error?: string }> {
     if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
     try {
-      // 1. Direct update on private_messages table
-      const payload: any = pinned
-        ? {
-            is_pinned: true,
-            pinned_at: new Date().toISOString(),
-            pinned_by: userId,
-          }
-        : {
-            is_pinned: false,
-            pinned_at: null,
-            pinned_by: null,
-          };
-
-      const { error: directError } = await supabase!
-        .from('private_messages')
-        .update(payload)
-        .eq('id', messageId);
-
-      if (directError) {
-        console.warn('Direct private_messages pin update notice:', directError);
-      }
-
-      // 2. Also keep private_message_pins table in sync
-      let pinTableSuccess = false;
-      if (pinned) {
-        const { data: existing, error: lookupError } = await supabase!
-          .from('private_message_pins')
-          .select('message_id')
-          .eq('message_id', messageId)
-          .eq('user_id', userId)
-          .maybeSingle();
-        if (lookupError) {
-          console.warn('private_message_pins lookup notice:', lookupError);
-        }
-        if (!existing) {
-          const { error: insertError } = await supabase!
-            .from('private_message_pins')
-            .insert({ message_id: messageId, user_id: userId });
-          if (insertError) {
-            console.warn('private_message_pins insert notice:', insertError);
-          } else {
-            pinTableSuccess = true;
-          }
-        } else {
-          pinTableSuccess = true;
-        }
-      } else {
-        const { error: deleteError } = await supabase!
-          .from('private_message_pins')
-          .delete()
-          .eq('message_id', messageId)
-          .eq('user_id', userId);
-        if (deleteError) {
-          console.warn('private_message_pins delete notice:', deleteError);
-        } else {
-          pinTableSuccess = true;
-        }
-      }
-
-      // 3. Try RPC silently
-      const { error: rpcErr } = await supabase!.rpc('set_private_message_pin', {
+      // The server verifies that the caller belongs to this conversation and
+      // updates the shared pin state atomically. Never treat a failed RPC as success.
+      const { data, error } = await supabase!.rpc('set_private_message_pin', {
         p_message_id: messageId,
         p_pinned: pinned,
       });
-      if (rpcErr) {
-        console.warn('RPC set_private_message_pin notice:', rpcErr);
-      }
-
-      // If both direct update and pins table failed, report error
-      if (directError && !pinTableSuccess) {
-        return { success: false, error: directError.message };
-      }
-
+      if (error) return { success: false, error: error.message || 'Private message pin failed.' };
+      if (data !== true) return { success: false, error: 'The private message pin was not saved. Please try again.' };
       return { success: true };
     } catch (error: any) {
       console.warn('Private message pin failed:', error);
