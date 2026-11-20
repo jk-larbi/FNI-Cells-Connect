@@ -6,6 +6,7 @@ const retryMigration = readFileSync('supabase/migrations/20261120145300_make_qui
 const edge = readFileSync('supabase/functions/learning-portal/index.ts', 'utf8');
 const service = readFileSync('src/services/learningService.ts', 'utf8');
 const quizView = readFileSync('src/components/learning/LearningQuizzesView.tsx', 'utf8');
+const authContext = readFileSync('src/context/AuthContext.tsx', 'utf8');
 const cloudSync = readFileSync('src/services/cloudSyncService.ts', 'utf8');
 const supabaseClient = readFileSync('src/lib/supabase.ts', 'utf8');
 
@@ -40,6 +41,8 @@ assert.match(service, /action: 'get_attempts'/);
 assert.match(quizView, /startQuizAttempt\(quiz\.id/);
 assert.match(quizView, /quizSessionId/);
 assert.match(quizView, /saveQuizDraftAnswers\(activeQuizForTest\.id/);
+assert.match(authContext, /fni_learning_quiz_questions_v2/);
+assert.match(authContext, /privilegedRoles/);
 assert.match(cloudSync, /'learning_quiz_sync_state'/);
 assert.doesNotMatch(supabaseClient, /SUPABASE_SERVICE_ROLE_KEY|service_role/i);
 
