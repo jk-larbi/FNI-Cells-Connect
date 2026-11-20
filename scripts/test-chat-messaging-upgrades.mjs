@@ -13,6 +13,17 @@ assert.match(supabase, /createSignedUrl\(objectPath, 60 \* 60 \* 24\)/, 'private
 assert.match(view, /<video controls playsInline/, 'videos must render inline with playback controls');
 assert.match(view, /<audio controls preload="metadata"/, 'music and audio files must have an inline audio player');
 assert.match(view, /<img src=\{fileUrl\}/, 'photos must render inline');
+assert.match(view, /setImagePreview\(\{ url: fileUrl, name: att\.name \|\| 'FNI image' \}\)/, 'photos must open in a full-screen image viewer');
+assert.match(view, /handleSaveAttachment = async/, 'attachments must have a save/share flow');
+assert.match(view, /Filesystem\.writeFile/, 'native devices must prepare attachments for the system share sheet');
+assert.match(view, /Share\.share\(/, 'native devices must expose Save to Photos/Gallery through the system share sheet');
+assert.match(view, /navigator\.canShare\(\{ files: \[file\] \}\)/, 'web devices must use the native file share sheet when supported');
+assert.match(view, /link\.download = safeName/, 'web devices must have a direct download fallback');
+assert.match(view, /onContextMenu=\{e => e\.stopPropagation\(\)\}/, 'attachment controls must not trigger the message context menu');
+assert.match(view, /window\.open\(fileUrl, '_blank'/, 'documents must open for viewing');
+assert.match(view, /Save \$\{att\.name \|\| 'document'\}/, 'documents must have a save action');
+assert.match(view, /Save audio/, 'music and audio attachments must have an explicit save action');
+assert.match(view, /onClick=\{e => e\.stopPropagation\(\)\}/, 'native media controls must not trigger message context menus');
 assert.match(view, /accept="image\/\*,video\/\*,audio\/\*/, 'the attachment picker must accept audio and video');
 assert.match(view, /const message: PrivateMessage = \{/, 'private Realtime rows must be mapped directly without a second fetch');
 assert.match(view, /const message: CommunityMessage = \{/, 'community Realtime rows must be mapped directly without a second fetch');
