@@ -15,9 +15,12 @@ import {
   MessageSquare,
   Bell,
   GraduationCap,
+  MapPin, Users, Archive, ClipboardCheck, Flame, UserCheck, DollarSign,
+  BookOpen, MessagesSquare, BarChart3, Settings, Phone,
 } from 'lucide-react';
 import { ICON_STYLES, IconColorKey } from '../../utils/iconColors';
 import { LocationSharingPanel } from '../location/LocationSharingPanel';
+import { SectionHub } from './SectionHub';
 
 // Administrator Portal Views
 import { DashboardView } from '../dashboard/DashboardView';
@@ -352,6 +355,40 @@ export const AppLayout: React.FC = () => {
               ? 'p-0 max-w-none pb-0 h-[100dvh] overflow-hidden w-full'
               : 'p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 overflow-x-hidden'
           } ${effectiveTab === 'messages' ? 'fni-messaging-route-main' : ''}`}>
+            {/* Administrator section landing pages */}
+            {isAdmin && effectiveTab === 'cells-hub' && <SectionHub
+              title="Cells" description="Manage cell profiles, leaders and location records."
+              items={[
+                { title: 'Cell Management', description: 'View and manage registered cells and profiles.', icon: Building, onClick: () => navigateToTab('cell-management') },
+                { title: 'Cell Leaders', description: 'Review cell leaders and their responsibilities.', icon: Users, onClick: () => navigateToTab('cell-leaders') },
+                { title: 'Cell Location History', description: 'Review submitted cell location records.', icon: MapPin, onClick: () => navigateToTab('cell-location-history') },
+              ]} />}
+            {isAdmin && effectiveTab === 'reports-hub' && <SectionHub
+              title="Reports" description="Review submissions and access report history."
+              items={[
+                { title: 'Review Reports', description: 'Assess submissions and approve or request corrections.', icon: ClipboardCheck, onClick: () => navigateToTab('report-review') },
+                { title: 'Report History', description: 'Browse previously received and processed reports.', icon: Archive, onClick: () => navigateToTab('report-history') },
+                { title: 'Deadline Settings', description: 'Configure reporting deadlines.', icon: FileCheck, onClick: () => navigateToTab('report-deadlines') },
+              ]} />}
+            {isAdmin && effectiveTab === 'ministry-hub' && <SectionHub
+              title="Ministry" description="Access ministry operations and communication tools."
+              items={[
+                { title: 'Evangelism', description: 'Monitor outreach activity and records.', icon: Flame, onClick: () => navigateToTab('evangelism') },
+                { title: 'Follow-ups', description: 'Manage contacts and follow-up progress.', icon: UserCheck, onClick: () => navigateToTab('follow-ups') },
+                { title: 'Offering', description: 'Review offering records and summaries.', icon: DollarSign, onClick: () => navigateToTab('finance') },
+                { title: 'Teaching Materials', description: 'Publish and manage teaching resources.', icon: BookOpen, onClick: () => navigateToTab('materials') },
+                { title: 'Communications', description: 'Open private and community messaging.', icon: MessagesSquare, onClick: () => navigateToTab('messages') },
+                { title: 'Calls & Meetings', description: 'Review call and meeting history.', icon: Phone, onClick: () => navigateToTab('call-history') },
+              ]} />}
+            {isAdmin && effectiveTab === 'more-hub' && <SectionHub
+              title="More" description="Learning, insights, alerts and platform configuration."
+              items={[
+                { title: 'Learning Portal', description: 'Access assignments, quizzes, participation and grades.', icon: GraduationCap, onClick: () => navigateToTab('learning-portal') },
+                { title: 'Analytics', description: 'View ministry performance and activity insights.', icon: BarChart3, onClick: () => navigateToTab('analytics') },
+                { title: 'Notifications', description: 'Review alerts and important updates.', icon: Bell, onClick: () => navigateToTab('notifications') },
+                { title: 'Settings', description: 'Manage administrator and platform settings.', icon: Settings, onClick: () => navigateToTab('settings') },
+              ]} />}
+
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
               <>
@@ -549,8 +586,8 @@ export const AppLayout: React.FC = () => {
         {(isAdmin
           ? [
               { id: 'dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard, colorKey: 'gold' as IconColorKey },
-              { id: 'cell-management' as AppNavTab, label: 'Cells', icon: Building, colorKey: 'teal' as IconColorKey },
-              { id: 'report-review' as AppNavTab, label: 'Reports', icon: FileCheck, colorKey: 'emerald' as IconColorKey },
+              { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: Building, colorKey: 'teal' as IconColorKey },
+              { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: FileCheck, colorKey: 'emerald' as IconColorKey },
               { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare, colorKey: 'azure' as IconColorKey },
               { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap, colorKey: 'purple' as IconColorKey },
             ]
