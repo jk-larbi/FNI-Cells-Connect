@@ -67,6 +67,7 @@ import {
   ChevronDown,
   Volume2,
   Repeat,
+  Palette,
   Image as ImageIcon,
   CheckCircle2,
   Settings,
@@ -299,6 +300,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Modals & Settings
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsModalTab, setSettingsModalTab] = useState<
+    'directory' | 'appearance' | 'call-settings' | 'call-history' | 'notifications' | 'privacy' | 'blocked' | 'saved'
+  >('directory');
   const [showCallHistoryModal, setShowCallHistoryModal] = useState(false);
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
 
@@ -1938,6 +1942,25 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     void MessagingService.deleteUserCustomSticker(currentUser.id, stickerId);
   };
 
+  // Open Poll Modal with mobile virtual keyboard dismissal
+  const handleOpenPollModal = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    // Dismiss virtual keyboard on mobile devices
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    if (composerInputRef.current) {
+      composerInputRef.current.blur();
+    }
+    setShowAttachmentMenu(false);
+    if (pollOptions.length < 2) {
+      setPollOptions(['', '']);
+    }
+    setIsPollModalOpen(true);
+  };
+
   // Create Poll
   const handleCreatePoll = async () => {
     if (!currentUser?.id) return;
@@ -3226,6 +3249,21 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       type="button"
                       onClick={() => {
                         setShowChatOptionsMenu(false);
+                        setSettingsModalTab('appearance');
+                        setIsSettingsModalOpen(true);
+                      }}
+                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
+                    >
+                      <span className="w-6 h-6 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 border border-orange-200/50 dark:border-orange-800/40">
+                        <Palette className="w-3.5 h-3.5" />
+                      </span>
+                      <span>Chat Colors & Wallpaper</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowChatOptionsMenu(false);
+                        setSettingsModalTab('directory');
                         setIsSettingsModalOpen(true);
                       }}
                       className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
@@ -4162,19 +4200,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                             <button
                               type="button"
-                              onPointerDown={e => {
+                              onClick={handleOpenPollModal}
+                              onTouchEnd={e => {
                                 e.preventDefault();
-                                setShowAttachmentMenu(false);
-                                setIsPollModalOpen(true);
+                                handleOpenPollModal(e);
                               }}
-                              onClick={e => {
-                                e.preventDefault();
-                                setShowAttachmentMenu(false);
-                                setIsPollModalOpen(true);
-                              }}
-                              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold text-left transition-colors active:scale-98"
+                              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold text-left transition-colors active:scale-98 text-slate-800 dark:text-slate-100"
                             >
-                              <BarChart2 className="w-4 h-4 text-emerald-500" />
+                              <BarChart2 className="w-4 h-4 text-emerald-500 shrink-0" />
                               <span>Create Poll</span>
                             </button>
                           </div>
@@ -4378,6 +4411,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       ========================================================================= */}
       <CommunicationSettingsModal
         isOpen={isSettingsModalOpen}
+        initialTab={settingsModalTab}
         onClose={() => setIsSettingsModalOpen(false)}
         tutorList={tutorList}
         onSelectTutor={tutorId => {
