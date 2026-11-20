@@ -49,6 +49,15 @@ export const CellMembersPanel: React.FC<CellMembersPanelProps> = ({ cellId, crea
 
   useEffect(() => { if (cellId) void load(); }, [cellId, load]);
 
+  useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || table === 'cell_members') void load();
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, [load]);
+
   const filtered = useMemo(() => members.filter(member =>
     member.full_name.toLowerCase().includes(search.toLowerCase()) ||
     (member.phone_number || '').includes(search)
