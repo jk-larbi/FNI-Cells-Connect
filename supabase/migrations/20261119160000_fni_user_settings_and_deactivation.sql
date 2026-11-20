@@ -1,3 +1,0 @@
--- Superseded by 20261120130834_fni_user_settings_and_deactivation_profile_id_compatibility.sql.
--- This historical migration was never applied to production; the replacement
--- uses TEXT profile IDs and maps auth.uid() through profiles.supabase_user_id.
