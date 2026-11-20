@@ -204,30 +204,37 @@ export class MessagingService {
   }
 
   static async clearCommunityHistory(viewerUid: string, forEveryone: boolean = false): Promise<boolean> {
-    if (!supabase || !isSupabaseConfigured) return false;
+    if (!supabase || !isSupabaseConfigured || !viewerUid) return false;
     try {
-      // 1. Try dedicated RPC
-      const { data, error: rpcError } = await supabase.rpc('fni_clear_community_chat_history', { p_for_everyone: forEveryone });
-      if (!rpcError && data === true) {
-        ConversationCacheService.clearConversation(viewerUid, 'community');
-        return true;
-      }
+      // Only the server RPC may clear the fellowship for everyone. Never fall
+      // back to a broad client UPDATE when that privileged RPC is unavailable.
+      const { data, error: rpcError } = await supabase.rpc('fni_clear_community_chat_history', {
+        p_for_everyone: forEveryone,
+      });
 
-      // 2. Direct fallback
-      if (forEveryone) {
-        await supabase
-          .from('community_messages')
-          .update({ deleted_for_everyone_at: new Date().toISOString() })
-          .is('deleted_for_everyone_at', null);
-      } else {
-        const { data: authData } = await supabase.auth.getUser();
-        const effectiveUid = authData.user?.id || viewerUid;
-        await supabase.from('community_chat_preferences').upsert(
+      if (rpcError || data !== true) {
+        if (forEveryone) {
+          console.warn('Community-wide clear was rejected by the server:', rpcError?.message || 'No confirmation returned');
+          return false;
+        }
+
+        // Personal fallback is scoped to the authenticated user's own preference row.
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const effectiveUid = authData.user?.id;
+        if (authError || !effectiveUid || effectiveUid !== viewerUid) {
+          console.warn('Personal community clear could not verify the signed-in user.');
+          return false;
+        }
+        const { error } = await supabase.from('community_chat_preferences').upsert(
           { user_id: effectiveUid, cleared_at: new Date().toISOString(), updated_at: new Date().toISOString() },
           { onConflict: 'user_id' }
         );
+        if (error) throw error;
       }
-      setStored(STORAGE_KEYS.COMMUNITY, []);
+
+      // This cache belongs to the current user only. Do not empty a shared
+      // device-wide community cache used by other signed-in accounts.
+      ConversationCacheService.clearConversation(viewerUid, 'community');
       return true;
     } catch (e) {
       console.warn('Community history clear failed:', e);
@@ -822,7 +829,7 @@ export class MessagingService {
           visibleMessages = visibleMessages.filter(message =>
             !message.deletedForEveryoneAt &&
             !deletedForSelf.has(message.id) &&
-            (message.isPinned || (new Date(message.createdAt).getTime() > cutoff && !hiddenIds.has(message.id)))
+            (new Date(message.createdAt).getTime() > cutoff && !hiddenIds.has(message.id))
           );
         }
         const sorted = visibleMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -837,7 +844,7 @@ export class MessagingService {
           const cellIsActive = !message.cellName?.trim() || activeCellNames.has(message.cellName.trim().toLowerCase());
           if (!serverDeletedIds.has(message.id) && !deletedForSelf.has(message.id) &&
               allowedMemberIds.has(message.senderUid) && cellIsActive &&
-              (message.isPinned || (createdAt > cutoff && !hiddenIds.has(message.id)))) {
+              (createdAt > cutoff && !hiddenIds.has(message.id))) {
             mergedMap.set(message.id, message);
           }
         });
