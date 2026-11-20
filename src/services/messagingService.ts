@@ -795,6 +795,8 @@ export class MessagingService {
         const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
         const deletedForSelf = viewerUid ? this.getDeletedForSelfIds(viewerUid) : new Set<string>();
         const serverDeletedIds = new Set(supaMsgs.filter(message => Boolean(message.deletedForEveryoneAt)).map(message => message.id));
+        let cutoff = 0;
+        let hiddenIds = new Set<string>();
         const memberMap = new Map((directory || []).map(m => [m.id, m.full_name]));
         let visibleMessages = supaMsgs.map(msg => ({
           ...msg,
@@ -811,8 +813,8 @@ export class MessagingService {
             supabase.from('community_message_hidden_for_user').select('message_id').eq('user_id', viewerUid),
           ]);
           if (preferenceResult.error || hiddenResult.error) return [];
-          const cutoff = preferenceResult.data?.cleared_at ? new Date(preferenceResult.data.cleared_at).getTime() : 0;
-          const hiddenIds = new Set((hiddenResult.data || []).map(row => row.message_id));
+          cutoff = preferenceResult.data?.cleared_at ? new Date(preferenceResult.data.cleared_at).getTime() : 0;
+          hiddenIds = new Set((hiddenResult.data || []).map(row => row.message_id));
           visibleMessages = visibleMessages.filter(message =>
             !message.deletedForEveryoneAt &&
             !deletedForSelf.has(message.id) &&
