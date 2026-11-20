@@ -112,6 +112,8 @@ Deno.serve(async (req) => {
     const quiz = body.quiz;
     const questions = Array.isArray(body.questions) ? body.questions : [];
     if (!quiz?.id || !String(quiz.title || "").trim()) return fail("Quiz title and ID are required");
+    const desiredStatus = ["draft", "published", "archived"].includes(quiz.status) ? quiz.status : "draft";
+    if (desiredStatus === "published" && questions.length === 0) return fail("Add at least one question before publishing this quiz");
     const quizRow = {
       id: String(quiz.id),
       title: String(quiz.title).trim(),
@@ -126,7 +128,7 @@ Deno.serve(async (req) => {
       has_subjective: Boolean(quiz.has_subjective),
       published_at: quiz.published_at || null,
       due_date: quiz.due_date,
-      status: ["draft", "published", "archived"].includes(quiz.status) ? quiz.status : "draft",
+      status: "draft",
       results_released: false,
       timing_settings: quiz.timing_settings || {},
       created_by: profile.id,
@@ -168,6 +170,11 @@ Deno.serve(async (req) => {
       const { error: kError } = await db.from("learning_quiz_answer_keys").insert(keyRows);
       if (kError) return fail("Could not save protected answer keys: " + kError.message, 400);
     }
+    const { error: publishError } = await db.from("learning_quizzes")
+      .update({ status: desiredStatus, published_at: quizRow.published_at, updated_at: new Date().toISOString() })
+      .eq("id", quizRow.id);
+    if (publishError) return fail("Questions were saved but quiz status could not be updated: " + publishError.message, 500);
+    quizRow.status = desiredStatus;
     return json({ success: true, quiz: quizRow });
   }
 
@@ -331,6 +338,23 @@ Deno.serve(async (req) => {
 
   if (action === "get_attempts") {
     if (!isAdmin && profile.role !== "tutor") return fail("Tutor access required", 403);
+
+    // Release automatically graded results once an "after_close" quiz reaches its close time.
+    const { data: closingQuizzes } = await db.from("learning_quizzes").select("id,timing_settings").eq("status", "published");
+    for (const closingQuiz of closingQuizzes || []) {
+      const timing = closingQuiz.timing_settings || {};
+      const closesAt = timing.closes_at ? new Date(timing.closes_at) : null;
+      if (timing.result_release_policy !== "after_close" || !closesAt || new Date() < closesAt) continue;
+      const { data: dueAttempts } = await db.from("learning_quiz_attempts")
+        .update({ results_released: true })
+        .eq("quiz_id", closingQuiz.id).eq("grading_status", "graded").eq("results_released", false)
+        .select("id,tutor_id");
+      for (const dueAttempt of dueAttempts || []) {
+        await syncState(closingQuiz.id, dueAttempt.tutor_id, "results_released", dueAttempt.id);
+      }
+      await db.from("learning_quizzes").update({ results_released: true }).eq("id", closingQuiz.id);
+    }
+
     let query = db.from("learning_quiz_attempts").select("*").order("completed_at", { ascending: false });
     if (!isAdmin) query = query.eq("tutor_id", profile.id);
     else if (body.tutorId) query = query.eq("tutor_id", body.tutorId);
