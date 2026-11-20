@@ -439,7 +439,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
   // Tutor Starts or Resumes a Quiz
   const handleStartQuiz = async (quiz: Quiz) => {
     const timing = quiz.timing_settings;
-    const draft = LearningService.getQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
+    let draft = LearningService.getQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
     try {
       // The server owns the authoritative start time, expiry and attempt limit.
       let session: Awaited<ReturnType<typeof LearningService.startQuizAttempt>>;
@@ -448,6 +448,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       } catch (resumeError) {
         if (!draft?.sessionId) throw resumeError;
         LearningService.clearQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
+        draft = null;
         session = await LearningService.startQuizAttempt(quiz.id);
       }
       const questions = await LearningService.getQuizQuestions(quiz.id, true);
@@ -455,7 +456,9 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
       const startIso = session.startedAt;
       const cloudAnswers = session.answers || {};
-      const initialAnswers: Record<string, any> = Object.keys(cloudAnswers).length ? cloudAnswers : (draft?.answers || {});
+      const localSavedAt = Number(draft?.savedAt || 0);
+      const cloudUpdatedAt = new Date(session.updatedAt || startIso).getTime();
+      const initialAnswers: Record<string, any> = localSavedAt > cloudUpdatedAt ? (draft?.answers || {}) : cloudAnswers;
       setQuizSessionId(session.sessionId);
       LearningService.saveQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor', initialAnswers, startIso, session.sessionId);
 
