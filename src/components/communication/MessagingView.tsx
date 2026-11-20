@@ -311,6 +311,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const recordingSecondsRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordingTimerRef = useRef<any>(null);
 
   // --- FNI MESSAGING STATE ---
@@ -2052,73 +2053,90 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // 5. VOICE NOTE RECORDING
   // ---------------------------------------------------------------------------
   const startVoiceRecording = async () => {
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      alert('Voice recording is not supported on this device or browser.');
+    if (isRecordingVoice || !selectedChatId) return;
+
+    if (!window.isSecureContext) {
+      setSendError('Voice notes require a secure connection. Open FNI Cells Connect using its HTTPS address.');
       return;
     }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setSendError('Voice recording is not supported by this browser. Please update your browser or use the FNI app.');
+      return;
+    }
+
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setSendError(null);
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
 
-      // Determine best supported audio container/codec across iOS, Android, and Desktop
-      let mimeType = 'audio/webm;codecs=opus';
-      if (typeof MediaRecorder.isTypeSupported === 'function') {
-        const candidates = [
-          'audio/webm;codecs=opus',
-          'audio/webm',
-          'audio/mp4;codecs=mp4a.40.2',
-          'audio/mp4',
-          'audio/aac',
-          'audio/ogg',
-        ];
-        const supported = candidates.find(t => MediaRecorder.isTypeSupported(t));
-        if (supported) mimeType = supported;
-      }
+      mediaStreamRef.current = stream;
 
-      let recorder: MediaRecorder;
-      try {
-        recorder = new MediaRecorder(stream, { mimeType });
-      } catch {
-        recorder = new MediaRecorder(stream);
-        mimeType = recorder.mimeType || 'audio/webm';
-      }
+      // Safari/iOS commonly records AAC in MP4; Chromium/Android generally supports Opus in WebM.
+      const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const candidates = isAppleMobile
+        ? ['audio/mp4', 'audio/mp4;codecs=mp4a.40.2', 'audio/aac', 'audio/webm;codecs=opus', 'audio/webm']
+        : ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac', 'audio/ogg'];
 
+      const supportedMimeType = typeof MediaRecorder.isTypeSupported === 'function'
+        ? candidates.find(type => MediaRecorder.isTypeSupported(type))
+        : undefined;
+
+      // Do not force an unsupported MIME type. Let the browser choose its native recorder format.
+      const recorder = new MediaRecorder(
+        stream,
+        supportedMimeType ? { mimeType: supportedMimeType } : undefined
+      );
+      const actualMimeType = recorder.mimeType || supportedMimeType || 'application/octet-stream';
       const chunks: BlobPart[] = [];
-      recorder.ondataavailable = e => {
-        if (e.data && e.data.size > 0) chunks.push(e.data);
+
+      recorder.ondataavailable = event => {
+        if (event.data && event.data.size > 0) chunks.push(event.data);
+      };
+
+      recorder.onerror = () => {
+        setSendError('The microphone recording stopped unexpectedly. Please try again.');
+        try {
+          if (recorder.state !== 'inactive') recorder.stop();
+        } catch {
+          stream?.getTracks().forEach(track => track.stop());
+        }
       };
 
       recorder.onstop = async () => {
-        const finalSecs = recordingSecondsRef.current || 1;
+        const finalSecs = Math.max(1, recordingSecondsRef.current);
         const formattedDuration = `${Math.floor(finalSecs / 60)}:${(finalSecs % 60).toString().padStart(2, '0')}`;
-        const blob = new Blob(chunks, { type: mimeType });
+        const blob = new Blob(chunks, { type: actualMimeType });
 
-        if (blob.size > 0 && selectedChatId) {
-          // Robust Data URL representation guaranteed to play on any device/offline
-          const dataUrl = await new Promise<string>(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => resolve('');
-            reader.readAsDataURL(blob);
-          });
-
-          const ext = mimeType.includes('mp4') ? 'm4a' : (mimeType.includes('aac') ? 'aac' : 'webm');
-          const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: mimeType });
-
-          let att: any = null;
-          try {
-            att = await MessagingService.uploadChatAttachment(currentUser?.id || 'guest', file);
-          } catch (uploadErr) {
-            console.warn('Voice note storage upload fallback:', uploadErr);
+        try {
+          if (!blob.size) {
+            setSendError('No audio was captured. Check microphone permission and try again.');
+            return;
           }
+          if (!currentUser?.id) throw new Error('Please sign in again before sending a voice note.');
 
-          if (!att || !att.path) {
-            att = {
-              name: `Voice Note (${formattedDuration})`,
-              path: dataUrl || '',
-              mimeType: mimeType || 'audio/webm',
-              size: blob.size,
-            };
-          }
+          const extension = actualMimeType.includes('mp4') ? 'm4a'
+            : actualMimeType.includes('aac') ? 'aac'
+            : actualMimeType.includes('ogg') ? 'ogg'
+            : actualMimeType.includes('wav') ? 'wav'
+            : actualMimeType.includes('mpeg') ? 'mp3'
+            : 'webm';
+          const file = new File(
+            [blob],
+            `voice-note-${Date.now()}.${extension}`,
+            { type: actualMimeType === 'application/octet-stream' ? 'audio/webm' : actualMimeType }
+          );
+
+          // Use the same authenticated Supabase attachment pipeline as other chat media.
+          // It handles storage upload and its supported fallback; do not duplicate large data URLs here.
+          const attachment = await MessagingService.uploadChatAttachment(currentUser.id, file);
+          if (!attachment?.path) throw new Error('The voice note could not be uploaded. Please try again.');
 
           const content = `🎤 Voice Note (${formattedDuration})`;
           if (selectedChatId === 'community') {
@@ -2128,11 +2146,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               senderRole: currentUser.role,
               cellName: currentUser.cell_name,
               content,
-              attachments: [att],
+              attachments: [attachment],
             });
           } else {
             const recipientUid = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
-            const recipient = allMembers.find(m => m.id === recipientUid);
+            const recipient = allMembers.find(member => member.id === recipientUid);
             await MessagingService.sendPrivateMessage({
               senderUid: currentUser.id,
               senderName: currentUser.full_name || 'FNI Leader',
@@ -2140,39 +2158,66 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               recipientUid,
               recipientName: recipient?.full_name || 'FNI Member',
               content,
-              attachments: [att],
+              attachments: [attachment],
             });
           }
           await loadActiveMessages();
+        } catch (error: any) {
+          console.error('Voice note send failed:', error);
+          setSendError(error?.message || 'Your voice note could not be sent. Please try again.');
+        } finally {
+          stream?.getTracks().forEach(track => track.stop());
+          stream = null;
+          mediaStreamRef.current = null;
+          mediaRecorderRef.current = null;
+          setIsRecordingVoice(false);
+          if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+          recordingTimerRef.current = null;
         }
-
-        stream.getTracks().forEach(t => t.stop());
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start(250); // Timeslice 250ms for chunk reliability
+      recorder.start();
       setIsRecordingVoice(true);
       setRecordingSeconds(0);
       recordingSecondsRef.current = 0;
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = setInterval(() => {
-        setRecordingSeconds(sec => {
-          const next = sec + 1;
+        setRecordingSeconds(seconds => {
+          const next = seconds + 1;
           recordingSecondsRef.current = next;
           return next;
         });
       }, 1000);
-    } catch (e: any) {
-      console.error('Microphone access notice:', e);
-      alert('Microphone access was denied or is unavailable on this device.');
+    } catch (error: any) {
+      console.error('Microphone access error:', error);
+      stream?.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+      const message = error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError'
+        ? 'Microphone permission was denied. Allow microphone access for FNI Cells Connect in your browser or device settings.'
+        : error?.name === 'NotFoundError'
+          ? 'No microphone was found on this device.'
+          : error?.message || 'The microphone is unavailable. Please try again.';
+      setSendError(message);
+      setIsRecordingVoice(false);
+      mediaRecorderRef.current = null;
     }
   };
 
   const stopVoiceRecording = () => {
-    if (mediaRecorderRef.current && isRecordingVoice) {
-      mediaRecorderRef.current.stop();
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+    try {
+      recorder.stop();
+    } catch (error) {
+      console.error('Could not stop voice recording:', error);
+      setSendError('The recording could not be completed. Please try again.');
+      mediaStreamRef.current?.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
       setIsRecordingVoice(false);
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
     }
   };
 
