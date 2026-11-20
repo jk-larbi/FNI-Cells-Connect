@@ -45,6 +45,8 @@ try {
     'fni_learning_quiz_attempts_v1',
     'fni_learning_events_v1',
     'fni_learning_resources_v1',
+    KEYS.QUESTIONS,
+    KEYS.ATTEMPTS,
   ].forEach(k => {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(k);
