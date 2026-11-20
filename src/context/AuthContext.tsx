@@ -201,6 +201,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (updated) setCurrentUser(updated);
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${currentUser.id}` },
+        async () => {
+          const updated = await AuthService.fetchProfileById(currentUser.id);
+          if (updated) setCurrentUser(updated);
+        }
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
