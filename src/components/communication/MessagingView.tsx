@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useBackHandler } from '../../hooks/useBackHandler';
@@ -308,6 +310,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Attachments & Voice Notes
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
+  const [imagePreview, setImagePreview] = useState<{ url: string; name: string } | null>(null);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const recordingSecondsRef = useRef<number>(0);
@@ -2608,6 +2611,59 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     return attachmentUrls[raw] || '';
   };
 
+  // Save/share an attachment using the native phone share sheet where available.
+  // On iOS this exposes Save Image/Save to Files; on Android it exposes installed
+  // Gallery/Photos and file destinations. Browsers fall back to a real download.
+  const handleSaveAttachment = async (url: string, fileName: string) => {
+    if (!url) return;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Download failed (${response.status}).`);
+      const blob = await response.blob();
+      const safeName = (fileName || 'FNI-attachment').replace(/[\\/:*?"<>|]/g, '_');
+      const file = new File([blob], safeName, { type: blob.type || 'application/octet-stream' });
+
+      if (Capacitor.isNativePlatform()) {
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+          reader.onerror = () => reject(new Error('Could not prepare this file for sharing.'));
+          reader.readAsDataURL(blob);
+        });
+        const saved = await Filesystem.writeFile({
+          path: safeName,
+          data: base64,
+          directory: Directory.Cache,
+        });
+        await Share.share({
+          title: safeName,
+          files: [saved.uri],
+          dialogTitle: 'Save or share attachment',
+        });
+        return;
+      }
+
+      if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: safeName, files: [file] });
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = safeName;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return;
+      console.error('FNI attachment save failed:', error);
+      window.alert(error?.message || 'This attachment could not be saved. Please try again.');
+    }
+  };
+
   // Render Formatted Message Body with Clickable Mentions
   const renderMessageTextWithMentions = (text: string) => {
     if (!text) return null;
@@ -3860,7 +3916,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                           {/* Attachments & Voice Notes */}
                           {msg.attachments && msg.attachments.length > 0 && (
-                            <div className="space-y-2 mb-1.5">
+                            <div
+                              className="space-y-2 mb-1.5"
+                              onClick={e => e.stopPropagation()}
+                              onContextMenu={e => e.stopPropagation()}
+                            >
                               {msg.attachments.map((att, attIdx) => {
                                 const isAudio = att.mimeType?.startsWith('audio') || /\.(mp3|m4a|m4b|aac|ogg|oga|opus|wav|flac|amr|mid|midi)$/i.test(att.name || '') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
                                 const isVoiceNote = att.name?.toLowerCase().includes('voice-note') || att.name?.toLowerCase().includes('voice note') || msg.content?.startsWith('🎤 Voice Note');
@@ -3880,20 +3940,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                                 if (isAudio) {
                                   return (
-                                    <div key={attIdx} className="rounded-2xl bg-black/10 dark:bg-white/10 p-3 space-y-2 min-w-[220px] max-w-[320px]">
+                                    <div key={attIdx} className="rounded-2xl bg-black/10 dark:bg-white/10 p-3 space-y-2 min-w-[220px] max-w-[320px]" onClick={e => e.stopPropagation()}>
                                       <div className="flex items-center gap-2 min-w-0">
                                         <Volume2 className="w-5 h-5 shrink-0" />
                                         <span className="text-sm font-semibold truncate">{att.name || 'Audio'}</span>
                                       </div>
-                                      <audio controls preload="metadata" src={fileUrl} className="w-full" />
+                                      <audio controls preload="metadata" src={fileUrl} className="w-full" onClick={e => e.stopPropagation()} onError={() => console.warn('FNI audio could not be decoded or loaded:', att.name)} />
                                     </div>
                                   );
                                 }
 
                                 if (isVideo) {
                                   return (
-                                    <div key={attIdx} className="relative rounded-2xl overflow-hidden max-w-full bg-black my-1">
-                                      <video controls playsInline preload="metadata" src={fileUrl} className="block w-full max-h-[420px] object-contain" />
+                                    <div key={attIdx} className="relative rounded-2xl overflow-hidden max-w-full bg-black my-1" onClick={e => e.stopPropagation()}>
+                                      <video controls playsInline preload="metadata" src={fileUrl} className="block w-full max-h-[420px] object-contain" onClick={e => e.stopPropagation()} />
                                       <div className="px-2 py-1 text-[10px] text-white/80">{att.name}</div>
                                     </div>
                                   );
@@ -3902,7 +3962,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 if (isImage) {
                                   return (
                                     <div key={attIdx} className="relative rounded-2xl overflow-hidden max-h-[420px] max-w-full bg-black/10 select-none my-1">
-                                      <img src={fileUrl} alt={att.name} loading="lazy" className="block max-w-full max-h-[420px] w-auto h-auto object-contain rounded-2xl" />
+                                      <button
+                                        type="button"
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          setImagePreview({ url: fileUrl, name: att.name || 'FNI image' });
+                                        }}
+                                        className="block w-full text-left cursor-zoom-in"
+                                        aria-label={`Open image ${att.name || ''}`}
+                                      >
+                                        <img src={fileUrl} alt={att.name} loading="lazy" className="block max-w-full max-h-[420px] w-auto h-auto object-contain rounded-2xl" />
+                                      </button>
+                                      <div className="absolute bottom-2 left-2 px-2 py-1 rounded-full bg-black/60 text-white text-[10px]">
+                                        Tap to open
+                                      </div>
                                       <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] flex items-center gap-1 font-medium select-none shadow-xs">
                                         <span>{formattedTime}</span>
                                         {isMine && <CheckCheck className="w-3.5 h-3.5 text-white" />}
@@ -3912,10 +3985,31 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 }
 
                                 return (
-                                  <a key={attIdx} href={fileUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-xl bg-black/15 flex items-center gap-2 hover:underline">
-                                    <Paperclip className="w-4 h-4" />
-                                    <span className="truncate">{att.name}</span>
-                                  </a>
+                                  <div key={attIdx} className="p-2 rounded-xl bg-black/15 flex items-center gap-2 min-w-0">
+                                    <Paperclip className="w-4 h-4 shrink-0" />
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        window.open(fileUrl, '_blank', 'noopener,noreferrer');
+                                      }}
+                                      className="truncate flex-1 text-left hover:underline"
+                                    >
+                                      {att.name || 'Open document'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        void handleSaveAttachment(fileUrl, att.name || 'FNI-document');
+                                      }}
+                                      className="shrink-0 rounded-lg p-2 hover:bg-black/10 dark:hover:bg-white/10"
+                                      aria-label={`Save ${att.name || 'document'}`}
+                                      title="Save or share"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -5235,6 +5329,42 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       {/* =========================================================================
           FNI CHAT FOLDER MODAL
       ========================================================================= */}
+      {imagePreview && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-3 sm:p-6"
+          onClick={() => setImagePreview(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <div className="absolute top-3 right-3 flex items-center gap-2 z-10" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => void handleSaveAttachment(imagePreview.url, imagePreview.name)}
+              className="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white px-4 py-2.5 text-sm font-semibold"
+            >
+              <Download className="w-4 h-4" />
+              Save / Share
+            </button>
+            <button
+              type="button"
+              onClick={() => setImagePreview(null)}
+              className="rounded-full bg-white/15 hover:bg-white/25 text-white p-2.5"
+              aria-label="Close image"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <img
+            src={imagePreview.url}
+            alt={imagePreview.name}
+            onClick={e => e.stopPropagation()}
+            className="max-w-full max-h-[88vh] object-contain select-auto"
+          />
+          <p className="text-white/70 text-xs mt-3 text-center">{imagePreview.name}</p>
+        </div>
+      )}
+
       <ChatFolderModal
         isOpen={isFolderModalOpen}
         onClose={() => {
