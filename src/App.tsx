@@ -13,8 +13,11 @@ import { supabase } from './lib/supabase';
 import { ThemeProvider } from './context/ThemeContext';
 import { ThemeToggle } from './components/layout/ThemeToggle';
 import { IosInstallGuide } from './components/pwa/IosInstallGuide';
+import { useVisualViewport } from './hooks/useVisualViewport';
 
 const MainContent: React.FC = () => {
+  // Keep viewport and keyboard measurements available to every authenticated and public screen.
+  useVisualViewport();
   const { currentUser, mustChangePassword, isLoggedOut } = useAuth();
 
   // Navigation state for unauthenticated visitor flow:
