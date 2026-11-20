@@ -395,7 +395,7 @@ export class LearningService {
     // 1. Supabase write
     try {
       if (supabase) {
-        await supabase.from('learning_assignment_submissions').insert({
+        const { error } = await supabase.from('learning_assignment_submissions').insert({
           id: submission.id,
           assignment_id: submission.assignment_id,
           tutor_id: submission.tutor_id,
@@ -412,9 +412,11 @@ export class LearningService {
           status: submission.status,
           results_released: false,
         });
+        if (error) throw error;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Notice saving submission to Supabase:', e);
+      throw new Error(e?.message || 'Your assignment could not be saved to the cloud. Please try again when connected.');
     }
 
     // 2. Local update
