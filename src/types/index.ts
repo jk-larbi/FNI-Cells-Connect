@@ -77,11 +77,15 @@ export type NotificationType =
   | 'leadership_assigned'
   | 'leadership_changed'
   | 'leadership_dismissed'
-  // Meetings
+  // Meetings & Evangelism Activities
   | 'meeting_upcoming'
   | 'meeting_reminder'
   | 'meeting_started'
   | 'meeting_cancelled'
+  | 'activity_scheduled'
+  | 'activity_reminder_30min'
+  | 'activity_reminder_now'
+  | 'activity_cancelled'
   // Communication
   | 'direct_message'
   | 'community_message'
@@ -109,6 +113,7 @@ export interface UserNotificationPreferences {
   quizzes?: boolean;
   learningMaterials?: boolean;
   meetings?: boolean;
+  evangelismReminders?: boolean;
   cellAnnouncements?: boolean;
   messages?: boolean;
   groupMessages?: boolean;
@@ -969,5 +974,45 @@ export type TutorNavTab =
   | 'my-account';
 
 export type AppNavTab = AdminNavTab | TutorNavTab;
+
+// ==============================================================================
+// SCHEDULED ACTIVITIES (Cell Meetings, Group Meetings, Evangelism Outreaches)
+// ==============================================================================
+
+export type ScheduledActivityType = 'cell_meeting' | 'group_meeting' | 'evangelism';
+export type ScheduledActivityStatus = 'scheduled' | 'cancelled' | 'completed';
+export type ScheduledActivityScope = 'cell' | 'group' | 'all';
+
+export interface ScheduledActivity {
+  id: string;
+  activityType: ScheduledActivityType;
+  title: string;
+  description?: string;
+  scheduledStartTime: string; // ISO-8601 string in UTC (equivalent to Africa/Accra)
+  scheduledEndTime?: string;
+  cellId?: string;
+  cellName?: string;
+  location?: string;
+  createdBy: string;
+  creatorName: string;
+  invitedMemberIds: string[];
+  scope: ScheduledActivityScope;
+  status: ScheduledActivityStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateScheduledActivityInput {
+  activityType: ScheduledActivityType;
+  title: string;
+  description?: string;
+  scheduledStartTime: string;
+  scheduledEndTime?: string;
+  cellId?: string;
+  cellName?: string;
+  location?: string;
+  invitedMemberIds?: string[];
+  scope?: ScheduledActivityScope;
+}
 
 export * from './calling';

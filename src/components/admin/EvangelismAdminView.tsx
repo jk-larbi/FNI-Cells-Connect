@@ -4,6 +4,7 @@ import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { LocationSharingPanel } from '../location/LocationSharingPanel';
+import { ScheduleEvangelismModal } from '../evangelism/ScheduleEvangelismModal';
 import {
   Flame,
   Search,
@@ -36,6 +37,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [inspectingReport, setInspectingReport] = useState<UnifiedReportItem | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const loadData = async (showLoading = true) => {
     try {
@@ -213,6 +215,15 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-[#142B4A] text-white text-xs font-bold hover:shadow-md transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <Calendar className="w-3.5 h-3.5 text-emerald-300" />
+            <span>Schedule Outreach</span>
+          </button>
+
           <button
             type="button"
             onClick={() => loadData(false)}
@@ -676,6 +687,14 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
             )}
           </div>
         </div>
+      )}
+      {/* Schedule Evangelism Outreach Modal */}
+      {isScheduleModalOpen && (
+        <ScheduleEvangelismModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          onSuccess={() => loadData(false)}
+        />
       )}
     </div>
   );

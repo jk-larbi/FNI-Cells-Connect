@@ -19,22 +19,28 @@ import {
   Shield,
   Plus,
   Trash2,
+  Bell,
+  MapPin,
 } from 'lucide-react';
 import { CreateMeetingModal } from './CreateMeetingModal';
+import { ActivityScheduleService } from '../../services/activityScheduleService';
+import { ScheduledActivity } from '../../types';
 
 interface CallHistoryViewProps {
   onBack?: () => void;
 }
 
 export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
-  const { currentUser } = useAuth();
-  const { startDirectCall } = useCall();
+  const { currentUser, isAdmin } = useAuth();
+  const { startDirectCall, startCellMeeting } = useCall();
   const [history, setHistory] = useState<CallHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [filter, setFilter] = useState<'all' | 'missed' | 'incoming' | 'outgoing'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+  const [meetingModalMode, setMeetingModalMode] = useState<'instant' | 'scheduled'>('instant');
+  const [scheduledActivities, setScheduledActivities] = useState<ScheduledActivity[]>([]);
   const [blockedCallers, setBlockedCallers] = useState<CallBlockedUser[]>([]);
   const [isLoadingBlocked, setIsLoadingBlocked] = useState(false);
 
@@ -59,8 +65,29 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
     if (currentUser?.id) {
       loadHistory();
       loadBlockedCallers();
+      loadScheduledActivities();
+      const unsub = ActivityScheduleService.subscribeToChanges(() => {
+        loadScheduledActivities();
+      });
+      return () => {
+        unsub();
+      };
     }
   }, [currentUser?.id]);
+
+  const loadScheduledActivities = async () => {
+    if (!currentUser?.id) return;
+    try {
+      const list = await ActivityScheduleService.getScheduledActivities({
+        userId: currentUser.id,
+        cellId: currentUser.cell_id,
+        isAdmin,
+      });
+      setScheduledActivities(list.filter(a => a.status === 'scheduled' && a.activityType !== 'evangelism'));
+    } catch (e) {
+      console.warn('Notice loading scheduled activities in CallHistoryView:', e);
+    }
+  };
 
   const loadHistory = async () => {
     if (!currentUser?.id) return;
@@ -188,14 +215,121 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
           )}
           <button
             type="button"
-            onClick={() => setIsMeetingModalOpen(true)}
+            onClick={() => {
+              setMeetingModalMode('scheduled');
+              setIsMeetingModalOpen(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-[#142B4A] text-white text-xs font-bold hover:shadow-md transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+          >
+            <Calendar className="w-4 h-4 text-emerald-300" />
+            <span>Schedule Meeting</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMeetingModalMode('instant');
+              setIsMeetingModalOpen(true);
+            }}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#142B4A] to-[#203D63] text-white text-xs font-bold hover:shadow-md transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4 text-[#C6A45A]" />
-            <span>New Group Meeting</span>
+            <span>Start Now</span>
           </button>
         </div>
       </div>
+
+      {/* Upcoming Scheduled Fellowship Meetings */}
+      {scheduledActivities.length > 0 && (
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                <Calendar className="w-4 h-4" />
+              </span>
+              <h3 className="text-sm font-bold text-[#142B4A] dark:text-white">Upcoming Scheduled Meetings</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-bold">
+                {scheduledActivities.length}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+              Automatic 30m &amp; start offline reminders
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {scheduledActivities.map(act => (
+              <div
+                key={act.id}
+                className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{act.title}</h4>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold shrink-0">
+                      {act.cellName || 'Fellowship'}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>
+                        {new Date(act.scheduledStartTime).toLocaleString('en-GB', {
+                          timeZone: 'Africa/Accra',
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}{' '}
+                        GMT
+                      </span>
+                    </div>
+                    {act.location && (
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                        <span className="truncate">{act.location}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-white/5">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    <Bell className="w-3 h-3" />
+                    <span>Reminders active</span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {(act.createdBy === currentUser?.id || isAdmin) && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (confirm('Cancel this scheduled meeting?')) {
+                            await ActivityScheduleService.cancelScheduledActivity(act.id, { id: currentUser.id });
+                            loadScheduledActivities();
+                          }
+                        }}
+                        className="text-[10px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        startCellMeeting({
+                          cellId: act.cellId || 'general',
+                          cellName: act.cellName || act.title,
+                          callType: 'video',
+                        });
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      Join / Start
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter Tabs & Search Bar */}
       <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-white/10 p-3 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -444,6 +578,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
       {isMeetingModalOpen && (
         <CreateMeetingModal
           isOpen={isMeetingModalOpen}
+          initialTimingMode={meetingModalMode}
           onClose={() => setIsMeetingModalOpen(false)}
         />
       )}

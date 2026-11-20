@@ -21,6 +21,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: UserNotificationPreferences = {
   quizzes: true,
   learningMaterials: true,
   meetings: true,
+  evangelismReminders: true,
   cellAnnouncements: true,
   messages: true,
   groupMessages: true,

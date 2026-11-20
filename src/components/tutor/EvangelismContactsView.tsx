@@ -19,6 +19,7 @@ import {
   Send,
   PhoneCall,
 } from 'lucide-react';
+import { ScheduleEvangelismModal } from '../evangelism/ScheduleEvangelismModal';
 
 const STATUS_LIST: FollowUpStatus[] = [
   'Not contacted',
@@ -43,6 +44,7 @@ export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ 
 
   // Add / Edit Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Partial<EvangelismContact>>({});
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -167,13 +169,22 @@ export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ 
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="px-3.5 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4 text-[#C6A45A]" />
-          <span>Add New Contact</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-[#142B4A] text-white text-xs font-bold hover:shadow-md transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+          >
+            <Calendar className="w-4 h-4 text-emerald-300" />
+            <span>Schedule Outreach</span>
+          </button>
+          <button
+            onClick={handleOpenAdd}
+            className="px-3.5 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-[#C6A45A]" />
+            <span>Add New Contact</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -541,6 +552,15 @@ export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ 
             </form>
           </div>
         </div>
+      )}
+      {/* Schedule Evangelism Modal */}
+      {isScheduleModalOpen && (
+        <ScheduleEvangelismModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          defaultCellId={currentUser?.cell_id}
+          defaultCellName={currentUser?.cell_name}
+        />
       )}
     </div>
   );

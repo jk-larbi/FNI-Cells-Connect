@@ -18,6 +18,16 @@ import {
   MapPin, Users, Archive, ClipboardCheck, Flame, UserCheck, DollarSign,
   BookOpen, MessagesSquare, BarChart3, Settings, Phone,
 } from 'lucide-react';
+import {
+  TelegramDashboardIcon,
+  TelegramCellsIcon,
+  TelegramReportsIcon,
+  TelegramMessagesIcon,
+  TelegramLearningIcon,
+  TelegramPlusReportIcon,
+} from '../common/TelegramSettingsIcons';
+import { ActivityReminderService } from '../../services/activityReminderService';
+import { ActivityScheduleService } from '../../services/activityScheduleService';
 import { ICON_STYLES, IconColorKey } from '../../utils/iconColors';
 import { LocationSharingPanel } from '../location/LocationSharingPanel';
 import { SectionHub } from './SectionHub';
@@ -139,10 +149,37 @@ export const AppLayout: React.FC = () => {
   const [editingMeetingReport, setEditingMeetingReport] = useState<any | null>(null);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
-  // Register initial tab into NavigationService
+  // Register initial tab into NavigationService & Sync Activity Reminders
   useEffect(() => {
     NavigationService.pushTab(currentTab);
   }, []);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      ActivityReminderService.initAppListeners(() => {
+        void ActivityScheduleService.getScheduledActivities({
+          userId: currentUser.id,
+          cellId: currentUser.cell_id,
+          isAdmin,
+        });
+      });
+      const unsub = ActivityScheduleService.subscribeToChanges(() => {
+        void ActivityScheduleService.getScheduledActivities({
+          userId: currentUser.id,
+          cellId: currentUser.cell_id,
+          isAdmin,
+        });
+      });
+      void ActivityScheduleService.getScheduledActivities({
+        userId: currentUser.id,
+        cellId: currentUser.cell_id,
+        isAdmin,
+      });
+      return () => {
+        unsub();
+      };
+    }
+  }, [currentUser?.id, currentUser?.cell_id, isAdmin]);
 
   // Back interceptors for top-level modals and drawer
   useBackHandler(() => {
@@ -585,18 +622,18 @@ export const AppLayout: React.FC = () => {
       >
         {(isAdmin
           ? [
-              { id: 'dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard, colorKey: 'gold' as IconColorKey },
-              { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: Building, colorKey: 'teal' as IconColorKey },
-              { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: FileCheck, colorKey: 'emerald' as IconColorKey },
-              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare, colorKey: 'azure' as IconColorKey },
-              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap, colorKey: 'purple' as IconColorKey },
+              { id: 'dashboard' as AppNavTab, label: 'Home', icon: TelegramDashboardIcon, colorKey: 'gold' as IconColorKey },
+              { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' as IconColorKey },
+              { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' as IconColorKey },
+              { id: 'messages' as AppNavTab, label: 'Messages', icon: TelegramMessagesIcon, colorKey: 'azure' as IconColorKey },
+              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: TelegramLearningIcon, colorKey: 'purple' as IconColorKey },
             ]
           : [
-              { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: LayoutDashboard, colorKey: 'gold' as IconColorKey },
-              { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building, colorKey: 'teal' as IconColorKey },
-              { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Report', icon: PlusCircle, colorKey: 'emerald' as IconColorKey },
-              { id: 'messages' as AppNavTab, label: 'Messages', icon: MessageSquare, colorKey: 'azure' as IconColorKey },
-              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: GraduationCap, colorKey: 'purple' as IconColorKey },
+              { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: TelegramDashboardIcon, colorKey: 'gold' as IconColorKey },
+              { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: TelegramCellsIcon, colorKey: 'teal' as IconColorKey },
+              { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Report', icon: TelegramPlusReportIcon, colorKey: 'emerald' as IconColorKey },
+              { id: 'messages' as AppNavTab, label: 'Messages', icon: TelegramMessagesIcon, colorKey: 'azure' as IconColorKey },
+              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: TelegramLearningIcon, colorKey: 'purple' as IconColorKey },
             ]
         ).map(item => {
           const Icon = item.icon;
@@ -613,9 +650,9 @@ export const AppLayout: React.FC = () => {
               }`}
             >
               <span className={`flex h-7 w-10 items-center justify-center rounded-xl transition-all ${
-                active ? `${style.bg} ${style.text}` : ''
+                active ? `${style.bg}` : ''
               }`}>
-                <Icon className={`h-5 w-5 ${active ? style.text : `${style.text} opacity-75`}`} />
+                <Icon className="h-5 w-5 shrink-0" />
               </span>
               <span className="truncate max-w-[56px] text-center">{item.label}</span>
               {active && <span className={`absolute bottom-0.5 h-0.5 w-7 rounded-full ${style.badge.split(' ')[0]}`} />}

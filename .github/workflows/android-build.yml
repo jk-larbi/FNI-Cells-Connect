@@ -165,6 +165,9 @@ jobs:
               "android.permission.SCHEDULE_EXACT_ALARM",
               "android.permission.RECORD_AUDIO",
               "android.permission.REQUEST_INSTALL_PACKAGES",
+              "android.permission.RECEIVE_BOOT_COMPLETED",
+              "android.permission.SCHEDULE_EXACT_ALARM",
+              "android.permission.USE_EXACT_ALARM",
           ]:
               if permission not in existing_permissions:
                   ET.SubElement(manifest_root, "uses-permission", {f"{{{android_ns}}}name": permission})

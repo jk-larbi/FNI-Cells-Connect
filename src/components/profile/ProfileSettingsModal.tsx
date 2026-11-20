@@ -1767,12 +1767,26 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               <div className="p-4 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-bold text-[#182230] dark:text-white">Cell Meetings & Reminders</div>
-                  <div className="text-[11px] text-slate-400">Weekly meeting reminders, start notices and room joins</div>
+                  <div className="text-[11px] text-slate-400">Weekly meeting reminders (30m before & start time)</div>
                 </div>
                 <input
                   type="checkbox"
                   checked={notifPrefs.meetings !== false}
                   onChange={() => handleToggleNotif('meetings')}
+                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
+                />
+              </div>
+
+              {/* Evangelism Reminders */}
+              <div className="p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-[#182230] dark:text-white">Evangelism Activity Reminders</div>
+                  <div className="text-[11px] text-slate-400">Outreach reminders (30m before & start time) with offline alarms</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.evangelismReminders !== false}
+                  onChange={() => handleToggleNotif('evangelismReminders')}
                   className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
                 />
               </div>

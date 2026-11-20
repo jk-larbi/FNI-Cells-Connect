@@ -3,35 +3,36 @@ import { useAuth } from '../../context/AuthContext';
 import { AppNavTab } from '../../types';
 import { ICON_STYLES, IconColorKey } from '../../utils/iconColors';
 import {
-  LayoutDashboard,
-  Calendar,
-  GraduationCap,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
-  FileCheck2,
-  Library,
-  Building,
-  Users,
-  FileCheck,
-  Flame,
-  UserCheck,
-  BarChart3,
-  Bell,
-  Settings,
-  LogOut,
-  FileText,
-  Clock,
-  User,
-  History,
-  MapPin,
-  DollarSign,
-  BookOpen,
-  MessagesSquare,
   X,
-  MessageCircle,
-  Phone,
+  LogOut,
 } from 'lucide-react';
+import {
+  TelegramDashboardIcon,
+  TelegramCellsIcon,
+  TelegramReportsIcon,
+  TelegramLearningIcon,
+  TelegramEvangelismIcon,
+  TelegramFollowUpsIcon,
+  TelegramFinanceIcon,
+  TelegramMessagesIcon,
+  TelegramCallsIcon,
+  TelegramAnalyticsIcon,
+  TelegramNotificationsIcon,
+  TelegramAdvancedIcon as TelegramSettingsIcon,
+  TelegramProfileIcon,
+  TelegramHistoryIcon,
+  TelegramLocationIcon,
+  TelegramDeadlinesIcon,
+  TelegramAssignmentsIcon,
+  TelegramQuizzesIcon,
+  TelegramEventsIcon,
+  TelegramMaterialsIcon,
+  TelegramUsersIcon,
+  TelegramLogoutIcon,
+} from '../common/TelegramSettingsIcons';
 
 interface SidebarProps {
   currentTab: AppNavTab;
@@ -93,51 +94,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Administrator Navigation
   // Keep the administrator drawer concise with dedicated section pages.
   const adminNavItems: { id: AppNavTab | 'cells-dropdown' | 'reports-dropdown'; label: string; icon: any; colorKey: IconColorKey; badge?: number }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, colorKey: 'gold' },
-    { id: 'cells-hub', label: 'Cells', icon: Building, colorKey: 'teal' },
-    { id: 'reports-hub', label: 'Reports', icon: FileCheck, colorKey: 'emerald' },
-    { id: 'ministry-hub', label: 'Ministry', icon: Flame, colorKey: 'flame' },
-    { id: 'more-hub', label: 'More', icon: Settings, colorKey: 'slate' },
+    { id: 'dashboard', label: 'Dashboard', icon: TelegramDashboardIcon, colorKey: 'gold' },
+    { id: 'cells-hub', label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' },
+    { id: 'reports-hub', label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' },
+    { id: 'ministry-hub', label: 'Ministry', icon: TelegramEvangelismIcon, colorKey: 'flame' },
+    { id: 'more-hub', label: 'More', icon: TelegramSettingsIcon, colorKey: 'slate' },
   ];
 
   // Tutor Navigation
   const tutorNavItems: { id: AppNavTab; label: string; icon: any; isExpandable?: boolean; badge?: number; colorKey: IconColorKey }[] = [
-    { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: LayoutDashboard, colorKey: 'gold' },
-    { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: Building, colorKey: 'teal' },
-    { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: FileText, colorKey: 'emerald' },
-    { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: Flame, colorKey: 'flame' },
-    { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: FileCheck, colorKey: 'emerald' },
-    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: GraduationCap, isExpandable: true, colorKey: 'purple' },
-    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: Users, colorKey: 'teal' },
-    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: UserCheck, colorKey: 'teal' },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: MessagesSquare, colorKey: 'azure' },
-    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: Phone, colorKey: 'purple' },
-    { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: History, colorKey: 'blue' },
-    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: Bell, badge: unreadCount, colorKey: 'sky' },
-    { id: 'my-account' as AppNavTab, label: 'My Account', icon: User, colorKey: 'teal' },
+    { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: TelegramDashboardIcon, colorKey: 'gold' },
+    { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: TelegramCellsIcon, colorKey: 'teal' },
+    { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: TelegramReportsIcon, colorKey: 'emerald' },
+    { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: TelegramEvangelismIcon, colorKey: 'flame' },
+    { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: TelegramReportsIcon, colorKey: 'emerald' },
+    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: TelegramLearningIcon, isExpandable: true, colorKey: 'purple' },
+    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: TelegramUsersIcon, colorKey: 'teal' },
+    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: TelegramFollowUpsIcon, colorKey: 'teal' },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: TelegramMessagesIcon, colorKey: 'azure' },
+    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: TelegramCallsIcon, colorKey: 'purple' },
+    { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: TelegramHistoryIcon, colorKey: 'blue' },
+    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: TelegramNotificationsIcon, badge: unreadCount, colorKey: 'sky' },
+    { id: 'my-account' as AppNavTab, label: 'My Account', icon: TelegramProfileIcon, colorKey: 'teal' },
   ];
 
   // Submodules
   const cellsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
-    { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: Building, colorKey: 'teal' },
-    { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: Users, colorKey: 'teal' },
-    { id: 'cell-location-history' as AppNavTab, label: 'Cell Location History', icon: MapPin, colorKey: 'cyan' },
+    { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: TelegramCellsIcon, colorKey: 'teal' },
+    { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: TelegramUsersIcon, colorKey: 'teal' },
+    { id: 'cell-location-history' as AppNavTab, label: 'Cell Location History', icon: TelegramLocationIcon, colorKey: 'cyan' },
   ];
 
   const reportsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
-    { id: 'report-review' as AppNavTab, label: 'Review', icon: FileCheck, colorKey: 'emerald' },
-    { id: 'report-history' as AppNavTab, label: 'Report History', icon: History, colorKey: 'blue' },
-    { id: 'report-deadlines' as AppNavTab, label: 'Deadline Settings', icon: Clock, colorKey: 'flame' },
+    { id: 'report-review' as AppNavTab, label: 'Review', icon: TelegramReportsIcon, colorKey: 'emerald' },
+    { id: 'report-history' as AppNavTab, label: 'Report History', icon: TelegramHistoryIcon, colorKey: 'blue' },
+    { id: 'report-deadlines' as AppNavTab, label: 'Deadline Settings', icon: TelegramDeadlinesIcon, colorKey: 'flame' },
   ];
 
   const learningSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
-    { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: LayoutDashboard, colorKey: 'purple' },
-    { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: BookOpen, colorKey: 'amber' },
-    { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: FileCheck2, colorKey: 'orange' },
-    { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: Users, colorKey: 'teal' },
-    { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: BarChart3, colorKey: 'blue' },
-    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: Calendar, colorKey: 'cyan' },
-    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: Library, colorKey: 'amber' },
+    { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: TelegramLearningIcon, colorKey: 'purple' },
+    { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: TelegramAssignmentsIcon, colorKey: 'amber' },
+    { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: TelegramQuizzesIcon, colorKey: 'orange' },
+    { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: TelegramUsersIcon, colorKey: 'teal' },
+    { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: TelegramAnalyticsIcon, colorKey: 'blue' },
+    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: TelegramEventsIcon, colorKey: 'cyan' },
+    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: TelegramMaterialsIcon, colorKey: 'amber' },
   ];
 
   const navItems = isAdmin ? adminNavItems : tutorNavItems;
@@ -323,7 +324,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             ? 'bg-white/15 text-[#C6A45A]'
                             : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
                         } transition-colors`}>
-                          <Building className="w-4 h-4 shrink-0" />
+                          <TelegramCellsIcon className="w-4 h-4 shrink-0" />
                         </span>
                         <span className="truncate">Cells</span>
                       </button>
@@ -406,7 +407,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             ? 'bg-white/15 text-[#C6A45A]'
                             : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
                         } transition-colors`}>
-                          <FileCheck className="w-4 h-4 shrink-0" />
+                          <TelegramReportsIcon className="w-4 h-4 shrink-0" />
                         </span>
                         <span className="truncate">Reports</span>
                       </button>
@@ -489,7 +490,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             ? 'bg-white/15 text-[#C6A45A]'
                             : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
                         } transition-colors`}>
-                          <GraduationCap className="w-4 h-4 shrink-0" />
+                          <TelegramLearningIcon className="w-4 h-4 shrink-0" />
                         </span>
                         <span className="truncate">Learning Portal</span>
                       </button>
@@ -638,7 +639,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Sunday Reporting Deadline Card */}
               <div className="p-2.5 fni-glass-panel border border-slate-200/80 dark:border-white/10 rounded-2xl text-[11px] text-slate-600 dark:text-slate-400">
                 <div className="flex items-center gap-1.5 text-[#142B4A] dark:text-white font-bold">
-                  <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <TelegramDeadlinesIcon className="w-3.5 h-3.5" />
                   <span>Reporting Deadline</span>
                 </div>
                 <div className="text-slate-900 dark:text-slate-200 font-semibold mt-0.5">
