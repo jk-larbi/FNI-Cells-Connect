@@ -3947,6 +3947,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                         <span className="text-sm font-semibold truncate">{att.name || 'Audio'}</span>
                                       </div>
                                       <audio controls preload="metadata" src={fileUrl} className="w-full" onClick={e => e.stopPropagation()} onError={() => console.warn('FNI audio could not be decoded or loaded:', att.name)} />
+                                      <button type="button" onClick={e => { e.stopPropagation(); void handleSaveAttachment(fileUrl, att.name || 'FNI-audio'); }} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2AABEE] hover:underline"><Download className="w-3.5 h-3.5" /> Save audio</button>
                                     </div>
                                   );
                                 }
@@ -3955,6 +3956,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                   return (
                                     <div key={attIdx} className="relative rounded-2xl overflow-hidden max-w-full bg-black my-1" onClick={e => e.stopPropagation()}>
                                       <video controls playsInline preload="metadata" src={fileUrl} className="block w-full max-h-[420px] object-contain" onClick={e => e.stopPropagation()} />
+                                      <button type="button" onClick={e => { e.stopPropagation(); void handleSaveAttachment(fileUrl, att.name || 'FNI-video'); }} className="absolute bottom-2 right-2 rounded-full bg-black/65 text-white px-2.5 py-1 text-[11px] font-semibold inline-flex items-center gap-1"><Download className="w-3.5 h-3.5" /> Save</button>
                                       <div className="px-2 py-1 text-[10px] text-white/80">{att.name}</div>
                                     </div>
                                   );
