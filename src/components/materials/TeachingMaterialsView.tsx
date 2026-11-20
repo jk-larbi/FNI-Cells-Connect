@@ -52,6 +52,15 @@ export const TeachingMaterialsView: React.FC<TeachingMaterialsViewProps> = ({ on
     loadMaterials();
   }, [currentUser, isAdmin]);
 
+  useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || table === 'teaching_materials') void loadMaterials();
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, [currentUser, isAdmin]);
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
