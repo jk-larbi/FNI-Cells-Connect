@@ -1494,7 +1494,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   };
 
   const handleConfirmDelete = async () => {
-    if (!deleteTargetMessage || !currentUser?.id) return;
+    if (!deleteTargetMessage || !currentUser?.id || !selectedChatId) return;
     const msg = deleteTargetMessage;
     const isCommunity = selectedChatId === 'community';
     const forEveryone = deleteForBoth;
