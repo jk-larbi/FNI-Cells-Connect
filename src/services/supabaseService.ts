@@ -1590,7 +1590,7 @@ export class SupabaseService {
     messageId: string,
     pinned: boolean,
     notifyMembers?: boolean,
-    pinnerDetails?: { uid: string; name: string }
+    _pinnerDetails?: { uid: string; name: string }
   ): Promise<{ success: boolean; error?: string }> {
     if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
     try {
