@@ -433,7 +433,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
     const draft = LearningService.getQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
     try {
       // The server owns the authoritative start time, expiry and attempt limit.
-      let session;
+      let session: Awaited<ReturnType<typeof LearningService.startQuizAttempt>>;
       try {
         session = await LearningService.startQuizAttempt(quiz.id, draft?.sessionId);
       } catch (resumeError) {
@@ -457,7 +457,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
         if (session.expired || remaining <= 0) {
           alert('Your quiz time has expired. Submitting your saved answers.');
           setUserAnswers(initialAnswers);
-          await executeQuizSubmission(true, quiz, initialAnswers, startIso, session.sessionId);
+          await executeQuizSubmission(true, quiz, initialAnswers, session.sessionId);
           return;
         }
         setTimeRemainingSeconds(remaining);
@@ -478,7 +478,6 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
     isAutoExpired = false,
     quizToSubmit?: Quiz,
     overrideAnswers?: Record<string, any>,
-    overrideStartedAt?: string,
     overrideSessionId?: string
   ) => {
     const quiz = quizToSubmit || activeQuizForTest;
