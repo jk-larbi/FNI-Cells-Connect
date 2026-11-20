@@ -3373,7 +3373,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           >
             {/* Top Audio Player Bar (Image 1) */}
             {activeAudioPlayer && (
-              <div className="bg-[#182533] text-white px-4 py-2 flex items-center justify-between gap-3 text-xs border-b border-white/10 z-30 shrink-0">
+              <div className="fni-audio-player-bar bg-[#182533] text-white px-4 py-2 flex items-center justify-between gap-3 text-xs border-b border-white/10 z-30 shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     type="button"
