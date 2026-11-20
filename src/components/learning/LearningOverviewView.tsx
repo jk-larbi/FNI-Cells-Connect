@@ -106,6 +106,35 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
     };
   }, [isAdmin, currentUser]);
 
+  // Keep overview metrics current when quiz attempts or learning records change on another device.
+  useEffect(() => {
+    const refreshOverviewRecords = async () => {
+      try {
+        const [subs, atts, res] = await Promise.all([
+          LearningService.getSubmissions(undefined, isAdmin ? undefined : currentUser?.id),
+          LearningService.getQuizAttempts(undefined, isAdmin ? undefined : currentUser?.id),
+          LearningService.getResources(isAdmin),
+        ]);
+        setSubmissions(subs || []);
+        setQuizAttempts(atts || []);
+        setResources(res || []);
+      } catch (error) {
+        console.warn('Overview cross-device refresh notice:', error);
+      }
+    };
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent<{ table?: string }>).detail?.table;
+      if (!table || table === '*' || [
+        'learning_assignment_submissions', 'learning_quiz_sync_state', 'learning_quizzes',
+        'learning_quiz_questions', 'learning_resources',
+      ].includes(table)) {
+        void refreshOverviewRecords();
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, [isAdmin, currentUser?.id]);
+
   // Published Activities
   const publishedAssignments = assignments.filter(a => a.status === 'published');
   const publishedQuizzes = quizzes.filter(q => q.status === 'published');
