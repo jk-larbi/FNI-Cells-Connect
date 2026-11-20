@@ -1456,6 +1456,29 @@ export class SupabaseService {
     }
   }
 
+  static async getCommunityDeletedMessageIds(): Promise<string[] | null> {
+    if (!this.isAvailable()) return null;
+    try {
+      const ids: string[] = [];
+      const pageSize = 500;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase!
+          .from('community_messages')
+          .select('id')
+          .not('deleted_for_everyone_at', 'is', null)
+          .order('id', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        ids.push(...(data || []).map(row => row.id));
+        if (!data || data.length < pageSize) break;
+      }
+      return ids;
+    } catch (error) {
+      console.warn('Could not refresh community deletion tombstones:', error);
+      return null;
+    }
+  }
+
   static async getCommunityMessageById(messageId: string): Promise<CommunityMessage | null> {
     if (!this.isAvailable() || !messageId) return null;
     const { data, error } = await supabase!
@@ -1571,41 +1594,13 @@ export class SupabaseService {
   ): Promise<{ success: boolean; error?: string }> {
     if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
     try {
-      const authUser = (await supabase!.auth.getUser()).data.user;
-      const authUid = authUser?.id || pinnerDetails?.uid;
-
-      // 1. Direct update on public.community_messages (column grants for authenticated: is_pinned, pinned_at, pinned_by)
-      const payload: any = pinned
-        ? {
-            is_pinned: true,
-            pinned_at: new Date().toISOString(),
-            pinned_by: authUid || null,
-          }
-        : {
-            is_pinned: false,
-            pinned_at: null,
-            pinned_by: null,
-          };
-
-      const { error: directError } = await supabase!
-        .from('community_messages')
-        .update(payload)
-        .eq('id', messageId);
-
-      if (directError) {
-        console.warn('Direct community message pin update error:', directError);
-        // Fallback to RPC in case RPC is present and functional
-        const { error: rpcError } = await supabase!.rpc('set_community_message_pin', {
-          p_message_id: messageId,
-          p_pinned: pinned,
-          p_notify: Boolean(notifyMembers),
-        });
-        if (rpcError) {
-          console.error('Both direct update and RPC failed for community pin:', rpcError);
-          return { success: false, error: directError.message || rpcError.message };
-        }
-      }
-
+      const { data, error } = await supabase!.rpc('set_community_message_pin', {
+        p_message_id: messageId,
+        p_pinned: pinned,
+        p_notify: Boolean(notifyMembers),
+      });
+      if (error) return { success: false, error: error.message };
+      if (data !== true) return { success: false, error: 'The community pin was not saved. Please try again.' };
       return { success: true };
     } catch (error: any) {
       console.warn('Community message pin update failed:', error);
