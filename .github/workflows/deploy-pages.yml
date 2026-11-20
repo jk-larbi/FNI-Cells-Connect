@@ -42,6 +42,9 @@ jobs:
           npm run test:fni
           npm run test:notifications
 
+      - name: Run chat messaging regression checks
+        run: node scripts/test-chat-messaging-upgrades.mjs
+
       - name: Build application
         run: npm run build
         env:
