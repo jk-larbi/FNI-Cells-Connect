@@ -873,14 +873,8 @@ export class SupabaseService {
         const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
         const { error } = await supabase.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: true });
         if (!error) {
-          const signed = await this.getChatAttachmentUrl(path);
-          if (signed) {
-            return { name: file.name, path: signed, mimeType, size: file.size };
-          }
-          const { data: pubData } = supabase.storage.from('fni-chat-media').getPublicUrl(path);
-          if (pubData?.publicUrl) {
-            return { name: file.name, path: pubData.publicUrl, mimeType, size: file.size };
-          }
+          // Persist the stable private Storage object path, never a short-lived signed URL.
+          // Each recipient resolves a fresh signed URL when rendering the attachment.
           return { name: file.name, path, mimeType, size: file.size };
         }
       } catch (storageErr) {
@@ -888,50 +882,49 @@ export class SupabaseService {
       }
     }
 
-    // 2. Data URL fallback (100% resilient for voice notes and media)
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-    return { name: file.name, path: dataUrl, mimeType, size: file.size };
+    // Chat media must live in shared cloud storage so every signed-in device can open it.
+    // A data URL fallback only stores bytes on the sender's device and breaks cross-device media.
+    throw new Error('Media upload failed. Please check your connection and try again.');
   }
 
   static async getChatAttachmentUrl(path: string): Promise<string | null> {
-    if (!this.isAvailable()) return null;
-    const { data, error } = await supabase!.storage.from('fni-chat-media').createSignedUrl(path, 3600);
-    if (error) return null;
+    if (!this.isAvailable() || !path) return null;
+    let objectPath = path;
+    // Compatibility with older messages that stored a signed URL rather than its object path.
+    if (/^https?:\\/\\//i.test(path)) {
+      try {
+        const parsed = new URL(path);
+        const marker = '/storage/v1/object/sign/fni-chat-media/';
+        const index = parsed.pathname.indexOf(marker);
+        if (index >= 0) objectPath = decodeURIComponent(parsed.pathname.slice(index + marker.length));
+        else return path;
+      } catch {
+        return null;
+      }
+    }
+    if (objectPath.startsWith('data:') || objectPath.startsWith('blob:')) return objectPath;
+    const { data, error } = await supabase!.storage.from('fni-chat-media').createSignedUrl(objectPath, 60 * 60 * 24);
+    if (error) {
+      console.warn('Chat attachment signed URL could not be refreshed:', error.message);
+      return null;
+    }
     return data.signedUrl;
   }
 
   static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
-    if (!this.isAvailable()) return false;
+    if (!this.isAvailable() || !messageId) return false;
     const rpc = scope === 'private' ? 'fni_delete_private_message_for_everyone' : 'fni_delete_community_message_for_everyone';
     try {
       const { data, error } = await supabase!.rpc(rpc, { p_message_id: messageId });
-      if (!error && data === true) return true;
-    } catch {}
-
-    // Fallback: direct table update / deletion
-    try {
-      const table = scope === 'private' ? 'private_messages' : 'community_messages';
-      const { error: updateError } = await supabase!
-        .from(table)
-        .update({ deleted_for_everyone_at: new Date().toISOString() })
-        .eq('id', messageId);
-      if (!updateError) return true;
-
-      const { error: deleteError } = await supabase!
-        .from(table)
-        .delete()
-        .eq('id', messageId);
-      if (!deleteError) return true;
-    } catch (e) {
-      console.warn('Direct fallback delete error:', e);
+      if (error) {
+        console.warn('Delete-for-everyone RPC failed:', error.message);
+        return false;
+      }
+      return data === true;
+    } catch (error) {
+      console.warn('Delete-for-everyone request failed:', error);
+      return false;
     }
-    return false;
   }
 
   // --- Private Messages ---
