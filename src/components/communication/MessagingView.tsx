@@ -1042,7 +1042,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       window.removeEventListener('focus', handleFocus);
       clearInterval(pollTimer);
     };
-  }, [selectedChatId, currentUser?.id, isAdmin]);
+  }, [selectedChatId, currentUser?.id, isAdmin, allMembers]);
 
   // Auto-scroll on new message
   useEffect(() => {
