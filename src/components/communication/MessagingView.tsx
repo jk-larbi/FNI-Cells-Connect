@@ -951,6 +951,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_folder_conversations' }, () => {
         loadChatFolders();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_pinned_chats', filter: `user_id=eq.${viewerId}` }, () => {
+        loadPinnedChats();
+      })
       .subscribe();
 
     // Responsive window focus listener: refresh when user returns to app tab
