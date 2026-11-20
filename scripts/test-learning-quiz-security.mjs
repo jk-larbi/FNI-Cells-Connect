@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const migration = readFileSync('supabase/migrations/20261120145000_secure_learning_quiz_tables_and_answer_key_isolation.sql', 'utf8');
+const retryMigration = readFileSync('supabase/migrations/20261120145300_make_quiz_attempt_submission_idempotent.sql', 'utf8');
 const edge = readFileSync('supabase/functions/learning-portal/index.ts', 'utf8');
 const service = readFileSync('src/services/learningService.ts', 'utf8');
 const quizView = readFileSync('src/components/learning/LearningQuizzesView.tsx', 'utf8');
@@ -21,6 +22,8 @@ assert.match(edge, /auth\.getUser\(\)/);
 assert.match(edge, /ADMIN_ROLES/);
 assert.match(edge, /SUPABASE_SERVICE_ROLE_KEY/);
 assert.match(edge, /action === "submit_attempt"/);
+assert.match(retryMigration, /unique index if not exists learning_quiz_attempts_session_unique_idx/i);
+assert.match(edge, /eq\("session_id", session\.id\)/);
 assert.match(edge, /is_active/);
 assert.match(edge, /scoreAutomaticText/);
 assert.match(edge, /action === "grade_attempt"/);
