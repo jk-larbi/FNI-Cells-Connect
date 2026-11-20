@@ -45,8 +45,6 @@ try {
     'fni_learning_quiz_attempts_v1',
     'fni_learning_events_v1',
     'fni_learning_resources_v1',
-    KEYS.QUESTIONS,
-    KEYS.ATTEMPTS,
   ].forEach(k => {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(k);
@@ -662,9 +660,6 @@ export class LearningService {
     const index = current.findIndex(q => q.id === id);
     if (index >= 0) current[index] = record; else current.unshift(record);
     writeLocal(KEYS.QUIZZES, current);
-    // Never retain answer keys in browser storage, even on administrator devices.
-    try { localStorage.removeItem(KEYS.QUESTIONS); } catch {}
-
     if (record.status === 'published') {
       try {
         await NotificationService.createNotification({
