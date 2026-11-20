@@ -33,6 +33,17 @@ export const ReceivedReportsView: React.FC = () => {
 
   useEffect(() => { void loadReports(); }, []);
 
+  useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || ['cell_meeting_reports', 'evangelism_reports', 'cells'].includes(table)) {
+        void loadReports(true);
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, []);
+
   const visibleReports = useMemo(() => {
     const query = search.trim().toLowerCase();
     return reports

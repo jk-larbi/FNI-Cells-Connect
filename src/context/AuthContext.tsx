@@ -158,6 +158,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Keep durable app data fresh across every device signed in to this account.
+  useEffect(() => {
+    if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    import('../services/cloudSyncService').then(({ CloudSyncService }) => {
+      if (!active) return;
+      unsubscribe = CloudSyncService.subscribe(currentUser.id, change => {
+        if (!active) return;
+        window.dispatchEvent(new CustomEvent('fni:cloud-data-changed', { detail: change }));
+      });
+    });
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [currentUser?.id]);
+
   // Keep this account's own profile photo synchronized across its signed-in devices.
   useEffect(() => {
     if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
