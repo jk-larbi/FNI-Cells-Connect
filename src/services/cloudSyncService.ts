@@ -51,6 +51,7 @@ export class CloudSyncService {
     'learning_assignment_submissions',
     'learning_events',
     'learning_resources',
+    'learning_quiz_sync_state',
   ] as const;
 
   static subscribe(userId: string, callback: (change: CloudDataChange) => void): () => void {
