@@ -1241,7 +1241,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     let cancelled = false;
     const paths = Array.from(new Set(currentMessages.flatMap(message =>
       (message.attachments || []).map(attachment => attachment.path)
-        .filter((path): path is string => Boolean(path) && !/^(data:|blob:|https?:\\/\\/)/i.test(path))
+        .filter((path): path is string => Boolean(path) && !/^(data:|blob:|https?:\/\/)/i.test(path))
     )));
     if (!paths.length) return;
     void Promise.all(paths.map(async path => [path, await MessagingService.getChatAttachmentUrl(path)] as const))
@@ -2536,7 +2536,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if (!att) return '';
     const raw = att.path || (att as any).url || (att as any).dataUrl || '';
     if (!raw) return '';
-    if (/^(data:|blob:|https?:\\/\\/)/i.test(raw)) return raw;
+    if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
     return attachmentUrls[raw] || '';
   };
 
@@ -3794,10 +3794,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {msg.attachments && msg.attachments.length > 0 && (
                             <div className="space-y-2 mb-1.5">
                               {msg.attachments.map((att, attIdx) => {
-                                const isAudio = att.mimeType?.startsWith('audio') || /\\.(mp3|m4a|m4b|aac|ogg|oga|opus|wav|flac|amr|mid|midi)$/i.test(att.name || '') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
+                                const isAudio = att.mimeType?.startsWith('audio') || /\.(mp3|m4a|m4b|aac|ogg|oga|opus|wav|flac|amr|mid|midi)$/i.test(att.name || '') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
                                 const isVoiceNote = att.name?.toLowerCase().includes('voice-note') || att.name?.toLowerCase().includes('voice note') || msg.content?.startsWith('🎤 Voice Note');
                                 const isImage = att.mimeType?.startsWith('image');
-                                const isVideo = att.mimeType?.startsWith('video') || /\\.(mp4|mov|webm|m4v)$/i.test(att.name || '');
+                                const isVideo = att.mimeType?.startsWith('video') || /\.(mp4|mov|webm|m4v)$/i.test(att.name || '');
                                 const fileUrl = getAttachmentUrl(att);
 
                                 if (!fileUrl) {
@@ -3805,7 +3805,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 }
 
                                 if (isAudio && isVoiceNote) {
-                                  const durationMatch = (att.name || msg.content || '').match(/\\((\\d+:\\d+)\\)/);
+                                  const durationMatch = (att.name || msg.content || '').match(/\((\d+:\d+)\\)/);
                                   const initialDuration = durationMatch ? durationMatch[1] : '0:15';
                                   return <React.Fragment key={attIdx}>{renderVoiceNote(fileUrl, att.name || 'Voice Message', initialDuration, formattedTime, msg.senderName)}</React.Fragment>;
                                 }
