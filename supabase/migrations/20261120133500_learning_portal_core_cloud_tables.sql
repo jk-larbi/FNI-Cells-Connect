@@ -121,7 +121,52 @@ create policy learning_resources_admin_all on public.learning_resources for all 
 drop policy if exists learning_resources_tutor_published_read on public.learning_resources;
 create policy learning_resources_tutor_published_read on public.learning_resources for select to authenticated using (status = 'published');
 
-do $$
+
+-- Tutors may submit their own work, but cannot self-award marks or release grades.
+create or replace function public.protect_learning_submission_grades()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, public
+as $
+declare
+  v_role text;
+begin
+  if auth.uid() is not null then
+    select p.role into v_role
+    from public.profiles p
+    where p.supabase_user_id = auth.uid()
+    limit 1;
+
+    if coalesce(v_role, '') not in ('admin','super_admin','national_admin') then
+      if tg_op = 'INSERT' then
+        new.grade := null;
+        new.feedback := null;
+        new.graded_by := null;
+        new.graded_by_name := null;
+        new.graded_at := null;
+        new.results_released := false;
+        new.status := case when new.is_late then 'submitted_late' else 'submitted' end;
+      elsif new.grade is distinct from old.grade
+         or new.feedback is distinct from old.feedback
+         or new.graded_by is distinct from old.graded_by
+         or new.graded_by_name is distinct from old.graded_by_name
+         or new.graded_at is distinct from old.graded_at
+         or new.results_released is distinct from old.results_released
+      then
+        raise exception 'Only authorized Learning Portal administrators can grade or release assignment results.';
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists protect_learning_submission_grades on public.learning_assignment_submissions;
+create trigger protect_learning_submission_grades
+before insert or update on public.learning_assignment_submissions
+for each row execute function public.protect_learning_submission_grades();
+
+do $
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
     begin alter publication supabase_realtime add table public.learning_assignments; exception when duplicate_object then null; end;
