@@ -158,6 +158,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Keep this account's own profile photo synchronized across its signed-in devices.
+  useEffect(() => {
+    if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
+    const channel = supabase
+      .channel(`fni-own-avatar-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profile_avatar_updates', filter: `user_id=eq.${currentUser.supabase_user_id || currentUser.id}` },
+        async () => {
+          const updated = await AuthService.fetchProfileById(currentUser.id);
+          if (updated) setCurrentUser(updated);
+        }
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id, currentUser?.supabase_user_id]);
+
   // Re-fetch the signed-in profile when the tutor returns to an already-open portal.
   // This ensures administrator-side cell unassignments are reflected without requiring a sign-out.
   useEffect(() => {
