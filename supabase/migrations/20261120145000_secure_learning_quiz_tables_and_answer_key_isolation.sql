@@ -55,7 +55,8 @@ create table if not exists public.learning_quiz_sessions (
   expires_at timestamptz,
   answers jsonb not null default '{}'::jsonb,
   consumed_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 create unique index if not exists learning_quiz_one_active_session_idx
   on public.learning_quiz_sessions(quiz_id,tutor_id) where consumed_at is null;
