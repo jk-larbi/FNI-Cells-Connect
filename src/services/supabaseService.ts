@@ -882,7 +882,7 @@ export class SupabaseService {
           return { name: file.name, path, mimeType, size: file.size };
         }
       } catch (storageErr) {
-        console.warn('Supabase storage upload error, falling back to data URL:', storageErr);
+        console.warn('Supabase chat media upload failed:', storageErr);
       }
     }
 
