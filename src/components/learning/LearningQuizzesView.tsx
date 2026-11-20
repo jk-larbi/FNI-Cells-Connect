@@ -116,6 +116,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(0);
   const [quizStartedAt, setQuizStartedAt] = useState<string>('');
+  const [quizSessionId, setQuizSessionId] = useState<string>('');
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
   const [isPreviewReviewOpen, setIsPreviewReviewOpen] = useState(false);
   const [autoSaveNotice, setAutoSaveNotice] = useState<string>('');
@@ -197,7 +198,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
   // Continuous auto-save draft for active attempt
   useEffect(() => {
     if (activeQuizForTest && currentUser?.id && quizStartedAt) {
-      LearningService.saveQuizDraftAnswers(activeQuizForTest.id, currentUser.id, userAnswers, quizStartedAt);
+      void LearningService.saveQuizDraftAnswers(activeQuizForTest.id, currentUser.id, userAnswers, quizStartedAt, quizSessionId);
       setAutoSaveNotice('Draft auto-saved');
       const timer = setTimeout(() => setAutoSaveNotice(''), 2000);
       return () => clearTimeout(timer);
@@ -403,61 +404,40 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
   // Tutor Starts or Resumes a Quiz
   const handleStartQuiz = async (quiz: Quiz) => {
-    // 1. Availability validation
     const timing = quiz.timing_settings;
-    const nowIso = new Date().toISOString();
-
-    if (timing?.opens_at && nowIso < timing.opens_at) {
-      alert(`This quiz opens on ${new Date(timing.opens_at).toLocaleString('en-US', { timeZone: 'Africa/Accra' })} (Ghana Time).`);
-      return;
-    }
-
-    if (timing?.closes_at && nowIso > timing.closes_at && !timing.allow_late_submissions) {
-      alert(`This quiz closed on ${new Date(timing.closes_at).toLocaleString('en-US', { timeZone: 'Africa/Accra' })}.`);
-      return;
-    }
-
-    // 2. Max attempts check
-    const myAttempts = tutorAttempts.filter(a => a.quiz_id === quiz.id);
-    const maxAtt = timing?.max_attempts ?? 1;
-    if (maxAtt > 0 && myAttempts.length >= maxAtt) {
-      alert(`You have reached the maximum allowed attempts (${maxAtt} of ${maxAtt}) for this quiz.`);
-      return;
-    }
-
-    // 3. Check for existing active draft to resume
     const draft = LearningService.getQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
-    let startIso = new Date().toISOString();
-    let initialAnswers: Record<string, any> = {};
+    try {
+      // The server owns the authoritative start time, expiry and attempt limit.
+      const session = await LearningService.startQuizAttempt(quiz.id, draft?.sessionId);
+      const questions = await LearningService.getQuizQuestions(quiz.id, true);
+      setActiveQuestions(questions);
 
-    const questions = await LearningService.getQuizQuestions(quiz.id, true);
-    setActiveQuestions(questions);
+      const startIso = session.startedAt;
+      const initialAnswers: Record<string, any> = draft?.answers || session.answers || {};
+      setQuizSessionId(session.sessionId);
+      LearningService.saveQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor', initialAnswers, startIso, session.sessionId);
 
-    if (draft && draft.startedAt) {
-      startIso = draft.startedAt;
-      initialAnswers = draft.answers || {};
-    }
-
-    // Calculate time remaining based on started_at
-    const durationMinutes = timing?.time_limit_minutes ?? quiz.time_limit_minutes ?? 15;
-    if (durationMinutes > 0) {
-      const elapsedSeconds = Math.floor((Date.now() - new Date(startIso).getTime()) / 1000);
-      const totalAllowedSeconds = durationMinutes * 60;
-      const remaining = Math.max(0, totalAllowedSeconds - elapsedSeconds);
-      if (remaining <= 0) {
-        alert('Your active attempt time has expired. Submitting your saved answers.');
-        setUserAnswers(initialAnswers);
-        await executeQuizSubmission(true, quiz, initialAnswers, startIso);
-        return;
+      const durationMinutes = timing?.time_limit_minutes ?? quiz.time_limit_minutes ?? 15;
+      if (durationMinutes > 0) {
+        const expiresAt = session.expiresAt ? new Date(session.expiresAt).getTime() : new Date(startIso).getTime() + durationMinutes * 60000;
+        const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+        if (session.expired || remaining <= 0) {
+          alert('Your quiz time has expired. Submitting your saved answers.');
+          setUserAnswers(initialAnswers);
+          await executeQuizSubmission(true, quiz, initialAnswers, startIso, session.sessionId);
+          return;
+        }
+        setTimeRemainingSeconds(remaining);
+      } else {
+        setTimeRemainingSeconds(0);
       }
-      setTimeRemainingSeconds(remaining);
-    } else {
-      setTimeRemainingSeconds(0); // unlimited
-    }
 
-    setActiveQuizForTest(quiz);
-    setQuizStartedAt(startIso);
-    setUserAnswers(initialAnswers);
+      setActiveQuizForTest(quiz);
+      setQuizStartedAt(startIso);
+      setUserAnswers(initialAnswers);
+    } catch (err: any) {
+      alert(err?.message || 'Could not start this quiz. Please check your connection and try again.');
+    }
   };
 
   // Submit Quiz Attempt
@@ -465,7 +445,8 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
     isAutoExpired = false,
     quizToSubmit?: Quiz,
     overrideAnswers?: Record<string, any>,
-    overrideStartedAt?: string
+    overrideStartedAt?: string,
+    overrideSessionId?: string
   ) => {
     const quiz = quizToSubmit || activeQuizForTest;
     if (!quiz || !currentUser) return;
@@ -477,16 +458,13 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
 
       const attempt = await LearningService.submitQuizAttempt({
         quizId: quiz.id,
-        tutorId: currentUser.id,
-        tutorName: currentUser.full_name || 'Tutor',
-        cellId: currentUser.cell_id,
-        cellName: currentUser.cell_name,
+        sessionId: overrideSessionId || quizSessionId,
         answers: answersToSend,
-        startedAt: startToSend,
         isAutoSubmittedOnExpiry: isAutoExpired,
       });
 
       setActiveQuizForTest(null);
+      setQuizSessionId('');
       setIsPreviewReviewOpen(false);
       setViewingAttempt(attempt);
 
