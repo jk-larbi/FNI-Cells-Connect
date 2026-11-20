@@ -147,6 +147,66 @@ export class UserSettingsService {
   }
 
   /**
+   * Subscribe to the signed-in user's settings so changes made on another
+   * device are applied immediately. RLS remains the authority for row access.
+   */
+  static subscribeToUserSettings(
+    userId: string,
+    onChange?: (settings: UserSettings | null) => void
+  ): () => void {
+    if (!userId || !isSupabaseConfigured || !supabase) return () => {};
+
+    let active = true;
+    const channel = supabase
+      .channel(`fni-user-settings-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_settings',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (!active) return;
+          const row = payload.eventType === 'DELETE' ? null : (payload.new as any);
+          if (!row) {
+            try {
+              localStorage.removeItem(`${USER_SETTINGS_CACHE_PREFIX}${userId}`);
+              localStorage.removeItem(`fni_user_notification_prefs_${userId}`);
+              localStorage.removeItem(`fni-chat-wallpapers:${userId}`);
+            } catch {}
+            onChange?.(null);
+            return;
+          }
+
+          const settings: UserSettings = {
+            userId: row.user_id,
+            notificationPreferences: row.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES,
+            chatWallpapers: row.chat_wallpapers || {},
+            generalPreferences: row.general_preferences || undefined,
+            themePreference: (row.theme_preference as any) || 'system',
+            updatedAt: row.updated_at,
+          };
+
+          try {
+            localStorage.setItem(`${USER_SETTINGS_CACHE_PREFIX}${userId}`, JSON.stringify(settings));
+            localStorage.setItem(`fni_user_notification_prefs_${userId}`, JSON.stringify(settings.notificationPreferences));
+            localStorage.setItem(`fni-chat-wallpapers:${userId}`, JSON.stringify(settings.chatWallpapers));
+            if (settings.themePreference) localStorage.setItem('fni-theme-preference', settings.themePreference);
+          } catch {}
+          onChange?.(settings);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }
+
+  /**
    * Fetch the most recent account deactivation request for a user.
    */
   static async getDeactivationRequest(userId: string): Promise<AccountDeactivationRequest | null> {
