@@ -4406,7 +4406,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           >
                             <label className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold transition-colors active:scale-98">
                               <ImageIcon className="w-4 h-4 text-blue-500" />
-                              <span>Photo or Document</span>
+                              <span>Photos, Videos, Audio or Files</span>
                               <input
                                 type="file"
                                 accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
