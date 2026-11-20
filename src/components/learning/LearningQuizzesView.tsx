@@ -228,7 +228,7 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       const timer = setTimeout(() => setAutoSaveNotice(''), 2000);
       return () => clearTimeout(timer);
     }
-  }, [userAnswers, activeQuizForTest, currentUser, quizStartedAt]);
+  }, [userAnswers, activeQuizForTest, currentUser, quizStartedAt, quizSessionId]);
 
   // Quiz Countdown Timer
   useEffect(() => {
@@ -433,12 +433,20 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
     const draft = LearningService.getQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
     try {
       // The server owns the authoritative start time, expiry and attempt limit.
-      const session = await LearningService.startQuizAttempt(quiz.id, draft?.sessionId);
+      let session;
+      try {
+        session = await LearningService.startQuizAttempt(quiz.id, draft?.sessionId);
+      } catch (resumeError) {
+        if (!draft?.sessionId) throw resumeError;
+        LearningService.clearQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
+        session = await LearningService.startQuizAttempt(quiz.id);
+      }
       const questions = await LearningService.getQuizQuestions(quiz.id, true);
       setActiveQuestions(questions);
 
       const startIso = session.startedAt;
-      const initialAnswers: Record<string, any> = draft?.answers || session.answers || {};
+      const cloudAnswers = session.answers || {};
+      const initialAnswers: Record<string, any> = Object.keys(cloudAnswers).length ? cloudAnswers : (draft?.answers || {});
       setQuizSessionId(session.sessionId);
       LearningService.saveQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor', initialAnswers, startIso, session.sessionId);
 
@@ -479,8 +487,6 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
     setIsSubmittingQuiz(true);
     try {
       const answersToSend = overrideAnswers || userAnswers;
-      const startToSend = overrideStartedAt || quizStartedAt;
-
       const attempt = await LearningService.submitQuizAttempt({
         quizId: quiz.id,
         sessionId: overrideSessionId || quizSessionId,
