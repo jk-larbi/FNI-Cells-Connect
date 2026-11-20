@@ -127,6 +127,22 @@ jobs:
             exit 1
           fi
           npx cap sync android
+
+          # The runner's direct Maven Central endpoint intermittently returns
+          # missing-artifact responses for valid Android Gradle Plugin dependencies.
+          # Add Google's Maven Central mirror before the standard repositories.
+          python3 - <<'PY'
+          from pathlib import Path
+          for path in Path("android").rglob("*"):
+              if path.suffix not in {".gradle", ".kts"} or not path.is_file():
+                  continue
+              source = path.read_text()
+              replacement = 'maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }; mavenCentral()'
+              updated = source.replace("mavenCentral()", replacement)
+              if updated != source:
+                  path.write_text(updated)
+                  print(f"Added Maven Central mirror to {path}")
+          PY
           python3 - <<'PY'
           import json
           from pathlib import Path
