@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useBackHandler } from '../../hooks/useBackHandler';
@@ -2622,6 +2624,17 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       const blob = await response.blob();
       const safeName = (fileName || 'FNI-attachment').replace(/[\\\\/:*?"<>|]/g, '_');
       const file = new File([blob], safeName, { type: blob.type || 'application/octet-stream' });
+      if (preferShare && Capacitor.isNativePlatform()) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+          reader.onerror = () => reject(new Error('The file could not be prepared for sharing.'));
+          reader.readAsDataURL(blob);
+        });
+        const saved = await Filesystem.writeFile({ path: safeName, data: dataUrl, directory: Directory.Cache, recursive: true });
+        await Share.share({ title: safeName, dialogTitle: 'Save or share image', files: [saved.uri] });
+        return;
+      }
       const shareNavigator = navigator as Navigator & { canShare?: (data?: ShareData) => boolean; share?: (data: ShareData) => Promise<void> };
       if (preferShare && shareNavigator.share && shareNavigator.canShare?.({ files: [file] })) {
         await shareNavigator.share({ files: [file], title: safeName });
@@ -3903,7 +3916,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               {msg.attachments.map((att, attIdx) => {
                                 const isAudio = att.mimeType?.startsWith('audio') || /\.(mp3|m4a|m4b|aac|ogg|oga|opus|wav|flac|amr|mid|midi)$/i.test(att.name || '') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
                                 const isVoiceNote = att.name?.toLowerCase().includes('voice-note') || att.name?.toLowerCase().includes('voice note') || msg.content?.startsWith('🎤 Voice Note');
-                                const isImage = att.mimeType?.startsWith('image');
+                                const isImage = att.mimeType?.startsWith('image') || /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp)$/i.test(att.name || '');
                                 const isVideo = att.mimeType?.startsWith('video') || /\.(mp4|mov|webm|m4v)$/i.test(att.name || '');
                                 const fileUrl = getAttachmentUrl(att);
 
@@ -3924,7 +3937,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                         <Volume2 className="w-5 h-5 shrink-0" />
                                         <span className="text-sm font-semibold truncate">{att.name || 'Audio'}</span>
                                       </div>
-                                      <audio controls preload="auto" controlsList="nodownload" src={fileUrl} className="w-full" onError={() => setAttachmentActionError('This audio format may not be supported by this device. Try downloading the audio file.')} />
+                                      <audio controls preload="metadata" src={fileUrl} className="w-full" onError={() => setAttachmentActionError('This audio format may not be supported by this device. Try downloading the audio file.')} />
                                       <button type="button" onClick={() => handleAttachmentDownload(fileUrl, att.name || 'audio-file', false)} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2AABEE] hover:underline">
                                         <Download className="w-3.5 h-3.5" /> Download audio
                                       </button>
