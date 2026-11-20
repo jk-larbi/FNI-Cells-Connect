@@ -82,7 +82,7 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
       if (
         !table ||
         table === '*' ||
-        ['learning_assignments', 'learning_assignment_submissions', 'learning_events', 'learning_resources'].includes(table)
+        ['learning_assignments', 'learning_assignment_submissions', 'learning_events', 'learning_resources', 'learning_quizzes', 'learning_quiz_questions', 'learning_quiz_sync_state'].includes(table)
       ) {
         void loadPortalData();
       }
