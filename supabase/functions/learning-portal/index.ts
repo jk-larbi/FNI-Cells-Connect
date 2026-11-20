@@ -223,6 +223,7 @@ Deno.serve(async (req) => {
       sessionId: session.id,
       startedAt: session.started_at,
       expiresAt: session.expires_at,
+      updatedAt: session.updated_at || session.started_at,
       answers: session.answers || {},
       expired: Boolean(session.expires_at && now >= new Date(session.expires_at)),
       quizId: quiz.id,
@@ -239,10 +240,11 @@ Deno.serve(async (req) => {
     const questions = await fetchQuestions(body.quizId);
     const validIds = new Set(questions.map((q: any) => q.id));
     const answers = cleanAnswers(body.answers || {}, validIds);
-    const { error } = await db.from("learning_quiz_sessions").update({ answers }).eq("id", session.id);
+    const updatedAt = new Date().toISOString();
+    const { error } = await db.from("learning_quiz_sessions").update({ answers, updated_at: updatedAt }).eq("id", session.id);
     if (error) return fail("Could not sync quiz draft: " + error.message, 500);
     await syncState(body.quizId, profile.id, "draft_updated");
-    return json({ success: true, savedAt: new Date().toISOString() });
+    return json({ success: true, savedAt: updatedAt });
   }
 
   if (action === "submit_attempt") {
