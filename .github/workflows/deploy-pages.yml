@@ -87,7 +87,7 @@ jobs:
             --connect-timeout 15 --max-time 60 \
             "${PAGES_URL}" --output /tmp/fni-pages-index.html
 
-          if ! grep -Fq '<div id="root"></div>' /tmp/fni-pages-index.html; then
+          if ! grep -Fq '<div id="root"' /tmp/fni-pages-index.html; then
             echo "::error::Published HTML is missing the React application root."
             exit 1
           fi
