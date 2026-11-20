@@ -156,7 +156,8 @@ begin
         select a.status, a.max_attempts, a.due_date, a.late_policy
           into v_assignment_status, v_max_attempts, v_due_date, v_late_policy
         from public.learning_assignments a
-        where a.id = new.assignment_id;
+        where a.id = new.assignment_id
+        for update;
 
         if not found or v_assignment_status <> 'published' then
           raise exception 'This assignment is not available for submission.';
@@ -171,6 +172,7 @@ begin
           raise exception 'The maximum number of attempts for this assignment has been reached.';
         end if;
 
+        new.attempt_number := v_used_attempts + 1;
         new.is_late := now() > v_due_date;
         if new.is_late and v_late_policy = 'reject_late' then
           raise exception 'The assignment deadline has passed and late submissions are not accepted.';
