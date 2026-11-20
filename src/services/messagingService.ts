@@ -207,9 +207,9 @@ export class MessagingService {
     if (!supabase || !isSupabaseConfigured) return false;
     try {
       // 1. Try dedicated RPC
-      const { error: rpcError } = await supabase.rpc('fni_clear_community_chat_history', { p_for_everyone: forEveryone });
-      if (!rpcError) {
-        setStored(STORAGE_KEYS.COMMUNITY, []);
+      const { data, error: rpcError } = await supabase.rpc('fni_clear_community_chat_history', { p_for_everyone: forEveryone });
+      if (!rpcError && data === true) {
+        ConversationCacheService.clearConversation(viewerUid, 'community');
         return true;
       }
 
@@ -780,13 +780,14 @@ export class MessagingService {
 
   static async getCommunityMessages(viewerUid?: string, options?: { limit?: number; before?: string }): Promise<CommunityMessage[]> {
     try {
-      const [supaMsgs, directory, activeCells] = await Promise.all([
+      const [supaMsgs, directory, activeCells, deletedMessageIds] = await Promise.all([
         SupabaseService.getCommunityMessagesOptimized({
           limit: options?.limit || 50,
           before: options?.before,
         }),
         SupabaseService.getMemberDirectory(),
         CellService.getActiveCells(),
+        SupabaseService.getCommunityDeletedMessageIds(),
       ]);
       if (supaMsgs !== null) {
         const allowedMemberIds = new Set((directory || []).map(member => member.id));
@@ -794,7 +795,10 @@ export class MessagingService {
         if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
         const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
         const deletedForSelf = viewerUid ? this.getDeletedForSelfIds(viewerUid) : new Set<string>();
-        const serverDeletedIds = new Set(supaMsgs.filter(message => Boolean(message.deletedForEveryoneAt)).map(message => message.id));
+        const serverDeletedIds = new Set([
+          ...(deletedMessageIds || []),
+          ...supaMsgs.filter(message => Boolean(message.deletedForEveryoneAt)).map(message => message.id),
+        ]);
         let cutoff = 0;
         let hiddenIds = new Set<string>();
         const memberMap = new Map((directory || []).map(m => [m.id, m.full_name]));
@@ -824,7 +828,9 @@ export class MessagingService {
         const sorted = visibleMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
         // Merge into conversation cache
-        const cached = this.getCachedCommunityMessages(viewerUid) || [];
+        // If tombstone refresh failed, do not merge stale local messages that may have
+        // been deleted for everyone while this device was offline.
+        const cached = deletedMessageIds === null ? [] : (this.getCachedCommunityMessages(viewerUid) || []);
         const mergedMap = new Map<string, CommunityMessage>();
         cached.forEach(message => {
           const createdAt = new Date(message.createdAt).getTime();
