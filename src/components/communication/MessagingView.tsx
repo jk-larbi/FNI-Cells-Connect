@@ -1248,7 +1248,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     let cancelled = false;
     const paths = Array.from(new Set(currentMessages.flatMap(message =>
       (message.attachments || []).map(attachment => attachment.path)
-        .filter((path): path is string => Boolean(path) && !/^(data:|blob:|https?:\/\/)/i.test(path))
+        .filter((path): path is string => Boolean(path) && !attachmentUrls[path] && !/^(data:|blob:|https?:\/\/)/i.test(path))
     )));
     if (!paths.length) return;
     void Promise.all(paths.map(async path => [path, await MessagingService.getChatAttachmentUrl(path)] as const))
@@ -1262,7 +1262,20 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       })
       .catch(error => console.warn('Chat media URL refresh notice:', error));
     return () => { cancelled = true; };
-  }, [currentMessages]);
+  }, [currentMessages, attachmentUrls]);
+
+  useEffect(() => {
+    const refreshMediaUrls = () => setAttachmentUrls({});
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refreshMediaUrls();
+    };
+    window.addEventListener('focus', refreshMediaUrls);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('focus', refreshMediaUrls);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // Active pinned messages in current conversation (Multiple pinned messages supported)
   const allPinnedMessages = useMemo(() => {
