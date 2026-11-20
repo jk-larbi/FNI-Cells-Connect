@@ -53,6 +53,11 @@ export interface RetryOptions {
 }
 
 const SYNC_REGISTRY_KEY = 'fni_pending_supabase_sync_registry_v1';
+let activeUserScope: string | null = null;
+
+function getScopedRegistryKey(): string | null {
+  return activeUserScope ? `${SYNC_REGISTRY_KEY}:${encodeURIComponent(activeUserScope)}` : null;
+}
 const MAX_RETRY_ATTEMPTS = 5;
 
 type SyncListener = (pendingCount: number, items: PendingSyncItem[]) => void;
@@ -80,6 +85,14 @@ export class SyncStateService {
    */
   static setDefaultClient(client: any): void {
     defaultClient = client;
+  }
+
+  /** Bind this device's retry queue to the currently authenticated FNI account. */
+  static setActiveUserId(userId: string | null | undefined): void {
+    activeUserScope = userId?.trim() || null;
+    if (activeUserScope && this.getPendingCount() > 0 && defaultClient) {
+      void this.retryPendingSync();
+    }
   }
 
   static getDefaultClient(): any {
@@ -122,7 +135,9 @@ export class SyncStateService {
   static getPendingItems(): PendingSyncItem[] {
     try {
       if (typeof localStorage === 'undefined') return [];
-      const raw = localStorage.getItem(SYNC_REGISTRY_KEY);
+      const key = getScopedRegistryKey();
+      if (!key) return [];
+      const raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
@@ -170,7 +185,12 @@ export class SyncStateService {
 
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(SYNC_REGISTRY_KEY, JSON.stringify(items));
+        const key = getScopedRegistryKey();
+        if (!key) {
+          console.warn('[SyncStateService] Not queueing a write without an authenticated account scope.');
+          return;
+        }
+        localStorage.setItem(key, JSON.stringify(items));
       }
       notifyListeners(items);
       console.warn(`[Dual-Write Sync] Queued pending Supabase write for table "${item.table}" (ID: ${item.id}) [attempt ${retryCount}]: ${item.errorMessage}`);
@@ -185,7 +205,8 @@ export class SyncStateService {
     if (filtered.length !== items.length) {
       try {
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(SYNC_REGISTRY_KEY, JSON.stringify(filtered));
+          const key = getScopedRegistryKey();
+          if (key) localStorage.setItem(key, JSON.stringify(filtered));
         }
         notifyListeners(filtered);
         console.info(`[Dual-Write Sync] Resolved pending write for table "${table}" (ID: ${id})`);
@@ -215,7 +236,8 @@ export class SyncStateService {
     if (modified) {
       try {
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(SYNC_REGISTRY_KEY, JSON.stringify(updated));
+          const key = getScopedRegistryKey();
+        if (key) localStorage.setItem(key, JSON.stringify(updated));
         }
         notifyListeners(updated);
         console.info(`[SyncStateService] Reset terminal status for ${id ? `item ${id}` : 'all terminal items'}`);
@@ -228,7 +250,8 @@ export class SyncStateService {
   static clearRegistry(): void {
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(SYNC_REGISTRY_KEY);
+        const key = getScopedRegistryKey();
+        if (key) localStorage.removeItem(key);
       }
       notifyListeners([]);
     } catch {}
@@ -251,6 +274,11 @@ export class SyncStateService {
    * - Draining succeeded operations from localStorage.
    */
   static async retryPendingSync(customClient?: any, options?: RetryOptions): Promise<RetrySyncSummary> {
+    // Never replay a device queue unless its owning account is signed in.
+    if (!activeUserScope) {
+      return { total: 0, succeeded: 0, failed: 0, terminal: 0 };
+    }
+
     // 1. Prevent overlapping retry runs
     if (isRetryingMutex) {
       console.warn('[SyncStateService] A retry run is already in progress. Skipping overlapping run.');
@@ -350,7 +378,8 @@ export class SyncStateService {
 
       try {
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(SYNC_REGISTRY_KEY, JSON.stringify(remainingItems));
+          const key = getScopedRegistryKey();
+          if (key) localStorage.setItem(key, JSON.stringify(remainingItems));
         }
         notifyListeners(remainingItems);
       } catch (e) {
