@@ -69,6 +69,15 @@ export const LearningGalleryView: React.FC = () => {
     loadData();
   }, [isAdmin]);
 
+  useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || ['gallery_albums', 'gallery_items'].includes(table)) void loadData();
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, [isAdmin]);
+
   const loadData = async () => {
     setIsLoading(true);
     try {
