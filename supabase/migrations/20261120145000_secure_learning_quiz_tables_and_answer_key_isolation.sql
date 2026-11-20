@@ -55,6 +55,7 @@ create table if not exists public.learning_quiz_sessions (
   started_at timestamptz not null default now(),
   expires_at timestamptz,
   answers jsonb not null default '{}'::jsonb,
+  question_ids jsonb not null default '[]'::jsonb,
   consumed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
