@@ -15,11 +15,13 @@ assert.match(migration, /revoke all on public\.learning_quiz_sessions from anon,
 assert.match(migration, /alter table public\.learning_quiz_answer_keys enable row level security/i);
 assert.match(migration, /learning_quiz_sync_state_owner_read/i);
 assert.match(migration, /updated_at timestamptz not null default now\(\)/i);
+assert.match(migration, /is_active boolean not null default true/i);
 
 assert.match(edge, /auth\.getUser\(\)/);
 assert.match(edge, /ADMIN_ROLES/);
 assert.match(edge, /SUPABASE_SERVICE_ROLE_KEY/);
 assert.match(edge, /action === "submit_attempt"/);
+assert.match(edge, /is_active/);
 assert.match(edge, /scoreAutomaticText/);
 assert.match(edge, /action === "grade_attempt"/);
 assert.match(edge, /action === "release_all"/);
