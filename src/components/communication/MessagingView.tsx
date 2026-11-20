@@ -307,6 +307,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Attachments & Voice Notes
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const recordingSecondsRef = useRef<number>(0);
@@ -937,13 +938,128 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     loadActiveMessages(selectedChatId);
 
     // Supabase Realtime channel for messages and personal chat folders
+    const applyMessageChange = async (scope: 'private' | 'community', payload: any) => {
+      const row = payload.new || {};
+      const messageId = row.id || payload.old?.id;
+      if (!messageId) return;
+      const removeMessage = payload.eventType === 'DELETE' || Boolean(row.deleted_for_everyone_at);
+      if (scope === 'community') {
+        if (selectedChatId !== 'community') return;
+        if (removeMessage) {
+          setCommunityMessages(previous => {
+            const next = previous.filter(message => message.id !== messageId);
+            ConversationCacheService.setMessages(viewerId, 'community', next);
+            return next;
+          });
+          return;
+        }
+        try {
+          // INSERT/UPDATE Realtime payloads already contain the committed row.
+          // Map it directly so recipients do not wait for a second network request.
+          const message: CommunityMessage = {
+            id: row.id,
+            senderUid: row.sender_uid,
+            senderName: row.sender_name,
+            senderRole: row.sender_role,
+            cellName: row.cell_name || undefined,
+            content: row.content || '',
+            category: row.category || 'general',
+            createdAt: row.created_at,
+            replyTo: row.reply_to || undefined,
+            mentions: Array.isArray(row.mentions) ? row.mentions : [],
+            reactions: row.reactions && typeof row.reactions === 'object' ? row.reactions : {},
+            attachments: Array.isArray(row.attachments) ? row.attachments : [],
+            deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+            editedAt: row.edited_at || undefined,
+            isPinned: Boolean(row.is_pinned),
+            pinnedAt: row.pinned_at || undefined,
+            pinnedBy: row.pinned_by || undefined,
+            pinnedByName: row.pinned_by_name || undefined,
+            pinnedNotify: Boolean(row.pinned_notify),
+            groupId: row.group_id || undefined,
+          };
+          if (!message.id || message.deletedForEveryoneAt) return;
+          if (message.senderUid !== viewerId && !allMembers.some(member => member.id === message.senderUid)) return;
+          if (MessagingService.getDeletedForSelfIds(viewerId).has(message.id)) return;
+          setCommunityMessages(previous => {
+            const existing = previous.find(item => item.id === message.id);
+            const mergedMessage = { ...message, reactions: message.reactions || existing?.reactions || {} };
+            const next = [...previous.filter(item => item.id !== message.id), mergedMessage]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            ConversationCacheService.setMessages(viewerId, 'community', next);
+            return next;
+          });
+        } catch (error) {
+          console.warn('Realtime community message refresh notice:', error);
+        }
+        return;
+      }
+
+      if (!selectedChatId || selectedChatId === 'community') return;
+      const conversationId = selectedChatId === 'saved_messages' ? viewerId : selectedChatId;
+      if (removeMessage) {
+        setPrivateMessages(previous => {
+          const next = previous.filter(message => message.id !== messageId);
+          ConversationCacheService.setMessages(viewerId, conversationId, next);
+          return next;
+        });
+        return;
+      }
+      try {
+        // The Realtime row is already the committed message; avoid a second query.
+        const message: PrivateMessage = {
+          id: row.id,
+          senderUid: row.sender_uid,
+          senderName: row.sender_name,
+          senderRole: row.sender_role,
+          recipientUid: row.recipient_uid,
+          recipientName: row.recipient_name,
+          cellId: row.cell_id || undefined,
+          cellName: row.cell_name || undefined,
+          content: row.content || '',
+          createdAt: row.created_at,
+          isRead: Boolean(row.is_read),
+          readAt: row.read_at || undefined,
+          replyTo: row.reply_to || undefined,
+          attachments: Array.isArray(row.attachments) ? row.attachments : [],
+          reactions: {},
+          isPinned: Boolean(row.is_pinned),
+          pinnedAt: row.pinned_at || undefined,
+          pinnedBy: row.pinned_by || undefined,
+          pinnedByName: row.pinned_by_name || undefined,
+          pinnedNotify: Boolean(row.pinned_notify),
+          mentions: Array.isArray(row.mentions) ? row.mentions : [],
+          deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+          editedAt: row.edited_at || undefined,
+        };
+        if (!message.id || message.deletedForEveryoneAt) return;
+        if (MessagingService.getDeletedForSelfIds(viewerId).has(message.id)) return;
+        const belongs = isAdmin
+          ? ((message.senderUid === conversationId && (message.recipientUid === 'admin' || message.recipientUid === viewerId)) ||
+             (message.senderUid === viewerId && message.recipientUid === conversationId))
+          : ((message.senderUid === viewerId && message.recipientUid === conversationId) ||
+             (message.senderUid === conversationId && message.recipientUid === viewerId));
+        if (!belongs) return;
+        setPrivateMessages(previous => {
+          const existing = previous.find(item => item.id === message.id);
+          const mergedMessage = { ...message, reactions: existing?.reactions || message.reactions || {} };
+          const next = [...previous.filter(item => item.id !== message.id), mergedMessage]
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          ConversationCacheService.setMessages(viewerId, conversationId, next);
+          return next;
+        });
+      } catch (error) {
+        console.warn('Realtime private message refresh notice:', error);
+      }
+    };
+
     const channel = supabase
       ?.channel(`fni-messages-${viewerId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'community_messages' }, () => {
-        if (selectedChatId === 'community') loadActiveMessages('community');
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'community_messages' }, payload => {
+        void applyMessageChange('community', payload);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages' }, () => {
-        if (selectedChatId && selectedChatId !== 'community') loadActiveMessages(selectedChatId);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages' }, payload => {
+        void applyMessageChange('private', payload);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_folders' }, () => {
         loadChatFolders();
@@ -974,7 +1090,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       window.removeEventListener('focus', handleFocus);
       clearInterval(pollTimer);
     };
-  }, [selectedChatId, currentUser?.id, isAdmin]);
+  }, [selectedChatId, currentUser?.id, isAdmin, allMembers]);
 
   // Auto-scroll on new message
   useEffect(() => {
@@ -1176,6 +1292,39 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Active messages array
   const currentMessages = selectedChatId === 'community' ? communityMessages : privateMessages;
 
+  useEffect(() => {
+    let cancelled = false;
+    const paths = Array.from(new Set(currentMessages.flatMap(message =>
+      (message.attachments || []).map(attachment => attachment.path)
+        .filter((path): path is string => Boolean(path) && !attachmentUrls[path] && !/^(data:|blob:|https?:\/\/)/i.test(path))
+    )));
+    if (!paths.length) return;
+    void Promise.all(paths.map(async path => [path, await MessagingService.getChatAttachmentUrl(path)] as const))
+      .then(entries => {
+        if (cancelled) return;
+        setAttachmentUrls(previous => {
+          const next = { ...previous };
+          entries.forEach(([path, url]) => { if (url) next[path] = url; });
+          return next;
+        });
+      })
+      .catch(error => console.warn('Chat media URL refresh notice:', error));
+    return () => { cancelled = true; };
+  }, [currentMessages, attachmentUrls]);
+
+  useEffect(() => {
+    const refreshMediaUrls = () => setAttachmentUrls({});
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refreshMediaUrls();
+    };
+    window.addEventListener('focus', refreshMediaUrls);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('focus', refreshMediaUrls);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
   // Active pinned messages in current conversation (Multiple pinned messages supported)
   const allPinnedMessages = useMemo(() => {
     return currentMessages.filter(m => m.isPinned);
@@ -1358,7 +1507,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setPrivateMessages(prev => prev.filter(m => m.id !== msg.id));
     }
 
-    // 2. Persist deletion in background without blocking the UI
+    // Persist first; if the server rejects it, restore the message instead of
+    // leaving the sender with a phantom deletion.
     try {
       if (forEveryone) {
         await MessagingService.deleteMessageForEveryone(
@@ -1372,8 +1522,22 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           isCommunity ? 'community' : 'private'
         );
       }
-    } catch (err) {
-      console.warn('Background message delete notice:', err);
+      const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+      ConversationCacheService.removeMessage(currentUser.id, conversationId, msg.id);
+    } catch (err: any) {
+      if (isCommunity) {
+        setCommunityMessages(previous => [...previous.filter(item => item.id !== msg.id), msg]
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+        const cached = ConversationCacheService.getMessages<CommunityMessage>(currentUser.id, 'community') || [];
+        ConversationCacheService.setMessages(currentUser.id, 'community', [...cached.filter(item => item.id !== msg.id), msg]);
+      } else {
+        setPrivateMessages(previous => [...previous.filter(item => item.id !== msg.id), msg as PrivateMessage]
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+        const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+        const cached = ConversationCacheService.getMessages<PrivateMessage>(currentUser.id, conversationId) || [];
+        ConversationCacheService.setMessages(currentUser.id, conversationId, [...cached.filter(item => item.id !== msg.id), msg as PrivateMessage]);
+      }
+      setSendError(err?.message || 'The message could not be deleted. Please try again.');
     }
   };
 
@@ -1800,6 +1964,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       composerInputRef.current.style.height = 'auto';
     }
 
+    let confirmedMessage: CommunityMessage | PrivateMessage | null = null;
+
     try {
       // If currently editing an existing message, perform edit update
       if (editingMessage) {
@@ -1857,10 +2023,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const att = await MessagingService.uploadChatAttachment(currentUser?.id || 'guest', file);
         if (att) uploadedAttachments.push(att);
       }
+      // Make uploaded media visible on the optimistic bubble while the message commits.
+      if (selectedChatId === 'community') {
+        setCommunityMessages(previous => previous.map(message => message.id === optimisticId ? { ...message, attachments: uploadedAttachments } : message));
+      } else {
+        setPrivateMessages(previous => previous.map(message => message.id === optimisticId ? { ...message, attachments: uploadedAttachments } : message));
+      }
 
       // 4. Dispatch confirmed message to Supabase
       if (selectedChatId === 'community') {
-        await MessagingService.sendCommunityMessage({
+        confirmedMessage = await MessagingService.sendCommunityMessage({
           senderUid: currentUser.id,
           senderName: currentUser.full_name || 'FNI Leader',
           senderRole: currentUser.role,
@@ -1875,7 +2047,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const recipientUid = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
         const recipient = allMembers.find(m => m.id === recipientUid);
 
-        await MessagingService.sendPrivateMessage({
+        confirmedMessage = await MessagingService.sendPrivateMessage({
           senderUid: currentUser.id,
           senderName: currentUser.full_name || 'FNI Leader',
           senderRole: currentUser.role,
@@ -1890,9 +2062,41 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         });
       }
 
-      // Background sync confirmed message ID
-      loadActiveMessages(selectedChatId);
+      // Replace the temporary optimistic ID with the authoritative database message.
+      if (confirmedMessage) {
+        if (selectedChatId === 'community') {
+          setCommunityMessages(previous => {
+            const next = [...previous.filter(message => message.id !== optimisticId && message.id !== confirmedMessage!.id), confirmedMessage as CommunityMessage]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            ConversationCacheService.setMessages(currentUser.id, 'community', next);
+            return next;
+          });
+        } else {
+          const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+          setPrivateMessages(previous => {
+            const next = [...previous.filter(message => message.id !== optimisticId && message.id !== confirmedMessage!.id), confirmedMessage as PrivateMessage]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            ConversationCacheService.setMessages(currentUser.id, conversationId, next);
+            return next;
+          });
+        }
+      }
     } catch (err: any) {
+      // Failed sends must not leave phantom messages on the sender's screen.
+      if (selectedChatId === 'community') {
+        setCommunityMessages(previous => previous.filter(message => message.id !== optimisticId));
+      } else {
+        const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+        setPrivateMessages(previous => previous.filter(message => message.id !== optimisticId));
+        const cached = ConversationCacheService.getMessages<PrivateMessage>(currentUser.id, conversationId) || [];
+        ConversationCacheService.setMessages(currentUser.id, conversationId, cached.filter(message => message.id !== optimisticId));
+      }
+      if (selectedChatId === 'community') {
+        const cached = ConversationCacheService.getMessages<CommunityMessage>(currentUser.id, 'community') || [];
+        ConversationCacheService.setMessages(currentUser.id, 'community', cached.filter(message => message.id !== optimisticId));
+      }
+      setInputText(textSnapshot);
+      setStagedFiles(stagedFilesSnapshot);
       setSendError(err?.message || 'Message could not be sent.');
     } finally {
       setIsSending(false);
@@ -2395,19 +2599,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     }
   };
 
-  // Resolve Attachment URL
+  // Resolve attachment URLs. Private cloud objects use a fresh signed URL per device.
   const getAttachmentUrl = (att: ChatAttachment) => {
     if (!att) return '';
     const raw = att.path || (att as any).url || (att as any).dataUrl || '';
     if (!raw) return '';
-    if (raw.startsWith('data:') || raw.startsWith('blob:') || raw.startsWith('http://') || raw.startsWith('https://')) {
-      return raw;
-    }
-    if (supabase) {
-      const { data } = supabase.storage.from('fni-chat-media').getPublicUrl(raw);
-      if (data?.publicUrl) return data.publicUrl;
-    }
-    return raw;
+    if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
+    return attachmentUrls[raw] || '';
   };
 
   // Render Formatted Message Body with Clickable Mentions
@@ -3664,31 +3862,47 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {msg.attachments && msg.attachments.length > 0 && (
                             <div className="space-y-2 mb-1.5">
                               {msg.attachments.map((att, attIdx) => {
-                                const isAudio = att.mimeType?.startsWith('audio') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
+                                const isAudio = att.mimeType?.startsWith('audio') || /\.(mp3|m4a|m4b|aac|ogg|oga|opus|wav|flac|amr|mid|midi)$/i.test(att.name || '') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
+                                const isVoiceNote = att.name?.toLowerCase().includes('voice-note') || att.name?.toLowerCase().includes('voice note') || msg.content?.startsWith('🎤 Voice Note');
                                 const isImage = att.mimeType?.startsWith('image');
+                                const isVideo = att.mimeType?.startsWith('video') || /\.(mp4|mov|webm|m4v)$/i.test(att.name || '');
                                 const fileUrl = getAttachmentUrl(att);
 
-                                if (isAudio) {
+                                if (!fileUrl) {
+                                  return <div key={attIdx} className="rounded-xl bg-black/10 px-3 py-4 text-xs opacity-70">Loading media…</div>;
+                                }
+
+                                if (isAudio && isVoiceNote) {
                                   const durationMatch = (att.name || msg.content || '').match(/\((\d+:\d+)\)/);
                                   const initialDuration = durationMatch ? durationMatch[1] : '0:15';
+                                  return <React.Fragment key={attIdx}>{renderVoiceNote(fileUrl, att.name || 'Voice Message', initialDuration, formattedTime, msg.senderName)}</React.Fragment>;
+                                }
+
+                                if (isAudio) {
                                   return (
-                                    <React.Fragment key={attIdx}>
-                                      {renderVoiceNote(
-                                        fileUrl,
-                                        att.name || 'Voice Message',
-                                        initialDuration,
-                                        formattedTime,
-                                        msg.senderName
-                                      )}
-                                    </React.Fragment>
+                                    <div key={attIdx} className="rounded-2xl bg-black/10 dark:bg-white/10 p-3 space-y-2 min-w-[220px] max-w-[320px]">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <Volume2 className="w-5 h-5 shrink-0" />
+                                        <span className="text-sm font-semibold truncate">{att.name || 'Audio'}</span>
+                                      </div>
+                                      <audio controls preload="metadata" src={fileUrl} className="w-full" />
+                                    </div>
+                                  );
+                                }
+
+                                if (isVideo) {
+                                  return (
+                                    <div key={attIdx} className="relative rounded-2xl overflow-hidden max-w-full bg-black my-1">
+                                      <video controls playsInline preload="metadata" src={fileUrl} className="block w-full max-h-[420px] object-contain" />
+                                      <div className="px-2 py-1 text-[10px] text-white/80">{att.name}</div>
+                                    </div>
                                   );
                                 }
 
                                 if (isImage) {
                                   return (
-                                    <div key={attIdx} className="relative rounded-2xl overflow-hidden max-h-80 bg-black/10 select-none my-1">
-                                      <img src={fileUrl} alt={att.name} className="w-full h-full object-cover rounded-2xl" />
-                                      {/* Photo timestamp overlay in bottom-right matching reference */}
+                                    <div key={attIdx} className="relative rounded-2xl overflow-hidden max-h-[420px] max-w-full bg-black/10 select-none my-1">
+                                      <img src={fileUrl} alt={att.name} loading="lazy" className="block max-w-full max-h-[420px] w-auto h-auto object-contain rounded-2xl" />
                                       <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] flex items-center gap-1 font-medium select-none shadow-xs">
                                         <span>{formattedTime}</span>
                                         {isMine && <CheckCheck className="w-3.5 h-3.5 text-white" />}
@@ -3698,13 +3912,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 }
 
                                 return (
-                                  <a
-                                    key={attIdx}
-                                    href={fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-2 rounded-xl bg-black/15 flex items-center gap-2 hover:underline"
-                                  >
+                                  <a key={attIdx} href={fileUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-xl bg-black/15 flex items-center gap-2 hover:underline">
                                     <Paperclip className="w-4 h-4" />
                                     <span className="truncate">{att.name}</span>
                                   </a>
@@ -4266,9 +4474,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           >
                             <label className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold transition-colors active:scale-98">
                               <ImageIcon className="w-4 h-4 text-blue-500" />
-                              <span>Photo or Document</span>
+                              <span>Photos, Videos, Audio or Files</span>
                               <input
                                 type="file"
+                                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
                                 multiple
                                 className="hidden"
                                 onChange={e => {
