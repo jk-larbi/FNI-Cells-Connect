@@ -6,6 +6,8 @@ const retryMigration = readFileSync('supabase/migrations/20261120145300_make_qui
 const edge = readFileSync('supabase/functions/learning-portal/index.ts', 'utf8');
 const service = readFileSync('src/services/learningService.ts', 'utf8');
 const quizView = readFileSync('src/components/learning/LearningQuizzesView.tsx', 'utf8');
+const overviewView = readFileSync('src/components/learning/LearningOverviewView.tsx', 'utf8');
+const gradesView = readFileSync('src/components/learning/LearningGradesView.tsx', 'utf8');
 const authContext = readFileSync('src/context/AuthContext.tsx', 'utf8');
 const cloudSync = readFileSync('src/services/cloudSyncService.ts', 'utf8');
 const supabaseClient = readFileSync('src/lib/supabase.ts', 'utf8');
@@ -44,6 +46,9 @@ assert.match(quizView, /saveQuizDraftAnswers\(activeQuizForTest\.id/);
 assert.match(authContext, /fni_learning_quiz_questions_v2/);
 assert.match(authContext, /privilegedRoles/);
 assert.match(cloudSync, /'learning_quiz_sync_state'/);
+assert.match(cloudSync, /'learning_quizzes'/);
+assert.match(overviewView, /learning_quiz_sync_state/);
+assert.match(gradesView, /learning_quiz_sync_state/);
 assert.doesNotMatch(supabaseClient, /SUPABASE_SERVICE_ROLE_KEY|service_role/i);
 
 console.log('Learning Portal security checks passed: answer keys and attempts are server-only, quiz grading is server-side, and tutor sessions/drafts sync through protected server actions.');
