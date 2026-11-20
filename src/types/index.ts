@@ -917,6 +917,10 @@ export interface CellLocationRecord {
 
 export type AdminNavTab =
   | 'dashboard'
+  | 'cells-hub'
+  | 'reports-hub'
+  | 'ministry-hub'
+  | 'more-hub'
   | 'location-sharing'
   | 'cell-management'
   | 'cell-leaders'
