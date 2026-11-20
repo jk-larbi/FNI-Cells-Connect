@@ -3961,7 +3961,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                         <img src={fileUrl} alt={att.name || 'Shared image'} loading="lazy" className="block max-w-full max-h-[420px] w-auto h-auto object-contain rounded-2xl" />
                                       </button>
                                       <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
-                                        <button type="button" onClick={() => setSelectedImagePreview({ url: fileUrl, name: att.name || 'FNI image' })} className="px-2.5 py-1 rounded-full bg-black/65 text-white text-[11px] font-semibold inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" /> Open</button>
+                                        <button type="button" onClick={() => setSelectedImagePreview({ url: fileUrl, name: att.name || 'FNI image', messageId: msg.id })} className="px-2.5 py-1 rounded-full bg-black/65 text-white text-[11px] font-semibold inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" /> Open</button>
                                         <button type="button" onClick={() => handleAttachmentDownload(fileUrl, att.name || 'FNI-image.jpg', true)} className="px-2.5 py-1 rounded-full bg-black/65 text-white text-[11px] font-semibold inline-flex items-center gap-1"><Download className="w-3 h-3" /> Save</button>
                                       </div>
                                       <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] flex items-center gap-1 font-medium select-none shadow-xs">
