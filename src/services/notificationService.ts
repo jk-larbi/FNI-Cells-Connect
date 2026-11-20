@@ -1148,6 +1148,14 @@ export class NotificationService {
               }
             }
           )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'notification_dismissals', filter: `user_id=eq.${userId}` },
+            async () => {
+              const dismissed = await this.loadDismissedIds(userId);
+              emitVisible(getStoredNotifications(), dismissed);
+            }
+          )
           .subscribe();
       } catch (e) {
         console.warn('Supabase Realtime notifications subscription note:', e);
