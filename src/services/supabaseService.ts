@@ -869,9 +869,13 @@ export class SupabaseService {
     if (this.isAvailable() && supabase) {
       try {
         const uploadFile = file.type === mimeType ? file : new File([file], file.name, { type: mimeType, lastModified: file.lastModified });
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const authUid = authData.user?.id;
+        if (authError || !authUid) throw new Error('Sign in again before uploading chat media.');
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
-        const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
-        const { error } = await supabase.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: true });
+        // Storage RLS scopes the first path segment to auth.uid(), not the profile display ID.
+        const path = `${authUid}/${crypto.randomUUID()}-${safeName}`;
+        const { error } = await supabase.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: false });
         if (!error) {
           // Persist the stable private Storage object path, never a short-lived signed URL.
           // Each recipient resolves a fresh signed URL when rendering the attachment.
