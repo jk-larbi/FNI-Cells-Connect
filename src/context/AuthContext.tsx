@@ -204,6 +204,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [currentUser?.id]);
 
+  // Persist explicit theme changes to the signed-in user's cloud settings.
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const handleThemeChange = (event: Event) => {
+      const preference = (event as CustomEvent).detail;
+      if (preference !== 'light' && preference !== 'dark' && preference !== 'system') return;
+      import('../services/userSettingsService').then(({ UserSettingsService }) => {
+        void UserSettingsService.saveUserSettings(currentUser.id, { themePreference: preference });
+      });
+    };
+    window.addEventListener('fni:theme-preference-changed', handleThemeChange);
+    return () => window.removeEventListener('fni:theme-preference-changed', handleThemeChange);
+  }, [currentUser?.id]);
+
   // Re-fetch the signed-in profile when the tutor returns to an already-open portal.
   // This ensures administrator-side cell unassignments are reflected without requiring a sign-out.
   useEffect(() => {
