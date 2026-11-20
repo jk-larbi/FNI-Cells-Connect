@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
       const { count, error: countError } = await db.from("learning_quiz_attempts").select("id", { count: "exact", head: true })
         .eq("quiz_id", quiz.id).eq("tutor_id", profile.id);
       if (countError) return fail("Could not check attempt limit: " + countError.message, 500);
-      const maxAttempts = Number(timing.max_attempts ?? 1);
+      const maxAttempts = timing.allow_resubmission === false ? 1 : Number(timing.max_attempts ?? 1);
       if (maxAttempts > 0 && (count || 0) >= maxAttempts) return fail("You have reached the maximum allowed attempts", 409);
       const startedAt = now.toISOString();
       const duration = Number(timing.time_limit_minutes ?? quiz.time_limit_minutes ?? 15);
@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
     const { count, error: countError } = await db.from("learning_quiz_attempts").select("id", { count: "exact", head: true })
       .eq("quiz_id", quiz.id).eq("tutor_id", profile.id);
     if (countError) return fail("Could not verify attempt limit", 500);
-    const maxAttempts = Number(timing.max_attempts ?? 1);
+    const maxAttempts = timing.allow_resubmission === false ? 1 : Number(timing.max_attempts ?? 1);
     if (maxAttempts > 0 && (count || 0) >= maxAttempts) return fail("Maximum quiz attempts reached", 409);
 
     const [questions, keys] = await Promise.all([fetchQuestions(quiz.id), fetchAnswerKeys(quiz.id)]);
@@ -344,7 +344,7 @@ Deno.serve(async (req) => {
     if (!isAdmin && profile.role !== "tutor") return fail("Tutor access required", 403);
 
     // Release automatically graded results once an "after_close" quiz reaches its close time.
-    const { data: closingQuizzes } = await db.from("learning_quizzes").select("id,timing_settings").eq("status", "published");
+    const { data: closingQuizzes } = await db.from("learning_quizzes").select("id,timing_settings").in("status", ["published", "archived"]);
     for (const closingQuiz of closingQuizzes || []) {
       const timing = closingQuiz.timing_settings || {};
       const closesAt = timing.closes_at ? new Date(timing.closes_at) : null;
