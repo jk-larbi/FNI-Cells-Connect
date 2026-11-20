@@ -198,8 +198,10 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
   // Refresh quiz attempts and any active server draft when another device changes this tutor's quiz data.
   useEffect(() => {
     const handleQuizCloudChange = async (event: Event) => {
-      const change = (event as CustomEvent<{ table?: string }>).detail;
-      if (change?.table !== 'learning_quiz_sync_state' && change?.table !== '*') return;
+      const change = (event as CustomEvent<{ table?: string; source?: string }>).detail;
+      const isQuizSync = change?.table === 'learning_quiz_sync_state';
+      const isReconnect = change?.table === '*';
+      if (!isQuizSync && !isReconnect) return;
       try {
         if (isAdmin) {
           setAllAttempts(await LearningService.getQuizAttempts());
@@ -207,8 +209,15 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
           setTutorAttempts(await LearningService.getQuizAttempts(undefined, currentUser.id));
           if (activeQuizForTest && quizSessionId) {
             const remote = await LearningService.getQuizSession(activeQuizForTest.id, quizSessionId);
-            if (remote.answers && JSON.stringify(remote.answers) !== JSON.stringify(userAnswers)) {
+            const localDraft = LearningService.getQuizDraftAnswers(activeQuizForTest.id, currentUser.id);
+            const localSavedAt = Number(localDraft?.savedAt || 0);
+            const remoteUpdatedAt = new Date(remote.updatedAt || remote.startedAt).getTime();
+            if (localSavedAt > remoteUpdatedAt && localDraft?.answers) {
+              // Preserve edits made offline; push them when the connection returns.
+              await LearningService.saveQuizDraftAnswers(activeQuizForTest.id, currentUser.id, localDraft.answers, remote.startedAt, quizSessionId);
+            } else if (remote.answers && JSON.stringify(remote.answers) !== JSON.stringify(userAnswers)) {
               setUserAnswers(remote.answers);
+              await LearningService.saveQuizDraftAnswers(activeQuizForTest.id, currentUser.id, remote.answers, remote.startedAt, quizSessionId);
             }
           }
         }
