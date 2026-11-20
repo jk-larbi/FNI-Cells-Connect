@@ -14,8 +14,8 @@ assert.match(view, /<video controls playsInline/, 'videos must render inline wit
 assert.match(view, /<audio controls preload="metadata"/, 'music and audio files must have an inline audio player');
 assert.match(view, /<img src=\{fileUrl\}/, 'photos must render inline');
 assert.match(view, /accept="image\/\*,video\/\*,audio\/\*/, 'the attachment picker must accept audio and video');
-assert.match(view, /getPrivateMessageById\(messageId\)/, 'private Realtime events must fetch only the changed message');
-assert.match(view, /getCommunityMessageById\(messageId\)/, 'community Realtime events must fetch only the changed message');
+assert.match(view, /const message: PrivateMessage = \{/, 'private Realtime rows must be mapped directly without a second fetch');
+assert.match(view, /const message: CommunityMessage = \{/, 'community Realtime rows must be mapped directly without a second fetch');
 assert.match(messaging, /Notifications are deliberately dispatched after the message commit/, 'private notifications must not block message send');
 assert.match(messaging, /Keep chat delivery independent from push\/email notification latency/, 'community notifications must not block message send');
 assert.match(messaging, /if \(!success\) throw new Error\('The message could not be deleted for everyone/, 'delete-for-everyone must report server failure');
