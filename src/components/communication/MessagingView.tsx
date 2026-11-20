@@ -954,8 +954,31 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           return;
         }
         try {
-          const message = await MessagingService.getCommunityMessageById(messageId);
-          if (!message || message.deletedForEveryoneAt) return;
+          // INSERT/UPDATE Realtime payloads already contain the committed row.
+          // Map it directly so recipients do not wait for a second network request.
+          const message: CommunityMessage = {
+            id: row.id,
+            senderUid: row.sender_uid,
+            senderName: row.sender_name,
+            senderRole: row.sender_role,
+            cellName: row.cell_name || undefined,
+            content: row.content || '',
+            category: row.category || 'general',
+            createdAt: row.created_at,
+            replyTo: row.reply_to || undefined,
+            mentions: Array.isArray(row.mentions) ? row.mentions : [],
+            reactions: row.reactions && typeof row.reactions === 'object' ? row.reactions : {},
+            attachments: Array.isArray(row.attachments) ? row.attachments : [],
+            deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+            editedAt: row.edited_at || undefined,
+            isPinned: Boolean(row.is_pinned),
+            pinnedAt: row.pinned_at || undefined,
+            pinnedBy: row.pinned_by || undefined,
+            pinnedByName: row.pinned_by_name || undefined,
+            pinnedNotify: Boolean(row.pinned_notify),
+            groupId: row.group_id || undefined,
+          };
+          if (!message.id || message.deletedForEveryoneAt) return;
           if (message.senderUid !== viewerId && !allMembers.some(member => member.id === message.senderUid)) return;
           if (MessagingService.getDeletedForSelfIds(viewerId).has(message.id)) return;
           setCommunityMessages(previous => {
@@ -983,8 +1006,33 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         return;
       }
       try {
-        const message = await MessagingService.getPrivateMessageById(messageId);
-        if (!message || message.deletedForEveryoneAt) return;
+        // The Realtime row is already the committed message; avoid a second query.
+        const message: PrivateMessage = {
+          id: row.id,
+          senderUid: row.sender_uid,
+          senderName: row.sender_name,
+          senderRole: row.sender_role,
+          recipientUid: row.recipient_uid,
+          recipientName: row.recipient_name,
+          cellId: row.cell_id || undefined,
+          cellName: row.cell_name || undefined,
+          content: row.content || '',
+          createdAt: row.created_at,
+          isRead: Boolean(row.is_read),
+          readAt: row.read_at || undefined,
+          replyTo: row.reply_to || undefined,
+          attachments: Array.isArray(row.attachments) ? row.attachments : [],
+          reactions: {},
+          isPinned: Boolean(row.is_pinned),
+          pinnedAt: row.pinned_at || undefined,
+          pinnedBy: row.pinned_by || undefined,
+          pinnedByName: row.pinned_by_name || undefined,
+          pinnedNotify: Boolean(row.pinned_notify),
+          mentions: Array.isArray(row.mentions) ? row.mentions : [],
+          deletedForEveryoneAt: row.deleted_for_everyone_at || undefined,
+          editedAt: row.edited_at || undefined,
+        };
+        if (!message.id || message.deletedForEveryoneAt) return;
         if (MessagingService.getDeletedForSelfIds(viewerId).has(message.id)) return;
         const belongs = isAdmin
           ? ((message.senderUid === conversationId && (message.recipientUid === 'admin' || message.recipientUid === viewerId)) ||
