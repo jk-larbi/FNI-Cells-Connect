@@ -93,6 +93,17 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     loadCells();
   }, []);
 
+  useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || ['cells', 'cell_members', 'cell_leadership_history'].includes(table)) {
+        void loadCells();
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, []);
+
   const openCellProfile = async (cell: Cell) => {
     setSelectedCell(cell);
     setIsLoadingDetails(true);
