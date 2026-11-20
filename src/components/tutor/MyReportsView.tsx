@@ -89,6 +89,15 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({
   }, [typeFilter, currentUser]);
 
   useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || ['cell_meeting_reports', 'evangelism_reports'].includes(table)) void loadData();
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, [typeFilter, currentUser]);
+
+  useEffect(() => {
     if (initialReportId && reports.length > 0) {
       const found = reports.find(r => r.id === initialReportId);
       if (found) {
