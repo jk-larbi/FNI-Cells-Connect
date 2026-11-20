@@ -24,6 +24,8 @@ assert.match(edge, /SUPABASE_SERVICE_ROLE_KEY/);
 assert.match(edge, /action === "submit_attempt"/);
 assert.match(retryMigration, /unique index if not exists learning_quiz_attempts_session_unique_idx/i);
 assert.match(edge, /eq\("session_id", session\.id\)/);
+assert.match(edge, /session\.question_ids/);
+assert.match(edge, /questions: sessionQuestions/);
 assert.match(edge, /is_active/);
 assert.match(edge, /scoreAutomaticText/);
 assert.match(edge, /action === "grade_attempt"/);
