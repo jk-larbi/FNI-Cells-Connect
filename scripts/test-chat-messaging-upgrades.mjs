@@ -32,3 +32,16 @@ assert.match(messaging, /Keep chat delivery independent from push\/email notific
 assert.match(messaging, /if \(!success\) throw new Error\('The message could not be deleted for everyone/, 'delete-for-everyone must report server failure');
 assert.match(view, /The message could not be deleted\. Please try again\./, 'failed deletes must be reported and restored');
 console.log('Chat media, realtime delivery, and deletion regression checks passed.');
+
+const communityMessagingMigration = read('../supabase/migrations/20261120150000_community_message_author_delete_pin_and_tombstone_sync.sql');
+assert.match(view, /deleteTargetMessage\.senderUid === currentUser\?\.id \|\| isAdmin/, 'message authors and admins must see the delete-for-everyone option');
+assert.match(messaging, /getCommunityDeletedMessageIds\(\)/, 'community loads must refresh server deletion tombstones');
+assert.match(messaging, /deletedMessageIds === null \? \[\]/, 'stale cache must not be merged if tombstones cannot be refreshed');
+assert.doesNotMatch(messaging, /message\.isPinned \|\| \(createdAt > cutoff/, 'personal history clearing must also hide older pinned messages');
+assert.match(messaging, /ConversationCacheService\.clearConversation\(viewerUid, 'community'\)/, 'community clear must clear only the current user cache');
+assert.match(supaR, /rpc\('set_community_message_pin'/, 'community pinning must use the authoritative RPC');
+assert.match(communityMessagingMigration, /drop function if exists public\.set_community_message_pin\(text, boolean\)/, 'obsolete two-argument pin overload must be removed');
+assert.match(communityMessagingMigration, /drop index if exists public\.community_messages_one_pinned_idx/, 'community must support multiple pinned messages');
+assert.match(communityMessagingMigration, /v_sender is distinct from v_uid/, 'authors must be checked independently from administrator permissions');
+assert.match(messaging, /if \(forEveryone\) \{\s*console\.warn\('Community-wide clear was rejected by the server:/, 'a failed admin-only clear must not fall back to a broad client update');
+console.log('Community author deletion, personal clear isolation, tombstone sync, and Telegram-style pin regression checks passed.');
