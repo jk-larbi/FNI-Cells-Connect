@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
       });
       keyRows.push({
         question_id: qid, quiz_id: quizRow.id,
-        correct_answer: q.correct_answer === undefined || q.correct_answer === null ? null : String(q.correct_answer),
+        correct_answer: q.correct_answer === undefined || q.correct_answer === null ? (section === 'mcq' ? '0' : null) : String(q.correct_answer),
         explanation: String(q.explanation || ""),
         expected_answer: String(q.expected_answer || ""),
         acceptable_alternatives: Array.isArray(q.acceptable_alternatives) ? q.acceptable_alternatives : [],
@@ -210,6 +210,7 @@ Deno.serve(async (req) => {
       }).select("*").single();
       if (error) return fail("Could not start quiz session: " + error.message, 500);
       session = data;
+      await syncState(quiz.id, profile.id, 'session_started');
     }
     return json({
       sessionId: session.id,
@@ -338,7 +339,6 @@ Deno.serve(async (req) => {
     if (error) return fail("Could not load quiz attempts: " + error.message, 500);
     const rows = attempts || [];
     const quizIds = [...new Set(rows.map((a: any) => a.quiz_id))];
-    const questionMap = new Map<string, any>();
     const keyMap = new Map<string, any>();
     if (quizIds.length) {
       const [{ data: questions }, { data: keys }, { data: quizzes }] = await Promise.all([
@@ -346,7 +346,6 @@ Deno.serve(async (req) => {
         db.from("learning_quiz_answer_keys").select("*").in("quiz_id", quizIds),
         db.from("learning_quizzes").select("id,title").in("id", quizIds),
       ]);
-      for (const q of questions || []) questionMap.set(q.id, q);
       for (const k of keys || []) keyMap.set(k.question_id, k);
       const titleMap = new Map((quizzes || []).map((q: any) => [q.id, q.title]));
       return json(rows.map((a: any) => {
@@ -389,7 +388,6 @@ Deno.serve(async (req) => {
     const { data: attempt, error: attemptError } = await db.from("learning_quiz_attempts").select("*").eq("id", body.attemptId).maybeSingle();
     if (attemptError || !attempt) return fail("Quiz attempt not found", 404);
     const [questions, keys] = await Promise.all([fetchQuestions(attempt.quiz_id), fetchAnswerKeys(attempt.quiz_id)]);
-    const questionMap = new Map(questions.map((q: any) => [q.id, q]));
     const keyMap = new Map(keys.map((k: any) => [k.question_id, k]));
     const grades: Record<string, any> = {};
     let score = 0, total = 0;
