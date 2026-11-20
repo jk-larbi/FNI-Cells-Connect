@@ -2135,3 +2135,57 @@ html.dark .fni-chat-composer textarea:focus-visible {
     scroll-margin-bottom: 0;
   }
 }
+
+
+/* Global safe-area and keyboard fit for iOS Home Screen and Android WebView.
+   The visual viewport hook is mounted above all routes, not just messaging. */
+@supports (padding: env(safe-area-inset-top)) {
+  .fni-audio-player-bar {
+    padding-top: max(.5rem, env(safe-area-inset-top)) !important;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .fni-app-shell:not(.fni-messaging-route) {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Keep page content scrollable while the keyboard reduces the visible area.
+     Do not freeze the whole document: long forms and reports must still scroll. */
+  .fni-app-shell:not(.fni-messaging-route) {
+    min-height: var(--fni-visible-viewport-height, 100dvh);
+  }
+
+  .fni-app-shell:not(.fni-messaging-route) .fni-app-main {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .fni-app-shell:not(.fni-messaging-route) input,
+  .fni-app-shell:not(.fni-messaging-route) textarea,
+  .fni-app-shell:not(.fni-messaging-route) select {
+    max-width: 100%;
+    scroll-margin-top: max(1rem, env(safe-area-inset-top));
+    scroll-margin-bottom: 1rem;
+  }
+
+  /* Avoid fixed drawers and dialogs being clipped by the keyboard viewport. */
+  .fni-app-shell [role="dialog"],
+  .fni-app-shell [aria-modal="true"] {
+    max-height: var(--fni-visible-viewport-height, 100dvh);
+    overscroll-behavior: contain;
+  }
+}
+
+/* Compact-height phones in landscape still get usable, scrollable forms. */
+@media (max-width: 767px) and (max-height: 500px) {
+  .fni-app-shell:not(.fni-messaging-route) .fni-app-main {
+    padding-top: .5rem;
+  }
+}
