@@ -1275,7 +1275,7 @@ export class SupabaseService {
 
   static async setPrivateMessagePin(
     messageId: string,
-    userId: string,
+    _userId: string,
     pinned: boolean
   ): Promise<{ success: boolean; error?: string }> {
     if (!this.isAvailable()) return { success: false, error: 'Database unavailable' };
