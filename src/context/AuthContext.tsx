@@ -180,6 +180,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [currentUser?.id, currentUser?.supabase_user_id]);
 
+  // Keep account preferences (theme, notification settings and chat appearance)
+  // synchronized when another signed-in device changes them.
+  useEffect(() => {
+    if (!currentUser?.id || !isSupabaseConfigured || !supabase) return;
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    import('../services/userSettingsService').then(({ UserSettingsService }) => {
+      if (!active) return;
+      unsubscribe = UserSettingsService.subscribeToUserSettings(currentUser.id, (settings) => {
+        if (!active || !settings) return;
+        window.dispatchEvent(new CustomEvent('fni:user-settings-updated', { detail: settings }));
+      });
+      void UserSettingsService.getUserSettings(currentUser.id).then((settings) => {
+        if (active && settings) {
+          window.dispatchEvent(new CustomEvent('fni:user-settings-updated', { detail: settings }));
+        }
+      });
+    });
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [currentUser?.id]);
+
   // Re-fetch the signed-in profile when the tutor returns to an already-open portal.
   // This ensures administrator-side cell unassignments are reflected without requiring a sign-out.
   useEffect(() => {
