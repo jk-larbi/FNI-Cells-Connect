@@ -1439,7 +1439,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setPrivateMessages(prev => prev.filter(m => m.id !== msg.id));
     }
 
-    // 2. Persist deletion in background without blocking the UI
+    // Persist first; if the server rejects it, restore the message instead of
+    // leaving the sender with a phantom deletion.
     try {
       if (forEveryone) {
         await MessagingService.deleteMessageForEveryone(
@@ -1453,8 +1454,22 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           isCommunity ? 'community' : 'private'
         );
       }
-    } catch (err) {
-      console.warn('Background message delete notice:', err);
+      const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+      ConversationCacheService.removeMessage(currentUser.id, conversationId, msg.id);
+    } catch (err: any) {
+      if (isCommunity) {
+        setCommunityMessages(previous => [...previous.filter(item => item.id !== msg.id), msg]
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+        const cached = ConversationCacheService.getMessages<CommunityMessage>(currentUser.id, 'community') || [];
+        ConversationCacheService.setMessages(currentUser.id, 'community', [...cached.filter(item => item.id !== msg.id), msg]);
+      } else {
+        setPrivateMessages(previous => [...previous.filter(item => item.id !== msg.id), msg as PrivateMessage]
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+        const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+        const cached = ConversationCacheService.getMessages<PrivateMessage>(currentUser.id, conversationId) || [];
+        ConversationCacheService.setMessages(currentUser.id, conversationId, [...cached.filter(item => item.id !== msg.id), msg as PrivateMessage]);
+      }
+      setSendError(err?.message || 'The message could not be deleted. Please try again.');
     }
   };
 
