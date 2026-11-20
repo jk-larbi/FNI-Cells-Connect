@@ -195,6 +195,31 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
     }
   };
 
+  // Refresh quiz attempts and any active server draft when another device changes this tutor's quiz data.
+  useEffect(() => {
+    const handleQuizCloudChange = async (event: Event) => {
+      const change = (event as CustomEvent<{ table?: string }>).detail;
+      if (change?.table !== 'learning_quiz_sync_state' && change?.table !== '*') return;
+      try {
+        if (isAdmin) {
+          setAllAttempts(await LearningService.getQuizAttempts());
+        } else if (currentUser?.id) {
+          setTutorAttempts(await LearningService.getQuizAttempts(undefined, currentUser.id));
+          if (activeQuizForTest && quizSessionId) {
+            const remote = await LearningService.getQuizSession(activeQuizForTest.id, quizSessionId);
+            if (remote.answers && JSON.stringify(remote.answers) !== JSON.stringify(userAnswers)) {
+              setUserAnswers(remote.answers);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not refresh quiz data from another device:', error);
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleQuizCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleQuizCloudChange);
+  }, [isAdmin, currentUser?.id, activeQuizForTest?.id, quizSessionId, JSON.stringify(userAnswers)]);
+
   // Continuous auto-save draft for active attempt
   useEffect(() => {
     if (activeQuizForTest && currentUser?.id && quizStartedAt) {
