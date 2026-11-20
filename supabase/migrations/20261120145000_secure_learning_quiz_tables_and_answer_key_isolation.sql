@@ -33,6 +33,7 @@ create table if not exists public.learning_quiz_questions (
   options jsonb not null default '[]'::jsonb,
   points numeric not null default 10 check (points >= 0),
   marking_method text check (marking_method in ('automatic','manual')),
+  is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -128,7 +129,7 @@ using (exists (select 1 from public.profiles p where p.supabase_user_id=(select 
 with check (exists (select 1 from public.profiles p where p.supabase_user_id=(select auth.uid()) and p.role in ('admin','super_admin','national_admin')));
 drop policy if exists learning_quiz_questions_published_read on public.learning_quiz_questions;
 create policy learning_quiz_questions_published_read on public.learning_quiz_questions for select to authenticated
-using (exists (select 1 from public.learning_quizzes q where q.id=quiz_id and q.status='published'));
+using (is_active = true and exists (select 1 from public.learning_quizzes q where q.id=quiz_id and q.status='published'));
 
 drop policy if exists learning_quiz_sync_state_owner_read on public.learning_quiz_sync_state;
 create policy learning_quiz_sync_state_owner_read on public.learning_quiz_sync_state for select to authenticated
