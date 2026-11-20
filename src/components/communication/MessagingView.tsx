@@ -52,6 +52,7 @@ import {
   CornerDownRight,
   MoreVertical,
   Pin,
+  Download,
   Paperclip,
   Search,
   Mic,
