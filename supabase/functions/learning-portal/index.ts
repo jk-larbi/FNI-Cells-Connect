@@ -253,8 +253,8 @@ Deno.serve(async (req) => {
     if (isAdmin || profile.role !== "tutor") return fail("Tutor access required", 403);
     if (!body.quizId || !body.sessionId) return fail("Quiz session is required");
     const { data: session, error: sessionError } = await db.from("learning_quiz_sessions").select("*")
-      .eq("id", body.sessionId).eq("quiz_id", body.quizId).eq("tutor_id", profile.id).is("consumed_at", null).maybeSingle();
-    if (sessionError || !session) return fail("Quiz session is invalid or has already been submitted", 409);
+      .eq("id", body.sessionId).eq("quiz_id", body.quizId).eq("tutor_id", profile.id).maybeSingle();
+    if (sessionError || !session) return fail("Quiz session is invalid", 409);
     const { data: existingAttempt } = await db.from("learning_quiz_attempts").select("*").eq("session_id", session.id).maybeSingle();
     if (existingAttempt) {
       await db.from("learning_quiz_sessions").update({ consumed_at: existingAttempt.completed_at }).eq("id", session.id);
@@ -275,6 +275,7 @@ Deno.serve(async (req) => {
       }
       return json(response);
     }
+    if (session.consumed_at) return fail("Quiz session has already been submitted", 409);
 
     const { data: quiz, error: quizError } = await db.from("learning_quizzes").select("*").eq("id", body.quizId).maybeSingle();
     if (quizError || !quiz || quiz.status !== "published") return fail("Quiz is no longer available", 404);
