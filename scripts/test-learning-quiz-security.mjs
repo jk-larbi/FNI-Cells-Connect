@@ -14,6 +14,7 @@ assert.match(migration, /revoke all on public\.learning_quiz_attempts from anon,
 assert.match(migration, /revoke all on public\.learning_quiz_sessions from anon,authenticated,public/i);
 assert.match(migration, /alter table public\.learning_quiz_answer_keys enable row level security/i);
 assert.match(migration, /learning_quiz_sync_state_owner_read/i);
+assert.match(migration, /updated_at timestamptz not null default now\(\)/i);
 
 assert.match(edge, /auth\.getUser\(\)/);
 assert.match(edge, /ADMIN_ROLES/);
