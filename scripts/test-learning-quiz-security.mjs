@@ -34,6 +34,7 @@ assert.match(edge, /scoreAutomaticText/);
 assert.match(edge, /action === "grade_attempt"/);
 assert.match(edge, /action === "release_all"/);
 assert.match(edge, /results_released/);
+assert.match(edge, /awaiting_results/);
 assert.match(edge, /learning_quiz_answer_keys/);
 
 assert.match(service, /functions\.invoke\('learning-portal'/);
