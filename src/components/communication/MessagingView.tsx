@@ -2624,7 +2624,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       const blob = await response.blob();
       const safeName = (fileName || 'FNI-attachment').replace(/[\\\\/:*?"<>|]/g, '_');
       const file = new File([blob], safeName, { type: blob.type || 'application/octet-stream' });
-      if (preferShare && Capacitor.isNativePlatform()) {
+      if (Capacitor.isNativePlatform()) {
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
@@ -2632,7 +2632,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           reader.readAsDataURL(blob);
         });
         const saved = await Filesystem.writeFile({ path: safeName, data: dataUrl, directory: Directory.Cache, recursive: true });
-        await Share.share({ title: safeName, dialogTitle: 'Save or share image', files: [saved.uri] });
+        await Share.share({ title: safeName, dialogTitle: preferShare ? 'Save or share image' : 'Save or share file', files: [saved.uri] });
         return;
       }
       const shareNavigator = navigator as Navigator & { canShare?: (data?: ShareData) => boolean; share?: (data: ShareData) => Promise<void> };
