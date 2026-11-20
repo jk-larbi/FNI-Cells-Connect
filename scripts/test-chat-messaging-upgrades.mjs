@@ -13,6 +13,16 @@ assert.match(supabase, /createSignedUrl\(objectPath, 60 \* 60 \* 24\)/, 'private
 assert.match(view, /<video controls playsInline/, 'videos must render inline with playback controls');
 assert.match(view, /<audio controls preload="metadata"/, 'music and audio files must have an inline audio player');
 assert.match(view, /<img src=\{fileUrl\}/, 'photos must render inline');
+assert.match(view, /setSelectedImagePreview\(\{ url: fileUrl/, 'photos must open in a full-screen preview');
+assert.match(view, /Save image/, 'photo preview must expose a save action');
+assert.match(view, /handleAttachmentDownload\(fileUrl, att\.name \|\| 'FNI-image\.jpg', true\)/, 'photo save must use the device share or download flow');
+assert.match(view, /Filesystem\.writeFile/, 'native Android photo saving must prepare a shareable local file');
+assert.match(view, /Share\.share\(\{ title: safeName, dialogTitle: 'Save or share image', files: \[saved\.uri\] \}\)/, 'native photo saving must open the system share sheet');
+assert.match(view, /Download document/, 'documents must have an explicit download action');
+assert.match(view, /Download audio/, 'audio files must have an explicit download action');
+assert.match(view, /openAttachmentInNewTab\(fileUrl\)/, 'documents must be openable from the chat');
+assert.match(view, /<audio controls preload="metadata" src=\{fileUrl\}/, 'audio must use the native playback control');
+
 assert.match(view, /accept="image\/\*,video\/\*,audio\/\*/, 'the attachment picker must accept audio and video');
 assert.match(view, /const message: PrivateMessage = \{/, 'private Realtime rows must be mapped directly without a second fetch');
 assert.match(view, /const message: CommunityMessage = \{/, 'community Realtime rows must be mapped directly without a second fetch');
