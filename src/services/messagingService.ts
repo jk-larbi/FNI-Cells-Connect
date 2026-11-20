@@ -86,8 +86,10 @@ export class MessagingService {
   }
 
   static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
+    if (!messageId) throw new Error('Message not found.');
     const success = await SupabaseService.deleteMessageForEveryone(messageId, scope);
-    // Also prune from local cache
+    if (!success) throw new Error('The message could not be deleted for everyone. Please check your connection and try again.');
+
     if (scope === 'private') {
       const msgs = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
       setStored(STORAGE_KEYS.PRIVATE, msgs.filter(m => m.id !== messageId));
@@ -95,7 +97,7 @@ export class MessagingService {
       const msgs = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
       setStored(STORAGE_KEYS.COMMUNITY, msgs.filter(m => m.id !== messageId));
     }
-    return success;
+    return true;
   }
 
   static async editMessage(messageId: string, scope: 'private' | 'community', content: string): Promise<boolean> {
