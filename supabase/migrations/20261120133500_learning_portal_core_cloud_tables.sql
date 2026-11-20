@@ -127,18 +127,58 @@ create or replace function public.protect_learning_submission_grades()
 returns trigger
 language plpgsql
 set search_path = pg_catalog, public
-as $
+as $$
 declare
   v_role text;
+  v_profile_id text;
+  v_full_name text;
+  v_cell_id text;
+  v_cell_name text;
+  v_assignment_status text;
+  v_max_attempts integer;
+  v_due_date timestamptz;
+  v_late_policy text;
+  v_used_attempts integer;
 begin
   if auth.uid() is not null then
-    select p.role into v_role
+    select p.role, p.id, p.full_name, p.cell_id, p.cell_name
+      into v_role, v_profile_id, v_full_name, v_cell_id, v_cell_name
     from public.profiles p
     where p.supabase_user_id = auth.uid()
     limit 1;
 
     if coalesce(v_role, '') not in ('admin','super_admin','national_admin') then
       if tg_op = 'INSERT' then
+        if new.tutor_id is distinct from v_profile_id then
+          raise exception 'You can only submit assignments for your own tutor account.';
+        end if;
+
+        select a.status, a.max_attempts, a.due_date, a.late_policy
+          into v_assignment_status, v_max_attempts, v_due_date, v_late_policy
+        from public.learning_assignments a
+        where a.id = new.assignment_id;
+
+        if not found or v_assignment_status <> 'published' then
+          raise exception 'This assignment is not available for submission.';
+        end if;
+
+        select count(*) into v_used_attempts
+        from public.learning_assignment_submissions s
+        where s.assignment_id = new.assignment_id
+          and s.tutor_id = v_profile_id;
+
+        if coalesce(v_max_attempts, 1) > 0 and v_used_attempts >= v_max_attempts then
+          raise exception 'The maximum number of attempts for this assignment has been reached.';
+        end if;
+
+        new.is_late := now() > v_due_date;
+        if new.is_late and v_late_policy = 'reject_late' then
+          raise exception 'The assignment deadline has passed and late submissions are not accepted.';
+        end if;
+
+        new.tutor_name := coalesce(v_full_name, new.tutor_name);
+        new.cell_id := v_cell_id;
+        new.cell_name := v_cell_name;
         new.grade := null;
         new.feedback := null;
         new.graded_by := null;
@@ -159,7 +199,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists protect_learning_submission_grades on public.learning_assignment_submissions;
 create trigger protect_learning_submission_grades
