@@ -985,6 +985,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           if (!message.id || message.deletedForEveryoneAt) return;
           if (message.senderUid !== viewerId && !allMembers.some(member => member.id === message.senderUid)) return;
           if (MessagingService.getDeletedForSelfIds(viewerId).has(message.id)) return;
+          // A Realtime pin/reaction/edit event must not resurrect a post that this
+          // member already cleared from their own community history.
+          if (!await MessagingService.isCommunityMessageVisibleForUser(viewerId, message.id, message.createdAt)) return;
           setCommunityMessages(previous => {
             const existing = previous.find(item => item.id === message.id);
             const mergedMessage = { ...message, reactions: message.reactions || existing?.reactions || {} };
