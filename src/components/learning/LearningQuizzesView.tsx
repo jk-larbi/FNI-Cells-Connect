@@ -445,8 +445,9 @@ export const LearningQuizzesView: React.FC<LearningQuizzesViewProps> = ({
       let session: Awaited<ReturnType<typeof LearningService.startQuizAttempt>>;
       try {
         session = await LearningService.startQuizAttempt(quiz.id, draft?.sessionId);
-      } catch (resumeError) {
-        if (!draft?.sessionId) throw resumeError;
+      } catch (resumeError: any) {
+        const message = String(resumeError?.message || '').toLowerCase();
+        if (!draft?.sessionId || !message.includes('session')) throw resumeError;
         LearningService.clearQuizDraftAnswers(quiz.id, currentUser?.id || 'tutor');
         draft = null;
         session = await LearningService.startQuizAttempt(quiz.id);
