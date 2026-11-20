@@ -938,13 +938,73 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     loadActiveMessages(selectedChatId);
 
     // Supabase Realtime channel for messages and personal chat folders
+    const applyMessageChange = async (scope: 'private' | 'community', payload: any) => {
+      const row = payload.new || {};
+      const messageId = row.id || payload.old?.id;
+      if (!messageId) return;
+      const removeMessage = payload.eventType === 'DELETE' || Boolean(row.deleted_for_everyone_at);
+      if (scope === 'community') {
+        if (selectedChatId !== 'community') return;
+        if (removeMessage) {
+          setCommunityMessages(previous => {
+            const next = previous.filter(message => message.id !== messageId);
+            ConversationCacheService.setMessages(viewerId, 'community', next);
+            return next;
+          });
+          return;
+        }
+        try {
+          const message = await MessagingService.getCommunityMessageById(messageId);
+          if (!message || message.deletedForEveryoneAt) return;
+          setCommunityMessages(previous => {
+            const next = [...previous.filter(item => item.id !== message.id), message]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            ConversationCacheService.setMessages(viewerId, 'community', next);
+            return next;
+          });
+        } catch (error) {
+          console.warn('Realtime community message refresh notice:', error);
+        }
+        return;
+      }
+
+      if (!selectedChatId || selectedChatId === 'community') return;
+      const conversationId = selectedChatId === 'saved_messages' ? viewerId : selectedChatId;
+      if (removeMessage) {
+        setPrivateMessages(previous => {
+          const next = previous.filter(message => message.id !== messageId);
+          ConversationCacheService.setMessages(viewerId, conversationId, next);
+          return next;
+        });
+        return;
+      }
+      try {
+        const message = await MessagingService.getPrivateMessageById(messageId);
+        if (!message || message.deletedForEveryoneAt) return;
+        const belongs = isAdmin
+          ? ((message.senderUid === conversationId && (message.recipientUid === 'admin' || message.recipientUid === viewerId)) ||
+             (message.senderUid === viewerId && message.recipientUid === conversationId))
+          : ((message.senderUid === viewerId && message.recipientUid === conversationId) ||
+             (message.senderUid === conversationId && message.recipientUid === viewerId));
+        if (!belongs) return;
+        setPrivateMessages(previous => {
+          const next = [...previous.filter(item => item.id !== message.id), message]
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          ConversationCacheService.setMessages(viewerId, conversationId, next);
+          return next;
+        });
+      } catch (error) {
+        console.warn('Realtime private message refresh notice:', error);
+      }
+    };
+
     const channel = supabase
       ?.channel(`fni-messages-${viewerId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'community_messages' }, () => {
-        if (selectedChatId === 'community') loadActiveMessages('community');
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'community_messages' }, payload => {
+        void applyMessageChange('community', payload);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages' }, () => {
-        if (selectedChatId && selectedChatId !== 'community') loadActiveMessages(selectedChatId);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_messages' }, payload => {
+        void applyMessageChange('private', payload);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_folders' }, () => {
         loadChatFolders();
