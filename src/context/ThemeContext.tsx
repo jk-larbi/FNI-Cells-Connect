@@ -71,13 +71,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setThemePreference = (pref: ThemePreference) => {
     setThemePreferenceState(pref);
+    window.dispatchEvent(new CustomEvent('fni:theme-preference-changed', { detail: pref }));
   };
 
   const toggleTheme = () => {
-    setThemePreferenceState(current => {
-      const effective = current === 'system' ? (systemIsDark ? 'dark' : 'light') : current;
-      return effective === 'dark' ? 'light' : 'dark';
-    });
+    const effective = themePreference === 'system' ? (systemIsDark ? 'dark' : 'light') : themePreference;
+    setThemePreference(effective === 'dark' ? 'light' : 'dark');
   };
 
   return (
