@@ -165,8 +165,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .channel(`fni-own-avatar-${currentUser.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'profile_avatar_updates', filter: `user_id=eq.${currentUser.supabase_user_id || currentUser.id}` },
-        async () => {
+        { event: '*', schema: 'public', table: 'profile_avatar_updates' },
+        async (payload) => {
+          const update = (payload.new || {}) as { user_id?: string };
+          const ownAuthId = currentUser.supabase_user_id || currentUser.id;
+          if (update.user_id !== ownAuthId) return;
           const updated = await AuthService.fetchProfileById(currentUser.id);
           if (updated) setCurrentUser(updated);
         }
