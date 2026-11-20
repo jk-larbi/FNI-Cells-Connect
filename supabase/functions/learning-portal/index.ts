@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       event_type: eventType,
       updated_at: new Date().toISOString(),
     });
-    if (error) throw error;
+    if (error) console.error("Quiz sync marker update failed:", error.message);
   };
 
   const fetchQuestions = async (quizId: string) => {
@@ -255,6 +255,27 @@ Deno.serve(async (req) => {
     const { data: session, error: sessionError } = await db.from("learning_quiz_sessions").select("*")
       .eq("id", body.sessionId).eq("quiz_id", body.quizId).eq("tutor_id", profile.id).is("consumed_at", null).maybeSingle();
     if (sessionError || !session) return fail("Quiz session is invalid or has already been submitted", 409);
+    const { data: existingAttempt } = await db.from("learning_quiz_attempts").select("*").eq("session_id", session.id).maybeSingle();
+    if (existingAttempt) {
+      await db.from("learning_quiz_sessions").update({ consumed_at: existingAttempt.completed_at }).eq("id", session.id);
+      await syncState(existingAttempt.quiz_id, existingAttempt.tutor_id, "attempt_submitted", existingAttempt.id);
+      const { data: existingQuiz } = await db.from("learning_quizzes").select("title,total_points").eq("id", existingAttempt.quiz_id).maybeSingle();
+      const response: any = { ...existingAttempt, quiz_title: existingQuiz?.title || "Quiz" };
+      if (existingAttempt.results_released) {
+        const keys = await fetchAnswerKeys(existingAttempt.quiz_id);
+        const keyMap = new Map(keys.map((k: any) => [k.question_id, k]));
+        for (const [qid, grade] of Object.entries(existingAttempt.question_grades || {})) {
+          const key: any = keyMap.get(qid) || {};
+          response.question_grades[qid] = { ...(grade as any), correct_answer: key.correct_answer, expected_answer: key.expected_answer };
+        }
+      } else {
+        response.question_grades = {};
+        response.score = 0; response.total_possible = Number(existingQuiz?.total_points || existingAttempt.total_possible);
+        response.percentage = 0; response.passed = false;
+      }
+      return json(response);
+    }
+
     const { data: quiz, error: quizError } = await db.from("learning_quizzes").select("*").eq("id", body.quizId).maybeSingle();
     if (quizError || !quiz || quiz.status !== "published") return fail("Quiz is no longer available", 404);
     const timing = quiz.timing_settings || {};
@@ -314,7 +335,7 @@ Deno.serve(async (req) => {
     const attemptId = "att-" + crypto.randomUUID();
     const attemptNumber = (count || 0) + 1;
     const attemptRow = {
-      id: attemptId, quiz_id: quiz.id, tutor_id: profile.id, tutor_name: profile.full_name || "Tutor",
+      id: attemptId, session_id: session.id, quiz_id: quiz.id, tutor_id: profile.id, tutor_name: profile.full_name || "Tutor",
       cell_id: profile.cell_id, cell_name: profile.cell_name, attempt_number: attemptNumber,
       answers, question_grades: grades, score: totalScore, total_possible: totalPossible, percentage, passed,
       started_at: session.started_at, completed_at: now.toISOString(), status,
