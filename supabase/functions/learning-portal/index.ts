@@ -211,22 +211,38 @@ Deno.serve(async (req) => {
       if (countError) return fail("Could not check attempt limit: " + countError.message, 500);
       const maxAttempts = timing.allow_resubmission === false ? 1 : Number(timing.max_attempts ?? 1);
       if (maxAttempts > 0 && (count || 0) >= maxAttempts) return fail("You have reached the maximum allowed attempts", 409);
+      const currentQuestions = await fetchQuestions(quiz.id);
+      if (!currentQuestions.length) return fail("This quiz has no active questions yet", 409);
+      const questionIds = currentQuestions.map((q: any) => q.id);
       const startedAt = now.toISOString();
       const duration = Number(timing.time_limit_minutes ?? quiz.time_limit_minutes ?? 15);
       const expiresAt = duration > 0 ? new Date(now.getTime() + duration * 60000).toISOString() : null;
       const { data, error } = await db.from("learning_quiz_sessions").insert({
-        quiz_id: quiz.id, tutor_id: profile.id, started_at: startedAt, expires_at: expiresAt, answers: {},
+        quiz_id: quiz.id, tutor_id: profile.id, started_at: startedAt, expires_at: expiresAt, answers: {}, question_ids: questionIds,
       }).select("*").single();
       if (error) return fail("Could not start quiz session: " + error.message, 500);
       session = data;
       await syncState(quiz.id, profile.id, 'session_started');
     }
+    let questionIds = Array.isArray(session.question_ids) ? session.question_ids : [];
+    if (!questionIds.length) {
+      const currentQuestions = await fetchQuestions(quiz.id);
+      if (!currentQuestions.length) return fail("This quiz has no active questions yet", 409);
+      questionIds = currentQuestions.map((q: any) => q.id);
+      await db.from("learning_quiz_sessions").update({ question_ids: questionIds }).eq("id", session.id);
+      session.question_ids = questionIds;
+    }
+    const { data: sessionQuestions, error: questionError } = await db.from("learning_quiz_questions")
+      .select("id,quiz_id,section,question_text,question_type,options,points,marking_method")
+      .in("id", questionIds).order("created_at", { ascending: true });
+    if (questionError || !sessionQuestions?.length) return fail("The questions for this quiz session could not be loaded", 500);
     return json({
       sessionId: session.id,
       startedAt: session.started_at,
       expiresAt: session.expires_at,
       updatedAt: session.updated_at || session.started_at,
       answers: session.answers || {},
+      questions: sessionQuestions,
       expired: Boolean(session.expires_at && now >= new Date(session.expires_at)),
       quizId: quiz.id,
     });
@@ -239,8 +255,7 @@ Deno.serve(async (req) => {
       .eq("id", body.sessionId).eq("quiz_id", body.quizId).eq("tutor_id", profile.id).maybeSingle();
     if (!session || session.consumed_at) return fail("Quiz session is no longer active", 409);
     if (session.expires_at && new Date() >= new Date(session.expires_at)) return fail("Quiz time has expired", 409);
-    const questions = await fetchQuestions(body.quizId);
-    const validIds = new Set(questions.map((q: any) => q.id));
+    const validIds = new Set(Array.isArray(session.question_ids) ? session.question_ids : []);
     const answers = cleanAnswers(body.answers || {}, validIds);
     const updatedAt = new Date().toISOString();
     const { error } = await db.from("learning_quiz_sessions").update({ answers, updated_at: updatedAt }).eq("id", session.id);
@@ -291,7 +306,18 @@ Deno.serve(async (req) => {
     const maxAttempts = timing.allow_resubmission === false ? 1 : Number(timing.max_attempts ?? 1);
     if (maxAttempts > 0 && (count || 0) >= maxAttempts) return fail("Maximum quiz attempts reached", 409);
 
-    const [questions, keys] = await Promise.all([fetchQuestions(quiz.id), fetchAnswerKeys(quiz.id)]);
+    let questionIds = Array.isArray(session.question_ids) ? session.question_ids : [];
+    if (!questionIds.length) {
+      const activeQuestions = await fetchQuestions(quiz.id);
+      questionIds = activeQuestions.map((q: any) => q.id);
+      await db.from("learning_quiz_sessions").update({ question_ids: questionIds }).eq("id", session.id);
+    }
+    if (!questionIds.length) return fail("This quiz session has no saved question version", 409);
+    const [{ data: questions, error: questionsError }, keys] = await Promise.all([
+      db.from("learning_quiz_questions").select("*").in("id", questionIds).order("created_at", { ascending: true }),
+      fetchAnswerKeys(quiz.id),
+    ]);
+    if (questionsError || !questions?.length) return fail("The saved quiz question version could not be loaded", 500);
     const keyMap = new Map(keys.map((k: any) => [k.question_id, k]));
     const answers = cleanAnswers(body.answers || session.answers || {}, new Set(questions.map((q: any) => q.id)));
     let totalScore = 0;
