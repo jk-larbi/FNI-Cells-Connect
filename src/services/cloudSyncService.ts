@@ -73,16 +73,20 @@ export class CloudSyncService {
     const refreshOnReconnect = () => {
       if (active) callback({ table: '*', eventType: 'REFRESH', source: 'reconnect' });
     };
+    const refreshOnVisible = () => {
+      if (document.visibilityState === 'visible') refreshOnReconnect();
+    };
     if (typeof window !== 'undefined') {
       window.addEventListener('online', refreshOnReconnect);
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') refreshOnReconnect();
-      });
+      document.addEventListener('visibilitychange', refreshOnVisible);
     }
 
     return () => {
       active = false;
-      if (typeof window !== 'undefined') window.removeEventListener('online', refreshOnReconnect);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', refreshOnReconnect);
+        document.removeEventListener('visibilitychange', refreshOnVisible);
+      }
       void supabase.removeChannel(channel);
     };
   }
