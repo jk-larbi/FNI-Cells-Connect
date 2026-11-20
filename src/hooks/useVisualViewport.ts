@@ -60,7 +60,7 @@ export function useVisualViewport(): VisualViewportState {
       const baseline = Math.max(layoutHeightRef.current, window.innerHeight);
       const heightDifference = Math.max(0, baseline - visualHeight);
       const isKeyboardVisible = editableFocused && heightDifference > 100;
-      if (!editableFocused || !isKeyboardVisible) {
+      if (!editableFocused) {
         layoutHeightRef.current = Math.max(visualHeight, window.innerHeight);
       }
 
@@ -87,7 +87,7 @@ export function useVisualViewport(): VisualViewportState {
       });
 
       if (isKeyboardVisible && window.scrollY !== 0) {
-        window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+        window.scrollTo(0, 0);
       }
     };
 
