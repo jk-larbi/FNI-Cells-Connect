@@ -59,6 +59,19 @@ export const LearningGradesView: React.FC<LearningGradesViewProps> = ({ assignme
     }
   };
 
+  useEffect(() => {
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent<{ table?: string }>).detail?.table;
+      if (!table || table === '*' || [
+        'learning_assignment_submissions', 'learning_quiz_sync_state', 'learning_quizzes', 'learning_quiz_questions',
+      ].includes(table)) {
+        void loadGrades();
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
+  }, [isAdmin, currentUser?.id]);
+
   // Only graded submissions for tutors, or released results
   const visibleSubmissions = submissions.filter(s => {
     if (s.grade === undefined || s.grade === null) return false;
