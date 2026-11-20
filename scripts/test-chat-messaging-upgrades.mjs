@@ -47,3 +47,9 @@ assert.match(messaging, /if \(forEveryone\) \{\s*console\.warn\('Community-wide 
 console.log('Community author deletion, personal clear isolation, tombstone sync, and Telegram-style pin regression checks passed.');
 
 assert.match(messaging, /isCommunityMessageVisibleForUser\(/, 'Realtime community updates must respect personal clear-history cutoffs');
+
+const communityClearMigration = read('../supabase/migrations/20261120160000_community_chat_personal_and_admin_clear_rpc.sql');
+assert.match(communityClearMigration, /if coalesce\(p_for_everyone, false\)/, 'community clear mode must be explicit');
+assert.match(communityClearMigration, /Administrator permission required to clear community chat for everyone/, 'only administrators may clear community history for everyone');
+assert.match(communityClearMigration, /insert into public\.community_chat_preferences \(user_id, cleared_at, updated_at\)/, 'personal clear must write only the current user preference');
+assert.match(communityClearMigration, /grant execute on function public\.fni_clear_community_chat_history\(boolean\) to authenticated/, 'authenticated members must use the secured clear RPC');
