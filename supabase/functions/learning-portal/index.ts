@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
   };
 
   const fetchQuestions = async (quizId: string) => {
-    const { data, error } = await db.from("learning_quiz_questions").select("*").eq("quiz_id", quizId).order("created_at", { ascending: true });
+    const { data, error } = await db.from("learning_quiz_questions").select("*").eq("quiz_id", quizId).eq("is_active", true).order("created_at", { ascending: true });
     if (error) throw error;
     return data || [];
   };
@@ -137,15 +137,16 @@ Deno.serve(async (req) => {
     const { error: quizError } = await db.from("learning_quizzes").upsert(quizRow);
     if (quizError) return fail("Could not save quiz: " + quizError.message, 400);
 
-    const { error: deleteError } = await db.from("learning_quiz_questions").delete().eq("quiz_id", quizRow.id);
-    if (deleteError) return fail("Could not replace quiz questions: " + deleteError.message, 400);
+    const { error: deactivateError } = await db.from("learning_quiz_questions")
+      .update({ is_active: false }).eq("quiz_id", quizRow.id);
+    if (deactivateError) return fail("Could not version existing quiz questions: " + deactivateError.message, 400);
 
     const questionRows: any[] = [];
     const keyRows: any[] = [];
     for (let index = 0; index < questions.length; index++) {
       const q = questions[index] || {};
       const section = q.section === "subjective" || q.question_type === "written" || q.question_type === "short_answer" ? "subjective" : "mcq";
-      const qid = String(q.id || ("q-" + crypto.randomUUID()));
+      const qid = "q-" + crypto.randomUUID();
       const questionType = section === "subjective" ? (q.question_type === "short_answer" ? "short_answer" : "written") : (q.question_type === "true_false" ? "true_false" : "multiple_choice");
       questionRows.push({
         id: qid, quiz_id: quizRow.id, section,
@@ -154,6 +155,7 @@ Deno.serve(async (req) => {
         options: Array.isArray(q.options) ? q.options : [],
         points: Number(q.points || 10),
         marking_method: section === "subjective" ? (q.marking_method === "automatic" ? "automatic" : "manual") : null,
+        is_active: true,
       });
       keyRows.push({
         question_id: qid, quiz_id: quizRow.id,
