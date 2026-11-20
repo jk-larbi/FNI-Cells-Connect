@@ -11,6 +11,7 @@ import {
   AccountDeactivationRequest,
 } from '../../types';
 import { ProfilePhotoUploader } from '../common/ProfilePhotoUploader';
+import { processBannerImage, getContrastingTextColor } from '../../utils/imageUtils';
 import { NotificationAudio } from '../../utils/notificationAudio';
 import { triggerIosInstallGuide, isIosDevice, isStandaloneMode } from '../pwa/IosInstallGuide';
 import { Capacitor } from '@capacitor/core';
@@ -18,6 +19,7 @@ import { AppUpdateSettingsSection } from '../settings/AppUpdateSettingsSection';
 import { ICON_STYLES } from '../../utils/iconColors';
 import {
   User,
+  Image as ImageIcon,
   Mail,
   Phone,
   Building,
@@ -95,12 +97,66 @@ const BUILT_IN_WALLPAPERS = [
 ];
 
 const SOLID_COLORS = [
+  { id: 'solid_telegram_dark', name: 'Telegram Dark', color: '#0e1621' },
+  { id: 'solid_unigram_night', name: 'Unigram Night', color: '#17212b' },
+  { id: 'solid_obsidian', name: 'Obsidian Night', color: '#090d16' },
+  { id: 'solid_navy', name: 'Deep Royal Navy', color: '#142B4A' },
+  { id: 'solid_night', name: 'Dark Slate', color: '#0F172A' },
+  { id: 'solid_charcoal', name: 'Deep Charcoal', color: '#1E293B' },
+  { id: 'solid_forest', name: 'Deep Forest', color: '#0F281E' },
+  { id: 'solid_pine', name: 'Dark Pine', color: '#143826' },
+  { id: 'solid_olive', name: 'Olive Grove', color: '#1C2814' },
+  { id: 'solid_wine', name: 'Dark Wine', color: '#26101C' },
+  { id: 'solid_violet', name: 'Royal Violet', color: '#1B1429' },
+  { id: 'solid_espresso', name: 'Deep Espresso', color: '#1F1A16' },
   { id: 'solid_classic', name: 'Classic Grey', color: '#F5F7FA' },
   { id: 'solid_warm', name: 'Warm Paper', color: '#FAF6ED' },
   { id: 'solid_ice', name: 'Ice Blue', color: '#EAF2FB' },
   { id: 'solid_mint', name: 'Soft Mint', color: '#F0FDF4' },
-  { id: 'solid_navy', name: 'Deep Royal Navy', color: '#142B4A' },
-  { id: 'solid_night', name: 'Dark Slate', color: '#0F172A' },
+  { id: 'solid_lavender', name: 'Soft Lavender', color: '#F1EEFA' },
+  { id: 'solid_rose', name: 'Soft Rose', color: '#FFF1F2' },
+  { id: 'solid_peach', name: 'Soft Peach', color: '#FFF7ED' },
+  { id: 'solid_alabaster', name: 'Warm Alabaster', color: '#FEFCE8' },
+  { id: 'solid_silver', name: 'Silver Cloud', color: '#F1F5F9' },
+  { id: 'solid_slate', name: 'Mineral Slate', color: '#E2E8F0' },
+  { id: 'solid_doodle_green', name: 'Telegram Green', color: '#85AD7B' },
+  { id: 'solid_sky', name: 'Electric Sky', color: '#3B82F6' },
+];
+
+export const OUTGOING_BUBBLE_COLORS = [
+  { id: 'bubble_telegram_green', name: 'Telegram Emerald', color: '#1b5e3f' },
+  { id: 'bubble_mint_green', name: 'Bright Mint', color: '#059669' },
+  { id: 'bubble_spring_jade', name: 'Spring Jade', color: '#10b981' },
+  { id: 'bubble_pine_forest', name: 'Pine Forest', color: '#14532d' },
+  { id: 'bubble_royal_blue', name: 'Royal Blue', color: '#2563eb' },
+  { id: 'bubble_sky_cyan', name: 'Sky Cyan', color: '#0284c7' },
+  { id: 'bubble_turquoise', name: 'Turquoise', color: '#06b6d4' },
+  { id: 'bubble_deep_teal', name: 'Deep Teal', color: '#0d9488' },
+  { id: 'bubble_royal_navy', name: 'FNI Royal Navy', color: '#142B4A' },
+  { id: 'bubble_electric_indigo', name: 'Electric Indigo', color: '#4f46e5' },
+  { id: 'bubble_soft_iris', name: 'Soft Iris', color: '#6366f1' },
+  { id: 'bubble_royal_violet', name: 'Royal Violet', color: '#7c3aed' },
+  { id: 'bubble_vivid_purple', name: 'Vivid Purple', color: '#9333ea' },
+  { id: 'bubble_bright_magenta', name: 'Bright Magenta', color: '#c026d3' },
+  { id: 'bubble_ruby_crimson', name: 'Ruby Crimson', color: '#e11d48' },
+  { id: 'bubble_cardinal_red', name: 'Cardinal Red', color: '#dc2626' },
+  { id: 'bubble_sunset_coral', name: 'Sunset Coral', color: '#ea580c' },
+  { id: 'bubble_warm_amber', name: 'Warm Amber', color: '#f59e0b' },
+  { id: 'bubble_harvest_gold', name: 'FNI Gold', color: '#c6a45a' },
+  { id: 'bubble_olive_lime', name: 'Olive Lime', color: '#65a30d' },
+  { id: 'bubble_steel_slate', name: 'Steel Slate', color: '#475569' },
+  { id: 'bubble_charcoal', name: 'Charcoal Graphite', color: '#334155' },
+  { id: 'bubble_obsidian', name: 'Obsidian Black', color: '#18181b' },
+  { id: 'bubble_deep_wine', name: 'Wine Velvet', color: '#831843' },
+];
+
+export const PRESET_PROFILE_BANNERS = [
+  { id: 'royal_gold', name: 'Royal Gold & Navy', url: 'linear-gradient(135deg, #142B4A 0%, #1e3a8a 50%, #C6A45A 100%)' },
+  { id: 'deep_sanctuary', name: 'Deep Sanctuary', url: 'linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #312e81 100%)' },
+  { id: 'emerald_pasture', name: 'Living Waters', url: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%)' },
+  { id: 'celestial_dawn', name: 'Celestial Dawn', url: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #f59e0b 100%)' },
+  { id: 'sunset_grace', name: 'Sunset Grace', url: 'linear-gradient(135deg, #881337 0%, #e11d48 50%, #f97316 100%)' },
+  { id: 'heavenly_ocean', name: 'Heavenly Ocean', url: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #38bdf8 100%)' },
 ];
 
 const DEFAULT_GENERAL_PREFS: UserGeneralPreferences = {
@@ -151,6 +207,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
     isAdmin,
     changePassword,
     updateAvatar,
+    updateBanner,
     updateUserProfile,
     signOutOtherDevices,
     logout,
@@ -205,6 +262,18 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const [activeWallpaperChoice, setActiveWallpaperChoice] = useState<string>('default');
   const [wallpaperNotice, setWallpaperNotice] = useState<string | null>(null);
 
+  // Bubble Color State (16-24 colours + custom)
+  const [activeBubbleColor, setActiveBubbleColor] = useState<string>(() => {
+    return localStorage.getItem('fni_bubble_color') || '#1b5e3f';
+  });
+
+  // Profile Background Cover Image State
+  const [profileBanner, setProfileBanner] = useState<string>(
+    currentUser?.banner_url || (currentUser?.id ? localStorage.getItem(`fni_profile_banner_${currentUser.id}`) || '' : '')
+  );
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [bannerNotice, setBannerNotice] = useState<string | null>(null);
+
   // 5. General Preferences State
   const generalPrefsKey = `fni_general_prefs:${currentUser?.id || 'guest'}`;
   const [generalPrefs, setGeneralPrefs] = useState<UserGeneralPreferences>(() => {
@@ -255,6 +324,10 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
       setEmail(currentUser.email || '');
       setNotifPrefs(NotificationService.getUserNotificationPreferences(currentUser.id));
 
+      if (currentUser.banner_url) {
+        setProfileBanner(currentUser.banner_url);
+      }
+
       // Fetch persistent Supabase user settings
       UserSettingsService.getUserSettings(currentUser.id).then(settings => {
         if (settings) {
@@ -264,6 +337,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
           if (settings.chatWallpapers) {
             setChatWallpapers(settings.chatWallpapers);
             setActiveWallpaperChoice(settings.chatWallpapers['community'] || 'default');
+          }
+          if (settings.bubbleColor) {
+            setActiveBubbleColor(settings.bubbleColor);
+            localStorage.setItem('fni_bubble_color', settings.bubbleColor);
+            document.documentElement.style.setProperty('--fni-outgoing-bubble-bg', settings.bubbleColor);
+            const textContrast = getContrastingTextColor(settings.bubbleColor);
+            document.documentElement.style.setProperty('--fni-outgoing-bubble-text', textContrast.text);
+            document.documentElement.style.setProperty('--fni-outgoing-bubble-time', textContrast.time);
           }
           if (settings.generalPreferences) {
             setGeneralPrefs(settings.generalPreferences);
@@ -398,6 +479,11 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
 
     try {
       localStorage.setItem(wallpaperStorageKey, JSON.stringify(nextWallpapers));
+      const chosenColor = SOLID_COLORS.find(s => s.id === id)?.color || (id.startsWith('#') ? id : '');
+      if (chosenColor) {
+        localStorage.setItem('fni_chat_wallpaper_color', chosenColor);
+        document.documentElement.style.setProperty('--fni-chat-bg-color', chosenColor);
+      }
     } catch {}
 
     // Persist to Supabase
@@ -460,6 +546,76 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
     window.dispatchEvent(new CustomEvent('fni-chat-wallpaper-updated'));
     setWallpaperNotice('Restored default chat wallpaper.');
     setTimeout(() => setWallpaperNotice(null), 3000);
+  };
+
+  // Message Bubble Color Handler (16-24 colours + custom)
+  const handleSelectBubbleColor = (color: string) => {
+    setActiveBubbleColor(color);
+    try {
+      localStorage.setItem('fni_bubble_color', color);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-bg', color);
+      const textContrast = getContrastingTextColor(color);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-text', textContrast.text);
+      document.documentElement.style.setProperty('--fni-outgoing-bubble-time', textContrast.time);
+      window.dispatchEvent(new CustomEvent('fni-bubble-color-updated', { detail: { color } }));
+    } catch {}
+
+    if (currentUser?.id) {
+      UserSettingsService.saveUserSettings(currentUser.id, { bubbleColor: color });
+    }
+    setWallpaperNotice('Message bubble colour updated.');
+    setTimeout(() => setWallpaperNotice(null), 3000);
+  };
+
+  // Profile Cover / Header Background Banner Handlers
+  const handleBannerUpload = async (file: File) => {
+    if (!currentUser?.id) return;
+    try {
+      setIsUploadingBanner(true);
+      setBannerNotice(null);
+      const compressedDataUrl = await processBannerImage(file);
+      setProfileBanner(compressedDataUrl);
+      const res = await updateBanner(compressedDataUrl);
+      if (res.success) {
+        setBannerNotice('Cover photo updated successfully.');
+      } else {
+        setBannerNotice(res.error || 'Failed to update cover photo.');
+      }
+    } catch (err: any) {
+      setBannerNotice(err.message || 'Error processing banner image.');
+    } finally {
+      setIsUploadingBanner(false);
+      setTimeout(() => setBannerNotice(null), 4000);
+    }
+  };
+
+  const handleSelectPresetBanner = async (bannerUrl: string) => {
+    if (!currentUser?.id) return;
+    try {
+      setIsUploadingBanner(true);
+      setBannerNotice(null);
+      setProfileBanner(bannerUrl);
+      const res = await updateBanner(bannerUrl);
+      if (res.success) {
+        setBannerNotice('Cover banner updated.');
+      }
+    } finally {
+      setIsUploadingBanner(false);
+      setTimeout(() => setBannerNotice(null), 3000);
+    }
+  };
+
+  const handleRemoveBanner = async () => {
+    if (!currentUser?.id) return;
+    try {
+      setIsUploadingBanner(true);
+      setProfileBanner('');
+      await updateBanner('');
+      setBannerNotice('Cover banner removed.');
+    } finally {
+      setIsUploadingBanner(false);
+      setTimeout(() => setBannerNotice(null), 3000);
+    }
   };
 
   // General Preferences Handlers
@@ -987,6 +1143,122 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   Upload a crisp portrait photo. Images are securely stored in Supabase storage and displayed across fellowship spaces.
                 </p>
+              </div>
+            </div>
+
+            {/* Profile Cover / Header Background Banner Uploader */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#152338] border border-slate-200/80 dark:border-[#26384d] space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#C6A45A]" />
+                    <span>Profile Header Cover Banner</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Choose or upload a custom background image displayed behind your profile avatar on member profile cards.
+                  </p>
+                </div>
+              </div>
+
+              {/* Cover Banner Preview Card */}
+              <div
+                className="relative h-28 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow-inner flex items-end p-3 transition-all duration-300"
+                style={{
+                  background: profileBanner
+                    ? profileBanner.startsWith('data:') || profileBanner.startsWith('http')
+                      ? `url("${profileBanner}") center/cover no-repeat`
+                      : profileBanner
+                    : 'linear-gradient(135deg, #142B4A 0%, #1e3a8a 50%, #C6A45A 100%)',
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
+                <div className="relative z-10 flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full border-2 border-white/90 overflow-hidden bg-slate-800 shrink-0 shadow-md">
+                    {currentUser?.avatar_url ? (
+                      <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-bold text-white text-xs bg-[#142B4A]">
+                        {currentUser?.full_name?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-white drop-shadow-sm">
+                    <div className="text-xs font-black">{currentUser?.full_name || 'My Profile'}</div>
+                    <div className="text-[10px] text-white/80">{currentUser?.role || 'FNI Fellowship Tutor'}</div>
+                  </div>
+                </div>
+
+                {isUploadingBanner && (
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center text-white text-xs font-bold gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#C6A45A]" />
+                    <span>Updating Cover Photo...</span>
+                  </div>
+                )}
+              </div>
+
+              {bannerNotice && (
+                <div className="p-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{bannerNotice}</span>
+                </div>
+              )}
+
+              {/* Preset Background Gradients */}
+              <div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Preset Fellowship Themes
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {PRESET_PROFILE_BANNERS.map(b => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => handleSelectPresetBanner(b.url)}
+                      className={`h-10 rounded-xl border-2 transition-transform hover:scale-105 cursor-pointer shadow-xs relative overflow-hidden ${
+                        profileBanner === b.url ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/50 scale-105' : 'border-slate-200 dark:border-slate-700'
+                      }`}
+                      style={{ background: b.url }}
+                      title={b.name}
+                    >
+                      {profileBanner === b.url && (
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                          <Check className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons: Upload Custom Banner & Remove */}
+              <div className="flex items-center gap-2 pt-1">
+                <label className="flex-1 py-2 px-3 rounded-xl border border-dashed border-[#C6A45A] bg-[#C6A45A]/5 hover:bg-[#C6A45A]/15 text-xs font-bold text-[#142B4A] dark:text-[#C6A45A] flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                  <Upload className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <span>Upload Custom Cover Banner</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploadingBanner}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) handleBannerUpload(file);
+                      e.currentTarget.value = '';
+                    }}
+                  />
+                </label>
+
+                {profileBanner && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBanner}
+                    disabled={isUploadingBanner}
+                    className="py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Reset</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1787,9 +2059,18 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
 
                 {/* Sample Outgoing Message Bubble (Self) */}
                 <div className="relative z-10 flex items-start justify-end gap-2 max-w-[80%] self-end">
-                  <div className="bg-[#142B4A] text-white p-2.5 rounded-2xl rounded-tr-xs text-[11px] shadow-sm border border-[#C6A45A]/30">
+                  <div
+                    className="p-2.5 rounded-2xl rounded-tr-xs text-[11px] shadow-sm border border-black/10 transition-colors"
+                    style={{
+                      backgroundColor: activeBubbleColor,
+                      color: getContrastingTextColor(activeBubbleColor).text,
+                    }}
+                  >
                     Amen! The cell meeting report has just been compiled and submitted.
-                    <div className="flex items-center justify-end gap-1 text-[9px] text-slate-300 mt-0.5">
+                    <div
+                      className="flex items-center justify-end gap-1 text-[9px] mt-0.5"
+                      style={{ color: getContrastingTextColor(activeBubbleColor).time }}
+                    >
                       <span>5:47 PM</span>
                       <Check className="w-3 h-3 text-[#C6A45A]" />
                     </div>
@@ -1827,6 +2108,51 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </div>
             </div>
 
+            {/* OUTGOING MESSAGE BUBBLE COLORS (24 Colours + Custom) */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-[#26384d] space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
+                    <Palette className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Outgoing Message Bubble Colour ({OUTGOING_BUBBLE_COLORS.length} Choices)</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Choose any colour for your sent chat bubbles, exactly like your reference.
+                  </div>
+                </div>
+                <label className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer">
+                  <span>Custom Hex</span>
+                  <input
+                    type="color"
+                    value={activeBubbleColor}
+                    className="sr-only"
+                    onChange={e => handleSelectBubbleColor(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-2">
+                {OUTGOING_BUBBLE_COLORS.map(item => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleSelectBubbleColor(item.color)}
+                    className={`h-9 rounded-xl border-2 transition-all hover:scale-110 cursor-pointer shadow-xs relative flex items-center justify-center ${
+                      activeBubbleColor.toLowerCase() === item.color.toLowerCase()
+                        ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/50 scale-105'
+                        : 'border-slate-200 dark:border-slate-700'
+                    }`}
+                    style={{ backgroundColor: item.color }}
+                    title={item.name}
+                  >
+                    {activeBubbleColor.toLowerCase() === item.color.toLowerCase() && (
+                      <Check className="w-3.5 h-3.5 text-white drop-shadow-md" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* BUILT-IN WALLPAPERS COLLECTION */}
             <div className="space-y-2">
               <div className="text-xs font-bold text-[#142B4A] dark:text-white">FNI Built-in Wallpapers</div>
@@ -1849,21 +2175,40 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </div>
             </div>
 
-            {/* SOLID COLORS */}
+            {/* SOLID COLORS (24 Choices + Custom) */}
             <div className="space-y-2">
-              <div className="text-xs font-bold text-[#142B4A] dark:text-white">Solid Background Colors</div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold text-[#142B4A] dark:text-white">
+                  Solid Chat Backgrounds ({SOLID_COLORS.length} Choices)
+                </div>
+                <label className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer">
+                  <Palette className="w-3.5 h-3.5" />
+                  <span>Custom Color</span>
+                  <input
+                    type="color"
+                    className="sr-only"
+                    onChange={e => handleSelectWallpaper(e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-2">
                 {SOLID_COLORS.map(item => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => handleSelectWallpaper(item.id)}
-                    className={`w-9 h-9 rounded-xl border-2 transition-transform hover:scale-110 cursor-pointer shadow-xs ${
-                      activeWallpaperChoice === item.id ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/50' : 'border-slate-200 dark:border-slate-700'
+                    className={`h-9 rounded-xl border-2 transition-all hover:scale-110 cursor-pointer shadow-xs relative flex items-center justify-center ${
+                      activeWallpaperChoice === item.id || activeWallpaperChoice === item.color
+                        ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/50 scale-105'
+                        : 'border-slate-200 dark:border-slate-700'
                     }`}
                     style={{ backgroundColor: item.color }}
                     title={item.name}
-                  />
+                  >
+                    {(activeWallpaperChoice === item.id || activeWallpaperChoice === item.color) && (
+                      <Check className="w-3.5 h-3.5 text-white drop-shadow-md" />
+                    )}
+                  </button>
                 ))}
               </div>
             </div>

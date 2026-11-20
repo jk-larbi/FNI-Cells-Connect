@@ -43,6 +43,7 @@ interface SidebarProps {
   onOpenAccountSettings?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  isOverlayMode?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -55,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAccountSettings,
   isCollapsed = false,
   onToggleCollapse,
+  isOverlayMode = false,
 }) => {
   const { currentUser, logout, isAdmin } = useAuth();
 
@@ -148,20 +150,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Drawer Backdrop */}
+      {/* Mobile & Communication Hub Drawer Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-[#142B4A]/60 backdrop-blur-sm md:hidden transition-opacity"
+          className={`fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-sm transition-opacity ${
+            isOverlayMode ? 'block' : 'md:hidden'
+          }`}
           onClick={onCloseMobile}
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col justify-between transition-all duration-300 ease-in-out fni-glass-sidebar ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed top-0 bottom-0 left-0 ${
+          isOverlayMode ? 'z-50 shadow-2xl' : 'z-40'
+        } flex flex-col justify-between transition-all duration-300 ease-in-out fni-glass-sidebar ${
+          isOpen
+            ? 'translate-x-0'
+            : isOverlayMode
+            ? '-translate-x-full'
+            : '-translate-x-full md:translate-x-0'
         } ${
-          isCollapsed ? 'w-[76px]' : 'w-[280px] sm:w-64 max-w-[85vw]'
+          isCollapsed && !isOverlayMode ? 'w-[76px]' : 'w-[280px] sm:w-64 max-w-[85vw]'
         }`}
       >
         {/* Top Section: Window Controls, Brand Header & Collapse Toggle */}

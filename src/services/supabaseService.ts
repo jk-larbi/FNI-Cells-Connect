@@ -2870,6 +2870,31 @@ export class SupabaseService {
     }
   }
 
+  static async updateProfileBanner(userId: string, bannerUrl: string): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    try {
+      const { error } = await supabase!
+        .from('profiles')
+        .update({ banner_url: bannerUrl })
+        .or(`id.eq.${userId},firebase_uid.eq.${userId}`);
+      if (error) {
+        // Fallback: save to user_settings if banner_url column doesn't exist yet on profiles table
+        try {
+          await supabase!.from('user_settings').upsert({
+            user_id: userId,
+            general_preferences: { banner_url: bannerUrl },
+            updated_at: new Date().toISOString(),
+          });
+        } catch (_) {}
+      }
+      SyncStateService.recordSuccessfulSync('profiles', userId);
+      return true;
+    } catch (err: any) {
+      console.warn('updateProfileBanner notice:', err);
+      return false;
+    }
+  }
+
   // --- Review Logs & Follow-Ups (Dual Field Reconciliation: status/action & comment/comments) ---
   static async insertReviewLog(log: {
     id?: string;

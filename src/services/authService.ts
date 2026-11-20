@@ -611,10 +611,30 @@ export class AuthService {
     return current;
   }
 
+  // --- 8A. BANNER / BACKGROUND COVER UPLOAD ---
+  static async updateUserBanner(userId: string, bannerUrl: string): Promise<Profile> {
+    const current = this.getCurrentProfile();
+    if (!current) throw new Error('Unauthenticated');
+
+    current.banner_url = bannerUrl;
+    this.setCurrentProfile(current);
+    try {
+      localStorage.setItem(`fni_profile_banner_${userId}`, bannerUrl);
+    } catch (_) {}
+
+    try {
+      await SupabaseService.updateProfileBanner(userId, bannerUrl);
+    } catch (e) {
+      console.warn('Supabase updateProfileBanner notice:', e);
+    }
+
+    return current;
+  }
+
   // --- 8B. UNIFIED PROFILE UPDATE (TUTOR & ADMIN) ---
   static async updateUserProfile(
     userId: string,
-    data: { full_name?: string; phone_number?: string; email?: string }
+    data: { full_name?: string; phone_number?: string; email?: string; banner_url?: string }
   ): Promise<{ success: boolean; profile?: Profile; error?: string }> {
     const current = this.getCurrentProfile();
     if (!current || !userId) return { success: false, error: 'Unauthenticated.' };

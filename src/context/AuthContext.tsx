@@ -39,6 +39,7 @@ interface AuthContextType {
   completeOnboarding: (input: any) => Promise<{ success: boolean; isExistingCellAssociated?: boolean; error?: string }>;
   changePassword: (newPass: string) => Promise<{ success: boolean; error?: string }>;
   updateAvatar: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
+  updateBanner: (bannerUrl: string) => Promise<{ success: boolean; error?: string }>;
   updateProfileDetails: (fullName: string, username: string) => Promise<{ success: boolean; error?: string }>;
   updateUserProfile: (data: { full_name?: string; phone_number?: string; email?: string }) => Promise<{ success: boolean; error?: string }>;
   signOutOtherDevices: () => Promise<{ success: boolean; error?: string }>;
@@ -301,6 +302,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateBanner = async (bannerUrl: string) => {
+    if (!currentUser.id) return { success: false, error: 'Unauthenticated' };
+    try {
+      const updated = await AuthService.updateUserBanner(currentUser.id, bannerUrl);
+      setCurrentUser(updated);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to update background banner' };
+    }
+  };
+
   const role = currentUser.role;
   const isAdmin = currentUser.id !== '' && (role === 'admin' || role === 'super_admin' || role === 'national_admin');
   const isTutor = !isAdmin;
@@ -329,6 +341,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         completeOnboarding,
         changePassword,
         updateAvatar,
+        updateBanner,
         updateProfileDetails,
         updateUserProfile,
         signOutOtherDevices,

@@ -159,6 +159,7 @@ export interface UserSettings {
   userId: string;
   notificationPreferences?: UserNotificationPreferences;
   chatWallpapers?: Record<string, string>;
+  bubbleColor?: string;
   generalPreferences?: UserGeneralPreferences;
   themePreference?: 'light' | 'dark' | 'system';
   updatedAt?: string;
@@ -194,6 +195,7 @@ export interface Profile {
   cell_id?: string;
   cell_name?: string;
   avatar_url?: string;
+  banner_url?: string;
   is_active: boolean;
   is_onboarded: boolean;
   is_test_account?: boolean;

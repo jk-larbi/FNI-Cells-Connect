@@ -20,6 +20,7 @@ export interface UserProfileModalProps {
     fullName: string;
     role?: string;
     avatarUrl?: string;
+    bannerUrl?: string;
     cellName?: string;
     phone?: string;
     email?: string;
@@ -51,10 +52,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden">
         {/* Cover banner */}
-        <div className="h-24 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
+        <div
+          className="h-28 relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-cover bg-center overflow-hidden transition-all duration-300"
+          style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : undefined}
+        >
+          {/* Subtle gradient overlay to keep icons and text clear */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent pointer-events-none" />
+
           <button
+            type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 p-1.5 text-white/80 hover:text-white rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-colors"
+            className="absolute top-3 right-3 p-1.5 text-white/90 hover:text-white rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm transition-colors z-10 cursor-pointer"
+            title="Close profile"
           >
             <X className="w-5 h-5" />
           </button>

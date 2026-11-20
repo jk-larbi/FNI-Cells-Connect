@@ -330,11 +330,12 @@ export const AppLayout: React.FC = () => {
           onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleToggleCollapse}
+          isOverlayMode={effectiveTab === 'messages'}
         />
 
         {/* Main Application Area */}
-        <div className={`flex-1 flex flex-col ${isSidebarCollapsed ? 'md:pl-[76px]' : 'md:pl-64'} min-w-0 w-full overflow-x-hidden transition-all duration-300 ease-in-out`}>
-          <div className={isMobileChatOpen && effectiveTab === 'messages' ? 'hidden md:block' : 'block'}>
+        <div className={`flex-1 flex flex-col ${effectiveTab === 'messages' ? 'md:pl-0' : isSidebarCollapsed ? 'md:pl-[76px]' : 'md:pl-64'} min-w-0 w-full overflow-x-hidden transition-all duration-300 ease-in-out`}>
+          <div className={effectiveTab === 'messages' ? 'hidden' : 'block'}>
             <Header
               onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               onOpenNotifications={() => setIsNotifModalOpen(true)}
@@ -347,8 +348,8 @@ export const AppLayout: React.FC = () => {
           </div>
 
           <main className={`fni-app-main flex-1 min-w-0 ${
-            isMobileChatOpen && effectiveTab === 'messages'
-              ? 'p-0 max-w-none pb-0 h-dvh overflow-hidden'
+            effectiveTab === 'messages'
+              ? 'p-0 max-w-none pb-0 h-[100dvh] overflow-hidden w-full'
               : 'p-2.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 overflow-x-hidden'
           } ${effectiveTab === 'messages' ? 'fni-messaging-route-main' : ''}`}>
             {/* ADMINISTRATOR PORTAL PAGES */}
@@ -410,6 +411,7 @@ export const AppLayout: React.FC = () => {
                     initialConversationId={targetConversationId}
                     onBack={handleGoBack}
                     onMobileChatStateChange={setIsMobileChatOpen}
+                    onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                   />
                 )}
                 {effectiveTab === 'call-history' && (
@@ -495,6 +497,7 @@ export const AppLayout: React.FC = () => {
                     initialConversationId={targetConversationId}
                     onBack={handleGoBack}
                     onMobileChatStateChange={setIsMobileChatOpen}
+                    onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                   />
                 )}
                 {effectiveTab === 'call-history' && (

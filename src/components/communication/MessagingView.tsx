@@ -20,6 +20,7 @@ import { ChatFolderModal, FOLDER_ICONS, FOLDER_COLORS } from './ChatFolderModal'
 import { IosEmojiPicker } from './IosEmojiPicker';
 import { useVisualViewport } from '../../hooks/useVisualViewport';
 import { ConversationCacheService } from '../../services/conversationCacheService';
+import { getContrastingTextColor } from '../../utils/imageUtils';
 import {
   PrivateMessage,
   CommunityMessage,
@@ -83,6 +84,7 @@ import {
   User,
   PanelRight,
   SquarePen,
+  Menu,
   Delete as BackspaceIcon,
 } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -92,6 +94,7 @@ export interface MessagingViewProps {
   initialTab?: 'private' | 'community';
   onBack?: () => void;
   onMobileChatStateChange?: (isChatOpen: boolean) => void;
+  onToggleSidebar?: () => void;
 }
 
 // FNI quick stickers
@@ -252,6 +255,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   initialTab,
   onBack,
   onMobileChatStateChange,
+  onToggleSidebar,
 }) => {
   const { currentUser, isAdmin } = useAuth();
   const { startDirectCall, startGroupMeeting } = useCall();
@@ -376,6 +380,32 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [pollIsAnonymous, setPollIsAnonymous] = useState(true);
   const [pollAllowsMultiple, setPollAllowsMultiple] = useState(false);
+
+  // User Custom Bubble & Wallpaper Colors
+  const [userBubbleColor, setUserBubbleColor] = useState<string>(() => {
+    return localStorage.getItem('fni_bubble_color') || '#1b5e3f';
+  });
+  const [userWallpaperColor, setUserWallpaperColor] = useState<string>(() => {
+    return localStorage.getItem('fni_chat_wallpaper_color') || '';
+  });
+
+  useEffect(() => {
+    const handleBubbleUpdate = (e: any) => {
+      const col = e.detail?.color || localStorage.getItem('fni_bubble_color') || '#1b5e3f';
+      setUserBubbleColor(col);
+    };
+    const handleWallpaperUpdate = () => {
+      const col = localStorage.getItem('fni_chat_wallpaper_color') || '';
+      setUserWallpaperColor(col);
+    };
+
+    window.addEventListener('fni-bubble-color-updated', handleBubbleUpdate);
+    window.addEventListener('fni-chat-wallpaper-updated', handleWallpaperUpdate);
+    return () => {
+      window.removeEventListener('fni-bubble-color-updated', handleBubbleUpdate);
+      window.removeEventListener('fni-chat-wallpaper-updated', handleWallpaperUpdate);
+    };
+  }, []);
 
   // Popovers & Drawers
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -588,14 +618,11 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     onBack
   ));
 
-  // Handle back from an open conversation (On PC, falls back to the main community fellowship chat)
+  // Handle back from an open conversation
   const handleBackToHome = () => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      setSelectedChatId('community');
-    } else {
-      setSelectedChatId(null);
-      setMobileScreen('list');
-    }
+    setSelectedChatId(null);
+    setMobileScreen('list');
+    onMobileChatStateChange?.(false);
   };
 
   // Calling integration
@@ -1036,9 +1063,21 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     return contacts.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
   }, [contacts]);
 
+  const personalUnreadCount = useMemo(() => {
+    return contacts
+      .filter(c => c.type === 'direct' || c.type === 'saved' || (c.id !== 'community' && c.type !== 'community'))
+      .reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  }, [contacts]);
+
+  const groupsUnreadCount = useMemo(() => {
+    return contacts
+      .filter(c => c.type === 'community' || c.id === 'community')
+      .reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  }, [contacts]);
+
   // Active folder object
   const activeFolderObj = useMemo(() => {
-    if (activeFolderId === 'all') return null;
+    if (activeFolderId === 'all' || activeFolderId === 'personal' || activeFolderId === 'groups') return null;
     return chatFolders.find(f => f.id === activeFolderId) || null;
   }, [chatFolders, activeFolderId]);
 
@@ -1054,6 +1093,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         if (!matchesName && !matchesCell && !matchesLast && !matchesRole) return false;
       }
       if (activeFolderId === 'all') return true;
+      if (activeFolderId === 'personal') {
+        return c.type === 'direct' || c.type === 'saved' || (c.id !== 'community' && c.type !== 'community');
+      }
+      if (activeFolderId === 'groups') {
+        return c.type === 'community' || c.id === 'community';
+      }
       if (activeFolderObj) return isContactInFolder(c, activeFolderObj);
       return true;
     });
@@ -1895,7 +1940,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   // Create Poll
   const handleCreatePoll = async () => {
-    if (!selectedChatId || !pollQuestion.trim()) return;
+    if (!currentUser?.id) return;
+    if (!selectedChatId) {
+      alert('Please open a conversation to share your poll.');
+      return;
+    }
+    if (!pollQuestion.trim()) {
+      alert('Please type a question for your poll.');
+      return;
+    }
     const validOptions = pollOptions.filter(o => o.trim().length > 0);
     if (validOptions.length < 2) {
       alert('Please provide at least 2 poll options.');
@@ -2271,6 +2324,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 fullName: member.full_name || member.name,
                 role: member.role,
                 avatarUrl: member.avatar_url || member.photo_url,
+                bannerUrl: (member as any).banner_url || (member as any).bannerUrl || localStorage.getItem(`fni_profile_banner_${member.id}`) || (member.id === currentUser?.id ? currentUser?.banner_url : undefined),
                 cellName: member.cell_name,
                 phone: member.phone_number || member.phone,
                 email: member.email,
@@ -2349,22 +2403,33 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   return (
     <div
       style={isMobileEnvironment() && viewportHeight ? { height: `${viewportHeight}px` } : undefined}
-      className="h-[100dvh] md:h-[calc(100vh-5rem)] flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-none md:rounded-3xl border-0 md:border border-slate-200/80 dark:border-white/10 shadow-none md:shadow-card transition-[height] duration-75"
+      className="h-full w-full flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-none border-0"
     >
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden h-full">
         {/* =====================================================================
             LEFT PANE: RECENT CONVERSATIONS & SEARCH (Desktop Left Sidebar / Mobile List View)
         ===================================================================== */}
         <div
           className={`${
             mobileScreen === 'chat' ? 'hidden md:flex' : 'flex'
-          } w-full md:w-80 lg:w-96 flex-col border-r border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0e1621] shrink-0 overflow-hidden`}
+          } w-full md:w-[320px] lg:w-[360px] xl:w-[400px] flex-col border-r border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0e1621] shrink-0 overflow-hidden h-full`}
         >
           {/* Top Header Bar */}
-          <div className="p-3.5 border-b border-slate-200/80 dark:border-white/10 space-y-2.5 shrink-0">
+          <div className="p-3.5 border-b border-slate-200/80 dark:border-white/10 space-y-2.5 shrink-0 bg-white dark:bg-[#0e1621]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {onBack && (
+                {onToggleSidebar && (
+                  <button
+                    type="button"
+                    onClick={onToggleSidebar}
+                    className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                    title="Main Menu"
+                    aria-label="Open main menu"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
+                )}
+                {onBack && !onToggleSidebar && (
                   <button
                     type="button"
                     onClick={onBack}
@@ -2434,6 +2499,54 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     }`}
                   >
                     {allChatsUnreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Personal Tab (Built-in) */}
+              <button
+                type="button"
+                onClick={() => setActiveFolderId('personal')}
+                className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
+                  activeFolderId === 'personal'
+                    ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                }`}
+              >
+                <span>Personal</span>
+                {personalUnreadCount > 0 && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      activeFolderId === 'personal'
+                        ? 'bg-[#2AABEE] text-white'
+                        : 'bg-slate-200 dark:bg-[#242f3d] text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {personalUnreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Groups Tab (Built-in) */}
+              <button
+                type="button"
+                onClick={() => setActiveFolderId('groups')}
+                className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
+                  activeFolderId === 'groups'
+                    ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                }`}
+              >
+                <span>Groups</span>
+                {groupsUnreadCount > 0 && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      activeFolderId === 'groups'
+                        ? 'bg-[#2AABEE] text-white'
+                        : 'bg-slate-200 dark:bg-[#242f3d] text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {groupsUnreadCount}
                   </span>
                 )}
               </button>
@@ -2703,8 +2816,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           =================================================================== */
           <div
             className={`${
-              mobileScreen === 'chat' ? 'hidden md:flex' : 'flex'
-            } flex-1 flex-col overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-[#0c1421] p-6 sm:p-10 justify-between`}
+              mobileScreen === 'chat' ? 'hidden md:flex' : 'hidden md:flex'
+            } flex-1 flex-col overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-[#0c1421] p-6 sm:p-10 justify-between h-full min-w-0`}
           >
             <div className="max-w-3xl mx-auto w-full space-y-8 my-auto">
               {/* Welcoming Hero Card */}
@@ -2885,7 +2998,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           <div
             className={`${
               mobileScreen === 'list' ? 'hidden md:flex' : 'flex'
-            } flex-1 flex-col overflow-hidden relative bg-[#0e1621]`}
+            } flex-1 flex-col overflow-hidden relative bg-[#0e1621] h-full min-w-0`}
           >
             {/* Top Audio Player Bar (Image 1) */}
             {activeAudioPlayer && (
@@ -2942,6 +3055,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           fullName: m.full_name || m.name,
                           role: m.role,
                           avatarUrl: m.avatar_url || m.photo_url,
+                          bannerUrl: (m as any).banner_url || (m as any).bannerUrl || localStorage.getItem(`fni_profile_banner_${m.id}`) || (m.id === currentUser?.id ? currentUser?.banner_url : undefined),
                           cellName: m.cell_name || m.cell,
                           phone: m.phone_number || m.phone,
                           email: m.email,
@@ -3027,6 +3141,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           fullName: m.full_name || m.name,
                           role: m.role,
                           avatarUrl: m.avatar_url || m.photo_url,
+                          bannerUrl: (m as any).banner_url || (m as any).bannerUrl || localStorage.getItem(`fni_profile_banner_${m.id}`) || (m.id === currentUser?.id ? currentUser?.banner_url : undefined),
                           cellName: m.cell_name || m.cell,
                           phone: m.phone_number || m.phone,
                           email: m.email,
@@ -3249,6 +3364,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             <div
               ref={messageStreamRef}
               className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-3 sm:p-4 space-y-3 fni-chat-wallpaper"
+              style={userWallpaperColor ? { backgroundColor: userWallpaperColor } : undefined}
             >
               {isLoadingChat && currentMessages.length === 0 ? (
                 <div className="h-full flex flex-col justify-end p-4 space-y-3 animate-pulse">
@@ -3360,7 +3476,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             className={`p-3 text-xs transition-shadow text-left cursor-pointer active:scale-[0.99] select-text transition-transform ${
                               isMine ? 'fni-bubble-outgoing' : 'fni-bubble-incoming'
                             }`}
-                            style={{ textAlign: 'left' }}
+                            style={
+                              isMine
+                                ? {
+                                    backgroundColor: userBubbleColor,
+                                    color: getContrastingTextColor(userBubbleColor).text,
+                                    ['--fni-msg-time' as any]: getContrastingTextColor(userBubbleColor).time,
+                                    textAlign: 'left',
+                                  }
+                                : { textAlign: 'left' }
+                            }
                           >
                           {/* Sender header in community chats */}
                           {!isMine && selectedChatId === 'community' && (
@@ -3373,6 +3498,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                     fullName: member.full_name || member.name,
                                     role: member.role,
                                     avatarUrl: member.avatar_url || member.photo_url,
+                                    bannerUrl: (member as any).banner_url || (member as any).bannerUrl || localStorage.getItem(`fni_profile_banner_${member.id}`) || (member.id === currentUser?.id ? currentUser?.banner_url : undefined),
                                     cellName: member.cell_name,
                                     phone: member.phone_number || member.phone,
                                     email: member.email,
@@ -3587,39 +3713,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     </button>
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* Attachment Menu Popup */}
-            {showAttachmentMenu && (
-              <div className="absolute left-4 bottom-16 z-30 w-52 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-2xl p-2 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn space-y-1">
-                <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer font-semibold">
-                  <ImageIcon className="w-4 h-4 text-blue-500" />
-                  <span>Photo or Document</span>
-                  <input
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={e => {
-                      if (e.target.files) {
-                        setStagedFiles([...stagedFiles, ...Array.from(e.target.files)]);
-                        setShowAttachmentMenu(false);
-                      }
-                    }}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAttachmentMenu(false);
-                    setIsPollModalOpen(true);
-                  }}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer font-semibold text-left"
-                >
-                  <BarChart2 className="w-4 h-4 text-emerald-500" />
-                  <span>Create Poll</span>
-                </button>
               </div>
             )}
 
@@ -4030,14 +4123,64 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     }}
                     className="flex items-center gap-2"
                   >
-                    <button
-                      type="button"
-                      onClick={() => setShowAttachmentMenu(v => !v)}
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer shrink-0 transition-colors"
-                      title="Attach file, photo or poll"
-                    >
-                      <Paperclip className="w-5 h-5" />
-                    </button>
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setShowAttachmentMenu(v => !v)}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer shrink-0 transition-colors"
+                        title="Attach file, photo or poll"
+                      >
+                        <Paperclip className="w-5 h-5" />
+                      </button>
+
+                      {/* Attachment Menu Popup (Docked above paperclip with tap-outside backdrop) */}
+                      {showAttachmentMenu && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setShowAttachmentMenu(false)}
+                          />
+                          <div
+                            onClick={e => e.stopPropagation()}
+                            className="absolute left-0 bottom-[calc(100%+8px)] z-50 w-56 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200/90 dark:border-white/10 shadow-2xl p-2 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn space-y-1"
+                          >
+                            <label className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold transition-colors active:scale-98">
+                              <ImageIcon className="w-4 h-4 text-blue-500" />
+                              <span>Photo or Document</span>
+                              <input
+                                type="file"
+                                multiple
+                                className="hidden"
+                                onChange={e => {
+                                  if (e.target.files) {
+                                    setStagedFiles([...stagedFiles, ...Array.from(e.target.files)]);
+                                    setShowAttachmentMenu(false);
+                                  }
+                                }}
+                              />
+                            </label>
+
+                            <button
+                              type="button"
+                              onPointerDown={e => {
+                                e.preventDefault();
+                                setShowAttachmentMenu(false);
+                                setIsPollModalOpen(true);
+                              }}
+                              onClick={e => {
+                                e.preventDefault();
+                                setShowAttachmentMenu(false);
+                                setIsPollModalOpen(true);
+                              }}
+                              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold text-left transition-colors active:scale-98"
+                            >
+                              <BarChart2 className="w-4 h-4 text-emerald-500" />
+                              <span>Create Poll</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
 
                     <div className="flex-1 rounded-2xl bg-slate-100 dark:bg-[#242f3d] border border-slate-200/80 dark:border-white/10 px-4 py-1.5 flex items-center gap-2 min-h-[44px]">
                       <textarea
@@ -4119,9 +4262,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           POLL CREATION MODAL
       ========================================================================= */}
       {isPollModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-200/80 dark:border-white/10 max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/10">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fadeIn overflow-y-auto">
+          <div className="bg-white dark:bg-[#111c2d] rounded-3xl border border-slate-200/80 dark:border-white/10 max-w-md w-full max-h-[92dvh] flex flex-col p-5 sm:p-6 shadow-2xl space-y-4 my-auto overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/10 shrink-0">
               <div className="flex items-center gap-2">
                 <BarChart2 className="w-5 h-5 text-blue-600" />
                 <h3 className="font-black text-base text-slate-900 dark:text-white">
@@ -4131,13 +4274,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsPollModalOpen(false)}
-                className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+                className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-3.5 text-xs overflow-y-auto custom-scrollbar flex-1 pr-1">
               <div>
                 <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
                   Question
@@ -4147,7 +4290,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   value={pollQuestion}
                   onChange={e => setPollQuestion(e.target.value)}
                   placeholder="Ask a question..."
-                  className="w-full px-3 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 />
               </div>
 
@@ -4167,23 +4310,23 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         setPollOptions(next);
                       }}
                       placeholder={`Option ${idx + 1}`}
-                      className="w-full px-3 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                     />
                   ))}
-                  {pollOptions.length < 6 && (
+                  {pollOptions.length < 8 && (
                     <button
                       type="button"
                       onClick={() => setPollOptions([...pollOptions, ''])}
-                      className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 pt-1"
+                      className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 pt-1 cursor-pointer"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5" />
                       <span>Add Option</span>
                     </button>
                   )}
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-2">
+              <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-2.5">
                 <label className="flex items-center justify-between cursor-pointer">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">
                     Anonymous Voting
@@ -4192,7 +4335,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     type="checkbox"
                     checked={pollIsAnonymous}
                     onChange={e => setPollIsAnonymous(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600"
+                    className="w-4 h-4 rounded text-blue-600 cursor-pointer"
                   />
                 </label>
 
@@ -4204,24 +4347,24 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     type="checkbox"
                     checked={pollAllowsMultiple}
                     onChange={e => setPollAllowsMultiple(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600"
+                    className="w-4 h-4 rounded text-blue-600 cursor-pointer"
                   />
                 </label>
               </div>
             </div>
 
-            <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-white/5">
+            <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-white/5 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsPollModalOpen(false)}
-                className="px-4 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
+                className="px-4 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleCreatePoll}
-                className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs cursor-pointer"
+                className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors"
               >
                 Create Poll
               </button>
