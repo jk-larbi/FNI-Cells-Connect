@@ -294,34 +294,33 @@ export class MessagingService {
     all.push(msg);
     setStored(STORAGE_KEYS.PRIVATE, all);
 
-    // Real-time notification dispatch
-    try {
-      const { NotificationService } = await import('./notificationService');
-      await NotificationService.notifyPrivateMessage({
-        messageId: msg.id,
-        senderUid: msg.senderUid,
-        senderName: msg.senderName,
-        senderRole: msg.senderRole,
-        recipientUid: msg.recipientUid,
-        cellName: msg.cellName,
-        content: msg.content,
-      });
-
-      // Reply notification
-      if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
-        await NotificationService.notifyMessageReply({
+    // Notifications are deliberately dispatched after the message commit, without
+    // holding the sender's composer open. Realtime delivers the message itself.
+    void (async () => {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyPrivateMessage({
           messageId: msg.id,
           senderUid: msg.senderUid,
           senderName: msg.senderName,
-          recipientUid: data.replyTo.senderUid,
+          senderRole: msg.senderRole,
+          recipientUid: msg.recipientUid,
+          cellName: msg.cellName,
           content: msg.content,
-          conversationTitle: 'Private Chat',
         });
-      }
 
-      // Mention notifications
-      if (data.mentions && data.mentions.length > 0) {
-        for (const mentionUid of data.mentions) {
+        if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
+          await NotificationService.notifyMessageReply({
+            messageId: msg.id,
+            senderUid: msg.senderUid,
+            senderName: msg.senderName,
+            recipientUid: data.replyTo.senderUid,
+            content: msg.content,
+            conversationTitle: 'Private Chat',
+          });
+        }
+
+        for (const mentionUid of data.mentions || []) {
           if (mentionUid !== data.senderUid) {
             await NotificationService.notifyMention({
               messageId: msg.id,
@@ -333,10 +332,10 @@ export class MessagingService {
             });
           }
         }
+      } catch (e) {
+        console.warn('Private message notification dispatch notice:', e);
       }
-    } catch (e) {
-      console.warn('Private message notification dispatch notice:', e);
-    }
+    })();
 
     return msg;
   }
@@ -681,31 +680,31 @@ export class MessagingService {
     all.push(msg);
     setStored(STORAGE_KEYS.COMMUNITY, all);
 
-    // Real-time notification dispatch to other tutors
-    try {
-      const { NotificationService } = await import('./notificationService');
-      await NotificationService.notifyCommunityMessage({
-        messageId: msg.id,
-        senderUid: msg.senderUid,
-        senderName: msg.senderName,
-        cellName: msg.cellName,
-        content: msg.content,
-        category: msg.category,
-      });
-
-      if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
-        await NotificationService.notifyMessageReply({
+    // Keep chat delivery independent from push/email notification latency.
+    void (async () => {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyCommunityMessage({
           messageId: msg.id,
           senderUid: msg.senderUid,
           senderName: msg.senderName,
-          recipientUid: data.replyTo.senderUid,
+          cellName: msg.cellName,
           content: msg.content,
-          conversationTitle: 'FNI Community',
+          category: msg.category,
         });
-      }
 
-      if (data.mentions && data.mentions.length > 0) {
-        for (const mentionUid of data.mentions) {
+        if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
+          await NotificationService.notifyMessageReply({
+            messageId: msg.id,
+            senderUid: msg.senderUid,
+            senderName: msg.senderName,
+            recipientUid: data.replyTo.senderUid,
+            content: msg.content,
+            conversationTitle: 'FNI Community',
+          });
+        }
+
+        for (const mentionUid of data.mentions || []) {
           if (mentionUid !== data.senderUid) {
             await NotificationService.notifyMention({
               messageId: msg.id,
@@ -717,15 +716,15 @@ export class MessagingService {
             });
           }
         }
-      }
 
-      if (msg.category === 'announcement' && msg.senderRole !== 'tutor') {
-        const { EmailNotificationService } = await import('./emailNotificationService');
-        await EmailNotificationService.announcementPublished(msg.id);
+        if (msg.category === 'announcement' && msg.senderRole !== 'tutor') {
+          const { EmailNotificationService } = await import('./emailNotificationService');
+          await EmailNotificationService.announcementPublished(msg.id);
+        }
+      } catch (e) {
+        console.warn('Community message notification dispatch notice:', e);
       }
-    } catch (e) {
-      console.warn('Community message notification dispatch notice:', e);
-    }
+    })();
 
     return msg;
   }
