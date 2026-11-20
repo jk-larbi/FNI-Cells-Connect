@@ -51,6 +51,14 @@ function setStored<T>(key: string, val: T): void {
 }
 
 export class MessagingService {
+  static async getPrivateMessageById(messageId: string): Promise<PrivateMessage | null> {
+    return SupabaseService.getPrivateMessageById(messageId);
+  }
+
+  static async getCommunityMessageById(messageId: string): Promise<CommunityMessage | null> {
+    return SupabaseService.getCommunityMessageById(messageId);
+  }
+
   static async getMemberDirectory() {
     return SupabaseService.getMemberDirectory();
   }
@@ -71,23 +79,28 @@ export class MessagingService {
 
   static async deleteMessageForSelf(userId: string, messageId: string, scope: 'private' | 'community'): Promise<boolean> {
     if (!userId || !messageId) return false;
-    // 1. Persist in local storage immediately
     const existing = this.getDeletedForSelfIds(userId);
     existing.add(messageId);
     setStored(`fni_deleted_for_self_${userId}`, Array.from(existing));
 
-    // 2. Persist in Supabase hidden table
-    if (scope === 'private') {
-      await SupabaseService.hidePrivateMessageForUser(userId, messageId);
-    } else {
-      await SupabaseService.hideCommunityMessageForUser(userId, messageId);
+    try {
+      const saved = scope === 'private'
+        ? await SupabaseService.hidePrivateMessageForUser(userId, messageId)
+        : await SupabaseService.hideCommunityMessageForUser(userId, messageId);
+      if (!saved) throw new Error('The message could not be hidden on this account.');
+      return true;
+    } catch (error) {
+      existing.delete(messageId);
+      setStored(`fni_deleted_for_self_${userId}`, Array.from(existing));
+      throw error;
     }
-    return true;
   }
 
   static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
+    if (!messageId) throw new Error('Message not found.');
     const success = await SupabaseService.deleteMessageForEveryone(messageId, scope);
-    // Also prune from local cache
+    if (!success) throw new Error('The message could not be deleted for everyone. Please check your connection and try again.');
+
     if (scope === 'private') {
       const msgs = getStored<PrivateMessage[]>(STORAGE_KEYS.PRIVATE, []);
       setStored(STORAGE_KEYS.PRIVATE, msgs.filter(m => m.id !== messageId));
@@ -95,7 +108,7 @@ export class MessagingService {
       const msgs = getStored<CommunityMessage[]>(STORAGE_KEYS.COMMUNITY, []);
       setStored(STORAGE_KEYS.COMMUNITY, msgs.filter(m => m.id !== messageId));
     }
-    return success;
+    return true;
   }
 
   static async editMessage(messageId: string, scope: 'private' | 'community', content: string): Promise<boolean> {
@@ -292,34 +305,33 @@ export class MessagingService {
     all.push(msg);
     setStored(STORAGE_KEYS.PRIVATE, all);
 
-    // Real-time notification dispatch
-    try {
-      const { NotificationService } = await import('./notificationService');
-      await NotificationService.notifyPrivateMessage({
-        messageId: msg.id,
-        senderUid: msg.senderUid,
-        senderName: msg.senderName,
-        senderRole: msg.senderRole,
-        recipientUid: msg.recipientUid,
-        cellName: msg.cellName,
-        content: msg.content,
-      });
-
-      // Reply notification
-      if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
-        await NotificationService.notifyMessageReply({
+    // Notifications are deliberately dispatched after the message commit, without
+    // holding the sender's composer open. Realtime delivers the message itself.
+    void (async () => {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyPrivateMessage({
           messageId: msg.id,
           senderUid: msg.senderUid,
           senderName: msg.senderName,
-          recipientUid: data.replyTo.senderUid,
+          senderRole: msg.senderRole,
+          recipientUid: msg.recipientUid,
+          cellName: msg.cellName,
           content: msg.content,
-          conversationTitle: 'Private Chat',
         });
-      }
 
-      // Mention notifications
-      if (data.mentions && data.mentions.length > 0) {
-        for (const mentionUid of data.mentions) {
+        if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
+          await NotificationService.notifyMessageReply({
+            messageId: msg.id,
+            senderUid: msg.senderUid,
+            senderName: msg.senderName,
+            recipientUid: data.replyTo.senderUid,
+            content: msg.content,
+            conversationTitle: 'Private Chat',
+          });
+        }
+
+        for (const mentionUid of data.mentions || []) {
           if (mentionUid !== data.senderUid) {
             await NotificationService.notifyMention({
               messageId: msg.id,
@@ -331,10 +343,10 @@ export class MessagingService {
             });
           }
         }
+      } catch (e) {
+        console.warn('Private message notification dispatch notice:', e);
       }
-    } catch (e) {
-      console.warn('Private message notification dispatch notice:', e);
-    }
+    })();
 
     return msg;
   }
@@ -374,6 +386,7 @@ export class MessagingService {
       }
 
       const hidden = new Set(hiddenIds || []);
+      const serverDeletedIds = new Set(supaMsgs.filter(message => Boolean(message.deletedForEveryoneAt)).map(message => message.id));
       const cutoffs = [preference?.clearedAt, preference?.deletedAt, allChatsPreference?.clearedAt]
         .filter((value): value is string => Boolean(value))
         .map(value => new Date(value).getTime())
@@ -412,7 +425,13 @@ export class MessagingService {
       // 2. Seamlessly merge into conversation cache
       const cached = this.getCachedPrivateConversation(viewerUid, conversationId) || [];
       const mergedMap = new Map<string, PrivateMessage>();
-      cached.forEach(m => mergedMap.set(m.id, m));
+      cached.forEach(message => {
+        const createdAt = new Date(message.createdAt).getTime();
+        if (!serverDeletedIds.has(message.id) && !hidden.has(message.id) &&
+            !deletedForSelf.has(message.id) && createdAt > cutoff) {
+          mergedMap.set(message.id, message);
+        }
+      });
       sorted.forEach(m => mergedMap.set(m.id, m));
       const merged = Array.from(mergedMap.values()).sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -679,31 +698,31 @@ export class MessagingService {
     all.push(msg);
     setStored(STORAGE_KEYS.COMMUNITY, all);
 
-    // Real-time notification dispatch to other tutors
-    try {
-      const { NotificationService } = await import('./notificationService');
-      await NotificationService.notifyCommunityMessage({
-        messageId: msg.id,
-        senderUid: msg.senderUid,
-        senderName: msg.senderName,
-        cellName: msg.cellName,
-        content: msg.content,
-        category: msg.category,
-      });
-
-      if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
-        await NotificationService.notifyMessageReply({
+    // Keep chat delivery independent from push/email notification latency.
+    void (async () => {
+      try {
+        const { NotificationService } = await import('./notificationService');
+        await NotificationService.notifyCommunityMessage({
           messageId: msg.id,
           senderUid: msg.senderUid,
           senderName: msg.senderName,
-          recipientUid: data.replyTo.senderUid,
+          cellName: msg.cellName,
           content: msg.content,
-          conversationTitle: 'FNI Community',
+          category: msg.category,
         });
-      }
 
-      if (data.mentions && data.mentions.length > 0) {
-        for (const mentionUid of data.mentions) {
+        if (data.replyTo?.senderUid && data.replyTo.senderUid !== data.senderUid) {
+          await NotificationService.notifyMessageReply({
+            messageId: msg.id,
+            senderUid: msg.senderUid,
+            senderName: msg.senderName,
+            recipientUid: data.replyTo.senderUid,
+            content: msg.content,
+            conversationTitle: 'FNI Community',
+          });
+        }
+
+        for (const mentionUid of data.mentions || []) {
           if (mentionUid !== data.senderUid) {
             await NotificationService.notifyMention({
               messageId: msg.id,
@@ -715,15 +734,15 @@ export class MessagingService {
             });
           }
         }
-      }
 
-      if (msg.category === 'announcement' && msg.senderRole !== 'tutor') {
-        const { EmailNotificationService } = await import('./emailNotificationService');
-        await EmailNotificationService.announcementPublished(msg.id);
+        if (msg.category === 'announcement' && msg.senderRole !== 'tutor') {
+          const { EmailNotificationService } = await import('./emailNotificationService');
+          await EmailNotificationService.announcementPublished(msg.id);
+        }
+      } catch (e) {
+        console.warn('Community message notification dispatch notice:', e);
       }
-    } catch (e) {
-      console.warn('Community message notification dispatch notice:', e);
-    }
+    })();
 
     return msg;
   }
@@ -775,6 +794,9 @@ export class MessagingService {
         if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
         const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
         const deletedForSelf = viewerUid ? this.getDeletedForSelfIds(viewerUid) : new Set<string>();
+        const serverDeletedIds = new Set(supaMsgs.filter(message => Boolean(message.deletedForEveryoneAt)).map(message => message.id));
+        let cutoff = 0;
+        let hiddenIds = new Set<string>();
         const memberMap = new Map((directory || []).map(m => [m.id, m.full_name]));
         let visibleMessages = supaMsgs.map(msg => ({
           ...msg,
@@ -791,8 +813,8 @@ export class MessagingService {
             supabase.from('community_message_hidden_for_user').select('message_id').eq('user_id', viewerUid),
           ]);
           if (preferenceResult.error || hiddenResult.error) return [];
-          const cutoff = preferenceResult.data?.cleared_at ? new Date(preferenceResult.data.cleared_at).getTime() : 0;
-          const hiddenIds = new Set((hiddenResult.data || []).map(row => row.message_id));
+          cutoff = preferenceResult.data?.cleared_at ? new Date(preferenceResult.data.cleared_at).getTime() : 0;
+          hiddenIds = new Set((hiddenResult.data || []).map(row => row.message_id));
           visibleMessages = visibleMessages.filter(message =>
             !message.deletedForEveryoneAt &&
             !deletedForSelf.has(message.id) &&
@@ -804,7 +826,15 @@ export class MessagingService {
         // Merge into conversation cache
         const cached = this.getCachedCommunityMessages(viewerUid) || [];
         const mergedMap = new Map<string, CommunityMessage>();
-        cached.forEach(m => mergedMap.set(m.id, m));
+        cached.forEach(message => {
+          const createdAt = new Date(message.createdAt).getTime();
+          const cellIsActive = !message.cellName?.trim() || activeCellNames.has(message.cellName.trim().toLowerCase());
+          if (!serverDeletedIds.has(message.id) && !deletedForSelf.has(message.id) &&
+              allowedMemberIds.has(message.senderUid) && cellIsActive &&
+              (message.isPinned || (createdAt > cutoff && !hiddenIds.has(message.id)))) {
+            mergedMap.set(message.id, message);
+          }
+        });
         sorted.forEach(m => mergedMap.set(m.id, m));
         const merged = Array.from(mergedMap.values()).sort(
           (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()

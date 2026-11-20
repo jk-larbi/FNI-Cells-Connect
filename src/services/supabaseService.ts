@@ -857,7 +857,7 @@ export class SupabaseService {
       jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
       webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', avif: 'image/avif',
       mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
-      mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', wav: 'audio/wav',
+      mp3: 'audio/mpeg', m4a: 'audio/mp4', m4b: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/opus', wav: 'audio/wav', flac: 'audio/flac', amr: 'audio/amr', mid: 'audio/midi', midi: 'audio/midi',
     };
     const providedMime = (file.type || '').toLowerCase();
     const mimeType = providedMime && providedMime !== 'application/octet-stream'
@@ -869,69 +869,66 @@ export class SupabaseService {
     if (this.isAvailable() && supabase) {
       try {
         const uploadFile = file.type === mimeType ? file : new File([file], file.name, { type: mimeType, lastModified: file.lastModified });
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const authUid = authData.user?.id;
+        if (authError || !authUid) throw new Error('Sign in again before uploading chat media.');
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-90) || 'attachment';
-        const path = `${userUid}/${crypto.randomUUID()}-${safeName}`;
-        const { error } = await supabase.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: true });
+        // Storage RLS scopes the first path segment to auth.uid(), not the profile display ID.
+        const path = `${authUid}/${crypto.randomUUID()}-${safeName}`;
+        const { error } = await supabase.storage.from('fni-chat-media').upload(path, uploadFile, { contentType: mimeType, upsert: false });
         if (!error) {
-          const signed = await this.getChatAttachmentUrl(path);
-          if (signed) {
-            return { name: file.name, path: signed, mimeType, size: file.size };
-          }
-          const { data: pubData } = supabase.storage.from('fni-chat-media').getPublicUrl(path);
-          if (pubData?.publicUrl) {
-            return { name: file.name, path: pubData.publicUrl, mimeType, size: file.size };
-          }
+          // Persist the stable private Storage object path, never a short-lived signed URL.
+          // Each recipient resolves a fresh signed URL when rendering the attachment.
           return { name: file.name, path, mimeType, size: file.size };
         }
       } catch (storageErr) {
-        console.warn('Supabase storage upload error, falling back to data URL:', storageErr);
+        console.warn('Supabase chat media upload failed:', storageErr);
       }
     }
 
-    // 2. Data URL fallback (100% resilient for voice notes and media)
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-    return { name: file.name, path: dataUrl, mimeType, size: file.size };
+    // Chat media must live in shared cloud storage so every signed-in device can open it.
+    // A data URL fallback only stores bytes on the sender's device and breaks cross-device media.
+    throw new Error('Media upload failed. Please check your connection and try again.');
   }
 
   static async getChatAttachmentUrl(path: string): Promise<string | null> {
-    if (!this.isAvailable()) return null;
-    const { data, error } = await supabase!.storage.from('fni-chat-media').createSignedUrl(path, 3600);
-    if (error) return null;
+    if (!this.isAvailable() || !path) return null;
+    let objectPath = path;
+    // Compatibility with older messages that stored a signed URL rather than its object path.
+    if (/^https?:\/\//i.test(path)) {
+      try {
+        const parsed = new URL(path);
+        const marker = '/storage/v1/object/sign/fni-chat-media/';
+        const index = parsed.pathname.indexOf(marker);
+        if (index >= 0) objectPath = decodeURIComponent(parsed.pathname.slice(index + marker.length));
+        else return path;
+      } catch {
+        return null;
+      }
+    }
+    if (objectPath.startsWith('data:') || objectPath.startsWith('blob:')) return objectPath;
+    const { data, error } = await supabase!.storage.from('fni-chat-media').createSignedUrl(objectPath, 60 * 60 * 24);
+    if (error) {
+      console.warn('Chat attachment signed URL could not be refreshed:', error.message);
+      return null;
+    }
     return data.signedUrl;
   }
 
   static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
-    if (!this.isAvailable()) return false;
+    if (!this.isAvailable() || !messageId) return false;
     const rpc = scope === 'private' ? 'fni_delete_private_message_for_everyone' : 'fni_delete_community_message_for_everyone';
     try {
       const { data, error } = await supabase!.rpc(rpc, { p_message_id: messageId });
-      if (!error && data === true) return true;
-    } catch {}
-
-    // Fallback: direct table update / deletion
-    try {
-      const table = scope === 'private' ? 'private_messages' : 'community_messages';
-      const { error: updateError } = await supabase!
-        .from(table)
-        .update({ deleted_for_everyone_at: new Date().toISOString() })
-        .eq('id', messageId);
-      if (!updateError) return true;
-
-      const { error: deleteError } = await supabase!
-        .from(table)
-        .delete()
-        .eq('id', messageId);
-      if (!deleteError) return true;
-    } catch (e) {
-      console.warn('Direct fallback delete error:', e);
+      if (error) {
+        console.warn('Delete-for-everyone RPC failed:', error.message);
+        return false;
+      }
+      return data === true;
+    } catch (error) {
+      console.warn('Delete-for-everyone request failed:', error);
+      return false;
     }
-    return false;
   }
 
   // --- Private Messages ---
@@ -1168,6 +1165,17 @@ export class SupabaseService {
       console.warn('Could not hide community message for this user:', error);
       return false;
     }
+  }
+
+  static async getPrivateMessageById(messageId: string): Promise<PrivateMessage | null> {
+    if (!this.isAvailable() || !messageId) return null;
+    const { data, error } = await supabase!
+      .from('private_messages')
+      .select('*')
+      .eq('id', messageId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapPrivateMessageFromDb(data) : null;
   }
 
   static async sendPrivateMessage(msg: PrivateMessage): Promise<boolean> {
@@ -1446,6 +1454,17 @@ export class SupabaseService {
       console.warn('getCommunityMessagesOptimized fallback:', err);
       return this.getCommunityMessages();
     }
+  }
+
+  static async getCommunityMessageById(messageId: string): Promise<CommunityMessage | null> {
+    if (!this.isAvailable() || !messageId) return null;
+    const { data, error } = await supabase!
+      .from('community_messages')
+      .select('*')
+      .eq('id', messageId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapCommunityMessageFromDb(data) : null;
   }
 
   static async sendCommunityMessage(msg: CommunityMessage): Promise<boolean> {
