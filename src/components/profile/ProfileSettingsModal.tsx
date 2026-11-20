@@ -1009,10 +1009,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 userName={currentUser?.full_name || 'User'}
                 userRole={currentUser?.role}
                 onPhotoUploaded={async (url: string) => {
-                  await updateAvatar(url);
+                  const result = await updateAvatar(url);
+                  if (!result.success) throw new Error(result.error || 'Could not synchronize your profile picture.');
                 }}
                 onPhotoRemoved={async () => {
-                  await updateAvatar('');
+                  const result = await updateAvatar('');
+                  if (!result.success) throw new Error(result.error || 'Could not remove your profile picture.');
                 }}
               />
               <div>

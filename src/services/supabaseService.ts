@@ -2841,32 +2841,69 @@ export class SupabaseService {
   }
 
   // --- Profiles & Avatars ---
-  static async updateProfileAvatar(userId: string, avatarUrl: string): Promise<boolean> {
-    if (!this.isAvailable()) return false;
-    try {
-      const { error } = await supabase!
+  static async updateProfileAvatar(userId: string, avatarDataUrl: string): Promise<string> {
+    if (!this.isAvailable()) throw new Error('Profile picture storage is unavailable.');
+    const { data: authData, error: authError } = await supabase!.auth.getUser();
+    const authUser = authData?.user;
+    if (authError || !authUser) throw new Error('Please sign in again before changing your profile picture.');
+    if (userId !== authUser.id) {
+      const { data: ownProfile, error: profileLookupError } = await supabase!
         .from('profiles')
-        .update({ avatar_url: avatarUrl })
-        .or(`id.eq.${userId},firebase_uid.eq.${userId}`);
-      if (error) {
-        SyncStateService.recordFailedSync({
-          table: 'profiles',
-          id: userId,
-          payload: { avatar_url: avatarUrl },
-          errorMessage: error.message,
-        });
-        return false;
+        .select('id,supabase_user_id')
+        .or(`id.eq.${authUser.id},supabase_user_id.eq.${authUser.id}`)
+        .maybeSingle();
+      if (profileLookupError || !ownProfile || (ownProfile.id !== userId && ownProfile.supabase_user_id !== authUser.id)) {
+        throw new Error('You can only change your own profile picture.');
       }
+    }
+
+    let storedUrl = '';
+    let uploadedPath: string | null = null;
+    try {
+      if (avatarDataUrl) {
+        if (!avatarDataUrl.startsWith('data:image/')) {
+          throw new Error('Please choose a valid image file.');
+        }
+        const imageResponse = await fetch(avatarDataUrl);
+        if (!imageResponse.ok) throw new Error('The selected picture could not be processed.');
+        const imageBlob = await imageResponse.blob();
+        if (!imageBlob.type.startsWith('image/')) throw new Error('The selected file is not a supported image.');
+        if (imageBlob.size > 3 * 1024 * 1024) throw new Error('Profile pictures must be 3 MB or smaller.');
+        const extension = imageBlob.type === 'image/png' ? 'png' : imageBlob.type === 'image/webp' ? 'webp' : 'jpg';
+        uploadedPath = `${authUser.id}/avatar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+        const { error: uploadError } = await supabase!.storage
+          .from('fni-profile-avatars')
+          .upload(uploadedPath, imageBlob, {
+            contentType: imageBlob.type,
+            cacheControl: '31536000',
+            upsert: false,
+          });
+        if (uploadError) throw new Error(`Profile picture upload failed: ${uploadError.message}`);
+        const { data: publicData } = supabase!.storage.from('fni-profile-avatars').getPublicUrl(uploadedPath);
+        storedUrl = `${publicData.publicUrl}?v=${Date.now()}`;
+      }
+
+      const { data: updatedRows, error: updateError } = await supabase!
+        .from('profiles')
+        .update({ avatar_url: storedUrl || null })
+        .or(`id.eq.${authUser.id},supabase_user_id.eq.${authUser.id}`)
+        .select('id');
+      if (updateError) throw new Error(`Profile picture could not be synchronized: ${updateError.message}`);
+      if (!updatedRows?.length) throw new Error('Your profile could not be found. Please sign out and sign in again.');
+
       SyncStateService.recordSuccessfulSync('profiles', userId);
-      return true;
+      return storedUrl;
     } catch (err: any) {
+      if (uploadedPath) {
+        await supabase!.storage.from('fni-profile-avatars').remove([uploadedPath]).catch(() => undefined);
+      }
       SyncStateService.recordFailedSync({
         table: 'profiles',
         id: userId,
-        payload: { avatar_url: avatarUrl },
+        payload: { avatar_url: storedUrl || null },
         errorMessage: err?.message || String(err),
       });
-      return false;
+      throw err;
     }
   }
 

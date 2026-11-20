@@ -599,15 +599,9 @@ export class AuthService {
     const current = this.getCurrentProfile();
     if (!current) throw new Error('Unauthenticated');
 
-    current.avatar_url = avatarUrl;
+    const storedAvatarUrl = await SupabaseService.updateProfileAvatar(userId, avatarUrl);
+    current.avatar_url = storedAvatarUrl || undefined;
     this.setCurrentProfile(current);
-
-    try {
-      await SupabaseService.updateProfileAvatar(userId, avatarUrl);
-    } catch (e) {
-      console.warn('Supabase updateProfileAvatar notice:', e);
-    }
-
     return current;
   }
 

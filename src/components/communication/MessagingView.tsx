@@ -753,6 +753,36 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     loadDirectory();
   }, [currentUser?.id]);
 
+  // Keep every open chat/contact view in sync when another member changes their photo.
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const channel = supabase
+      .channel(`fni-profile-avatars-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profile_avatar_updates' },
+        (payload) => {
+          const update = (payload.new || {}) as { user_id?: string; avatar_url?: string | null };
+          if (!update.user_id) return;
+          const nextAvatar = update.avatar_url || undefined;
+          setAllMembers(previous => previous.map(member =>
+            member.id === update.user_id ? { ...member, avatar_url: nextAvatar, photo_url: nextAvatar } : member
+          ));
+          setTutorList(previous => previous.map(member =>
+            member.id === update.user_id ? { ...member, avatar_url: nextAvatar, photo_url: nextAvatar } : member
+          ));
+          setSelectedUserProfile((previous: any) =>
+            previous?.id === update.user_id ? { ...previous, avatarUrl: nextAvatar } : previous
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id]);
+
   const handleTogglePinChat = async (chatId: string) => {
     if (!currentUser?.id) return;
     const isPinned =
