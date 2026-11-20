@@ -895,7 +895,7 @@ export class SupabaseService {
     if (!this.isAvailable() || !path) return null;
     let objectPath = path;
     // Compatibility with older messages that stored a signed URL rather than its object path.
-    if (/^https?:\\/\\//i.test(path)) {
+    if (/^https?:\/\//i.test(path)) {
       try {
         const parsed = new URL(path);
         const marker = '/storage/v1/object/sign/fni-chat-media/';
