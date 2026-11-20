@@ -386,6 +386,7 @@ export class MessagingService {
       }
 
       const hidden = new Set(hiddenIds || []);
+      const serverDeletedIds = new Set(supaMsgs.filter(message => Boolean(message.deletedForEveryoneAt)).map(message => message.id));
       const cutoffs = [preference?.clearedAt, preference?.deletedAt, allChatsPreference?.clearedAt]
         .filter((value): value is string => Boolean(value))
         .map(value => new Date(value).getTime())
@@ -424,7 +425,13 @@ export class MessagingService {
       // 2. Seamlessly merge into conversation cache
       const cached = this.getCachedPrivateConversation(viewerUid, conversationId) || [];
       const mergedMap = new Map<string, PrivateMessage>();
-      cached.forEach(m => mergedMap.set(m.id, m));
+      cached.forEach(message => {
+        const createdAt = new Date(message.createdAt).getTime();
+        if (!serverDeletedIds.has(message.id) && !hidden.has(message.id) &&
+            !deletedForSelf.has(message.id) && createdAt > cutoff) {
+          mergedMap.set(message.id, message);
+        }
+      });
       sorted.forEach(m => mergedMap.set(m.id, m));
       const merged = Array.from(mergedMap.values()).sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -787,6 +794,7 @@ export class MessagingService {
         if (currentProfile?.id) allowedMemberIds.add(currentProfile.id);
         const activeCellNames = new Set(activeCells.map(cell => cell.name.trim().toLowerCase()));
         const deletedForSelf = viewerUid ? this.getDeletedForSelfIds(viewerUid) : new Set<string>();
+        const serverDeletedIds = new Set(supaMsgs.filter(message => Boolean(message.deletedForEveryoneAt)).map(message => message.id));
         const memberMap = new Map((directory || []).map(m => [m.id, m.full_name]));
         let visibleMessages = supaMsgs.map(msg => ({
           ...msg,
@@ -816,7 +824,15 @@ export class MessagingService {
         // Merge into conversation cache
         const cached = this.getCachedCommunityMessages(viewerUid) || [];
         const mergedMap = new Map<string, CommunityMessage>();
-        cached.forEach(m => mergedMap.set(m.id, m));
+        cached.forEach(message => {
+          const createdAt = new Date(message.createdAt).getTime();
+          const cellIsActive = !message.cellName?.trim() || activeCellNames.has(message.cellName.trim().toLowerCase());
+          if (!serverDeletedIds.has(message.id) && !deletedForSelf.has(message.id) &&
+              allowedMemberIds.has(message.senderUid) && cellIsActive &&
+              (message.isPinned || (createdAt > cutoff && !hiddenIds.has(message.id)))) {
+            mergedMap.set(message.id, message);
+          }
+        });
         sorted.forEach(m => mergedMap.set(m.id, m));
         const merged = Array.from(mergedMap.values()).sort(
           (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
