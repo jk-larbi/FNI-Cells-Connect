@@ -45,3 +45,5 @@ assert.match(communityMessagingMigration, /drop index if exists public\.communit
 assert.match(communityMessagingMigration, /v_sender is distinct from v_uid/, 'authors must be checked independently from administrator permissions');
 assert.match(messaging, /if \(forEveryone\) \{\s*console\.warn\('Community-wide clear was rejected by the server:/, 'a failed admin-only clear must not fall back to a broad client update');
 console.log('Community author deletion, personal clear isolation, tombstone sync, and Telegram-style pin regression checks passed.');
+
+assert.match(messaging, /isCommunityMessageVisibleForUser\(/, 'Realtime community updates must respect personal clear-history cutoffs');
