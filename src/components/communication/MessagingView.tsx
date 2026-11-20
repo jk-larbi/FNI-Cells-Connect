@@ -310,7 +310,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Attachments & Voice Notes
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
-  const [selectedImagePreview, setSelectedImagePreview] = useState<{ url: string; name: string } | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<{ url: string; name: string; messageId: string } | null>(null);
   const [attachmentActionError, setAttachmentActionError] = useState<string | null>(null);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -3944,7 +3944,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 if (isImage) {
                                   return (
                                     <div key={attIdx} className="relative rounded-2xl overflow-hidden max-h-[420px] max-w-full bg-black/10 my-1">
-                                      <button type="button" onClick={() => setSelectedImagePreview({ url: fileUrl, name: att.name || 'FNI image' })} className="block w-full text-left cursor-zoom-in" aria-label="Open image">
+                                      <button type="button" onClick={() => setSelectedImagePreview({ url: fileUrl, name: att.name || 'FNI image', messageId: msg.id })} className="block w-full text-left cursor-zoom-in" aria-label="Open image">
                                         <img src={fileUrl} alt={att.name || 'Shared image'} loading="lazy" className="block max-w-full max-h-[420px] w-auto h-auto object-contain rounded-2xl" />
                                       </button>
                                       <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
@@ -3970,7 +3970,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             </div>
                           )}
 
-                          {selectedImagePreview && (
+                          {selectedImagePreview && selectedImagePreview.messageId === msg.id && (
                             <div className="fixed inset-0 z-[10000] bg-black/95 flex flex-col items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Image preview" onClick={() => setSelectedImagePreview(null)}>
                               <div className="absolute top-3 right-3 flex items-center gap-2" onClick={e => e.stopPropagation()}>
                                 <button type="button" onClick={() => handleAttachmentDownload(selectedImagePreview.url, selectedImagePreview.name || 'FNI-image.jpg', true)} className="rounded-full bg-white/15 text-white px-3 py-2 text-sm font-semibold inline-flex items-center gap-2"><Download className="w-4 h-4" /> Save image</button>
@@ -3981,7 +3981,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                               <div className="text-white/80 text-xs mt-3">{selectedImagePreview.name} · Use Save image to download or share to your Photos/Gallery app</div>
                             </div>
                           )}
-                          {attachmentActionError && (
+                          {attachmentActionError && msg.id === currentMessages[0]?.id && (
                             <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[10001] max-w-[90vw] rounded-xl bg-red-600 text-white px-4 py-2 text-sm shadow-xl" role="alert">
                               <div className="flex items-center gap-3"><span>{attachmentActionError}</span><button type="button" onClick={() => setAttachmentActionError(null)} aria-label="Dismiss"><X className="w-4 h-4" /></button></div>
                             </div>
