@@ -79,18 +79,21 @@ export class MessagingService {
 
   static async deleteMessageForSelf(userId: string, messageId: string, scope: 'private' | 'community'): Promise<boolean> {
     if (!userId || !messageId) return false;
-    // 1. Persist in local storage immediately
     const existing = this.getDeletedForSelfIds(userId);
     existing.add(messageId);
     setStored(`fni_deleted_for_self_${userId}`, Array.from(existing));
 
-    // 2. Persist in Supabase hidden table
-    if (scope === 'private') {
-      await SupabaseService.hidePrivateMessageForUser(userId, messageId);
-    } else {
-      await SupabaseService.hideCommunityMessageForUser(userId, messageId);
+    try {
+      const saved = scope === 'private'
+        ? await SupabaseService.hidePrivateMessageForUser(userId, messageId)
+        : await SupabaseService.hideCommunityMessageForUser(userId, messageId);
+      if (!saved) throw new Error('The message could not be hidden on this account.');
+      return true;
+    } catch (error) {
+      existing.delete(messageId);
+      setStored(`fni_deleted_for_self_${userId}`, Array.from(existing));
+      throw error;
     }
-    return true;
   }
 
   static async deleteMessageForEveryone(messageId: string, scope: 'private' | 'community'): Promise<boolean> {
