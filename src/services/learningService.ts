@@ -756,6 +756,18 @@ export class LearningService {
     const attempts = await this.getQuizAttempts();
     const updated = attempts.find(a => a.id === data.attemptId);
     if (!updated) throw new Error('The grading was saved but the updated attempt could not be reloaded.');
+    if (data.releaseResults) {
+      try {
+        await NotificationService.createNotification({
+          userId: updated.tutor_id,
+          title: 'Quiz Results Released: ' + (updated.quiz_title || 'Your Quiz'),
+          message: 'Your quiz results have been reviewed and released by FNI leadership. Score: ' + updated.score + '/' + updated.total_possible + ' (' + updated.percentage + '%).',
+          type: 'report_approved',
+          channel: 'in_app',
+          metadata: { category: 'learning', targetTab: 'learning-portal', section: 'quizzes', attemptId: updated.id },
+        });
+      } catch (err) { console.warn('Notice dispatching quiz result release notification:', err); }
+    }
     return updated;
   }
 
