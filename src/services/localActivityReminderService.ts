@@ -25,7 +25,8 @@ export interface ScheduleActivityReminderResult {
   supported: boolean;
   scheduled: number;
   skipped: number;
-  reason?: 'web_platform' | 'permission_denied' | 'invalid_activity' | 'past_activity' | 'disabled';
+  reason?: 'web_platform' | 'permission_denied' | 'invalid_activity' | 'past_activity' | 'disabled' | 'schedule_failed';
+  exactAlarmPermissionGranted?: boolean;
 }
 
 interface ReminderRegistry {
@@ -98,8 +99,12 @@ export class LocalActivityReminderService {
     if (!this.isSupported()) {
       return { supported: false, scheduled: 0, skipped: 0, reason: 'web_platform' };
     }
-    if (!userId || !activity.id || !activity.title?.trim() || activity.cancelled) {
+    if (!userId || !activity.id || !activity.title?.trim()) {
       return { supported: true, scheduled: 0, skipped: 0, reason: 'invalid_activity' };
+    }
+    if (activity.cancelled) {
+      await this.cancelActivityReminders(userId, activity.id);
+      return { supported: true, scheduled: 0, skipped: 0, reason: 'disabled' };
     }
 
     const enabled = activity.type === 'meeting'
@@ -134,6 +139,21 @@ export class LocalActivityReminderService {
 
     if (!permissionGranted) {
       return { supported: true, scheduled: 0, skipped: 0, reason: 'permission_denied' };
+    }
+
+    let exactAlarmPermissionGranted = true;
+    if (Capacitor.getPlatform() === 'android') {
+      try {
+        let exactStatus = await LocalNotifications.checkExactNotificationSetting();
+        exactAlarmPermissionGranted = exactStatus.exact_alarm === 'granted';
+        if (!exactAlarmPermissionGranted && options.requestPermission) {
+          exactStatus = await LocalNotifications.changeExactNotificationSetting();
+          exactAlarmPermissionGranted = exactStatus.exact_alarm === 'granted';
+        }
+      } catch (error) {
+        exactAlarmPermissionGranted = false;
+        console.warn('FNI could not verify Android exact-alarm access; the operating system may deliver reminders late:', error);
+      }
     }
 
     const startId = this.stableNotificationId(activity.id, 'start');
@@ -192,10 +212,11 @@ export class LocalActivityReminderService {
         supported: true,
         scheduled: notifications.length,
         skipped: startsAtMs - THIRTY_MINUTES_MS > now ? 0 : 1,
+        exactAlarmPermissionGranted,
       };
     } catch (error) {
       console.error('FNI could not schedule local activity reminders:', error);
-      return { supported: true, scheduled: 0, skipped: notifications.length, reason: 'invalid_activity' };
+      return { supported: true, scheduled: 0, skipped: notifications.length, reason: 'schedule_failed', exactAlarmPermissionGranted };
     }
   }
 
