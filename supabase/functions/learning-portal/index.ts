@@ -384,6 +384,7 @@ Deno.serve(async (req) => {
       response.question_grades = {};
       response.score = 0; response.total_possible = Number(quiz.total_points || totalPossible);
       response.percentage = 0; response.passed = false;
+      response.status = needsManual ? "awaiting_grading" : "awaiting_results";
     }
     return json(response);
   }
@@ -435,6 +436,7 @@ Deno.serve(async (req) => {
         }
         return {
           ...a, quiz_title: titleMap.get(a.quiz_id) || "Quiz",
+          status: released ? a.status : (a.grading_status === "awaiting_grading" ? "awaiting_grading" : "awaiting_results"),
           question_grades: released ? (isAdmin ? Object.fromEntries(Object.entries(a.question_grades || {}).map(([qid, grade]) => {
             const key: any = keyMap.get(qid) || {};
             return [qid, { ...(grade as any), correct_answer: key.correct_answer, expected_answer: key.expected_answer }];
@@ -450,7 +452,9 @@ Deno.serve(async (req) => {
       }));
     }
     return json(rows.map((a: any) => ({
-      ...a, question_grades: isAdmin || a.results_released ? a.question_grades : {},
+      ...a,
+      status: isAdmin || a.results_released ? a.status : (a.grading_status === "awaiting_grading" ? "awaiting_grading" : "awaiting_results"),
+      question_grades: isAdmin || a.results_released ? a.question_grades : {},
       score: isAdmin || a.results_released ? a.score : 0,
       percentage: isAdmin || a.results_released ? a.percentage : 0,
       passed: isAdmin || a.results_released ? a.passed : false,
