@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Administrator Navigation
   // Keep the administrator drawer concise with dedicated section pages.
-  const adminNavItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
+  const adminNavItems: { id: AppNavTab | 'cells-dropdown' | 'reports-dropdown'; label: string; icon: any; colorKey: IconColorKey; badge?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, colorKey: 'gold' },
     { id: 'cells-hub', label: 'Cells', icon: Building, colorKey: 'teal' },
     { id: 'reports-hub', label: 'Reports', icon: FileCheck, colorKey: 'emerald' },
