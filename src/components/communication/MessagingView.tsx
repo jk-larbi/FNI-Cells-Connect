@@ -3794,7 +3794,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                           {msg.attachments && msg.attachments.length > 0 && (
                             <div className="space-y-2 mb-1.5">
                               {msg.attachments.map((att, attIdx) => {
-                                const isAudio = att.mimeType?.startsWith('audio') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
+                                const isAudio = att.mimeType?.startsWith('audio') || /\\.(mp3|m4a|m4b|aac|ogg|oga|opus|wav|flac|amr|mid|midi)$/i.test(att.name || '') || att.name?.includes('voice-note') || att.name?.includes('Voice Note') || att.path?.startsWith('data:audio');
                                 const isVoiceNote = att.name?.toLowerCase().includes('voice-note') || att.name?.toLowerCase().includes('voice note') || msg.content?.startsWith('🎤 Voice Note');
                                 const isImage = att.mimeType?.startsWith('image');
                                 const isVideo = att.mimeType?.startsWith('video') || /\\.(mp4|mov|webm|m4v)$/i.test(att.name || '');
