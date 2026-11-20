@@ -3805,7 +3805,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 }
 
                                 if (isAudio && isVoiceNote) {
-                                  const durationMatch = (att.name || msg.content || '').match(/\((\d+:\d+)\\)/);
+                                  const durationMatch = (att.name || msg.content || '').match(/\((\d+:\d+)\)/);
                                   const initialDuration = durationMatch ? durationMatch[1] : '0:15';
                                   return <React.Fragment key={attIdx}>{renderVoiceNote(fileUrl, att.name || 'Voice Message', initialDuration, formattedTime, msg.senderName)}</React.Fragment>;
                                 }
