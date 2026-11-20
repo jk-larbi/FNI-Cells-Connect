@@ -857,7 +857,7 @@ export class SupabaseService {
       jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
       webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', avif: 'image/avif',
       mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
-      mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', wav: 'audio/wav',
+      mp3: 'audio/mpeg', m4a: 'audio/mp4', m4b: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/opus', wav: 'audio/wav', flac: 'audio/flac', amr: 'audio/amr', mid: 'audio/midi', midi: 'audio/midi',
     };
     const providedMime = (file.type || '').toLowerCase();
     const mimeType = providedMime && providedMime !== 'application/octet-stream'
