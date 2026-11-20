@@ -51,6 +51,14 @@ function setStored<T>(key: string, val: T): void {
 }
 
 export class MessagingService {
+  static async getPrivateMessageById(messageId: string): Promise<PrivateMessage | null> {
+    return SupabaseService.getPrivateMessageById(messageId);
+  }
+
+  static async getCommunityMessageById(messageId: string): Promise<CommunityMessage | null> {
+    return SupabaseService.getCommunityMessageById(messageId);
+  }
+
   static async getMemberDirectory() {
     return SupabaseService.getMemberDirectory();
   }
