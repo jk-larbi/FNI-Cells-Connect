@@ -242,6 +242,36 @@ export class MessagingService {
     }
   }
 
+  static async isCommunityMessageVisibleForUser(
+    viewerUid: string,
+    messageId: string,
+    createdAt: string
+  ): Promise<boolean> {
+    if (!viewerUid || !messageId || !supabase || !isSupabaseConfigured) return false;
+    try {
+      const [preferenceResult, hiddenResult] = await Promise.all([
+        supabase.from('community_chat_preferences')
+          .select('cleared_at')
+          .eq('user_id', viewerUid)
+          .maybeSingle(),
+        supabase.from('community_message_hidden_for_user')
+          .select('message_id')
+          .eq('user_id', viewerUid)
+          .eq('message_id', messageId)
+          .maybeSingle(),
+      ]);
+      if (preferenceResult.error || hiddenResult.error) return false;
+      if (hiddenResult.data) return false;
+      const cutoff = preferenceResult.data?.cleared_at
+        ? new Date(preferenceResult.data.cleared_at).getTime()
+        : 0;
+      return new Date(createdAt).getTime() > cutoff;
+    } catch (error) {
+      console.warn('Could not verify personal community message visibility:', error);
+      return false;
+    }
+  }
+
   static async hideCommunityMessageForUser(viewerUid: string, messageId: string): Promise<boolean> {
     if (!supabase || !isSupabaseConfigured) return false;
     const { error } = await supabase.from('community_message_hidden_for_user')
