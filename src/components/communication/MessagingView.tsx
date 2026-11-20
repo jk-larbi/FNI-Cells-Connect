@@ -1350,13 +1350,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // - Private chats: both participants can pin/unpin messages
   const canPin = useMemo(() => {
     if (selectedChatId === 'community') {
-      return (
-        isAdmin ||
-        currentUser?.role === 'tutor' ||
-        currentUser?.role === 'admin' ||
-        currentUser?.role === 'super_admin' ||
-        currentUser?.role === 'national_admin'
-      );
+      const role = String(currentUser?.role || '').trim().toLowerCase();
+      return isAdmin || ['tutor', 'admin', 'super_admin', 'national_admin'].includes(role);
     }
     return true;
   }, [selectedChatId, isAdmin, currentUser?.role]);
