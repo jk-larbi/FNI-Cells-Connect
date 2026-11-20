@@ -1881,6 +1881,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       composerInputRef.current.style.height = 'auto';
     }
 
+    let confirmedMessage: CommunityMessage | PrivateMessage | null = null;
+
     try {
       // If currently editing an existing message, perform edit update
       if (editingMessage) {
@@ -1938,10 +1940,16 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const att = await MessagingService.uploadChatAttachment(currentUser?.id || 'guest', file);
         if (att) uploadedAttachments.push(att);
       }
+      // Make uploaded media visible on the optimistic bubble while the message commits.
+      if (selectedChatId === 'community') {
+        setCommunityMessages(previous => previous.map(message => message.id === optimisticId ? { ...message, attachments: uploadedAttachments } : message));
+      } else {
+        setPrivateMessages(previous => previous.map(message => message.id === optimisticId ? { ...message, attachments: uploadedAttachments } : message));
+      }
 
       // 4. Dispatch confirmed message to Supabase
       if (selectedChatId === 'community') {
-        await MessagingService.sendCommunityMessage({
+        confirmedMessage = await MessagingService.sendCommunityMessage({
           senderUid: currentUser.id,
           senderName: currentUser.full_name || 'FNI Leader',
           senderRole: currentUser.role,
@@ -1956,7 +1964,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const recipientUid = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
         const recipient = allMembers.find(m => m.id === recipientUid);
 
-        await MessagingService.sendPrivateMessage({
+        confirmedMessage = await MessagingService.sendPrivateMessage({
           senderUid: currentUser.id,
           senderName: currentUser.full_name || 'FNI Leader',
           senderRole: currentUser.role,
@@ -1971,9 +1979,41 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         });
       }
 
-      // Background sync confirmed message ID
-      loadActiveMessages(selectedChatId);
+      // Replace the temporary optimistic ID with the authoritative database message.
+      if (confirmedMessage) {
+        if (selectedChatId === 'community') {
+          setCommunityMessages(previous => {
+            const next = [...previous.filter(message => message.id !== optimisticId && message.id !== confirmedMessage!.id), confirmedMessage as CommunityMessage]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            ConversationCacheService.setMessages(currentUser.id, 'community', next);
+            return next;
+          });
+        } else {
+          const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+          setPrivateMessages(previous => {
+            const next = [...previous.filter(message => message.id !== optimisticId && message.id !== confirmedMessage!.id), confirmedMessage as PrivateMessage]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            ConversationCacheService.setMessages(currentUser.id, conversationId, next);
+            return next;
+          });
+        }
+      }
     } catch (err: any) {
+      // Failed sends must not leave phantom messages on the sender's screen.
+      if (selectedChatId === 'community') {
+        setCommunityMessages(previous => previous.filter(message => message.id !== optimisticId));
+      } else {
+        const conversationId = selectedChatId === 'saved_messages' ? currentUser.id : selectedChatId;
+        setPrivateMessages(previous => previous.filter(message => message.id !== optimisticId));
+        const cached = ConversationCacheService.getMessages<PrivateMessage>(currentUser.id, conversationId) || [];
+        ConversationCacheService.setMessages(currentUser.id, conversationId, cached.filter(message => message.id !== optimisticId));
+      }
+      if (selectedChatId === 'community') {
+        const cached = ConversationCacheService.getMessages<CommunityMessage>(currentUser.id, 'community') || [];
+        ConversationCacheService.setMessages(currentUser.id, 'community', cached.filter(message => message.id !== optimisticId));
+      }
+      setInputText(textSnapshot);
+      setStagedFiles(stagedFilesSnapshot);
       setSendError(err?.message || 'Message could not be sent.');
     } finally {
       setIsSending(false);
