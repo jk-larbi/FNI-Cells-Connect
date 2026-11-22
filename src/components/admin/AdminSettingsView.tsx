@@ -99,7 +99,9 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   const [profileSaveNotice, setProfileSaveNotice] = useState<{ text: string; isError: boolean } | null>(null);
   const [showTargetConfigModal, setShowTargetConfigModal] = useState(false);
 
-  // Back handler navigation interception for Admin Settings
+  // Intercept Back only for settings sub-tabs and nested dialogs.
+  // Once on the main settings tab, let AppLayout handle page navigation.
+  // Calling onBack here would re-enter AppLayout's interceptor and trap Back.
   useBackHandler(() => {
     if (showTargetConfigModal) {
       setShowTargetConfigModal(false);
@@ -109,12 +111,8 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       setActiveTab('system');
       return true;
     }
-    if (onBack) {
-      onBack();
-      return true;
-    }
     return false;
-  }, Boolean(showTargetConfigModal || activeTab !== 'system' || onBack));
+  }, Boolean(showTargetConfigModal || activeTab !== 'system'));
 
   useEffect(() => {
     async function load() {
@@ -312,7 +310,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
 
       {/* TAB 1: MINISTRY SETTINGS */}
       {activeTab === 'system' && (
-        <div className="space-y-5 max-w-2xl">
+        <div className="space-y-5 w-full min-w-0">
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
