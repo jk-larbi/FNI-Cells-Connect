@@ -148,6 +148,16 @@ export const TelegramLogoutIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' 
 );
 
 // ==============================================================================
+// More: Telegram-style horizontal three-dot menu, matching the settings icon family.
+export const TelegramMoreIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="22" height="22" rx="7" fill="#29384f" />
+    <circle cx="6.5" cy="12" r="1.8" fill="#d5dfeb" />
+    <circle cx="12" cy="12" r="1.8" fill="#d5dfeb" />
+    <circle cx="17.5" cy="12" r="1.8" fill="#d5dfeb" />
+  </svg>
+);
+
 // 2. NAVIGATION BAR ICONS (Sidebar & Mobile Navigation)
 // Solid, high-contrast, dual-tone Telegram vector iconography
 // ==============================================================================
