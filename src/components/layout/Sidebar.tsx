@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   X,
   LogOut,
+  MoreHorizontal,
 } from 'lucide-react';
 import {
   TelegramDashboardIcon,
@@ -21,7 +22,6 @@ import {
   TelegramCallsIcon,
   TelegramAnalyticsIcon,
   TelegramNotificationsIcon,
-  TelegramAdvancedIcon as TelegramSettingsIcon,
   TelegramProfileIcon,
   TelegramHistoryIcon,
   TelegramLocationIcon,
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'cells-hub', label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' },
     { id: 'reports-hub', label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' },
     { id: 'ministry-hub', label: 'Ministry', icon: TelegramEvangelismIcon, colorKey: 'flame' },
-    { id: 'more-hub', label: 'More', icon: TelegramSettingsIcon, colorKey: 'slate' },
+    { id: 'more-hub', label: 'More', icon: MoreHorizontal, colorKey: 'slate' },
   ];
 
   // Tutor Navigation
