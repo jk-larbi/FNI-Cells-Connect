@@ -629,7 +629,6 @@ export const AppLayout: React.FC = () => {
               { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' as IconColorKey },
               { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' as IconColorKey },
               { id: 'messages' as AppNavTab, label: 'Comms', icon: TelegramMessagesIcon, colorKey: 'azure' as IconColorKey },
-              { id: 'more-hub' as AppNavTab, label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' as IconColorKey },
             ]
           : [
               { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: TelegramDashboardIcon, colorKey: 'gold' as IconColorKey },
