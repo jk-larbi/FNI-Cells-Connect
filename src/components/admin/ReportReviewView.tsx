@@ -536,19 +536,19 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
     sortBy !== 'newest';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#142B4A] text-[#C6A45A] flex items-center justify-center shadow-sm">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#142B4A] text-[#C6A45A] flex items-center justify-center shadow-sm">
               <FileCheck className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
+              <h1 className="text-lg sm:text-xl font-black text-[#142B4A] tracking-tight">
                 Accept / Decline Reports Directorate
               </h1>
-              <p className="text-xs text-[#667085] mt-0.5">
+              <p className="text-[11px] sm:text-xs text-[#667085] mt-0.5 leading-snug">
                 Central leadership portal to evaluate, accept (approve), or decline (return for correction) weekly fellowship reports.
               </p>
             </div>
@@ -582,12 +582,12 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       </div>
 
       {/* EXECUTIVE KPI SUMMARY CARDS (Clickable Fast-Filters) */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3.5">
         {/* Pending / Action Required */}
         <button
           type="button"
           onClick={() => setStatusFilter(statusFilter === 'Newly Submitted' ? 'all' : 'Newly Submitted')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
+          className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
             statusFilter === 'Newly Submitted'
               ? 'bg-amber-50 border-amber-300 ring-2 ring-[#D99A32]/30 shadow-sm'
               : 'bg-white border-[#E3E8EF] hover:border-amber-200 hover:shadow-2xs'
@@ -614,7 +614,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         <button
           type="button"
           onClick={() => setStatusFilter(statusFilter === 'Needs Correction' ? 'all' : 'Needs Correction')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
+          className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
             statusFilter === 'Needs Correction'
               ? 'bg-rose-50 border-rose-300 ring-2 ring-[#C74646]/30 shadow-sm'
               : 'bg-white border-[#E3E8EF] hover:border-rose-200 hover:shadow-2xs'
@@ -638,7 +638,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         <button
           type="button"
           onClick={() => setStatusFilter(statusFilter === 'Approved' ? 'all' : 'Approved')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
+          className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
             statusFilter === 'Approved'
               ? 'bg-emerald-50 border-emerald-300 ring-2 ring-[#23845B]/30 shadow-sm'
               : 'bg-white border-[#E3E8EF] hover:border-emerald-200 hover:shadow-2xs'
@@ -659,7 +659,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         </button>
 
         {/* Souls Won Harvest */}
-        <div className="p-4 rounded-2xl border border-[#E3E8EF] bg-white text-left relative overflow-hidden">
+        <div className="p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] bg-white text-left relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
               Souls Harvest
@@ -676,7 +676,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         </div>
 
         {/* On-Time Filing Rate */}
-        <div className="p-4 rounded-2xl border border-[#E3E8EF] bg-white text-left relative overflow-hidden">
+        <div className="p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] bg-white text-left relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
               On-Time Rate
@@ -695,10 +695,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       </div>
 
       {/* FILTER, SEARCH & BATCH TOOLKIT */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E3E8EF] shadow-sm space-y-3">
+      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] shadow-sm space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Search bar */}
-          <div className="relative flex-1 min-w-[260px]">
+          <div className="relative flex-1 min-w-0 w-full sm:min-w-[260px]">
             <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-3" />
             <input
               type="text"
@@ -719,7 +719,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           </div>
 
           {/* ── Report Type Section Tabs ── */}
-          <div className="flex items-center gap-0 border border-[#E3E8EF] rounded-xl overflow-hidden shadow-2xs text-xs font-semibold">
+          <div className="flex w-full sm:w-auto items-center gap-0 border border-[#E3E8EF] rounded-xl overflow-x-auto shadow-2xs text-xs font-semibold">
             <button
               onClick={() => setTypeFilter('all')}
               className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all border-r border-[#E3E8EF] ${
@@ -880,7 +880,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       {/* BATCH ACTION BAR (Shown when items are selected) */}
       {selectedIds.size > 0 && (
         <div className="bg-[#142B4A] text-white px-5 py-3 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-3 animate-fade-in">
-          <div className="flex items-center gap-3">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
             <span className="w-7 h-7 rounded-full bg-[#C6A45A] text-[#142B4A] font-extrabold text-xs flex items-center justify-center">
               {selectedIds.size}
             </span>
@@ -922,7 +922,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       {/* REVIEW QUEUE DATA TABLE */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
         <div className="py-4 px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-3 bg-white">
-          <div className="flex items-center gap-3">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={toggleSelectAll}
@@ -1061,7 +1061,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
                       {/* Tutor & Cell info */}
                       <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
                           <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                             {item.tutorName
                               ? item.tutorName
@@ -1961,7 +1961,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
             {/* ACTION PANEL: Approve vs Return for Correction */}
             <div className="pt-4 border-t border-[#E3E8EF] space-y-3.5">
-              <div className="flex items-center gap-3">
+              <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -2131,7 +2131,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       {isBulkReturnModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#E3E8EF] space-y-4 text-left animate-fade-in">
-            <div className="flex items-center gap-3">
+            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#C74646] flex items-center justify-center shrink-0 border border-rose-200">
                 <AlertCircle className="w-6 h-6" />
               </div>
