@@ -422,6 +422,7 @@ export const AppLayout: React.FC = () => {
             {isAdmin && effectiveTab === 'more-hub' && <SectionHub
               title="More" description="Learning, insights, alerts and platform configuration."
               items={[
+                { title: 'Ministry & Operations', description: 'Open evangelism, follow-ups, offerings, teaching materials and calls.', icon: Flame, onClick: () => navigateToTab('ministry-hub') },
                 { title: 'Learning Portal', description: 'Access assignments, quizzes, participation and grades.', icon: GraduationCap, onClick: () => navigateToTab('learning-portal') },
                 { title: 'Analytics', description: 'View ministry performance and activity insights.', icon: BarChart3, onClick: () => navigateToTab('analytics') },
                 { title: 'Notifications', description: 'Review alerts and important updates.', icon: Bell, onClick: () => navigateToTab('notifications') },
@@ -618,7 +619,7 @@ export const AppLayout: React.FC = () => {
       {/* Thumb-friendly mobile navigation with iOS safe-area support */}
       <nav
         aria-label="Mobile navigation"
-        className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
+        className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid ${isAdmin ? 'grid-cols-4' : 'grid-cols-5'} border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
           (isMobileChatOpen && effectiveTab === 'messages') || (activeSession && !isCallMinimized) ? 'hidden' : ''
         }`}
       >
@@ -628,7 +629,6 @@ export const AppLayout: React.FC = () => {
               { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' as IconColorKey },
               { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' as IconColorKey },
               { id: 'messages' as AppNavTab, label: 'Comms', icon: TelegramMessagesIcon, colorKey: 'azure' as IconColorKey },
-              { id: 'ministry-hub' as AppNavTab, label: 'Ministry', icon: TelegramEvangelismIcon, colorKey: 'flame' as IconColorKey },
               { id: 'more-hub' as AppNavTab, label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' as IconColorKey },
             ]
           : [
@@ -649,9 +649,7 @@ export const AppLayout: React.FC = () => {
               ? ['reports-hub', 'report-review', 'report-history', 'report-deadlines', 'received-reports'].includes(effectiveTab)
               : item.id === 'messages'
               ? effectiveTab === 'messages' || effectiveTab === 'call-history'
-              : item.id === 'ministry-hub'
-              ? ['ministry-hub', 'evangelism', 'follow-ups', 'finance', 'materials'].includes(effectiveTab)
-              : ['more-hub', 'learning-portal', 'learning-assignments', 'learning-quizzes', 'learning-participation', 'learning-grades', 'learning-events', 'learning-materials', 'analytics', 'notifications', 'settings', 'location-sharing'].includes(effectiveTab)
+              : ['more-hub', 'ministry-hub', 'evangelism', 'follow-ups', 'finance', 'materials', 'call-history', 'learning-portal', 'learning-assignments', 'learning-quizzes', 'learning-participation', 'learning-grades', 'learning-events', 'learning-materials', 'analytics', 'notifications', 'settings', 'location-sharing'].includes(effectiveTab)
             : effectiveTab === item.id || (item.id === 'learning-portal' && effectiveTab.startsWith('learning-'));
           const style = ICON_STYLES[item.colorKey];
           return (
