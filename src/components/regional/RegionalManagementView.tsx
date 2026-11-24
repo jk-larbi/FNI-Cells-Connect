@@ -191,7 +191,24 @@ export const RegionalManagementView: React.FC = () => {
         <h3 className="text-sm font-bold text-navy-950 uppercase tracking-wider">
           Cell Directory ({activeRegion?.name})
         </h3>
-        <div className="table-scroll-container custom-scrollbar">
+        <div className="md:hidden divide-y divide-slate-200">
+          {regionCells.length === 0 ? <div className="p-5 text-center text-xs text-slate-500">No cells assigned to this region.</div> : regionCells.map(cell => {
+            const isSubmitted = submittedCellIds.has(cell.id);
+            return <article key={cell.id} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0"><div className="font-bold text-sm text-navy-950 break-words">{cell.name}</div><div className="text-[10px] text-slate-400 font-mono mt-0.5">{cell.code}</div></div>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${isSubmitted ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{isSubmitted ? 'Filed' : 'Pending'}</span>
+              </div>
+              <div className="mt-3 text-xs"><div className="font-semibold text-slate-800">{cell.leader_name || 'Leader not assigned'}</div><div className="text-slate-500 mt-0.5">{cell.leader_phone || 'No phone recorded'}</div></div>
+              <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                <div className="rounded-lg bg-slate-50 p-2"><div className="text-[10px] text-slate-500">Meeting</div><div className="font-semibold text-slate-700">{cell.meeting_day} @ {cell.meeting_time}</div></div>
+                <div className="rounded-lg bg-slate-50 p-2"><div className="text-[10px] text-slate-500">Target</div><div className="font-semibold text-slate-700">{cell.target_attendance} people</div></div>
+              </div>
+              <div className="text-xs text-slate-500 mt-2 break-words"><span className="font-semibold">Venue:</span> {cell.venue_address || 'Not recorded'}</div>
+            </article>;
+          })}
+        </div>
+        <div className="hidden md:block table-scroll-container custom-scrollbar">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-400 font-medium text-[11px] border-b border-slate-100">
