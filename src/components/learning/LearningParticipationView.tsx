@@ -253,7 +253,24 @@ export const LearningParticipationView: React.FC = () => {
           </div>
 
           {/* Table */}
-          <div className="table-scroll-container">
+          <div className="md:hidden divide-y divide-[#E3E8EF] dark:divide-[#26384d]">
+            {isLoading ? <div className="p-6 text-center text-xs text-[#667085]">Loading participation records...</div> : filteredMetrics.length === 0 ? <div className="p-6 text-center text-xs text-[#667085]">No active tutors found matching filter.</div> : filteredMetrics.map(tutor => (
+              <article key={tutor.tutor_id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0"><div className="font-bold text-sm text-[#182230] dark:text-white break-words">{tutor.tutor_name}</div><div className="text-xs text-[#667085] mt-1 break-words">{tutor.cell_name}{tutor.phone ? ` · ${tutor.phone}` : ''}</div></div>
+                  <span className={`shrink-0 px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusBadge(tutor.status)}`}>{tutor.status}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="rounded-lg bg-[#F5F7FA] dark:bg-[#172437] p-3"><div className="text-[10px] text-[#667085]">Assignments</div><div className="text-sm font-bold text-[#142B4A] dark:text-white mt-1">{tutor.assignments_submitted} <span className="text-xs font-normal text-[#667085]">/ {tutor.assignments_total}</span></div></div>
+                  <div className="rounded-lg bg-[#F5F7FA] dark:bg-[#172437] p-3"><div className="text-[10px] text-[#667085]">Quizzes</div><div className="text-sm font-bold text-[#142B4A] dark:text-white mt-1">{tutor.quizzes_completed} <span className="text-xs font-normal text-[#667085]">/ {tutor.quizzes_total}</span></div></div>
+                  <div className="rounded-lg bg-[#F5F7FA] dark:bg-[#172437] p-3"><div className="text-[10px] text-[#667085]">Completion</div><div className="flex items-center gap-2 mt-2"><div className="h-2 flex-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden"><div className="h-full bg-blue-600 rounded-full" style={{width:`${tutor.participation_rate}%`}} /></div><span className="font-bold text-xs text-[#142B4A] dark:text-white">{tutor.participation_rate}%</span></div></div>
+                  <div className="rounded-lg bg-[#F5F7FA] dark:bg-[#172437] p-3"><div className="text-[10px] text-[#667085]">Average grade</div><div className="text-sm font-black text-emerald-600 mt-1">{tutor.average_score}%</div></div>
+                </div>
+                <div className="text-[11px] text-[#667085] mt-3">Last active: {tutor.last_activity_date ? new Date(tutor.last_activity_date).toLocaleDateString() : 'No activity'}</div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden md:block table-scroll-container">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[#E3E8EF] dark:border-[#26384d] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA] dark:bg-[#172437]">
