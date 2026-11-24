@@ -291,12 +291,12 @@ export const AdminManagementView: React.FC = () => {
   const leaderCount = users.filter(u => u.role === 'regional_leader' || u.role === 'cell_leader').length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Tab Navigation header */}
-      <div className="flex items-center gap-2 border-b border-slate-200/70 pb-3 text-xs font-bold overflow-x-auto">
+      <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-2 text-xs font-bold overflow-x-auto -mx-1 px-1 snap-x snap-mandatory">
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
+          className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap snap-start ${
             activeTab === 'users'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -306,7 +306,7 @@ export const AdminManagementView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('cells')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
+          className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap snap-start ${
             activeTab === 'cells'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -316,7 +316,7 @@ export const AdminManagementView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('regions')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
+          className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap snap-start ${
             activeTab === 'regions'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -326,7 +326,7 @@ export const AdminManagementView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('periods')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
+          className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap snap-start ${
             activeTab === 'periods'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -336,7 +336,7 @@ export const AdminManagementView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('deactivations')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${
+          className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 snap-start ${
             activeTab === 'deactivations'
               ? 'bg-navy-900 text-white shadow-card'
               : 'text-slate-500 hover:text-navy-900 hover:bg-white'
@@ -352,10 +352,10 @@ export const AdminManagementView: React.FC = () => {
       </div>
 
       {/* Main Card (Matching Screenshot "Users" View) */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-card space-y-6">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border border-slate-100 shadow-card space-y-4 sm:space-y-6">
         {/* Top Section Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold tracking-tight text-navy-950">
+          <h2 className="text-lg sm:text-2xl font-extrabold tracking-tight text-navy-950">
             {activeTab === 'users'
               ? 'Users'
               : activeTab === 'cells'
@@ -370,7 +370,7 @@ export const AdminManagementView: React.FC = () => {
 
         {/* Top Horizontal Stat Squircles + Action Card */}
         {activeTab === 'users' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             <StatCard
               title="Total Users"
               value={totalUsersCount}
@@ -408,7 +408,7 @@ export const AdminManagementView: React.FC = () => {
 
         {/* Multi-Column Filter Strip (matching screenshot) */}
         {activeTab === 'users' && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 text-xs">
             <div>
               <span className="block text-[11px] font-medium text-slate-400 mb-1">Name / Keyword</span>
               <input
@@ -820,9 +820,9 @@ export const AdminManagementView: React.FC = () => {
 
         {/* Deactivation Requests Tab */}
         {activeTab === 'deactivations' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Stat Cards for Deactivations */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <StatCard
                 title="Pending Review"
                 value={deactivationRequests.filter(r => r.status === 'pending').length}
