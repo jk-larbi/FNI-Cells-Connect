@@ -346,8 +346,59 @@ export const LearningGradesView: React.FC<LearningGradesViewProps> = ({ assignme
           </div>
         </div>
 
-        {/* TABLE CONTENT */}
-        <div className="table-scroll-container">
+        {/* MOBILE GRADE CARDS */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5">
+          {activeTab === 'assignments' ? (
+            isLoading ? <p className="p-6 text-center text-sm text-slate-500">Loading grade records...</p> :
+            filteredSubmissions.length === 0 ? <p className="p-6 text-center text-sm text-slate-500">No evaluated assignment submissions found.</p> :
+            filteredSubmissions.map(sub => {
+              const asg = assignments.find(a => a.id === sub.assignment_id);
+              const total = asg?.total_marks || 100;
+              const pct = Math.round(((sub.grade || 0) / total) * 100);
+              return (
+                <button key={sub.id} type="button" onClick={() => setInspectingSubmission(sub)} className="w-full p-4 text-left space-y-2.5 active:bg-slate-50 dark:active:bg-white/5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-slate-900 dark:text-white break-words">{sub.tutor_name}</p>
+                      <p className="text-xs text-slate-500">{sub.cell_name || 'Cell Leader'}</p>
+                    </div>
+                    <span className="shrink-0 text-sm font-black text-emerald-600">{sub.grade} / {total} <span className="text-[10px]">({pct}%)</span></span>
+                  </div>
+                  <p className="text-xs font-semibold text-[#142B4A] dark:text-white">{asg?.title || 'Assignment'}</p>
+                  <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <span>Attempt #{sub.attempt_number}</span>
+                    <span>{sub.graded_at ? new Date(sub.graded_at).toLocaleDateString() : 'Recently'}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 line-clamp-2">{sub.feedback || 'No written feedback'}</p>
+                </button>
+              );
+            })
+          ) : (
+            isLoading ? <p className="p-6 text-center text-sm text-slate-500">Loading quiz scores...</p> :
+            filteredQuizAttempts.length === 0 ? <p className="p-6 text-center text-sm text-slate-500">No evaluated quiz attempts found.</p> :
+            filteredQuizAttempts.map(att => {
+              const qz = quizzes.find(item => item.id === att.quiz_id);
+              return (
+                <button key={att.id} type="button" onClick={() => setInspectingQuizAttempt(att)} className="w-full p-4 text-left space-y-2.5 active:bg-slate-50 dark:active:bg-white/5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-slate-900 dark:text-white break-words">{att.tutor_name}</p>
+                      <p className="text-xs text-slate-500">{att.cell_name || 'Cell Leader'}</p>
+                    </div>
+                    <span className="shrink-0 text-sm font-black text-emerald-600">{att.score} / {att.total_possible} <span className="text-[10px]">({att.percentage}%)</span></span>
+                  </div>
+                  <p className="text-xs font-semibold text-[#142B4A] dark:text-white">{qz?.title || att.quiz_title || 'Quiz'}</p>
+                  <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <span className="capitalize">{att.status.replace('_', ' ')} · {att.passed ? 'Passed' : 'Needs Review'}</span>
+                    <span>{att.completed_at ? new Date(att.completed_at).toLocaleDateString() : 'Recently'}</span>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+        {/* DESKTOP GRADE TABLES */}
+        <div className="hidden md:block table-scroll-container">
           {activeTab === 'assignments' ? (
             /* ASSIGNMENTS TABLE */
             <table className="w-full text-left text-xs border-collapse">
