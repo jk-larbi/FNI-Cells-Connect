@@ -174,35 +174,35 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-5xl mx-auto pb-16">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in max-w-5xl mx-auto pb-28 sm:pb-16 px-0 sm:px-0">
       {/* 1. Header Banner */}
-      <div className="bg-[#142B4A] rounded-3xl p-6 sm:p-7 text-white shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-[#142B4A] rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-white shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#C6A45A] text-[10px] font-bold uppercase tracking-wider mb-2 border border-white/10">
             <FileText className="w-3.5 h-3.5" />
-            <span>Document Studio &bull; Word-Like Assignment Editor</span>
+            <span className="sm:inline">Assignment builder</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+          <h1 className="text-lg sm:text-2xl font-black tracking-tight text-white">
             {initialAssignment ? 'Edit Assignment Document' : 'Create Assignment Document'}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1">
+          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
             Write all instructions, questions, case studies, and rubrics seamlessly in one comprehensive document.
           </p>
         </div>
 
         {/* Action Controls in Top Bar */}
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto sm:justify-end">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="min-h-11 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/15 cursor-pointer"
+            className="min-h-11 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/15 cursor-pointer"
           >
             <Eye className="w-4 h-4 text-[#C6A45A]" />
             <span>Preview</span>
@@ -211,7 +211,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
             type="button"
             disabled={isSaving}
             onClick={() => handleTriggerSave('draft')}
-            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/20 cursor-pointer disabled:opacity-50"
+            className="min-h-11 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer disabled:opacity-50"
           >
             <Save className="w-4 h-4 text-slate-300" />
             <span>Save Draft</span>
@@ -220,7 +220,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
             type="button"
             disabled={isSaving}
             onClick={() => handleTriggerSave('published')}
-            className="px-5 py-2 rounded-xl bg-[#C6A45A] hover:bg-[#B3934B] text-[#142B4A] text-xs font-black transition-all flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+            className="min-h-11 col-span-2 sm:col-span-1 px-4 py-2 rounded-xl bg-[#C6A45A] hover:bg-[#B3934B] text-[#142B4A] text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
           >
             <Send className="w-4 h-4 text-[#142B4A]" />
             <span>Publish Assignment</span>
@@ -231,21 +231,21 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
       {/* 2. Document Page Container (Styled like a Microsoft Word Paper Sheet) */}
       <div className="bg-white dark:bg-[#111c2d] rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] shadow-lg overflow-hidden">
         {/* Word Document Title Header (First: Assignment Topic) */}
-        <div className="p-6 sm:p-8 border-b border-[#E3E8EF] dark:border-[#26384d] bg-gradient-to-b from-[#F8FAFC] to-white dark:from-[#172437] dark:to-[#111c2d]">
+        <div className="p-4 sm:p-8 border-b border-[#E3E8EF] dark:border-[#26384d] bg-gradient-to-b from-[#F8FAFC] to-white dark:from-[#172437] dark:to-[#111c2d]">
           <label className="block text-[11px] font-black uppercase tracking-wider text-[#667085] dark:text-slate-400 mb-2">
-            First: Assignment Topic / Title <span className="text-rose-500">*</span>
+            Assignment title <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             value={topic}
             onChange={e => setTopic(e.target.value)}
             placeholder="e.g. Cell Multiplication Blueprint & Practical Discipleship Strategy"
-            className="w-full text-xl sm:text-2xl font-black text-[#142B4A] dark:text-white placeholder-slate-300 dark:placeholder-slate-600 border-0 focus:outline-none focus:ring-0 bg-transparent"
+            className="w-full min-h-12 text-lg sm:text-2xl font-black text-[#142B4A] dark:text-white placeholder-slate-300 dark:placeholder-slate-600 border-0 focus:outline-none focus:ring-0 bg-transparent"
           />
         </div>
 
         {/* Word Ribbon Toolbar */}
-        <div className="p-3 bg-[#F1F5F9] dark:bg-[#1a293f] border-b border-[#E3E8EF] dark:border-[#26384d] flex flex-wrap items-center gap-1.5 text-slate-700 dark:text-slate-200 sticky top-0 z-20 shadow-2xs">
+        <div className="p-2 sm:p-3 bg-[#F1F5F9] dark:bg-[#1a293f] border-b border-[#E3E8EF] dark:border-[#26384d] flex flex-nowrap sm:flex-wrap items-center gap-1.5 text-slate-700 dark:text-slate-200 sticky top-0 z-20 shadow-2xs overflow-x-auto overscroll-x-contain">
           {/* Headings Selector */}
           <div className="flex items-center gap-1 border-r border-slate-300 dark:border-slate-700 pr-2 mr-1">
             <button
@@ -452,12 +452,12 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
         )}
 
         {/* Large Rich-Text Writing Canvas (Second: Assignment Content) */}
-        <div className="p-6 sm:p-10 min-h-[460px] max-w-4xl mx-auto">
+        <div className="p-4 sm:p-10 min-h-[320px] sm:min-h-[460px] max-w-4xl mx-auto">
           <div
             ref={editorRef}
             contentEditable
             onInput={handleEditorInput}
-            className="prose dark:prose-invert max-w-none min-h-[400px] focus:outline-none text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-relaxed tracking-normal"
+            className="prose dark:prose-invert max-w-none min-h-[280px] sm:min-h-[400px] focus:outline-none text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-relaxed tracking-normal"
             style={{ wordBreak: 'break-word' }}
             data-placeholder="Start typing your complete assignment here. Write instructions, questions, explanations, subsections, and case studies..."
           />
@@ -465,7 +465,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
       </div>
 
       {/* 3. Assignment Submission Settings Panel */}
-      <div className="bg-white dark:bg-[#111c2d] rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] p-6 sm:p-8 shadow-sm space-y-6">
+      <div className="bg-white dark:bg-[#111c2d] rounded-2xl sm:rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] p-4 sm:p-8 shadow-sm space-y-4 sm:space-y-6">
         <div className="flex items-center gap-2.5 pb-4 border-b border-[#E3E8EF] dark:border-[#26384d]">
           <FileCheck className="w-5 h-5 text-[#C6A45A]" />
           <div>
@@ -478,7 +478,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 text-xs">
           {/* Total Marks */}
           <div>
             <label className="block font-bold text-[#142B4A] dark:text-white mb-1.5">
@@ -559,7 +559,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
             <label className="block font-bold text-[#142B4A] dark:text-white mb-1.5">
               Maximum Submission Attempts <span className="text-[#C6A45A]">&bull; Required</span>
             </label>
-            <div className="grid grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {[
                 { value: 1, label: '1 Attempt' },
                 { value: 2, label: '2 Attempts' },
@@ -571,7 +571,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
                   key={opt.value}
                   type="button"
                   onClick={() => setMaxAttempts(opt.value)}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold transition-all text-center border cursor-pointer ${
+                  className={`min-h-11 py-2 px-2 rounded-xl text-xs font-bold transition-all text-center border cursor-pointer ${
                     maxAttempts === opt.value
                       ? 'bg-[#142B4A] text-white border-[#142B4A] shadow-xs'
                       : 'bg-slate-50 dark:bg-[#172437] text-slate-700 dark:text-slate-300 border-[#E3E8EF] dark:border-[#26384d] hover:bg-slate-100'
@@ -590,15 +590,15 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
         </div>
 
         {/* Bottom Action Ribbon */}
-        <div className="pt-4 border-t border-[#E3E8EF] dark:border-[#26384d] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="pt-4 border-t border-[#E3E8EF] dark:border-[#26384d] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="text-xs text-[#667085]">
             Auto-distributed to all active tutors across all registered fellowship cells.
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="grid grid-cols-1 sm:flex items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsPreviewOpen(true)}
-              className="px-4 py-2.5 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] text-xs font-bold text-[#142B4A] dark:text-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="min-h-11 w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] text-xs font-bold text-[#142B4A] dark:text-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Eye className="w-4 h-4 text-[#C6A45A]" />
               <span>Preview Assignment</span>
@@ -607,7 +607,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
               type="button"
               disabled={isSaving}
               onClick={() => handleTriggerSave('draft')}
-              className="px-4 py-2.5 rounded-xl border border-[#142B4A]/20 bg-slate-50 dark:bg-[#172437] text-xs font-bold text-[#142B4A] dark:text-white hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="min-h-11 w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl border border-[#142B4A]/20 bg-slate-50 dark:bg-[#172437] text-xs font-bold text-[#142B4A] dark:text-white hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Save className="w-4 h-4 text-slate-500" />
               <span>Save Draft</span>
@@ -616,7 +616,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
               type="button"
               disabled={isSaving}
               onClick={() => handleTriggerSave('published')}
-              className="px-6 py-2.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="min-h-11 w-full sm:w-auto justify-center px-6 py-2.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <Send className="w-4 h-4 text-[#C6A45A]" />
               <span>{isSaving ? 'Publishing...' : 'Publish Assignment Now'}</span>
