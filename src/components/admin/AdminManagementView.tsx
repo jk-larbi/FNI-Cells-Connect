@@ -453,7 +453,40 @@ export const AdminManagementView: React.FC = () => {
 
         {/* Users Table */}
         {activeTab === 'users' && (
-          <div className="table-scroll-container custom-scrollbar">
+          <div className="md:hidden divide-y divide-slate-200">
+            {filteredUsers.length === 0 ? <div className="p-6 text-center text-xs text-slate-500">No users or cell leaders registered yet.</div> : filteredUsers.map(user => {
+              const linkedCell = cells.find(cell => cell.id === user.cell_id || (user.cell_name && cell.name.toLowerCase() === user.cell_name.toLowerCase()));
+              return <article key={user.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-navy-900 text-gold-400 font-bold flex items-center justify-center text-xs shrink-0">{(user.full_name || 'U').slice(0,2).toUpperCase()}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-sm text-navy-950 break-words">{user.full_name}</div>
+                    <div className="text-xs text-slate-500 break-all mt-1">{user.email}</div>
+                    {user.phone_number && <div className="text-[11px] text-slate-500 mt-0.5">{user.phone_number}</div>}
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${user.is_onboarded ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{user.is_onboarded ? 'Verified' : 'Pending'}</span>
+                </div>
+                <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                  <div className="text-[10px] uppercase tracking-wide text-slate-400">Registered cell</div>
+                  <div className="text-xs font-semibold text-slate-800 mt-1">{linkedCell?.name || (user.role === 'admin' ? 'National Administration' : 'Pending Cell Association')}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <label className="text-[10px] text-slate-500">Role
+                    <select value={user.role} onChange={e => handleRoleChange(user.id, e.target.value as UserRole)} className="block w-full mt-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-navy-950 py-2 px-2">
+                      <option value="super_admin">Super Admin</option><option value="national_admin">National Admin</option><option value="regional_leader">Regional Leader</option><option value="cell_leader">Cell Leader</option>
+                    </select>
+                  </label>
+                  <div className="text-[10px] text-slate-500">Sign-in provider<div className="text-xs font-semibold text-slate-800 mt-2 capitalize">{user.auth_provider || 'Email'}</div></div>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {user.cell_id && <button onClick={() => { const cell = cells.find(c => c.id === user.cell_id); if (cell) handleViewCellReports(cell); }} className="flex-1 min-w-[110px] rounded-lg bg-slate-100 text-slate-700 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5"><FileSpreadsheet className="w-3.5 h-3.5" /> Reports</button>}
+                  <button onClick={() => handleCopy(user.email, user.id)} className="flex-1 min-w-[110px] rounded-lg bg-sky-50 text-sky-700 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5"><MessageSquare className="w-3.5 h-3.5" /> Copy email</button>
+                  {user.id !== currentUser.id && <button onClick={() => handleDeleteUser(user)} disabled={deletingUserId === user.id} className="rounded-lg bg-rose-50 text-rose-700 px-3 py-2 text-xs font-semibold disabled:opacity-50"><Trash2 className="w-3.5 h-3.5" /></button>}
+                </div>
+              </article>;
+            })}
+          </div>
+          <div className="hidden md:block table-scroll-container custom-scrollbar">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="text-slate-400 font-medium text-[11px] border-b border-slate-100">
