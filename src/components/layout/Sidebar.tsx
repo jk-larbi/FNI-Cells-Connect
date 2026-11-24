@@ -157,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 ${
+        className={`fixed top-0 bottom-0 left-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${
           'z-50 shadow-2xl'
         } flex flex-col justify-between transition-all duration-300 ease-in-out fni-glass-sidebar ${
           isOpen
