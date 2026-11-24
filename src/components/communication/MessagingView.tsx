@@ -70,7 +70,6 @@ import {
   ChevronDown,
   Volume2,
   Repeat,
-  Palette,
   Image as ImageIcon,
   CheckCircle2,
   Settings,
