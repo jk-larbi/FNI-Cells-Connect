@@ -173,7 +173,47 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
           </span>
         </div>
 
-        <div className="table-scroll-container">
+        <div className="md:hidden divide-y divide-[#E3E8EF]">
+          {filteredLeaders.length === 0 ? (
+            <div className="p-6 text-center text-xs text-[#667085]">No tutors registered yet.</div>
+          ) : filteredLeaders.map(leader => {
+            const leaderM = meetingReports.filter(m => m.tutorUid === leader.id || m.cellName === leader.cell_name);
+            const onTimeCount = leaderM.filter(m => !m.late).length;
+            const consistency = leaderM.length > 0 ? Math.round((onTimeCount / leaderM.length) * 100) : 100;
+            return (
+              <button
+                key={leader.id}
+                type="button"
+                onClick={() => openLeaderProfile(leader)}
+                className="w-full text-left p-4 active:bg-[#F5F7FA] hover:bg-[#F5F7FA] transition-colors"
+              >
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
+                    {leader.avatar_url ? <img src={leader.avatar_url} alt={leader.full_name || 'Leader'} className="w-full h-full object-cover" /> : (leader.full_name || 'TL').split(' ').map(n => n[0]).slice(0, 2).join('')}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-sm text-[#182230] break-words">{leader.full_name}</div>
+                    <div className="text-xs text-[#667085] break-all mt-0.5">{leader.email}</div>
+                    <div className="text-xs font-semibold text-[#142B4A] mt-2">{leader.cell_name || 'Assigned Fellowship Cell'}</div>
+                    <div className="text-[11px] text-[#667085] mt-0.5">{leader.phone_number || 'No phone recorded'}</div>
+                  </div>
+                  <Eye className="w-4 h-4 text-sky-600 shrink-0 mt-1" />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${leader.is_active ? 'bg-emerald-50 text-[#23845B]' : 'bg-rose-50 text-[#C74646]'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${leader.is_active ? 'bg-[#23845B]' : 'bg-[#C74646]'}`} />
+                    {leader.is_active ? 'Active' : 'Suspended'}
+                  </span>
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${consistency >= 80 ? 'bg-emerald-50 text-[#23845B]' : 'bg-amber-50 text-[#D99A32]'}`}>
+                    {consistency}% on-time
+                  </span>
+                </div>
+                <div className="text-[11px] font-semibold text-sky-700 mt-3">View leader profile and submissions</div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
