@@ -203,12 +203,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const currentQuarterSouls = soulMetrics?.quarterlyProgress.find(item => item.quarter === currentQuarterLabel)?.souls ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
+            <h1 className="text-lg sm:text-xl font-black text-[#142B4A] tracking-tight">
               Administrator Dashboard
             </h1>
             <span className="px-2 py-0.5 rounded-full bg-[#142B4A] text-[#C6A45A] text-[10px] font-bold uppercase tracking-wider">
@@ -220,10 +220,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2">
           <button
             onClick={() => onNavigateToTab('report-review')}
-            className="px-4 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-extrabold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-2 cursor-pointer border border-[#C6A45A]/30"
+            className="w-full sm:w-auto justify-center px-3 sm:px-4 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-extrabold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-2 cursor-pointer border border-[#C6A45A]/30"
           >
             <FileCheck className="w-4 h-4 text-[#C6A45A]" />
             <span>Accept / Decline Reports</span>
@@ -243,7 +243,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Vision, Mission & Annual Soul-Winning Target Surface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Vision & Mission Card */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm relative">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-5 shadow-sm relative">
           <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-[#C6A45A]" aria-label="FNI Vision and Mission" strokeWidth={2} />
@@ -282,7 +282,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Annual Soul-Winning Target Progress Card */}
-        <div onClick={() => setShowSoulModal(true)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSoulModal(true); } }} className="bg-white rounded-2xl border border-[#E3E8EF] p-5 shadow-sm flex flex-col justify-between hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all group focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40" title="Open the audited annual soul-winning progress and cell contributions">
+        <div onClick={() => setShowSoulModal(true)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSoulModal(true); } }} className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-5 shadow-sm flex flex-col justify-between hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all group focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40" title="Open the audited annual soul-winning progress and cell contributions">
           <div>
             <div className="flex items-center justify-between gap-3 mb-4 border-b border-[#E3E8EF] pb-3"><div className="flex items-center gap-2 min-w-0"><Wheat className="w-4 h-4 text-[#C6A45A] shrink-0" aria-label="Kingdom harvest target" /><h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">Soul-Winning Target</h2></div><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200 shrink-0"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live updates</span></div>
             <div className="flex items-end justify-between gap-3"><div><span className="block text-[10px] font-bold uppercase tracking-wider text-[#667085]">Approved conversions</span><div className="text-3xl font-black leading-tight text-[#142B4A] tabular-nums">{currentSoulsWon.toLocaleString()}</div><span className="text-[11px] text-[#667085]">of {soulTarget.toLocaleString()} annual goal</span></div><div className="text-right shrink-0"><div className="text-2xl font-black text-[#23845B] tabular-nums">{targetPercent}%</div><span className="text-[10px] font-semibold text-[#667085]">achieved</span></div></div>
@@ -299,11 +299,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <h3 className="text-xs font-bold text-[#667085] uppercase tracking-wider mb-3">
           Key Performance Indicators & Ministry Analytics
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3.5">
           {/* 1. Total Registered Cells */}
           <div
             onClick={() => onNavigateToTab('cell-management')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Total Cells</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.totalCells}</div>
@@ -313,7 +313,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 2. Total Registered Tutors */}
           <div
             onClick={() => onNavigateToTab('cell-leaders')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Registered Tutors</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.activeCellLeaders}</div>
@@ -323,7 +323,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 3. Meeting Reports Submitted */}
           <div
             onClick={() => onNavigateToTab('report-review')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Meeting Reports</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.meetingReportsSubmitted || 0}</div>
@@ -333,7 +333,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 4. Evangelism Reports Submitted */}
           <div
             onClick={() => onNavigateToTab('evangelism')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Evangelism Reports</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.evangelismReportsSubmitted || 0}</div>
@@ -383,7 +383,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 9. Total People Reached */}
           <div
             onClick={() => onNavigateToTab('evangelism')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">People Reached</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.peopleReached}</div>
@@ -403,7 +403,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 11. Interested in Joining Ministry */}
           <div
             onClick={() => onNavigateToTab('follow-ups')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Interested in Joining</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.interestedInMinistry || 0}</div>
@@ -413,7 +413,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 12. Pending & Completed Follow-ups */}
           <div
             onClick={() => onNavigateToTab('follow-ups')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Follow-up Pipeline</div>
             <div className="text-xl font-black text-[#182230] mt-1">
