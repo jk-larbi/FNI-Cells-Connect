@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile & Communication Hub Drawer Backdrop */}
       {isOpen && (
         <div
-          className={`fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-sm transition-opacity ${
+          className={`fixed inset-0 z-40 bg-[#142B4A]/60 backdrop-blur-sm transition-opacity ${
             isOverlayMode ? 'block' : 'md:hidden'
           }`}
           onClick={onCloseMobile}
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar Container */}
       <aside
         className={`fixed top-0 bottom-0 left-0 ${
-          isOverlayMode ? 'z-50 shadow-2xl' : 'z-40'
+          'z-50 shadow-2xl'
         } flex flex-col justify-between transition-all duration-300 ease-in-out fni-glass-sidebar ${
           isOpen
             ? 'translate-x-0'
