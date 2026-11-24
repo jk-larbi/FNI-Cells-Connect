@@ -649,7 +649,7 @@ export const AppLayout: React.FC = () => {
               ? ['reports-hub', 'report-review', 'report-history', 'report-deadlines', 'received-reports'].includes(effectiveTab)
               : item.id === 'messages'
               ? effectiveTab === 'messages' || effectiveTab === 'call-history'
-              : ['more-hub', 'ministry-hub', 'evangelism', 'follow-ups', 'finance', 'materials', 'call-history', 'learning-portal', 'learning-assignments', 'learning-quizzes', 'learning-participation', 'learning-grades', 'learning-events', 'learning-materials', 'analytics', 'notifications', 'settings', 'location-sharing'].includes(effectiveTab)
+              : ['more-hub', 'ministry-hub', 'evangelism', 'follow-ups', 'finance', 'materials', 'learning-portal', 'learning-assignments', 'learning-quizzes', 'learning-participation', 'learning-grades', 'learning-events', 'learning-materials', 'analytics', 'notifications', 'settings', 'location-sharing'].includes(effectiveTab)
             : effectiveTab === item.id || (item.id === 'learning-portal' && effectiveTab.startsWith('learning-'));
           const style = ICON_STYLES[item.colorKey];
           return (
