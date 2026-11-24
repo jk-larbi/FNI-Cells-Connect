@@ -627,7 +627,7 @@ export const AppLayout: React.FC = () => {
               { id: 'dashboard' as AppNavTab, label: 'Home', icon: TelegramDashboardIcon, colorKey: 'gold' as IconColorKey },
               { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' as IconColorKey },
               { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' as IconColorKey },
-              { id: 'messages' as AppNavTab, label: 'Communicate', icon: TelegramMessagesIcon, colorKey: 'azure' as IconColorKey },
+              { id: 'messages' as AppNavTab, label: 'Comms', icon: TelegramMessagesIcon, colorKey: 'azure' as IconColorKey },
               { id: 'ministry-hub' as AppNavTab, label: 'Ministry', icon: TelegramEvangelismIcon, colorKey: 'flame' as IconColorKey },
               { id: 'more-hub' as AppNavTab, label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' as IconColorKey },
             ]
@@ -660,6 +660,8 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => navigateToTab(item.id)}
               aria-current={active ? 'page' : undefined}
+              aria-label={item.id === 'messages' ? 'Communication Hub' : item.label}
+              title={item.id === 'messages' ? 'Communication Hub' : item.label}
               className={`relative flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#229ED9] ${
                 active ? 'text-[#142B4A] dark:text-white font-bold' : 'text-[#667085] dark:text-slate-400'
               }`}
