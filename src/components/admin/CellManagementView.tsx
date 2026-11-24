@@ -320,7 +320,45 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
           </span>
         </div>
 
-        <div className="table-scroll-container">
+        <div className="md:hidden divide-y divide-[#E3E8EF]">
+          {filteredCells.length === 0 ? (
+            <div className="p-6 text-center text-xs text-[#667085]">No cells found matching your criteria.</div>
+          ) : filteredCells.map(cell => {
+            const status = cell.status || (cell.is_active ? 'Active' : 'Suspended');
+            const suspended = status === 'Suspended' || status === 'Deactivated';
+            return (
+              <div key={cell.id} className={`p-4 ${suspended ? 'bg-rose-50/50' : 'bg-white'}`}>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${cell.name}`}
+                    checked={selectedCellIds.includes(cell.id)}
+                    onChange={event => setSelectedCellIds(prev => event.target.checked ? [...prev, cell.id] : prev.filter(id => id !== cell.id))}
+                    className="h-4 w-4 accent-[#142B4A] mt-1 shrink-0"
+                  />
+                  <button type="button" onClick={() => openCellProfile(cell)} className="min-w-0 flex-1 text-left">
+                    <div className="font-bold text-sm text-[#182230] break-words">{cell.name}</div>
+                    <div className="text-xs text-[#667085] mt-1 break-words">{cell.location || 'Campus / Territory'}</div>
+                    <div className="text-xs font-semibold text-[#182230] mt-2">{cell.leader_name || 'Unassigned Leader'}</div>
+                    <div className="text-[11px] text-[#667085]">{cell.leader_phone || 'No phone recorded'}</div>
+                  </button>
+                  <button type="button" onClick={() => openCellProfile(cell)} className="text-sky-600 p-1" aria-label={`View ${cell.name} history`}><Eye className="w-4 h-4" /></button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3 ml-7">
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${status === 'Active' ? 'bg-emerald-50 text-emerald-700' : status === 'Deactivated' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{status}</span>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">Target: {cell.target_attendance || 20}</span>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">{cell.meeting_day || 'Wednesday'} · {cell.meeting_time || '18:30'} GMT</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3 ml-7">
+                  <button type="button" onClick={() => startCellMeeting({ cellId: cell.id, cellName: cell.name, callType: 'video' })} className="flex-1 min-w-[100px] px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5"><Video className="w-3.5 h-3.5" /> Meet</button>
+                  <button type="button" onClick={() => { setEditingCell(cell); setIsEditModalOpen(true); }} className="flex-1 min-w-[100px] px-3 py-2 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5"><Edit2 className="w-3.5 h-3.5" /> Edit</button>
+                  <button type="button" disabled={isDeletingCells} onClick={() => handleDeleteCells([cell.id], 'cell registration')} className="flex-1 min-w-[100px] px-3 py-2 rounded-lg bg-rose-50 text-rose-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
