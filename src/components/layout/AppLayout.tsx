@@ -625,8 +625,8 @@ export const AppLayout: React.FC = () => {
               { id: 'dashboard' as AppNavTab, label: 'Home', icon: TelegramDashboardIcon, colorKey: 'gold' as IconColorKey },
               { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' as IconColorKey },
               { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' as IconColorKey },
-              { id: 'messages' as AppNavTab, label: 'Messages', icon: TelegramMessagesIcon, colorKey: 'azure' as IconColorKey },
-              { id: 'learning-portal' as AppNavTab, label: 'Learning', icon: TelegramLearningIcon, colorKey: 'purple' as IconColorKey },
+              { id: 'ministry-hub' as AppNavTab, label: 'Ministry', icon: TelegramEvangelismIcon, colorKey: 'flame' as IconColorKey },
+              { id: 'more-hub' as AppNavTab, label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' as IconColorKey },
             ]
           : [
               { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: TelegramDashboardIcon, colorKey: 'gold' as IconColorKey },
@@ -637,7 +637,17 @@ export const AppLayout: React.FC = () => {
             ]
         ).map(item => {
           const Icon = item.icon;
-          const active = effectiveTab === item.id || (item.id === 'learning-portal' && effectiveTab.startsWith('learning-'));
+          const active = isAdmin
+            ? item.id === 'dashboard'
+              ? effectiveTab === 'dashboard'
+              : item.id === 'cells-hub'
+              ? ['cells-hub', 'cell-management', 'cell-leaders', 'cell-location-history'].includes(effectiveTab)
+              : item.id === 'reports-hub'
+              ? ['reports-hub', 'report-review', 'report-history', 'report-deadlines', 'received-reports'].includes(effectiveTab)
+              : item.id === 'ministry-hub'
+              ? ['ministry-hub', 'evangelism', 'follow-ups', 'finance', 'materials', 'messages', 'call-history'].includes(effectiveTab)
+              : ['more-hub', 'learning-portal', 'learning-assignments', 'learning-quizzes', 'learning-participation', 'learning-grades', 'learning-events', 'learning-materials', 'analytics', 'notifications', 'settings', 'location-sharing'].includes(effectiveTab)
+            : effectiveTab === item.id || (item.id === 'learning-portal' && effectiveTab.startsWith('learning-'));
           const style = ICON_STYLES[item.colorKey];
           return (
             <button
@@ -645,7 +655,7 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => navigateToTab(item.id)}
               aria-current={active ? 'page' : undefined}
-              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-semibold transition-colors ${
+              className={`relative flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#229ED9] ${
                 active ? 'text-[#142B4A] dark:text-white font-bold' : 'text-[#667085] dark:text-slate-400'
               }`}
             >
