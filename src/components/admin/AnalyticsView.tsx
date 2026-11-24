@@ -1380,7 +1380,46 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
           </span>
         </div>
 
-        <div className="table-scroll-container">
+        <div className="md:hidden divide-y divide-[#E3E8EF] dark:divide-slate-800">
+          {filteredCellStats.length === 0 ? (
+            <p className="p-6 text-center text-sm text-slate-500">No fellowship cells matching criteria.</p>
+          ) : filteredCellStats.map((cell, idx) => (
+            <article key={cell.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-sm text-[#182230] dark:text-white break-words">{cell.name}</p>
+                  <p className="mt-0.5 text-xs text-[#667085] dark:text-slate-400">{cell.leaderName || 'Leader not assigned'}{cell.code ? ` · ${cell.code}` : ''}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-[#142B4A]/5 px-2.5 py-1 text-[10px] font-bold text-[#142B4A] dark:text-[#C6A45A]">#{idx + 1}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-[#667085] dark:text-slate-400">Attendance</p>
+                  <p className="mt-1 text-lg font-black text-[#182230] dark:text-white">{cell.totalAttendance}</p>
+                  <p className="text-[10px] text-[#667085] dark:text-slate-400">{cell.meetingReportsCount} meeting reports</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-[#667085] dark:text-slate-400">Souls won</p>
+                  <p className="mt-1 text-lg font-black text-emerald-600">+{cell.soulsWon}</p>
+                  <p className="text-[10px] text-[#667085] dark:text-slate-400">{cell.peopleReached} reached · {cell.evangelismReportsCount} outreaches</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-[#667085] dark:text-slate-400">Offerings</p>
+                  <p className="mt-1 text-sm font-black text-[#182230] dark:text-white">GHS {cell.offeringsGhs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-[#667085] dark:text-slate-400">Compliance</p>
+                  <p className="mt-1 text-lg font-black text-[#182230] dark:text-white">{cell.compliance}%</p>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#E3E8EF] dark:bg-slate-700">
+                    <div className={`h-full rounded-full ${cell.compliance >= 80 ? 'bg-[#23845B]' : cell.compliance >= 50 ? 'bg-[#D99A32]' : 'bg-[#C74646]'}`} style={{ width: `${cell.compliance}%` }} />
+                  </div>
+                </div>
+              </div>
+              <p className={`text-xs font-semibold ${cell.status === 'On Track' ? 'text-emerald-600' : cell.status === 'Awaiting Review' ? 'text-amber-600' : 'text-rose-600'}`}>{cell.status}</p>
+            </article>
+          ))}
+        </div>
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E3E8EF] dark:border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-[#667085] dark:text-slate-400 bg-[#F5F7FA] dark:bg-slate-800/50">
