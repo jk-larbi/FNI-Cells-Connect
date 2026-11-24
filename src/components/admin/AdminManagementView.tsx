@@ -453,6 +453,7 @@ export const AdminManagementView: React.FC = () => {
 
         {/* Users Table */}
         {activeTab === 'users' && (
+          <>
           <div className="md:hidden divide-y divide-slate-200">
             {filteredUsers.length === 0 ? <div className="p-6 text-center text-xs text-slate-500">No users or cell leaders registered yet.</div> : filteredUsers.map(user => {
               const linkedCell = cells.find(cell => cell.id === user.cell_id || (user.cell_name && cell.name.toLowerCase() === user.cell_name.toLowerCase()));
@@ -624,6 +625,7 @@ export const AdminManagementView: React.FC = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Cells Tab */}
