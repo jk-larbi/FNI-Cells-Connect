@@ -260,10 +260,10 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
+        <h1 className="text-lg sm:text-xl font-black text-[#142B4A] tracking-tight">
           System Administration & Settings
         </h1>
         <p className="text-xs text-[#667085] mt-0.5">
@@ -272,10 +272,10 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       </div>
 
       {/* Tabs */}
-      <div className="bg-[#E3E8EF] dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold text-[#667085] dark:text-slate-400 max-w-md">
+      <div className="bg-[#E3E8EF] dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold text-[#667085] dark:text-slate-400 w-full max-w-md overflow-x-auto">
         <button
           onClick={() => setActiveTab('system')}
-          className={`flex-1 py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[132px] py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'system' ? 'bg-white dark:bg-[#142B4A] text-[#182230] dark:text-white shadow-sm' : 'hover:text-[#182230] dark:hover:text-white'
           }`}
         >
@@ -311,7 +311,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {/* TAB 1: MINISTRY SETTINGS */}
       {activeTab === 'system' && (
         <div className="space-y-5 w-full min-w-0">
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
                 <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
@@ -355,7 +355,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
             </div>
 
-            <form onSubmit={handleSaveSystemSettings} className="p-6 space-y-6 text-xs bg-[#0c1626]">
+            <form onSubmit={handleSaveSystemSettings} className="p-4 sm:p-6 space-y-4 sm:space-y-6 text-xs bg-[#0c1626]">
               {systemSaveNotice && (
                 <div className="p-3.5 bg-emerald-950/40 border-l-4 border-[#23845B] text-emerald-300 rounded-xl font-semibold flex items-center gap-2.5 animate-fadeIn">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -630,7 +630,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {/* TAB 2: ADMINISTRATOR PROFILE & SECURITY */}
       {activeTab === 'security' && (
         <div className="space-y-6 max-w-md">
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
                 <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
@@ -649,7 +649,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           </div>
 
           {/* Email Notifications */}
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 flex items-center justify-center shrink-0">
                 <Bell className="w-5 h-5 text-sky-600 dark:text-sky-400" />
@@ -670,7 +670,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           </div>
 
           {/* Device Push Notifications Delivery & Testing (All Devices) */}
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center shrink-0">
@@ -962,7 +962,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           <AppUpdateSettingsSection />
 
           {/* Administrator Profile Photo */}
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm space-y-3">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-3">
             <div>
               <h3 className="text-sm font-bold text-[#182230]">Administrator Profile Photo</h3>
               <p className="text-xs text-[#667085] mt-0.5">
@@ -984,7 +984,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
             />
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center shrink-0">
                 <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
