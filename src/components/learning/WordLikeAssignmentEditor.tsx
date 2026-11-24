@@ -28,6 +28,67 @@ import {
 } from 'lucide-react';
 import { Assignment, LatePolicy, SubmissionFormat } from '../../types/learning';
 
+
+const escapeImportedText = (value: string) =>
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const readDocxHtml = async (file: File): Promise<string> => {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const view = new DataView(bytes.buffer);
+  let endOffset = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65558); i--) {
+    if (view.getUint32(i, true) === 0x06054b50) { endOffset = i; break; }
+  }
+  if (endOffset < 0) throw new Error('This does not appear to be a valid .docx file.');
+  const entries = view.getUint16(endOffset + 10, true);
+  let cursor = view.getUint32(endOffset + 16, true);
+  let documentXml: Uint8Array | null = null;
+  for (let i = 0; i < entries; i++) {
+    if (view.getUint32(cursor, true) !== 0x02014b50) break;
+    const method = view.getUint16(cursor + 10, true);
+    const compressedSize = view.getUint32(cursor + 20, true);
+    const nameLength = view.getUint16(cursor + 28, true);
+    const extraLength = view.getUint16(cursor + 30, true);
+    const commentLength = view.getUint16(cursor + 32, true);
+    const localOffset = view.getUint32(cursor + 42, true);
+    const name = new TextDecoder().decode(bytes.slice(cursor + 46, cursor + 46 + nameLength));
+    if (name === 'word/document.xml') {
+      const dataStart = localOffset + 30 + view.getUint16(localOffset + 26, true) + view.getUint16(localOffset + 28, true);
+      const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+      if (method === 0) documentXml = compressed;
+      else if (method === 8 && typeof DecompressionStream !== 'undefined') {
+        const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw' as CompressionFormat));
+        documentXml = new Uint8Array(await new Response(stream).arrayBuffer());
+      } else throw new Error('This browser cannot unpack this Word document. Try saving it again as .docx.');
+      break;
+    }
+    cursor += 46 + nameLength + extraLength + commentLength;
+  }
+  if (!documentXml) throw new Error('The Word document content could not be found.');
+  const xml = new DOMParser().parseFromString(new TextDecoder().decode(documentXml), 'application/xml');
+  if (xml.querySelector('parsererror')) throw new Error('The Word document could not be read.');
+  const paragraphs = Array.from(xml.getElementsByTagNameNS('*', 'p'));
+  const html = paragraphs.map((paragraph) => {
+    const style = paragraph.getElementsByTagNameNS('*', 'pStyle')[0]?.getAttribute('val') || '';
+    const runs = Array.from(paragraph.getElementsByTagNameNS('*', 'r'));
+    const content = runs.map((run) => {
+      const value = Array.from(run.getElementsByTagNameNS('*', 't')).map(node => escapeImportedText(node.textContent || '')).join('');
+      if (!value) return '';
+      const props = run.getElementsByTagNameNS('*', 'rPr')[0];
+      let formatted = value;
+      if (props?.getElementsByTagNameNS('*', 'b').length) formatted = '<strong>' + formatted + '</strong>';
+      if (props?.getElementsByTagNameNS('*', 'i').length) formatted = '<em>' + formatted + '</em>';
+      if (props?.getElementsByTagNameNS('*', 'u').length) formatted = '<u>' + formatted + '</u>';
+      return formatted;
+    }).join('');
+    if (!content.trim()) return '';
+    const tag = /Heading1|Title/i.test(style) ? 'h1' : /Heading2/i.test(style) ? 'h2' : /Heading3/i.test(style) ? 'h3' : 'p';
+    return '<' + tag + '>' + content + '</' + tag + '>';
+  }).filter(Boolean);
+  if (!html.length) throw new Error('No readable text was found in this Word document.');
+  return html.join('');
+};
+
 interface WordLikeAssignmentEditorProps {
   initialAssignment?: Assignment | null;
   onSave: (assignmentData: Partial<Assignment>, status: 'draft' | 'published') => Promise<void>;
@@ -49,6 +110,9 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
     initialAssignment?.instructions || initialAssignment?.description || ''
   );
   const editorRef = useRef<HTMLDivElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [isImportingDocument, setIsImportingDocument] = useState(false);
+  const [importMessage, setImportMessage] = useState('');
 
   // 3. Settings below writing area
   const [totalMarks, setTotalMarks] = useState<string>(
@@ -143,6 +207,29 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
     setAttachments(prev => prev.filter((_, i) => i !== idx));
   };
 
+
+  const handleImportWordFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      setImportMessage('Please choose a Word .docx document.');
+      return;
+    }
+    setIsImportingDocument(true);
+    setImportMessage('');
+    try {
+      const importedHtml = await readDocxHtml(file);
+      if (editorRef.current) editorRef.current.innerHTML = importedHtml;
+      setContentHtml(importedHtml);
+      setImportMessage(file.name + ' imported. Review the content before saving.');
+    } catch (error) {
+      setImportMessage(error instanceof Error ? error.message : 'The Word document could not be imported.');
+    } finally {
+      setIsImportingDocument(false);
+    }
+  };
+
   // Validation & Save Handler
   const handleTriggerSave = async (status: 'draft' | 'published') => {
     if (!topic.trim()) {
@@ -175,9 +262,9 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in max-w-5xl mx-auto pb-28 sm:pb-16 px-0 sm:px-0">
+    <div className="fixed inset-0 z-[70] h-[100dvh] w-full overflow-y-auto overscroll-y-contain bg-slate-50 dark:bg-[#0b1524] animate-fade-in pb-8">
       {/* 1. Header Banner */}
-      <div className="bg-[#142B4A] rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-white shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+      <div className="sticky top-0 z-40 bg-[#142B4A] rounded-none sm:rounded-b-2xl px-3 py-3 sm:px-7 sm:py-5 text-white shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#C6A45A] text-[10px] font-bold uppercase tracking-wider mb-2 border border-white/10">
             <FileText className="w-3.5 h-3.5" />
@@ -196,9 +283,9 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
           <button
             type="button"
             onClick={onCancel}
-            className="min-h-11 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="min-h-11 px-3 py-2 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 transition-colors cursor-pointer inline-flex items-center justify-center gap-2"
           >
-            Cancel
+            <span aria-hidden="true">←</span> Back
           </button>
           <button
             type="button"
@@ -238,13 +325,19 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
         </div>
       </div>
 
-      <div className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900/50 px-4 py-3 text-xs text-blue-900 dark:text-blue-100">
-        <p className="font-bold mb-1">Using Microsoft Word on the web</p>
-        <p>Open Word in the new tab, sign in if prompted, and create your document. When finished, copy the assignment content and paste it into the writing area below. Keep this FNI tab open to set marks, deadlines, submission rules, preview, and publish.</p>
+      <div className="max-w-6xl mx-auto w-full px-3 sm:px-6 pt-4">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900/50 px-4 py-3 text-xs text-blue-900 dark:text-blue-100">
+          <p className="font-bold mb-1">Import an existing Word document</p>
+          <p className="mb-3">Choose a .docx file saved on this device. FNI imports its text and basic formatting into this editor so you can review and edit it before saving.</p>
+          <input ref={importInputRef} type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleImportWordFile} className="hidden" />
+          <button type="button" disabled={isImportingDocument} onClick={() => importInputRef.current?.click()} className="min-h-11 rounded-lg bg-[#142B4A] px-4 py-2 font-bold text-white disabled:opacity-60">{isImportingDocument ? 'Importing document…' : 'Import Word document (.docx)'}</button>
+          {importMessage && <p role="status" className="mt-2 font-semibold">{importMessage}</p>}
+          <p className="mt-2 text-[11px] opacity-80">Or <a className="font-bold underline" href="https://word.cloud.microsoft/create/en/document-editor/" target="_blank" rel="noopener noreferrer">open Microsoft Word on the web</a> to create a document first.</p>
+        </div>
       </div>
 
       {/* 2. Document Page Container (Styled like a Microsoft Word Paper Sheet) */}
-      <div className="bg-white dark:bg-[#111c2d] rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] shadow-lg overflow-hidden">
+      <div className="mx-3 sm:mx-6 mt-4 max-w-6xl sm:mx-auto bg-white dark:bg-[#111c2d] rounded-2xl sm:rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] shadow-lg overflow-hidden">
         {/* Word Document Title Header (First: Assignment Topic) */}
         <div className="p-4 sm:p-8 border-b border-[#E3E8EF] dark:border-[#26384d] bg-gradient-to-b from-[#F8FAFC] to-white dark:from-[#172437] dark:to-[#111c2d]">
           <label className="block text-[11px] font-black uppercase tracking-wider text-[#667085] dark:text-slate-400 mb-2">
@@ -480,7 +573,7 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
       </div>
 
       {/* 3. Assignment Submission Settings Panel */}
-      <div className="bg-white dark:bg-[#111c2d] rounded-2xl sm:rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] p-4 sm:p-8 shadow-sm space-y-4 sm:space-y-6">
+      <div className="mx-3 sm:mx-6 mt-4 mb-8 max-w-6xl sm:mx-auto bg-white dark:bg-[#111c2d] rounded-2xl sm:rounded-3xl border border-[#E3E8EF] dark:border-[#26384d] p-4 sm:p-8 shadow-sm space-y-4 sm:space-y-6">
         <div className="flex items-center gap-2.5 pb-4 border-b border-[#E3E8EF] dark:border-[#26384d]">
           <FileCheck className="w-5 h-5 text-[#C6A45A]" />
           <div>
