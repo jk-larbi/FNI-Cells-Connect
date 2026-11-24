@@ -272,7 +272,30 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="md:hidden divide-y divide-slate-100">
+          {records.length === 0 ? (
+            <p className="p-6 text-center text-sm text-slate-500">No individual offering entries recorded yet.</p>
+          ) : records.map(rec => (
+            <article key={rec.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-sm text-navy-950 break-words">{rec.cellName}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{rec.tutorName || 'Tutor not listed'}</p>
+                </div>
+                <p className="shrink-0 text-right font-extrabold text-sm text-navy-950">
+                  {rec.currency || 'GHS'} {getCurrSymbol(rec.currency)}{rec.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="text-slate-500">{rec.meetingDate}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                  <CheckCircle2 className="h-3 w-3" /> Reconciled
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50/80">
