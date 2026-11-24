@@ -575,7 +575,40 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
           </span>
         </div>
 
-        <div className="table-scroll-container">
+        <div className="md:hidden divide-y divide-slate-200 dark:divide-navy-700">
+          {filteredContacts.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-500">No contacts found in this filter.</div>
+          ) : filteredContacts.map(c => {
+            const displayName = c.name || c.contactName || 'New Contact';
+            const isOverdue = c.nextFollowUpDate && new Date(c.nextFollowUpDate).getTime() < Date.now() && c.followUpStatus !== 'Completed / Joined' && c.followUpStatus !== 'Established in Church';
+            return (
+              <article key={c.id} onClick={() => handleOpenEdit(c)} className={`p-4 cursor-pointer ${isOverdue ? 'bg-rose-50/70 dark:bg-rose-950/20 border-l-4 border-rose-500' : 'bg-white dark:bg-navy-900'}`}>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-navy-900 text-gold-400 font-bold text-xs flex items-center justify-center shrink-0">{displayName.slice(0,2).toUpperCase()}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-sm text-navy-950 dark:text-white break-words">{displayName}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-300 mt-1">{c.phone || c.contactDetails || 'No phone recorded'}</div>
+                    <div className="text-[11px] text-slate-500 mt-1">{c.location || 'Territory'} · {c.leadSource || 'Evangelism'}</div>
+                  </div>
+                  <button type="button" onClick={e => {e.stopPropagation(); handleOpenEdit(c);}} className="p-2 rounded-lg bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-200" aria-label={`Edit ${displayName}`}><Edit2 className="w-4 h-4" /></button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                  <div className="rounded-lg bg-slate-50 dark:bg-navy-950 p-2"><div className="text-[10px] text-slate-500">Cell / Tutor</div><div className="font-semibold text-slate-800 dark:text-slate-200 break-words">{c.cellName || 'Central'} · {c.tutorName || 'Tutor'}</div></div>
+                  <div className="rounded-lg bg-slate-50 dark:bg-navy-950 p-2"><div className="text-[10px] text-slate-500">Progress</div><div className="font-semibold text-slate-800 dark:text-slate-200 break-words">{c.discipleshipProgress || 'Stage 1: New Convert'}</div></div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${isOverdue ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-200'}`}>{isOverdue ? 'Overdue' : c.followUpStatus || 'Uncontacted'}</span>
+                  <span className="text-[11px] text-slate-500">Next: {c.nextFollowUpDate || 'Not scheduled'}</span>
+                </div>
+                <div className="flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
+                  {(c.whatsappNumber || c.phone) && <a href={`https://wa.me/${(c.whatsappNumber || c.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="flex-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 py-2 text-xs font-semibold text-center inline-flex items-center justify-center gap-1.5"><MessageSquare className="w-3.5 h-3.5" /> WhatsApp</a>}
+                  {c.phone && <a href={`tel:${c.phone}`} className="flex-1 rounded-lg border border-navy-200 bg-navy-50 text-navy-900 py-2 text-xs font-semibold text-center inline-flex items-center justify-center gap-1.5"><Phone className="w-3.5 h-3.5" /> Call</a>}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse min-w-[950px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-navy-700 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-navy-950">
