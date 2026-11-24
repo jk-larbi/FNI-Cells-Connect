@@ -48,7 +48,49 @@ export const AuditTrailView: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+            No audit records match this search.
+          </div>
+        ) : filtered.map(log => (
+          <article key={log.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-navy-900 break-words">{log.user_name || 'System'}</p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {new Date(log.created_at).toLocaleString(undefined, { timeZone: 'UTC' })} UTC
+                </p>
+              </div>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                log.action.includes('APPROVE')
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : log.action.includes('REVISION')
+                  ? 'bg-rose-50 text-rose-700'
+                  : 'bg-navy-50 text-navy-800'
+              }`}>
+                {log.action}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Target</p>
+                <p className="mt-1 font-semibold text-slate-700 break-words">{log.entity_type}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Client IP</p>
+                <p className="mt-1 font-mono text-slate-600 break-all">{log.ip_address || 'Not recorded'}</p>
+              </div>
+            </div>
+            <details className="rounded-lg bg-slate-50 p-3">
+              <summary className="cursor-pointer text-xs font-semibold text-navy-800">View action details</summary>
+              <pre className="mt-2 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-600">{JSON.stringify(log.details, null, 2)}</pre>
+            </details>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-200">
         <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
           <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
             <tr>
@@ -64,7 +106,7 @@ export const AuditTrailView: React.FC = () => {
             {filtered.map(log => (
               <tr key={log.id} className="hover:bg-slate-50 font-mono text-[11px]">
                 <td className="px-4 py-3 whitespace-nowrap text-slate-500">
-                  {new Date(log.created_at).toLocaleString()}
+                  {new Date(log.created_at).toLocaleString(undefined, { timeZone: 'UTC' })} UTC
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap font-sans font-semibold text-navy-900">
                   {log.user_name || 'System Daemon'}
@@ -86,7 +128,7 @@ export const AuditTrailView: React.FC = () => {
                 <td className="px-4 py-3 font-sans text-xs text-slate-600 max-w-md truncate">
                   {JSON.stringify(log.details)}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-slate-400">{log.ip_address || '127.0.0.1'}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-400">{log.ip_address || 'Not recorded'}</td>
               </tr>
             ))}
           </tbody>
