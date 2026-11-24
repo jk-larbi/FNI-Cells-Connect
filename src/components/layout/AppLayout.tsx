@@ -368,7 +368,7 @@ export const AppLayout: React.FC = () => {
           unreadCount={unreadCount}
           onOpenNotifications={() => setIsNotifModalOpen(true)}
           onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
-          isCollapsed={isSidebarCollapsed}
+          isCollapsed={isSidebarCollapsed && !isSidebarOpen}
           onToggleCollapse={handleToggleCollapse}
           isOverlayMode={effectiveTab === 'messages'}
         />
