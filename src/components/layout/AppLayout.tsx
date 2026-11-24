@@ -25,6 +25,8 @@ import {
   TelegramMessagesIcon,
   TelegramLearningIcon,
   TelegramPlusReportIcon,
+  TelegramEvangelismIcon,
+  TelegramMoreIcon,
 } from '../common/TelegramSettingsIcons';
 import { ActivityReminderService } from '../../services/activityReminderService';
 import { ActivityScheduleService } from '../../services/activityScheduleService';
