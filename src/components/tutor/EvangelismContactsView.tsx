@@ -248,7 +248,7 @@ export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ 
                     <div className="text-xs text-[#667085] mt-1 break-words">{contact.phone || contact.contactDetails || 'No phone recorded'}</div>
                     <div className="text-xs text-[#182230] mt-2 break-words">{contact.location || contact.evangelismLocation || 'Territory'}</div>
                   </div>
-                  <Eye className="w-4 h-4 text-sky-600 shrink-0 mt-1" />
+                  <Edit2 className="w-4 h-4 text-sky-600 shrink-0 mt-1" />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">{contact.followUpStatus || 'New Contact'}</span>
