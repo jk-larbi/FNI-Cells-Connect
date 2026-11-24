@@ -2296,3 +2296,39 @@ html.dark .fni-chat-composer textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* iPhone Home Screen and older Safari viewport fallbacks. Modern Safari uses
+   dynamic viewport units; older iOS versions fall back to the visible fill area. */
+@supports not (height: 100dvh) {
+  html, body, #root {
+    min-height: -webkit-fill-available;
+  }
+
+  .fni-app-shell {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  .fni-app-shell.fni-messaging-route {
+    height: var(--fni-visible-viewport-height, 100vh) !important;
+    max-height: var(--fni-visible-viewport-height, 100vh) !important;
+  }
+
+  .fni-messaging-view.fni-community-mode {
+    height: var(--fni-visible-viewport-height, 100vh);
+    max-height: var(--fni-visible-viewport-height, 100vh);
+  }
+}
+
+/* Standalone mode removes Safari's browser chrome; keep content clear of the
+   iPhone notch, Dynamic Island, home indicator and rounded display corners. */
+@media (display-mode: standalone) {
+  html, body {
+    min-height: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .mobile-bottom-nav {
+    padding-bottom: max(.5rem, env(safe-area-inset-bottom)) !important;
+  }
+}
