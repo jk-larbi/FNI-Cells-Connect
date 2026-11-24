@@ -228,7 +228,40 @@ export const EvangelismContactsView: React.FC<EvangelismContactsViewProps> = ({ 
           </span>
         </div>
 
-        <div className="table-scroll-container">
+        <div className="md:hidden divide-y divide-[#E3E8EF]">
+          {filtered.length === 0 ? (
+            <div className="p-6 text-center text-xs text-[#667085]">No contacts registered yet.</div>
+          ) : filtered.map(contact => {
+            const name = contact.name || contact.contactName || 'New Contact';
+            const overdue = contact.nextFollowUpDate && new Date(contact.nextFollowUpDate).getTime() < Date.now() && contact.followUpStatus !== 'Joined Ministry' && contact.followUpStatus !== 'Completed';
+            return (
+              <button
+                key={contact.id}
+                type="button"
+                onClick={() => { setEditingContact(contact); setIsModalOpen(true); }}
+                className="w-full text-left p-4 hover:bg-[#F5F7FA] active:bg-[#F5F7FA] transition-colors"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">{name.slice(0, 2).toUpperCase()}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-sm text-[#182230] break-words">{name}</div>
+                    <div className="text-xs text-[#667085] mt-1 break-words">{contact.phone || contact.contactDetails || 'No phone recorded'}</div>
+                    <div className="text-xs text-[#182230] mt-2 break-words">{contact.location || contact.evangelismLocation || 'Territory'}</div>
+                  </div>
+                  <Eye className="w-4 h-4 text-sky-600 shrink-0 mt-1" />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">{contact.followUpStatus || 'New Contact'}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${overdue ? 'bg-rose-50 text-rose-700' : 'bg-slate-50 text-slate-600'}`}>
+                    {overdue ? 'Overdue' : contact.nextFollowUpDate ? `Next: ${contact.nextFollowUpDate}` : 'No follow-up date'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#667085] mt-2">Captured: {contact.dateCaptured || 'Date not recorded'} · Tap to view and update</div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse min-w-[850px]">
             <thead>
               <tr className="border-b border-[#E3E8EF] text-xs font-bold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
