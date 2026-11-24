@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
         <button
           onClick={onToggleSidebar}
-          className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
+          className="md:hidden inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
           aria-label="Open left navigation menu"
           title="Open left navigation menu"
         >
@@ -95,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Notifications */}
         <button
           onClick={onOpenNotifications}
-          className="relative p-2 sm:p-2.5 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#00A3E0] dark:text-[#38BDF8] hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors border border-[#E3E8EF] dark:border-[#26384d]"
+          className="relative inline-flex min-h-11 min-w-11 items-center justify-center p-2 sm:p-2.5 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#00A3E0] dark:text-[#38BDF8] hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors border border-[#E3E8EF] dark:border-[#26384d]"
           title="Notifications & Dispatches"
         >
           <Bell className="w-4 h-4 text-[#00A3E0] dark:text-[#38BDF8]" />
@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Profile Pill */}
         <button
           onClick={onOpenAccountSettings}
-          className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 text-left hover:opacity-90 transition-opacity focus:outline-none"
+          className="flex min-h-11 items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 text-left hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#229ED9] rounded-full"
           title="Account Settings"
         >
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#142B4A] text-[#C6A45A] text-xs font-bold flex items-center justify-center shadow-sm overflow-hidden shrink-0">
@@ -142,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Prominent Direct Logout Button (Always visible on mobile & desktop) */}
         <button
           onClick={logout}
-          className="inline-flex items-center justify-center gap-1 sm:gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full sm:rounded-xl bg-[#FFF5F5] hover:bg-[#FEE4E2] text-[#C74646] hover:text-[#B42318] border border-[#FECDCA] text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 sm:gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full sm:rounded-xl bg-[#FFF5F5] hover:bg-[#FEE4E2] text-[#C74646] hover:text-[#B42318] border border-[#FECDCA] text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
           title="Sign out of your account"
           aria-label="Sign out"
         >
