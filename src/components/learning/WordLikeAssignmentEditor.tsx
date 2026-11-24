@@ -21,6 +21,7 @@ import {
   AlertCircle,
   CheckCircle2,
   FileText,
+  ExternalLink,
   Trash2,
   FileCheck,
   HelpCircle,
@@ -216,6 +217,15 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
             <Save className="w-4 h-4 text-slate-300" />
             <span>Save Draft</span>
           </button>
+          <a
+            href="https://word.cloud.microsoft/create/en/document-editor/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-h-11 col-span-2 sm:col-span-2 px-4 py-2 rounded-xl bg-white text-[#142B4A] hover:bg-slate-100 text-xs font-black transition-all flex items-center justify-center gap-2 border border-white/30 cursor-pointer"
+          >
+            <ExternalLink className="w-4 h-4 text-[#185ABD]" />
+            <span>Write in Microsoft Word (Web)</span>
+          </a>
           <button
             type="button"
             disabled={isSaving}
@@ -226,6 +236,11 @@ export const WordLikeAssignmentEditor: React.FC<WordLikeAssignmentEditorProps> =
             <span>Publish Assignment</span>
           </button>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900/50 px-4 py-3 text-xs text-blue-900 dark:text-blue-100">
+        <p className="font-bold mb-1">Using Microsoft Word on the web</p>
+        <p>Open Word in the new tab, sign in if prompted, and create your document. When finished, copy the assignment content and paste it into the writing area below. Keep this FNI tab open to set marks, deadlines, submission rules, preview, and publish.</p>
       </div>
 
       {/* 2. Document Page Container (Styled like a Microsoft Word Paper Sheet) */}
