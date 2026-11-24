@@ -16,11 +16,11 @@ interface SectionHubProps {
 
 export const SectionHub: React.FC<SectionHubProps> = ({ title, description, items }) => (
   <section className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-6">
-    <header className="space-y-1.5 rounded-2xl bg-[#142B4A] px-4 py-4 sm:bg-transparent sm:px-0 sm:py-0">
+    <div className="space-y-1.5 rounded-2xl bg-[#142B4A] px-4 py-4 sm:bg-transparent sm:px-0 sm:py-0">
       <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.16em] text-[#D9BD7A] sm:text-[#C6A45A]">FNI Cells Connect</p>
       <h1 className="text-xl sm:text-3xl font-black tracking-tight text-white sm:text-[#142B4A] sm:dark:text-white">{title}</h1>
       <p className="text-xs sm:text-sm text-white/75 sm:text-[#667085] sm:dark:text-slate-400">{description}</p>
-    </header>
+    </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3">
       {items.map(item => {
         const Icon = item.icon;
