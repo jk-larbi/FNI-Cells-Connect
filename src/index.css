@@ -2189,3 +2189,57 @@ html.dark .fni-chat-composer textarea:focus-visible {
     padding-top: .5rem;
   }
 }
+
+
+/* Mobile-first directory, table and dialog safeguards. Desktop table layouts
+   remain unchanged; narrow screens scroll tables inside their own boundary. */
+@media (max-width: 767px) {
+  html, body, #root { max-width: 100%; overflow-x: clip; }
+  .table-scroll-container {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .table-scroll-container > table { min-width: 640px; }
+  .table-scroll-container table th,
+  .table-scroll-container table td { padding-left: .65rem; padding-right: .65rem; }
+  .table-scroll-container table th { white-space: nowrap; }
+  .table-scroll-container table td { vertical-align: middle; }
+  .table-scroll-container + * { min-width: 0; }
+  .fixed.inset-0.z-50 {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    padding: max(.5rem, env(safe-area-inset-top)) .5rem max(.5rem, env(safe-area-inset-bottom)) !important;
+  }
+  .fixed.inset-0.z-50 > .bg-white,
+  .fixed.inset-0.z-50 > [class*="bg-white"],
+  .fixed.inset-0.z-50 > [class*="bg-navy"],
+  .fixed.inset-0.z-50 > [role="dialog"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(var(--fni-visible-viewport-height, 100dvh) - 1rem) !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+    overscroll-behavior: contain;
+  }
+  .fixed.inset-0.z-50 [class*="grid-cols-3"] { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .fixed.inset-0.z-50 [class*="grid-cols-2"] { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .fixed.inset-0.z-50 :is(h1,h2,h3,h4) { overflow-wrap: anywhere; }
+  .fixed.inset-0.z-50 :is(input,select,textarea) { min-width: 0; width: 100%; }
+}
+@media (max-width: 390px) {
+  .table-scroll-container > table { min-width: 600px; }
+  .fixed.inset-0.z-50 { padding-left: .375rem !important; padding-right: .375rem !important; }
+}
