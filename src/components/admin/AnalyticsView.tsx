@@ -375,12 +375,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   const targetPercent = Math.min(100, Math.round((displaySouls / soulTarget) * 100));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* TOP CONTEXT & COMMAND BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl md:text-2xl font-black text-[#142B4A] dark:text-white tracking-tight">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-lg sm:text-2xl font-black text-[#142B4A] dark:text-white tracking-tight">
               Primary Analytics Dashboard
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
@@ -456,16 +456,16 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
           MAIN DASHBOARD GRID (Hero Wave Card + Highlight Cards + Right Sidebar)
           Strictly matching the visual balance of the reference UI
       ========================================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* LEFT / CENTER TWO COLUMNS: HERO WAVE CARD + 2 HIGHLIGHT CARDS + 3 PROGRESS CARDS */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
 
           {/* ROW 1: HERO OVERVIEW WAVE CARD + TWO ACTION PODS (SIDE BY SIDE ON DESKTOP) */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5">
 
             {/* HERO OVERVIEW WAVE CARD (md:col-span-8) */}
-            <div className="md:col-span-8 rounded-3xl p-5 sm:p-6 text-white bg-gradient-to-br from-[#142B4A] via-[#1B365D] to-[#203D63] shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[360px] border border-white/10">
+            <div className="md:col-span-8 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white bg-gradient-to-br from-[#142B4A] via-[#1B365D] to-[#203D63] shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[280px] sm:min-h-[360px] border border-white/10">
               {/* Background ambient light effects */}
               <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#C6A45A]/15 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-royal-blue/20 rounded-full blur-3xl pointer-events-none" />
@@ -483,7 +483,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 </div>
 
                 {/* Metric toggle pill + Time period dropdown */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <div className="bg-white/10 p-0.5 rounded-xl border border-white/10 flex items-center text-[10px] font-bold">
                     <button
                       type="button"
@@ -765,7 +765,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             {/* Card 1: Kingdom Soul Harvest Target */}
             <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="w-10 h-10 rounded-2xl bg-[#C6A45A]/15 text-[#C6A45A] flex items-center justify-center shrink-0">
                     <Flame className="w-5 h-5 text-[#C6A45A]" />
                   </div>
@@ -827,7 +827,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             {/* Card 2: Cell Reporting Compliance */}
             <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="w-10 h-10 rounded-2xl bg-[#142B4A]/10 text-[#142B4A] dark:text-[#C6A45A] flex items-center justify-center shrink-0">
                     <FileCheck className="w-5 h-5 text-[#142B4A] dark:text-[#C6A45A]" />
                   </div>
@@ -867,7 +867,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             {/* Card 3: Discipleship & Follow-up Care */}
             <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center shrink-0">
                     <UserCheck className="w-5 h-5 text-emerald-600" />
                   </div>
@@ -916,7 +916,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
         </div>
 
         {/* RIGHT SIDEBAR COLUMN: TUTORS & LEADERS ACTIVITY STREAM + LIVE CELL LOCATION RADAR MAP */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
 
           {/* SECTION 1: TUTORS & LEADERS (Matching "Friends" Panel in reference) */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-800 shadow-sm flex flex-col justify-between">
@@ -1187,7 +1187,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
         {/* Metric Switcher */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs font-semibold text-slate-500">Metric:</span>
             {(['souls', 'attendance', 'offerings', 'compliance'] as const).map(met => (
               <button
