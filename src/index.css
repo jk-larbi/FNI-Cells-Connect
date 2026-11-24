@@ -2243,3 +2243,56 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .table-scroll-container > table { min-width: 600px; }
   .fixed.inset-0.z-50 { padding-left: .375rem !important; padding-right: .375rem !important; }
 }
+
+
+/* Mobile-first admin shell: Android Chrome and iOS Safari */
+@supports (height: 100dvh) {
+  .fni-app-shell { min-height: 100dvh; }
+}
+.fni-app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.mobile-bottom-nav {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  touch-action: manipulation;
+}
+.mobile-bottom-nav button {
+  min-width: 0;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (max-width: 767px) {
+  .fni-app-main {
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fni-app-main :where(button, a, [role="button"], input[type="checkbox"], input[type="radio"]) {
+    touch-action: manipulation;
+  }
+  .fni-app-main :where(input, select, textarea) {
+    max-width: 100%;
+    scroll-margin-bottom: 7rem;
+  }
+  .fni-app-main :where(.table-scroll-container, .overflow-x-auto) {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fni-app-main :where(img, video, canvas, svg) {
+    max-width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-bottom-nav,
+  .fni-app-shell * {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
