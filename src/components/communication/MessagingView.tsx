@@ -438,7 +438,6 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [activePickerTab, setActivePickerTab] = useState<'stickers' | 'emojis'>('emojis');
   const [selectedEmojiCategory, setSelectedEmojiCategory] = useState<string>('Faith & Fellowship');
   const [emojiSearchQuery, setEmojiSearchQuery] = useState<string>('');
-  const [showChatOptionsMenu, setShowChatOptionsMenu] = useState(false);
   const [openMessageMenuId, setOpenMessageMenuId] = useState<string | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<MessageReply | null>(null);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
@@ -3496,169 +3495,35 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </div>
               </div>
 
-              {/* Header Action Icons (Search, Calls, Details, Options) */}
-              <div className="relative flex items-center gap-1 sm:gap-1.5 text-slate-600 dark:text-slate-300">
-                <button
-                  type="button"
-                  onClick={() => setIsSearchInChatOpen(v => !v)}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
-                  title="Search in chat"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleStartVideoCall}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
-                  title="Video Call"
-                >
-                  <Video className="w-5 h-5" />
-                </button>
+              {/* WhatsApp-style chat actions: voice, video, search only */}
+              <div className="flex items-center gap-1 sm:gap-1.5 text-slate-600 dark:text-slate-300">
                 <button
                   type="button"
                   onClick={handleStartVoiceCall}
                   className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-emerald-500 cursor-pointer transition-colors"
-                  title="Voice Call"
+                  title="Voice call"
+                  aria-label="Voice call"
                 >
                   <Phone className="w-5 h-5" />
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSettingsModalTab('appearance');
-                    setIsSettingsModalOpen(true);
-                  }}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-amber-500 cursor-pointer transition-colors"
-                  title="Chat Colors & Wallpaper (24 Colors)"
+                  onClick={handleStartVideoCall}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
+                  title="Video call"
+                  aria-label="Video call"
                 >
-                  <Palette className="w-5 h-5" />
+                  <Video className="w-5 h-5" />
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowChatOptionsMenu(v => !v)}
+                  onClick={() => setIsSearchInChatOpen(v => !v)}
                   className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
-                  title="Options"
+                  title="Search in chat"
+                  aria-label="Search in chat"
                 >
-                  <MoreVertical className="w-5 h-5" />
+                  <Search className="w-5 h-5" />
                 </button>
-
-                {/* Chat Options Dropdown */}
-                {showChatOptionsMenu && (
-                  <div className="absolute right-0 top-10 z-30 w-56 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 shadow-xl p-1.5 text-xs text-slate-800 dark:text-slate-200 animate-fadeIn space-y-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowChatOptionsMenu(false);
-                        handleStartVoiceCall();
-                      }}
-                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
-                    >
-                      <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/50 dark:border-emerald-800/40">
-                        <Phone className="w-3.5 h-3.5" />
-                      </span>
-                      <span>Voice Call</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowChatOptionsMenu(false);
-                        handleStartVideoCall();
-                      }}
-                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
-                    >
-                      <span className="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-200/50 dark:border-purple-800/40">
-                        <Video className="w-3.5 h-3.5" />
-                      </span>
-                      <span>Video Call</span>
-                    </button>
-                    {selectedChatId === 'community' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowChatOptionsMenu(false);
-                          setIsGroupInfoModalOpen(true);
-                        }}
-                        className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
-                      >
-                        <span className="w-6 h-6 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-200/50 dark:border-teal-800/40">
-                          <Info className="w-3.5 h-3.5" />
-                        </span>
-                        <span>Group Info & Settings</span>
-                      </button>
-                    )}
-                    {isAdmin && selectedChatId === 'community' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowChatOptionsMenu(false);
-                          setIsOfficialGroupModalOpen(true);
-                        }}
-                        className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
-                      >
-                        <span className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-[#C6A45A] flex items-center justify-center shrink-0 border border-amber-200/50 dark:border-amber-800/40">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                        </span>
-                        <span>Manage Official Group</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowChatOptionsMenu(false);
-                        setSettingsModalTab('appearance');
-                        setIsSettingsModalOpen(true);
-                      }}
-                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
-                    >
-                      <span className="w-6 h-6 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 border border-orange-200/50 dark:border-orange-800/40">
-                        <Palette className="w-3.5 h-3.5" />
-                      </span>
-                      <span>Chat Colors & Wallpaper</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowChatOptionsMenu(false);
-                        setSettingsModalTab('directory');
-                        setIsSettingsModalOpen(true);
-                      }}
-                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
-                    >
-                      <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-slate-700/50">
-                        <Settings className="w-3.5 h-3.5" />
-                      </span>
-                      <span>Settings & History</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowChatOptionsMenu(false);
-                        setChatToClear({ id: selectedChatId || 'community', name: activeContact?.name || 'this conversation' });
-                        setClearChatForEveryone(false);
-                        setShowClearChatModal(true);
-                      }}
-                      className="w-full px-2.5 py-1.5 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl flex items-center gap-2.5 font-semibold text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
-                    >
-                      <span className="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200/50 dark:border-rose-800/40">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </span>
-                      <span>Clear Chat History</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowChatOptionsMenu(false);
-                        handleBackToHome();
-                      }}
-                      className="w-full px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl flex items-center gap-2.5 font-semibold text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                    >
-                      <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-slate-700/50">
-                        <X className="w-3.5 h-3.5" />
-                      </span>
-                      <span>Close Conversation</span>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
