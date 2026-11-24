@@ -419,13 +419,12 @@ export const AppLayout: React.FC = () => {
                 { title: 'Calls & Meetings', description: 'Review call and meeting history.', icon: Phone, onClick: () => navigateToTab('call-history') },
               ]} />}
             {isAdmin && effectiveTab === 'more-hub' && <SectionHub
-              title="More" description="Learning, insights, alerts and platform configuration."
+              title="More" description="Other tools and settings for managing FNI Cells Connect."
               items={[
-                { title: 'Ministry & Operations', description: 'Open evangelism, follow-ups, offerings, teaching materials and calls.', icon: Flame, onClick: () => navigateToTab('ministry-hub') },
-                { title: 'Learning Portal', description: 'Access assignments, quizzes, participation and grades.', icon: GraduationCap, onClick: () => navigateToTab('learning-portal') },
-                { title: 'Analytics', description: 'View ministry performance and activity insights.', icon: BarChart3, onClick: () => navigateToTab('analytics') },
-                { title: 'Notifications', description: 'Review alerts and important updates.', icon: Bell, onClick: () => navigateToTab('notifications') },
-                { title: 'Settings', description: 'Manage administrator and platform settings.', icon: Settings, onClick: () => navigateToTab('settings') },
+                { title: 'Learning Portal', description: 'Assignments, quizzes, participation and grades.', icon: GraduationCap, onClick: () => navigateToTab('learning-portal') },
+                { title: 'Analytics', description: 'A clear overview of activity and ministry progress.', icon: BarChart3, onClick: () => navigateToTab('analytics') },
+                { title: 'Notifications', description: 'Important alerts and recent updates.', icon: Bell, onClick: () => navigateToTab('notifications') },
+                { title: 'Settings', description: 'Account and administrator preferences.', icon: Settings, onClick: () => navigateToTab('settings') },
               ]} />}
 
             {/* ADMINISTRATOR PORTAL PAGES */}
