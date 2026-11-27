@@ -1002,31 +1002,19 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         ========================================================================== */}
         {currentSection === 'manage_profile' && (
           <div className="fni-profile-manage space-y-5">
-            {/* Profile Photo Uploader */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#152338] border border-slate-200/80 dark:border-[#26384d] flex items-center gap-4">
-              <ProfilePhotoUploader
-                currentAvatarUrl={currentUser?.avatar_url}
-                userName={currentUser?.full_name || 'User'}
-                userRole={currentUser?.role}
-                onPhotoUploaded={async (url: string) => {
-                  const result = await updateAvatar(url);
-                  if (!result.success) throw new Error(result.error || 'Could not synchronize your profile picture.');
-                }}
-                onPhotoRemoved={async () => {
-                  const result = await updateAvatar('');
-                  if (!result.success) throw new Error(result.error || 'Could not remove your profile picture.');
-                }}
-              />
+            <div className="fni-profile-page-heading flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h4 className="text-xs font-bold text-[#142B4A] dark:text-white">Profile Photo</h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Upload a crisp portrait photo. Images are securely stored in Supabase storage and displayed across fellowship spaces.
-                </p>
+                <h1 className="text-2xl font-bold tracking-tight text-[#142842]">My Profile</h1>
+                <p className="mt-1 text-sm text-[#5A6B7C]">Manage your profile photograph, cover banner and personal contact details.</p>
               </div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#DCF2E5] px-3 py-1.5 text-xs font-semibold text-[#1F6E43]">
+                <span className="h-2 w-2 rounded-full bg-[#1F6E43]" /> {accountStatus}
+              </span>
             </div>
 
-            {/* Profile Cover / Header Background Banner Uploader */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#152338] border border-slate-200/80 dark:border-[#26384d] space-y-3">
+            <section className="fni-profile-identity-card overflow-hidden rounded-2xl border border-[#DCE3EC] bg-white shadow-sm">
+                          {/* Profile Cover / Header Background Banner Uploader */}
+            <div className="fni-profile-banner-controls px-5 py-5 space-y-4 border-t border-[#DCE3EC]">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
@@ -1041,7 +1029,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
 
               {/* Cover Banner Preview Card */}
               <div
-                className="relative h-28 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow-inner flex items-end p-3 transition-all duration-300"
+                className="fni-profile-cover-preview relative h-40 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 shadow-inner flex items-end p-4 transition-all duration-300"
                 style={{
                   background: profileBanner
                     ? profileBanner.startsWith('data:') || profileBanner.startsWith('http')
@@ -1140,6 +1128,33 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 )}
               </div>
             </div>
+
+
+                          {/* Profile Photo Uploader */}
+            <div className="fni-profile-photo-row flex flex-wrap items-center gap-4 px-5 pb-5 pt-3">
+              <ProfilePhotoUploader
+                currentAvatarUrl={currentUser?.avatar_url}
+                userName={currentUser?.full_name || 'User'}
+                userRole={currentUser?.role}
+                onPhotoUploaded={async (url: string) => {
+                  const result = await updateAvatar(url);
+                  if (!result.success) throw new Error(result.error || 'Could not synchronize your profile picture.');
+                }}
+                onPhotoRemoved={async () => {
+                  const result = await updateAvatar('');
+                  if (!result.success) throw new Error(result.error || 'Could not remove your profile picture.');
+                }}
+              />
+              <div>
+                <h4 className="text-xs font-bold text-[#142B4A] dark:text-white">Profile Photo</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Upload a crisp portrait photo. Images are securely stored in Supabase storage and displayed across fellowship spaces.
+                </p>
+              </div>
+            </div>
+
+
+            </section>
 
             {profileNotice && (
               <div
