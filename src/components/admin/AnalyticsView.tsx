@@ -1230,45 +1230,82 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
           return (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-              {timeDimension === 'weekly' && [
-                { label: 'Week 43 (Historic)', val: '0', delta: 'No returns filed' },
-                { label: 'Week 44 (Prior)', val: '0', delta: 'No returns filed' },
-                { label: 'Week 45 (Current)', val: currentVal, delta: currentSouls > 0 ? 'Live verified returns' : 'Awaiting returns' },
-                { label: 'Week 46 (Upcoming)', val: '0', delta: 'Cycle pending' },
-              ].map((item, idx) => (
-                <div key={idx} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
-                  <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
-                  <div className="text-lg font-black text-[#142B4A] dark:text-white mt-1">{item.val}</div>
-                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold mt-0.5 inline-block">{item.delta}</span>
-                </div>
-              ))}
-
-              {timeDimension === 'monthly' && [
-                { label: 'September 2026', val: '0', delta: 'Pre-launch period' },
-                { label: 'October 2026', val: '0', delta: 'No returns logged' },
-                { label: 'November (Current MTD)', val: currentVal, delta: currentSouls > 0 ? 'Active month returns' : 'In progress' },
-                { label: 'December 2026', val: '0', delta: 'Upcoming' },
-              ].map((item, idx) => (
-                <div key={idx} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
-                  <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
-                  <div className="text-lg font-black text-[#142B4A] dark:text-white mt-1">{item.val}</div>
-                  <span className="text-[10px] text-royal-blue dark:text-[#C6A45A] font-bold mt-0.5 inline-block">{item.delta}</span>
-                </div>
-              ))}
-
-              {timeDimension === 'quarterly' && [
-                { label: 'Q1 2026', val: '0', delta: 'Past period' },
-                { label: 'Q2 2026', val: '0', delta: 'Past period' },
-                { label: 'Q3 2026', val: '0', delta: 'Past period' },
-                { label: 'Q4 2026 (Active)', val: currentVal, delta: currentSouls > 0 ? 'Active quarter returns' : 'In progress' },
-              ].map((item, idx) => (
-                <div key={idx} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
-                  <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
-                  <div className="text-lg font-black text-[#142B4A] dark:text-white mt-1">{item.val}</div>
-                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold mt-0.5 inline-block">{item.delta}</span>
-                </div>
-              ))}
-
+              {timeDimension !== 'ytd' && (() => {
+                const now = new Date();
+                const getPeriodStart = (date: Date) => {
+                  const start = new Date(date);
+                  start.setHours(0, 0, 0, 0);
+                  if (timeDimension === 'weekly') {
+                    const day = (start.getDay() + 6) % 7;
+                    start.setDate(start.getDate() - day);
+                  } else if (timeDimension === 'monthly') {
+                    start.setDate(1);
+                  } else {
+                    start.setMonth(Math.floor(start.getMonth() / 3) * 3, 1);
+                  }
+                  return start;
+                };
+                const currentStart = getPeriodStart(now);
+                const periods: { start: Date; end: Date; label: string }[] = [];
+                for (let offset = 3; offset >= 0; offset -= 1) {
+                  const periodStart = new Date(currentStart);
+                  if (timeDimension === 'weekly') periodStart.setDate(periodStart.getDate() - offset * 7);
+                  else if (timeDimension === 'monthly') periodStart.setMonth(periodStart.getMonth() - offset);
+                  else periodStart.setMonth(periodStart.getMonth() - offset * 3);
+                  const periodEnd = new Date(periodStart);
+                  if (timeDimension === 'weekly') periodEnd.setDate(periodEnd.getDate() + 7);
+                  else if (timeDimension === 'monthly') periodEnd.setMonth(periodEnd.getMonth() + 1);
+                  else periodEnd.setMonth(periodEnd.getMonth() + 3);
+                  const label = timeDimension === 'weekly'
+                    ? `Week of ${periodStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+                    : timeDimension === 'monthly'
+                    ? periodStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+                    : `Q${Math.floor(periodStart.getMonth() / 3) + 1} ${periodStart.getFullYear()}`;
+                  periods.push({ start: periodStart, end: periodEnd, label });
+                }
+                return periods.map((period, idx) => {
+                  const inPeriod = (value?: string) => {
+                    if (!value) return false;
+                    const date = new Date(value);
+                    return !isNaN(date.getTime()) && date >= period.start && date < period.end;
+                  };
+                  const cellMatches = (cellName?: string) => selectedCell === 'All' || cellName === selectedCell;
+                  const meetings = meetingReports.filter(report =>
+                    cellMatches(report.cellName) && inPeriod(report.meetingDate || report.submittedAt)
+                  );
+                  const outreach = evangelismReports.filter(report =>
+                    cellMatches(report.cellName) && inPeriod(report.date || report.submittedAt)
+                  );
+                  const approvedOutreach = outreach.filter(report =>
+                    String(report.status || '').toLowerCase() === 'approved'
+                  );
+                  const attendance = meetings.reduce((sum, report) => sum + (Number(report.attendance) || 0), 0);
+                  const souls = approvedOutreach.reduce((sum, report) =>
+                    sum + (Number(report.verifiedSoulsWon ?? report.conversions) || 0), 0
+                  );
+                  const offerings = meetings.reduce((sum, report) => sum + (Number(report.offering) || 0), 0);
+                  const value = selectedMetric === 'attendance'
+                    ? attendance.toLocaleString()
+                    : selectedMetric === 'souls'
+                    ? souls.toLocaleString()
+                    : selectedMetric === 'offerings'
+                    ? `GHS ${offerings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : '—';
+                  const reportCount = meetings.length + outreach.length;
+                  const detail = selectedMetric === 'compliance'
+                    ? 'Compliance is not available by period'
+                    : reportCount === 0
+                    ? 'No submitted reports in this period'
+                    : `${meetings.length} meeting · ${outreach.length} outreach reports`;
+                  return (
+                    <div key={period.label} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
+                      <span className="text-[11px] font-semibold text-slate-500 block">{period.label}</span>
+                      <div className="text-lg font-black text-[#142B4A] dark:text-white mt-1">{value}</div>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5 inline-block">{detail}</span>
+                    </div>
+                  );
+                });
+              })()}
               {timeDimension === 'ytd' && [
                 { label: '2026 Annual Target', val: selectedMetric === 'souls' ? soulTarget.toLocaleString() : selectedMetric === 'attendance' ? 'Goal' : selectedMetric === 'offerings' ? 'Goal' : '100%', delta: 'Kingdom Benchmark' },
                 { label: '2026 YTD Harvested', val: currentVal, delta: currentSouls > 0 ? 'Live verified' : 'Awaiting returns' },
