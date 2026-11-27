@@ -444,7 +444,7 @@ export const AppLayout: React.FC = () => {
                   <CellManagementView onBack={handleGoBack} />
                 )}
                 {effectiveTab === 'cell-leaders' && (
-                  <CellLeadersView onBack={handleGoBack} />
+                  <CellLeadersView onBack={handleGoBack} onNavigateToTab={navigateToTab} />
                 )}
                 {effectiveTab === 'cell-location-history' && (
                   <CellLocationHistoryView onBack={handleGoBack} />
