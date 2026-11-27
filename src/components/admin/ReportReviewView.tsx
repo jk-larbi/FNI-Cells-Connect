@@ -546,10 +546,10 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-black text-[#142B4A] tracking-tight">
-                Accept / Decline Reports Directorate
+                Report review
               </h1>
               <p className="text-[11px] sm:text-xs text-[#667085] mt-0.5 leading-snug">
-                Central leadership portal to evaluate, accept (approve), or decline (return for correction) weekly fellowship reports.
+                Check submissions, read the details, then accept or return them with clear feedback.
               </p>
             </div>
           </div>
@@ -704,7 +704,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by Cell, Tutor, Location, Scripture, Notes..."
+              placeholder="Search cells, tutors or report details..."
               className="w-full pl-10 pr-9 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
             />
             {searchQuery && (
@@ -774,8 +774,14 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           </div>
         </div>
 
-        {/* Secondary Filter Chips Row */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E3E8EF]">
+        {/* Keep less-used filters available without crowding the mobile review screen. */}
+        <details className="group border-t border-[#E3E8EF] pt-2">
+          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 text-xs font-bold text-[#142B4A] [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-2"><SlidersHorizontal className="h-3.5 w-3.5 text-[#A88743]" /> More filters <span className="font-normal text-[#667085]">Status and submission timing</span></span>
+            <span className="text-[11px] font-semibold text-[#667085] group-open:hidden">Show</span>
+            <span className="hidden text-[11px] font-semibold text-[#667085] group-open:inline">Hide</span>
+          </summary>
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="text-[11px] font-bold text-[#667085] uppercase mr-1">Status:</span>
             {[
@@ -844,7 +850,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               <span>Reset Filters</span>
             </button>
           )}
-        </div>
+          </div>
+        </details>
       </div>
 
       {/* ── Active Section Banner ── */}
