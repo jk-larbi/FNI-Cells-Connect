@@ -542,7 +542,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
     sortBy !== 'newest';
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="fni-report-review-stitch space-y-4 sm:space-y-6">
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
@@ -551,8 +551,9 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               <FileCheck className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-black text-[#142B4A] tracking-tight">
-                Report review
+              <div className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8E6C23] mb-1">Admin workspace / Performance</div>
+              <h1 className="text-lg sm:text-xl font-black text-[#142842] tracking-tight">
+                Review reports
               </h1>
               <p className="text-[11px] sm:text-xs text-[#667085] mt-0.5 leading-snug">
                 Check submissions, read the details, then accept or return them with clear feedback.
