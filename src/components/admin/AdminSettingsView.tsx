@@ -282,11 +282,15 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-lg sm:text-xl font-black text-[#142B4A] tracking-tight">
-          System Administration & Settings
+        <h1 className="text-lg sm:text-xl font-bold text-[#142842] tracking-tight">
+          {activeTab === 'security' ? 'Admin security' : activeTab === 'audit' ? 'Audit trail' : 'Ministry settings'}
         </h1>
-        <p className="text-xs text-[#667085] mt-0.5">
-          Configure ministry vision, soul targets, Sunday deadline parameters, security, and audit logs.
+        <p className="text-sm text-[#5A6B7C] mt-1">
+          {activeTab === 'security'
+            ? 'Protect your administrator account and manage notification access across your devices.'
+            : activeTab === 'audit'
+              ? 'Review the recorded administrative actions and system activity.'
+              : 'Configure ministry vision, soul targets, and report deadlines.'}
         </p>
       </div>
 
@@ -655,7 +659,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
 
       {/* TAB 2: ADMINISTRATOR PROFILE & SECURITY */}
       {activeTab === 'security' && (
-        <div className="space-y-6 max-w-md">
+        <div className="fni-admin-security-view space-y-6 max-w-5xl w-full min-w-0">
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
