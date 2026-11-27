@@ -693,7 +693,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const assignedCellTitle = isAdmin ? 'National Administration' : currentUser?.cell_name || 'Unassigned Cell';
 
   const content = (
-    <div className={`fni-profile-settings relative w-full ${inline ? 'fni-profile-settings-inline max-w-5xl mx-auto my-0 shadow-none' : 'max-w-md my-auto max-h-[92vh] shadow-2xl'} bg-[#f0f2f5] dark:bg-[#17212b] rounded-2xl border border-[#e2e5e9] dark:border-white/10 overflow-hidden flex flex-col transition-all font-sans text-[#1f2328] dark:text-[#f3f4f6]`}>
+    <div className={`fni-profile-settings fni-account-settings relative w-full ${inline ? 'fni-profile-settings-inline max-w-5xl mx-auto my-0 shadow-none' : 'fni-account-settings-dialog max-w-4xl my-auto max-h-[94vh] shadow-xl'} bg-[#f0f2f5] dark:bg-[#17212b] rounded-2xl border border-[#e2e5e9] dark:border-white/10 overflow-hidden flex flex-col transition-all font-sans text-[#1f2328] dark:text-[#f3f4f6]`}>
       {/* HEADER BAR */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#e2e5e9] dark:border-white/10 bg-[#f0f2f5] dark:bg-[#17212b] sticky top-0 z-20">
         <div className="flex items-center gap-3">
