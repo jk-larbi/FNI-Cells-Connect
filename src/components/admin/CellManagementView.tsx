@@ -42,6 +42,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Suspended' | 'Deactivated'>('All');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedCellIds, setSelectedCellIds] = useState<string[]>([]);
   const [isDeletingCells, setIsDeletingCells] = useState(false);
 
@@ -82,8 +83,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const loadCells = async () => {
     try {
       setIsLoading(true);
+      setLoadError(null);
       const list = await CellService.getCells();
       setCells(list.filter(cell => !cell.is_archived));
+    } catch (error) {
+      console.error('Could not load the cell directory:', error);
+      setLoadError('The cell directory could not be loaded. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -288,6 +293,21 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
         </div>
       </div>
 
+      {loadError && (
+        <div role="alert" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-700 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-[#142B4A]">{cells.length ? 'Directory refresh failed' : 'Unable to load cells'}</p>
+              <p className="text-xs text-[#667085]">{loadError}{cells.length ? ' Previously loaded cells are still shown.' : ''}</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => void loadCells()} disabled={isLoading} className="min-h-10 shrink-0 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-[#142B4A] disabled:opacity-60">
+            {isLoading ? 'Retrying…' : 'Try again'}
+          </button>
+        </div>
+      )}
+
       <CellLocationsMap cells={cells.filter(cell => cell.is_active && !cell.is_archived)} />
 
       {/* Filter and Search Bar */}
@@ -332,8 +352,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
         </div>
 
         <div className="md:hidden divide-y divide-[#E3E8EF]">
-          {filteredCells.length === 0 ? (
-            <div className="p-6 text-center text-xs text-[#667085]">No cells found matching your criteria.</div>
+          {isLoading && cells.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[#667085]">Loading registered cells…</div>
+          ) : loadError && cells.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[#667085]">The cell directory is unavailable. Use Try again above to reload it.</div>
+          ) : filteredCells.length === 0 ? (
+            <div className="p-6 text-center text-xs text-[#667085]">{searchQuery || statusFilter !== 'All' ? 'No cells match your search or filter.' : 'No cells have been registered yet.'}</div>
           ) : filteredCells.map(cell => {
             const status = cell.status || (cell.is_active ? 'Active' : 'Suspended');
             const suspended = status === 'Suspended' || status === 'Deactivated';
@@ -394,7 +418,11 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E3E8EF]">
-              {filteredCells.length === 0 ? (
+              {isLoading && cells.length === 0 ? (
+                <tr><td colSpan={7} className="py-10 text-center text-xs text-[#667085]">Loading registered cells…</td></tr>
+              ) : loadError && cells.length === 0 ? (
+                <tr><td colSpan={7} className="py-10 text-center text-xs text-[#667085]">The cell directory is unavailable. Use Try again above to reload it.</td></tr>
+              ) : filteredCells.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[#667085]">
                     <Building className="w-8 h-8 text-[#CBD5E1] mx-auto mb-2" />
