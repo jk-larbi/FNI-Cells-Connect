@@ -688,10 +688,14 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const roleDisplayTitle = currentUser?.role === 'super_admin'
     ? 'Super Administrator'
     : currentUser?.role === 'admin' || currentUser?.role === 'national_admin'
-    ? 'Administrator'
-    : currentUser?.role === 'regional_leader'
-    ? 'Regional Leader'
-    : 'Registered Cell Leader';
+      ? 'Administrator'
+      : currentUser?.role === 'regional_leader'
+        ? 'Regional Leader'
+        : currentUser?.role === 'cell_leader'
+          ? 'Cell Leader'
+          : currentUser?.role === 'tutor'
+            ? 'Cell Tutor'
+            : 'Member';
 
   const assignedCellTitle = isAdmin ? 'National Administration' : currentUser?.cell_name || 'Unassigned Cell';
 
