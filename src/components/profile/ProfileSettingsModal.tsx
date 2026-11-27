@@ -196,6 +196,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPass, setIsChangingPass] = useState(false);
   const [passNotice, setPassNotice] = useState<{ isError: boolean; text: string } | null>(null);
+  const [isPasswordPanelOpen, setIsPasswordPanelOpen] = useState(false);
   const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
   const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
 
@@ -394,6 +395,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         setPassNotice({ isError: false, text: 'Account password updated successfully.' });
         setNewPassword('');
         setConfirmPassword('');
+        setIsPasswordPanelOpen(false);
       } else {
         setPassNotice({ isError: true, text: res.error || 'Password update failed.' });
       }
@@ -1092,183 +1094,156 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             SECTION 2: PASSWORD & SECURITY (Requirement 2)
         ========================================================================== */}
         {currentSection === 'password_security' && (
-          <div className="space-y-6">
-            <div className="fni-account-page-intro"><div><p className="fni-account-eyebrow">PROTECT YOUR ACCOUNT</p><h1>Account Security</h1><p>Update your password and review account session information.</p></div></div>
-
-            {passNotice && (
-              <div
-                className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                  passNotice.isError
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900'
-                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900'
-                }`}
-              >
-                {passNotice.isError ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
-                <span>{passNotice.text}</span>
-              </div>
-            )}
-
-            {/* Password Change Form */}
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div className="text-xs font-black text-[#142B4A] dark:text-white uppercase tracking-wider">
-                Change Account Password
-              </div>
-
+          <div className="fni-account-security-page">
+            <div className="fni-account-page-intro">
               <div>
-                <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200 mb-1">
-                  New Password <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    maxLength={128}
-                    placeholder="Create new password (min. 6 characters)"
-                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-[#26384d] bg-white dark:bg-slate-800 text-xs text-[#182230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                  >
-                    {showNewPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                <p className="fni-account-eyebrow">PROTECT YOUR ACCOUNT</p>
+                <h1>Account Security</h1>
+                <p>Manage your password and review the device currently signed in to your FNI account.</p>
+              </div>
+            </div>
+
+            <section className="fni-account-security-card" aria-label="Password and authentication">
+              <div className="fni-account-security-card-heading">
+                <div>
+                  <h2>Password &amp; Authentication</h2>
+                  <p>Keep your account credentials secure.</p>
                 </div>
-                {/* Strength Meter */}
-                {newPassword && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-[10px]">
-                    <span className="text-slate-400 font-medium">Strength:</span>
-                    <span
-                      className={`font-bold ${
-                        newPassword.length >= 8 && /[0-9!@#$%^&*]/.test(newPassword)
-                          ? 'text-emerald-600'
-                          : newPassword.length >= 6
-                          ? 'text-amber-600'
-                          : 'text-rose-600'
-                      }`}
-                    >
-                      {newPassword.length >= 8 && /[0-9!@#$%^&*]/.test(newPassword)
-                        ? 'Strong'
-                        : newPassword.length >= 6
-                        ? 'Good'
-                        : 'Weak (min. 6 chars required)'}
-                    </span>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  className="fni-account-security-outline"
+                  onClick={() => {
+                    setIsPasswordPanelOpen(value => !value);
+                    setPassNotice(null);
+                  }}
+                  aria-expanded={isPasswordPanelOpen}
+                  aria-controls="fni-password-update-panel"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  {isPasswordPanelOpen ? 'Close password form' : 'Change password'}
+                </button>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200">
-                    Confirm New Password <span className="text-rose-500">*</span>
-                  </label>
-                  {newPassword && confirmPassword && (
-                    <span
-                      className={`text-[10px] font-bold ${
-                        newPassword === confirmPassword ? 'text-emerald-600' : 'text-rose-600'
-                      }`}
-                    >
-                      {newPassword === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    maxLength={128}
-                    placeholder="Re-enter new password"
-                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-[#26384d] bg-white dark:bg-slate-800 text-xs text-[#182230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4 text-[#C6A45A]" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isChangingPass || !newPassword || newPassword !== confirmPassword}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isChangingPass ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#C6A45A]" />
-                    <span>Updating Password...</span>
-                  </>
-                ) : (
-                  <>
-                    <KeyRound className="w-4 h-4 text-[#C6A45A]" />
-                    <span>Update Password</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Active Sessions & Device Information */}
-            <div className="pt-4 border-t border-slate-200 dark:border-[#26384d] space-y-3">
-              <div className="text-xs font-black text-[#142B4A] dark:text-white uppercase tracking-wider">
-                Active Session & Device Information
-              </div>
-
-              {deviceNotice && (
-                <div className="p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>{deviceNotice}</span>
+              {passNotice && (
+                <div className={`fni-account-security-feedback ${passNotice.isError ? 'is-error' : 'is-success'}`} role="status" aria-live="polite">
+                  {passNotice.isError ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  <span>{passNotice.text}</span>
                 </div>
               )}
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-[#26384d] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Smartphone className="w-5 h-5 text-[#142B4A] dark:text-[#C6A45A]" />
-                  <div>
-                    <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-1.5">
-                      {Capacitor.isNativePlatform()
-                        ? 'Android APK Client'
-                        : isIosDevice()
+              {isPasswordPanelOpen && (
+                <form id="fni-password-update-panel" onSubmit={handlePasswordSubmit} className="fni-account-password-panel">
+                  <div className="fni-account-security-panel-heading">
+                    <div><h3>Update password</h3><p>Choose a new password for your account.</p></div>
+                  </div>
+                  <div className="fni-account-password-field">
+                    <label htmlFor="fni-new-password">New password <span>*</span></label>
+                    <div className="fni-account-password-input">
+                      <input
+                        id="fni-new-password"
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={event => setNewPassword(event.target.value)}
+                        required
+                        minLength={6}
+                        maxLength={128}
+                        autoComplete="new-password"
+                        placeholder="Enter a new password (minimum 6 characters)"
+                      />
+                      <button type="button" onClick={() => setShowNewPassword(value => !value)} aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}>
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="fni-account-password-strength" aria-live="polite">
+                      <div className="fni-account-password-strength-bars">
+                        <span className={newPassword.length >= 1 ? (newPassword.length >= 8 && /[0-9!@#$%^&*]/.test(newPassword) ? 'is-strong' : newPassword.length >= 6 ? 'is-good' : 'is-weak') : ''} />
+                        <span className={newPassword.length >= 6 ? (newPassword.length >= 8 && /[0-9!@#$%^&*]/.test(newPassword) ? 'is-strong' : 'is-good') : ''} />
+                        <span className={newPassword.length >= 8 && /[0-9!@#$%^&*]/.test(newPassword) ? 'is-strong' : ''} />
+                      </div>
+                      <span>Strength: <strong>{!newPassword ? 'Not entered' : newPassword.length >= 8 && /[0-9!@#$%^&*]/.test(newPassword) ? 'Strong' : newPassword.length >= 6 ? 'Good' : 'Weak'}</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="fni-account-password-field">
+                    <label htmlFor="fni-confirm-password">Confirm new password <span>*</span></label>
+                    <div className="fni-account-password-input">
+                      <input
+                        id="fni-confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={event => setConfirmPassword(event.target.value)}
+                        required
+                        minLength={6}
+                        maxLength={128}
+                        autoComplete="new-password"
+                        placeholder="Re-enter your new password"
+                      />
+                      <button type="button" onClick={() => setShowConfirmPassword(value => !value)} aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'}>
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {newPassword && confirmPassword && (
+                      <span className={`fni-account-password-match ${newPassword === confirmPassword ? 'is-match' : 'is-mismatch'}`}>
+                        {newPassword === confirmPassword ? 'Passwords match' : 'Passwords do not match'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="fni-account-password-actions">
+                    <button type="button" className="fni-account-security-cancel" onClick={() => { setIsPasswordPanelOpen(false); setNewPassword(''); setConfirmPassword(''); setPassNotice(null); }}>Cancel</button>
+                    <button type="submit" className="fni-account-security-submit" disabled={isChangingPass || !newPassword || newPassword !== confirmPassword}>
+                      {isChangingPass ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                      {isChangingPass ? 'Updating password…' : 'Update password'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="fni-account-security-info-row">
+                <div><span>Two-factor authentication</span><strong>Check Supabase Auth status</strong></div>
+                <span className="fni-account-security-managed">Managed by Supabase Auth</span>
+              </div>
+
+              <div className="fni-account-security-info-row">
+                <div><span>Registered devices &amp; activity</span><strong>Current signed-in device</strong></div>
+                <span className="fni-account-security-current"><i /> Active now</span>
+              </div>
+
+              <div className="fni-account-current-device">
+                <div className="fni-account-current-device-icon"><Smartphone className="w-5 h-5" /></div>
+                <div className="fni-account-current-device-copy">
+                  <strong>
+                    {Capacitor.isNativePlatform()
+                      ? 'Android APK Client'
+                      : isIosDevice()
                         ? isStandaloneMode()
                           ? 'Apple iOS Home Screen PWA'
                           : 'Apple iOS Safari'
                         : 'Web Browser'}
-                      <span className="text-[10px] text-emerald-600 font-bold">&bull; Active Now</span>
-                    </div>
-                    <div className="text-[11px] text-slate-400">
-                      Standard Timezone: Africa/Accra (UTC+0)
-                    </div>
-                  </div>
+                  </strong>
+                  <span>Current session · Africa/Accra (UTC+0)</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
-                  Current Session
-                </span>
+                <span className="fni-account-security-session-pill">Current session</span>
               </div>
+
+              {deviceNotice && (
+                <div className="fni-account-security-feedback is-success" role="status" aria-live="polite">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" /><span>{deviceNotice}</span>
+                </div>
+              )}
 
               <button
                 type="button"
                 onClick={handleSignOutOtherDevices}
                 disabled={isSigningOutOthers}
-                className="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-[#26384d] hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="fni-account-security-signout"
               >
-                {isSigningOutOthers ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-[#C6A45A]" />
-                ) : (
-                  <LogOut className="w-4 h-4 text-slate-400" />
-                )}
-                <span>Sign Out Other Devices via Supabase</span>
+                {isSigningOutOthers ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                {isSigningOutOthers ? 'Signing out other sessions…' : 'Sign out of other sessions'}
               </button>
-            </div>
+            </section>
           </div>
         )}
-
         {/* =========================================================================
             SECTION 3: NOTIFICATION PREFERENCES (Requirement 3)
         ========================================================================== */}
