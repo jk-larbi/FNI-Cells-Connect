@@ -556,7 +556,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
       {/* CELL PROFILE MODAL (Showing Meeting History, Evangelism History, Follow-ups, etc.) */}
       {selectedCell && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-[#142B4A]/50 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:items-center sm:justify-center sm:p-4 sm:pt-4 sm:pb-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-xl border border-[#E3E8EF] max-h-[90vh] overflow-y-auto custom-scrollbar space-y-5">
             <div className="flex items-start justify-between pb-3 border-b border-[#E3E8EF]">
               <div>
@@ -728,7 +728,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       {/* CREATE / EDIT CELL MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#142B4A]/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-[#E3E8EF] space-y-4">
+          <div className="flex h-full w-full max-w-md flex-col space-y-4 overflow-y-auto overscroll-contain border border-[#E3E8EF] bg-white p-5 shadow-xl sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl sm:p-6">
             <div className="flex items-center justify-between pb-3 border-b border-[#E3E8EF]">
               <h3 className="text-base font-bold text-[#142B4A]">
                 {editingCell.id ? 'Edit Cell Details' : 'Register New Cell'}
