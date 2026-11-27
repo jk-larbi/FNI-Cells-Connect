@@ -97,20 +97,34 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
   // Single Item Inspection & Review Modal
   const [inspectingItem, setInspectingItem] = useState<UnifiedReportItem | null>(null);
+  const [reviewOutcome, setReviewOutcome] = useState<'approved' | null>(null);
+  const [lastReviewedReport, setLastReviewedReport] = useState<UnifiedReportItem | null>(null);
 
   // Back navigation interceptor: closes report inspection dossier before leaving view
   useBackHandler(() => {
+    if (reviewOutcome) {
+      setReviewOutcome(null);
+      setLastReviewedReport(null);
+      return true;
+    }
     if (inspectingItem) {
       setInspectingItem(null);
+      setReviewAction(null);
+      setReviewReasons([]);
       if (onClearInitialReportId) onClearInitialReportId();
       return true;
     }
     return false;
-  }, Boolean(inspectingItem));
+  }, Boolean(inspectingItem || reviewOutcome));
 
   const handleBackNavigation = () => {
-    if (inspectingItem) {
+    if (reviewOutcome) {
+      setReviewOutcome(null);
+      setLastReviewedReport(null);
+    } else if (inspectingItem) {
       setInspectingItem(null);
+      setReviewAction(null);
+      setReviewReasons([]);
       if (onClearInitialReportId) onClearInitialReportId();
     } else if (onBack) {
       onBack();
@@ -120,6 +134,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   const [contactsLoading, setContactsLoading] = useState(false);
   const [reviewAction, setReviewAction] = useState<'Approved' | 'Needs Correction' | null>(null);
   const [reviewComment, setReviewComment] = useState('');
+  const [reviewReasons, setReviewReasons] = useState<string[]>([]);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [quickActionProcessingId, setQuickActionProcessingId] = useState<string | null>(null);
 
@@ -412,8 +427,9 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         currentUser.full_name
       );
 
-
       await loadData();
+      setLastReviewedReport(item);
+      setReviewOutcome('approved');
     } catch (error: any) {
       alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
@@ -432,18 +448,23 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   // Single Item Review Submission
   const handleSubmitReview = async () => {
     if (!inspectingItem || !reviewAction) return;
-    if (reviewAction === 'Needs Correction' && !reviewComment.trim()) {
-      alert('Please provide reviewer feedback comments explaining what needs correction.');
+    const combinedComment = [
+      ...reviewReasons,
+      ...(reviewComment.trim() ? [reviewComment.trim()] : []),
+    ].join('\n\n');
+    if (reviewAction === 'Needs Correction' && !combinedComment.trim()) {
+      alert('Select at least one item requiring an update or enter a message to the cell leader.');
       return;
     }
 
+    const reviewedItem = inspectingItem;
     setIsSubmittingReview(true);
     try {
       await ReportService.reviewReport(
-        inspectingItem.id,
-        inspectingItem.reportType,
+        reviewedItem.id,
+        reviewedItem.reportType,
         reviewAction,
-        reviewComment.trim(),
+        combinedComment,
         currentUser.id,
         currentUser.full_name
       );
@@ -451,8 +472,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       setInspectingItem(null);
       setReviewAction(null);
       setReviewComment('');
+      setReviewReasons([]);
       if (onClearInitialReportId) onClearInitialReportId();
       await loadData();
+      if (reviewAction === 'Approved') {
+        setLastReviewedReport(reviewedItem);
+        setReviewOutcome('approved');
+      }
     } catch (error: any) {
       alert(error?.message || 'The report decision could not be saved. Please try again.');
     } finally {
