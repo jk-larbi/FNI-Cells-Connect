@@ -252,7 +252,7 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* 1. Frosted Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-[#142B4A] bg-gradient-to-br from-[#142B4A] via-[#1E3A8A] to-[#2563EB] text-white p-6 sm:p-8 shadow-xl border border-blue-900/40">
+      <div className="relative overflow-hidden rounded-2xl bg-[#142842] text-white p-5 sm:p-7 shadow-sm border border-[#1E314C]">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 rounded-full bg-[#C6A45A]/25 blur-xl pointer-events-none" />
 
@@ -302,7 +302,7 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
         /* ======================== ADMIN OVERVIEW METRICS ======================== */
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-base sm:text-lg font-bold text-[#182230] dark:text-white">
+            <h2 className="text-base sm:text-lg font-bold text-[#142842] dark:text-white">
               Institutional Teaching Metrics
             </h2>
             <span className="text-xs font-semibold text-slate-500">Live database metrics</span>
@@ -310,7 +310,7 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
             {/* Active Tutors */}
-            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111c2d] border border-[#DCE3EC] dark:border-slate-700 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
                   Active Tutors
@@ -326,7 +326,7 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
             </div>
 
             {/* Assignments Created */}
-            <div className="p-4 rounded-3xl fni-glass-card bg-white dark:bg-[#111c2d] border border-slate-200/80 dark:border-white/10 shadow-card">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111c2d] border border-[#DCE3EC] dark:border-slate-700 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
                   Assignments
