@@ -896,282 +896,189 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         )}
 
         {currentSection === 'manage_profile' && (
-          <div className="fni-profile-manage space-y-5">
-            <div className="fni-profile-page-heading flex flex-wrap items-end justify-between gap-3">
+          <div className="fni-profile-manage fni-profile-stitch space-y-6">
+            <header className="fni-profile-stitch-heading flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-[#142842]">My Profile</h1>
-                <p className="mt-1 text-sm text-[#5A6B7C]">Manage your profile photograph, cover banner and personal contact details.</p>
+                <p className="fni-profile-eyebrow">ACCOUNT PROFILE</p>
+                <h1>My Profile</h1>
+                <p>Profile photograph, cover banner and personal details.</p>
               </div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#DCF2E5] px-3 py-1.5 text-xs font-semibold text-[#1F6E43]">
-                <span className="h-2 w-2 rounded-full bg-[#1F6E43]" /> {accountStatus}
+              <span className={`fni-profile-status ${accountStatus === 'Active' ? 'is-active' : accountStatus === 'Pending' ? 'is-pending' : 'is-suspended'}`}>
+                <span aria-hidden="true" />{accountStatus}
               </span>
-            </div>
-
-            <section className="fni-profile-identity-card overflow-hidden rounded-2xl border border-[#DCE3EC] bg-white shadow-sm">
-                          {/* Profile Cover / Header Background Banner Uploader */}
-            <div className="fni-profile-banner-controls px-5 py-5 space-y-4 border-t border-[#DCE3EC]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-[#C6A45A]" />
-                    <span>Profile Header Cover Banner</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Choose or upload a custom background image displayed behind your profile avatar on member profile cards.
-                  </p>
-                </div>
-              </div>
-
-              {/* Cover Banner Preview Card */}
-              <div
-                className="fni-profile-cover-preview relative h-40 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 shadow-inner flex items-end p-4 transition-all duration-300"
-                style={{
-                  background: profileBanner
-                    ? profileBanner.startsWith('data:') || profileBanner.startsWith('http')
-                      ? `url("${profileBanner}") center/cover no-repeat`
-                      : profileBanner
-                    : 'linear-gradient(135deg, #142B4A 0%, #1e3a8a 50%, #C6A45A 100%)',
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
-                <div className="relative z-10 flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full border-2 border-white/90 overflow-hidden bg-slate-800 shrink-0 shadow-md">
-                    {currentUser?.avatar_url ? (
-                      <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center font-bold text-white text-xs bg-[#142B4A]">
-                        {currentUser?.full_name?.charAt(0) || 'U'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-white drop-shadow-sm">
-                    <div className="text-xs font-black">{currentUser?.full_name || 'My Profile'}</div>
-                    <div className="text-[10px] text-white/80">{currentUser?.role || 'FNI Fellowship Tutor'}</div>
-                  </div>
-                </div>
-
-                {isUploadingBanner && (
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center text-white text-xs font-bold gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#C6A45A]" />
-                    <span>Updating Cover Photo...</span>
-                  </div>
-                )}
-              </div>
-
-              {bannerNotice && (
-                <div className="p-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>{bannerNotice}</span>
-                </div>
-              )}
-
-              {/* Preset Background Gradients */}
-              <div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Preset Fellowship Themes
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {PRESET_PROFILE_BANNERS.map(b => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => handleSelectPresetBanner(b.url)}
-                      className={`h-10 rounded-xl border-2 transition-transform hover:scale-105 cursor-pointer shadow-xs relative overflow-hidden ${
-                        profileBanner === b.url ? 'border-[#C6A45A] ring-2 ring-[#C6A45A]/50 scale-105' : 'border-slate-200 dark:border-slate-700'
-                      }`}
-                      style={{ background: b.url }}
-                      title={b.name}
-                    >
-                      {profileBanner === b.url && (
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons: Upload Custom Banner & Remove */}
-              <div className="flex items-center gap-2 pt-1">
-                <label className="flex-1 py-2 px-3 rounded-xl border border-dashed border-[#C6A45A] bg-[#C6A45A]/5 hover:bg-[#C6A45A]/15 text-xs font-bold text-[#142B4A] dark:text-[#C6A45A] flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
-                  <Upload className="w-3.5 h-3.5 text-[#C6A45A]" />
-                  <span>Upload Custom Cover Banner</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={isUploadingBanner}
-                    onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) handleBannerUpload(file);
-                      e.currentTarget.value = '';
-                    }}
-                  />
-                </label>
-
-                {profileBanner && (
-                  <button
-                    type="button"
-                    onClick={handleRemoveBanner}
-                    disabled={isUploadingBanner}
-                    className="py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Reset</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-
-                          {/* Profile Photo Uploader */}
-            <div className="fni-profile-photo-row flex flex-wrap items-center gap-4 px-5 pb-5 pt-3">
-              <ProfilePhotoUploader
-                currentAvatarUrl={currentUser?.avatar_url}
-                userName={currentUser?.full_name || 'User'}
-                userRole={currentUser?.role}
-                onPhotoUploaded={async (url: string) => {
-                  const result = await updateAvatar(url);
-                  if (!result.success) throw new Error(result.error || 'Could not synchronize your profile picture.');
-                }}
-                onPhotoRemoved={async () => {
-                  const result = await updateAvatar('');
-                  if (!result.success) throw new Error(result.error || 'Could not remove your profile picture.');
-                }}
-              />
-              <div>
-                <h4 className="text-xs font-bold text-[#142B4A] dark:text-white">Profile Photo</h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Upload a crisp portrait photo. Images are securely stored in Supabase storage and displayed across fellowship spaces.
-                </p>
-              </div>
-            </div>
-
-
-            </section>
+            </header>
 
             {profileNotice && (
-              <div
-                className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                  profileNotice.isError
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900'
-                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900'
-                }`}
-              >
+              <div role="status" className={`fni-profile-feedback ${profileNotice.isError ? 'is-error' : 'is-success'}`}>
                 {profileNotice.isError ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
                 <span>{profileNotice.text}</span>
               </div>
             )}
 
-            {/* Editable Fields Form */}
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200 mb-1">
-                  Full Name <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    required
-                    maxLength={120}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#26384d] bg-white dark:bg-slate-800 text-xs text-[#182230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-                    placeholder="Enter your full name"
-                  />
-                </div>
+            <section aria-label="Profile identity and cover banner" className="fni-profile-identity-card">
+              <div
+                className="fni-profile-cover-preview"
+                style={{
+                  background: profileBanner
+                    ? profileBanner.startsWith('data:') || profileBanner.startsWith('http')
+                      ? `url("${profileBanner}") center/cover no-repeat`
+                      : profileBanner
+                    : 'linear-gradient(120deg, #142842 0%, #263F62 58%, #8E6C23 100%)',
+                }}
+              >
+                <span className="fni-profile-cover-label">Cover preview</span>
+                <span className="fni-profile-cover-shade" aria-hidden="true" />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200 mb-1">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={e => setPhoneNumber(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#26384d] bg-white dark:bg-slate-800 text-xs text-[#182230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-                    placeholder="e.g. +233 24 123 4567"
-                  />
+              <div className="fni-profile-identity-content">
+                <div className="fni-profile-identity-row">
+                  <div className="fni-profile-avatar" aria-label={`${currentUser?.full_name || 'Member'} profile photograph`}>
+                    {currentUser?.avatar_url ? (
+                      <img src={currentUser.avatar_url} alt={currentUser?.full_name || 'Member profile'} />
+                    ) : (
+                      <span>{currentUser?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'FN'}</span>
+                    )}
+                  </div>
+                  <div className="fni-profile-identity-copy">
+                    <h2>{currentUser?.full_name || 'Signed-in Member'}</h2>
+                    <span className={`fni-profile-status ${accountStatus === 'Active' ? 'is-active' : accountStatus === 'Pending' ? 'is-pending' : 'is-suspended'}`}>
+                      <span aria-hidden="true" />{accountStatus}
+                    </span>
+                    <p>Account designation: {roleDisplayTitle} <span>· Read-only</span></p>
+                  </div>
+                  <div className="fni-profile-photo-actions">
+                    <ProfilePhotoUploader
+                      currentAvatarUrl={currentUser?.avatar_url}
+                      userName={currentUser?.full_name || 'User'}
+                      userRole={roleDisplayTitle}
+                      size="lg"
+                      className="fni-profile-photo-uploader"
+                      onPhotoUploaded={async (url: string) => {
+                        const result = await updateAvatar(url);
+                        if (!result.success) throw new Error(result.error || 'Could not synchronize your profile picture.');
+                      }}
+                      onPhotoRemoved={async () => {
+                        const result = await updateAvatar('');
+                        if (!result.success) throw new Error(result.error || 'Could not remove your profile picture.');
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200 mb-1">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 pointer-events-none" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#26384d] bg-white dark:bg-slate-800 text-xs text-[#182230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-                    placeholder="leader@example.com"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Updating your email will send a verification link via Supabase Auth.
-                </p>
-              </div>
+                <div className="fni-profile-cover-tools">
+                  <div className="fni-profile-cover-tools-heading">
+                    <div>
+                      <h3>Profile Header Cover Banner</h3>
+                      <p>Select a preset fellowship theme or upload a custom cover banner.</p>
+                    </div>
+                    <div className="fni-profile-cover-actions">
+                      <label className="fni-profile-outline-action">
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Custom Cover Banner</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          disabled={isUploadingBanner}
+                          onChange={e => {
+                            const selected = e.target.files?.[0];
+                            if (selected) handleBannerUpload(selected);
+                            e.currentTarget.value = '';
+                          }}
+                        />
+                      </label>
+                      <button type="button" className="fni-profile-outline-action" onClick={handleRemoveBanner} disabled={isUploadingBanner}>
+                        <RefreshCw className="w-4 h-4" /><span>Reset banner</span>
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Read-only Cell Association */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-[#26384d]">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Assigned Fellowship Cell</span>
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <div className="text-xs font-black text-[#142B4A] dark:text-white">
-                  {assignedCellTitle}
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Cell assignments are locked. Contact FNI Administration if your cell fellowship changes.
-                </p>
-              </div>
+                  <div className="fni-profile-presets" role="group" aria-label="Preset fellowship themes">
+                    {PRESET_PROFILE_BANNERS.map((banner, index) => (
+                      <button
+                        key={banner.id}
+                        type="button"
+                        onClick={() => handleSelectPresetBanner(banner.url)}
+                        className={profileBanner === banner.url ? 'is-selected' : ''}
+                        style={{ background: banner.url }}
+                        aria-label={`Select ${banner.name} cover theme`}
+                        title={banner.name}
+                      >
+                        {profileBanner === banner.url && <Check className="w-4 h-4" />}
+                      </button>
+                    ))}
+                  </div>
 
-              {/* Read-only Account Role */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-[#26384d]">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Account Designation & Status</span>
-                  <Shield className="w-3.5 h-3.5 text-[#C6A45A]" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-[#142B4A] dark:text-white">
-                    {roleDisplayTitle}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
-                    {accountStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isSavingProfile}
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isSavingProfile ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-[#C6A45A]" />
-                      <span>Saving Profile to Supabase...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 text-[#C6A45A]" />
-                      <span>Save Profile Changes</span>
-                    </>
+                  {isUploadingBanner && (
+                    <div className="fni-profile-feedback is-neutral" role="status">
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Uploading custom cover banner to Supabase Storage…
+                    </div>
                   )}
-                </button>
+                  {bannerNotice && (
+                    <div className="fni-profile-feedback is-success" role="status">
+                      <CheckCircle2 className="w-4 h-4" />{bannerNotice}
+                    </div>
+                  )}
+                </div>
               </div>
-            </form>
+            </section>
+
+            <div className="fni-profile-information-grid">
+              <section aria-label="Personal Information" className="fni-profile-information-card">
+                <div className="fni-profile-card-heading">
+                  <span><User className="w-5 h-5" /></span>
+                  <div><h2>Personal Information</h2><p>Editable contact and identity fields</p></div>
+                </div>
+                <form onSubmit={handleSaveProfile} className="fni-profile-personal-form">
+                  <div>
+                    <label htmlFor="fni-profile-full-name">Full Name <span>*</span></label>
+                    <input id="fni-profile-full-name" type="text" value={fullName} onChange={e => setFullName(e.target.value)} required maxLength={120} placeholder="Enter your full name" />
+                  </div>
+                  <div>
+                    <label htmlFor="fni-profile-phone">Phone Number</label>
+                    <input id="fni-profile-phone" type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="Enter your phone number" />
+                  </div>
+                  <div>
+                    <label htmlFor="fni-profile-email">Email Address</label>
+                    <input id="fni-profile-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email address" />
+                    <p className="fni-profile-field-note"><Mail className="w-4 h-4" /> Changing your email address triggers a verification link through Supabase Auth.</p>
+                  </div>
+                  <button type="submit" disabled={isSavingProfile} className="fni-profile-save-action">
+                    {isSavingProfile ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving profile…</> : <><Save className="w-4 h-4" /> Save Profile Changes</>}
+                  </button>
+                </form>
+              </section>
+
+              <div className="fni-profile-readonly-column">
+                <section aria-label="Assigned Fellowship Cell" className="fni-profile-information-card">
+                  <div className="fni-profile-readonly-heading">
+                    <div><h2>Assigned Fellowship Cell</h2><p>Your current ministry assignment</p></div>
+                    <span><Lock className="w-4 h-4" /> Locked</span>
+                  </div>
+                  <div className="fni-profile-readonly-value">
+                    <span>Fellowship cell</span><strong>{assignedCellTitle}</strong>
+                  </div>
+                  <p className="fni-profile-readonly-note">Cell assignments are locked to your account. Contact FNI Administration for changes.</p>
+                </section>
+
+                <section aria-label="Account Designation and Status" className="fni-profile-information-card">
+                  <div className="fni-profile-readonly-heading">
+                    <div><h2>Account Designation &amp; Status</h2><p>Managed by FNI Administration</p></div>
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div className="fni-profile-readonly-value">
+                    <span>Role / Designation</span><strong>{roleDisplayTitle}</strong>
+                  </div>
+                  <div className="fni-profile-readonly-value">
+                    <span>Account Status</span>
+                    <strong className={`fni-profile-status-text ${accountStatus.toLowerCase()}`}>{accountStatus}</strong>
+                  </div>
+                </section>
+              </div>
+            </div>
           </div>
         )}
-
+        
         {/* =========================================================================
             SECTION 2: PASSWORD & SECURITY (Requirement 2)
         ========================================================================== */}
