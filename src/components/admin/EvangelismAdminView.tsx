@@ -394,7 +394,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
       </section>
 
       {/* Reports Table */}
-      <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-xs overflow-hidden">
+      <div className="fni-evangelism-desktop-report bg-white rounded-2xl border border-[#E3E8EF] shadow-xs overflow-hidden">
         <div className="py-4 px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-[#182230]">
