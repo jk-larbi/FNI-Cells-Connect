@@ -34,6 +34,7 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
   const [cells, setCells] = useState<Cell[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,15 +63,19 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
 
   const loadData = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [historyData, cellList, profileList] = await Promise.all([
         CellLocationService.getLocationHistory(),
         CellService.getCells(),
         SupabaseService.getProfiles(),
       ]);
-      setRecords(historyData);
-      setCells(cellList);
-      setProfiles(profileList || []);
+      setRecords(Array.isArray(historyData) ? historyData : []);
+      setCells(Array.isArray(cellList) ? cellList : []);
+      setProfiles(Array.isArray(profileList) ? profileList : []);
+    } catch (err) {
+      console.error('Failed to load cell location history:', err);
+      setLoadError('We could not retrieve the location history from the server. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -183,6 +188,7 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
       await loadData();
     } catch (err) {
       console.error('Failed to delete location record:', err);
+      alert('The location record could not be deleted. Please try again.');
     }
   };
 
@@ -397,6 +403,17 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
           <div className="py-16 text-center text-xs text-[#667085]">
             <div className="w-8 h-8 border-2 border-[#142B4A] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             Loading cell location historical data...
+          </div>
+        ) : loadError ? (
+          <div role="alert" className="px-5 py-12 text-center">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-bold text-[#142B4A] dark:text-white">Location history unavailable</h3>
+            <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-[#667085] dark:text-slate-400">{loadError}</p>
+            <button type="button" onClick={() => void loadData()} className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#203D63]">
+              <History className="h-3.5 w-3.5" /> Try again
+            </button>
           </div>
         ) : filteredRecords.length === 0 ? (
           <div className="py-16 text-center text-[#667085]">
