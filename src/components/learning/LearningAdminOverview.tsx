@@ -1,13 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import {
-  AlertCircle,
   ArrowUpRight,
   Award,
   BarChart3,
   Bell,
   BookOpen,
   Calendar,
-  CheckCircle2,
   ChevronRight,
   Clock,
   Download,
