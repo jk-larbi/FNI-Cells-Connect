@@ -1303,10 +1303,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 });
               })()}
               {timeDimension === 'ytd' && [
-                { label: '2026 Annual Target', val: selectedMetric === 'souls' ? soulTarget.toLocaleString() : selectedMetric === 'attendance' ? 'Goal' : selectedMetric === 'offerings' ? 'Goal' : '100%', delta: 'Kingdom Benchmark' },
-                { label: '2026 YTD Harvested', val: currentVal, delta: currentSouls > 0 ? 'Live verified' : 'Awaiting returns' },
+                { label: `${new Date().getFullYear()} Annual Soul Target`, val: selectedMetric === 'souls' ? soulTarget.toLocaleString() : 'Not configured', delta: selectedMetric === 'souls' ? 'Kingdom benchmark' : 'No target configured for this metric' },
+                { label: `${new Date().getFullYear()} YTD Recorded`, val: currentVal, delta: selectedMetric === 'souls' ? (currentSouls > 0 ? 'Approved outreach reports' : 'Awaiting approved returns') : 'Based on submitted records' },
                 { label: 'Registered Cells', val: stats.totalCells.toString(), delta: 'Active Directory' },
-                { label: 'Remaining to Target', val: Math.max(0, soulTarget - (typeof currentSouls === 'number' ? currentSouls : 0)).toLocaleString(), delta: 'Goal Target' },
+                { label: 'Remaining Soul Target', val: selectedMetric === 'souls' ? Math.max(0, soulTarget - (typeof currentSouls === 'number' ? currentSouls : 0)).toLocaleString() : '—', delta: selectedMetric === 'souls' ? 'Goal remaining' : 'Only available for souls won' },
               ].map((item, idx) => (
                 <div key={idx} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
                   <span className="text-[11px] font-semibold text-slate-500 block">{item.label}</span>
