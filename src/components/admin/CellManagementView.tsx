@@ -259,7 +259,18 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete Selected ({selectedCellIds.length})
             </button>
           )}
-          <button type="button" disabled={!cells.length || isDeletingCells} onClick={() => handleArchiveCells(cells.map(cell => cell.id), 'all registered cells')} className="px-3 py-2 rounded-xl border border-amber-200 text-amber-800 text-xs font-bold hover:bg-amber-50 disabled:opacity-50"><Archive className="w-3.5 h-3.5 inline mr-1" /> Clear All (Keep Records)</button>
+          <details className="relative">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border border-[#E3E8EF] bg-white px-3 py-2 text-xs font-bold text-[#667085] hover:bg-[#F8FAFC] [&::-webkit-details-marker]:hidden">
+              <Filter className="h-3.5 w-3.5" /> Directory tools
+            </summary>
+            <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-[#E3E8EF] bg-white p-2 shadow-xl">
+              <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#667085]">Maintenance</p>
+              <button type="button" disabled={!cells.length || isDeletingCells} onClick={() => handleArchiveCells(cells.map(cell => cell.id), 'all registered cells')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-bold text-amber-800 hover:bg-amber-50 disabled:opacity-50">
+                <Archive className="h-3.5 w-3.5 shrink-0" /> Archive all cells (keep records)
+              </button>
+              <p className="px-2 pb-1 pt-2 text-[10px] leading-relaxed text-[#667085]">Archived cells are removed from the active directory. Historical records are retained.</p>
+            </div>
+          </details>
           <button
             onClick={() => {
               setEditingCell({
@@ -269,7 +280,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               });
               setIsEditModalOpen(true);
             }}
-            className="px-3.5 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-1.5"
+            className="min-h-10 px-3.5 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4 text-[#C6A45A]" />
             <span>Register New Cell</span>
