@@ -12,10 +12,11 @@ interface SectionHubProps {
   title: string;
   description: string;
   items: SectionHubItem[];
+  className?: string;
 }
 
-export const SectionHub: React.FC<SectionHubProps> = ({ title, description, items }) => (
-  <section className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-6">
+export const SectionHub: React.FC<SectionHubProps> = ({ title, description, items, className = '' }) => (
+  <section className={`mx-auto w-full max-w-5xl space-y-4 sm:space-y-6 ${className}`.trim()}>
     <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-white/10 dark:bg-[#111d2b] sm:px-6 sm:py-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#A88743]">FNI CELLS CONNECT</p>
       <h1 className="mt-1 text-xl font-extrabold tracking-tight text-[#142B4A] dark:text-white sm:text-2xl">{title}</h1>
