@@ -61,6 +61,9 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   const [adminPushNotice, setAdminPushNotice] = useState<string | null>(null);
 
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
+  const [settingsLoadError, setSettingsLoadError] = useState<string | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [settingsLoadAttempt, setSettingsLoadAttempt] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [activeTab, setActiveTab] = useState<'system' | 'security' | 'audit'>('system');
 
@@ -115,31 +118,47 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   }, Boolean(showTargetConfigModal || activeTab !== 'system'));
 
   useEffect(() => {
+    let isActive = true;
     async function load() {
-      const [s, logs, dl] = await Promise.all([
-        SettingsService.getSettings(),
-        ReportService.getAuditLogs(),
-        DeadlineService.getDeadlineSettings(),
-      ]);
-      setSettings(s);
-      setVision(s.vision);
-      setMission(s.mission);
-      setTarget(s.annualSoulWinningTarget);
-      setDeadline(s.weeklyDeadline);
-      setAuditLogs(logs);
+      setIsLoadingSettings(true);
+      setSettingsLoadError(null);
+      try {
+        const [s, logs, dl] = await Promise.all([
+          SettingsService.getSettings(),
+          ReportService.getAuditLogs(),
+          DeadlineService.getDeadlineSettings(),
+        ]);
+        const { data: emailSettings, error: emailError } = await supabase
+          .from('admin_notification_settings')
+          .select('notification_email')
+          .eq('id', 1)
+          .maybeSingle();
+        if (emailError) throw emailError;
+        if (!isActive) return;
 
-      setMeetingDay(dl.meeting.dayOfWeek);
-      setMeetingTime(dl.meeting.deadlineTime);
-      setMeetingReminders(dl.meeting.remindersEnabled);
-      setEvangDay(dl.evangelism.dayOfWeek);
-      setEvangTime(dl.evangelism.deadlineTime);
-      setEvangReminders(dl.evangelism.remindersEnabled);
-
-      const { data: emailSettings } = await supabase.from('admin_notification_settings').select('notification_email').eq('id', 1).maybeSingle();
-      setNotificationEmail(emailSettings?.notification_email || '');
+        setSettings(s);
+        setVision(s.vision);
+        setMission(s.mission);
+        setTarget(s.annualSoulWinningTarget);
+        setDeadline(s.weeklyDeadline);
+        setAuditLogs(logs);
+        setMeetingDay(dl.meeting.dayOfWeek);
+        setMeetingTime(dl.meeting.deadlineTime);
+        setMeetingReminders(dl.meeting.remindersEnabled);
+        setEvangDay(dl.evangelism.dayOfWeek);
+        setEvangTime(dl.evangelism.deadlineTime);
+        setEvangReminders(dl.evangelism.remindersEnabled);
+        setNotificationEmail(emailSettings?.notification_email || '');
+      } catch (error) {
+        console.error('Could not load administrator settings:', error);
+        if (isActive) setSettingsLoadError('Administrator settings could not be loaded. Check your connection and try again.');
+      } finally {
+        if (isActive) setIsLoadingSettings(false);
+      }
     }
-    load();
-  }, []);
+    void load();
+    return () => { isActive = false; };
+  }, [settingsLoadAttempt]);
 
   const handleSaveSystemSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,6 +289,13 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           Configure ministry vision, soul targets, Sunday deadline parameters, security, and audit logs.
         </p>
       </div>
+
+      {(settingsLoadError || isLoadingSettings) && (
+        <div className={`flex flex-col gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center sm:justify-between ${settingsLoadError ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-blue-200 bg-blue-50 text-blue-800'}`} role={settingsLoadError ? 'alert' : 'status'} aria-live="polite">
+          <span>{settingsLoadError || 'Loading administrator settings…'}</span>
+          {settingsLoadError && <button type="button" onClick={() => setSettingsLoadAttempt(value => value + 1)} disabled={isLoadingSettings} className="min-h-9 rounded-lg border border-rose-300 px-3 font-bold disabled:opacity-50">Retry loading settings</button>}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="bg-[#E3E8EF] dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold text-[#667085] dark:text-slate-400 w-full max-w-md overflow-x-auto">
