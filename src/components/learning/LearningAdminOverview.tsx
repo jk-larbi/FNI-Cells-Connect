@@ -12,7 +12,6 @@ import {
   FileCheck2,
   FileText,
   Filter,
-  GraduationCap,
   Search,
   Send,
   Users,
@@ -136,9 +135,6 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
     ...rangeSubmissions.map(item => item.tutor_id),
     ...rangeAttempts.map(item => item.tutor_id),
   ]).size;
-  const participationRate = activeTutorsCount > 0
-    ? Math.min(100, Math.round((uniqueParticipants / activeTutorsCount) * 100))
-    : null;
   const completedTaskKeys = new Set([
     ...rangeSubmissions.map(item => `${item.tutor_id}:assignment:${item.assignment_id}`),
     ...rangeAttempts
