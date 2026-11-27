@@ -262,5 +262,5 @@ export const LearningPortalView: React.FC<LearningPortalViewProps> = ({
         </main>
       </div>
     </div>
-
+  );
 };
