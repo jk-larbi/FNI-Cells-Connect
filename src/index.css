@@ -2410,3 +2410,34 @@ html.dark .fni-chat-composer textarea:focus-visible {
     padding-top: 1.25rem !important;
   }
 }
+
+.fni-admin-stitch-shell aside [class*="bg-[#142B4A]"] {
+  background: #354863 !important;
+  color: #FFFFFF !important;
+}
+.fni-admin-stitch-shell aside [class*="text-slate-600"],
+.fni-admin-stitch-shell aside [class*="text-slate-500"],
+.fni-admin-stitch-shell aside [class*="text-slate-400"] {
+  color: #DCE3EC !important;
+}
+.fni-admin-stitch-shell aside [class*="border-slate-200"] {
+  border-color: rgba(255,255,255,.14) !important;
+}
+.fni-admin-stitch-shell header.sticky button {
+  border-color: var(--fni-stitch-border) !important;
+  box-shadow: none !important;
+}
+.fni-admin-stitch-shell header.sticky button[aria-label="Open left navigation menu"] {
+  background: var(--fni-stitch-primary) !important;
+  color: #FFFFFF !important;
+}
+.fni-admin-stitch-shell header.sticky button[title="Notifications & Dispatches"] {
+  color: var(--fni-stitch-primary) !important;
+  background: #FFFFFF !important;
+}
+.fni-admin-stitch-shell .mobile-bottom-nav {
+  background: #FFFFFF !important;
+  border-color: var(--fni-stitch-border) !important;
+  backdrop-filter: none !important;
+  box-shadow: 0 -2px 10px rgba(20,40,66,.05) !important;
+}
