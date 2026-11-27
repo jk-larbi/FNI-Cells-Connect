@@ -2441,3 +2441,15 @@ html.dark .fni-chat-composer textarea:focus-visible {
   backdrop-filter: none !important;
   box-shadow: 0 -2px 10px rgba(20,40,66,.05) !important;
 }
+
+.fni-admin-stitch-shell .mobile-bottom-nav button {
+  color: #5A6B7C !important;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .mobile-bottom-nav button[aria-current="page"] {
+  color: #142842 !important;
+}
+.fni-admin-stitch-shell .mobile-bottom-nav button[aria-current="page"] > span:first-child {
+  background: #E4ECF7 !important;
+  color: #142842 !important;
+}
