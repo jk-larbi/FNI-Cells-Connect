@@ -1,0 +1,169 @@
+.fni-analytics-stitch-page{display:flex;flex-direction:column;gap:20px;width:100%;min-width:0;color:#142842;font-family:"Source Sans 3",sans-serif}
+.fni-analytics-stitch-page h1,.fni-analytics-stitch-page h2,.fni-analytics-stitch-page h3,.fni-analytics-stitch-page strong{font-family:"Libre Franklin",sans-serif}
+.fni-an-header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding-bottom:18px;border-bottom:1px solid #DCE3EC}
+.fni-an-eyebrow{margin:0 0 5px;color:#8E6C23;font:700 9px "Libre Franklin",sans-serif;letter-spacing:.16em}
+.fni-an-header h1{margin:0;color:#142842;font:700 clamp(24px,2.2vw,32px)/1.2 "Libre Franklin",sans-serif;letter-spacing:-.03em}
+.fni-an-header>div:first-child>p:last-child{margin:6px 0 0;color:#5A6B7C;font-size:13px}
+.fni-an-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.fni-an-header-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:8px 13px;border:1px solid #DCE3EC;border-radius:999px;background:#fff;color:#354863;font:600 10px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-header-actions button:hover{background:#EEF2F7}
+.fni-an-header-actions button.is-primary{border-color:#142842;background:#142842;color:#fff}
+.fni-an-live-state{display:inline-flex;align-items:center;gap:7px;margin-right:5px;color:#5A6B7C;font-size:10px;white-space:nowrap}
+.fni-an-live-state span{width:7px;height:7px;border-radius:50%;background:#1F6E43}
+.fni-an-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border:1px solid #DCE3EC;border-radius:9px;background:#fff}
+.fni-an-filters>label{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 10px;border:1px solid #DCE3EC;border-radius:7px;background:#fff;color:#68798B}
+.fni-an-filters .fni-an-search{flex:1 1 300px;min-width:220px}
+.fni-an-filters input,.fni-an-filters select{width:100%;min-width:0;min-height:34px;border:0;outline:0;background:transparent;color:#354863;font:12px "Source Sans 3",sans-serif}
+.fni-an-filters select{min-width:130px;cursor:pointer}
+.fni-an-search button{display:grid;place-items:center;width:25px;height:25px;border:0;border-radius:50%;background:#EEF2F7;color:#5A6B7C;cursor:pointer}
+.fni-an-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.fni-an-kpi{display:flex;min-width:0;min-height:116px;flex-direction:column;justify-content:space-between;gap:8px;padding:15px;border:1px solid #DCE3EC;border-radius:9px;background:#fff}
+.fni-an-kpi-label{display:flex;align-items:center;justify-content:space-between;gap:7px;color:#5A6B7C;font:600 10px "Libre Franklin",sans-serif}
+.fni-an-kpi-label svg{flex:0 0 auto;color:#8E6C23}
+.fni-an-kpi>strong{color:#142842;font:700 26px/1 "Libre Franklin",sans-serif;font-variant-numeric:tabular-nums}
+.fni-an-kpi>small{color:#68798B;font-size:10px;line-height:1.4}
+.fni-an-section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:15px}
+.fni-an-section-heading>div:first-child{display:flex;align-items:center;gap:11px;min-width:0}
+.fni-an-icon{display:grid;place-items:center;width:35px;height:35px;flex:0 0 35px;border-radius:8px;background:#E4ECF7;color:#142842}
+.fni-an-section-heading h2{margin:0;color:#142842;font:600 14px/1.3 "Libre Franklin",sans-serif}
+.fni-an-section-heading p{margin:4px 0 0;color:#5A6B7C;font-size:11px;line-height:1.45}
+.fni-an-link{display:inline-flex;align-items:center;gap:5px;padding:5px 0;border:0;background:transparent;color:#8E6C23;font:600 10px "Libre Franklin",sans-serif;white-space:nowrap;cursor:pointer}
+.fni-an-link:hover{text-decoration:underline}
+.fni-an-attendance,.fni-an-cell-performance,.fni-an-panel,.fni-an-growth,.fni-an-insights,.fni-an-activity{min-width:0;padding:19px;border:1px solid #DCE3EC;border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(20,40,66,.035)}
+.fni-an-toggle,.fni-an-activity-tabs{display:inline-flex;align-items:center;gap:3px;padding:3px;border-radius:999px;background:#EEF2F7}
+.fni-an-toggle button,.fni-an-activity-tabs button{min-height:29px;padding:6px 13px;border:0;border-radius:999px;background:transparent;color:#5A6B7C;font:600 10px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-toggle button.is-active,.fni-an-activity-tabs button.is-active{background:#fff;color:#142842;box-shadow:0 1px 2px rgba(20,40,66,.08)}
+.fni-an-attendance-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.8fr);gap:15px}
+.fni-an-chart-panel,.fni-an-distribution-panel{min-width:0;padding:15px;border:1px solid #DCE3EC;border-radius:8px;background:#F7F9FC}
+.fni-an-chart-title,.fni-an-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.fni-an-chart-title h3,.fni-an-panel-heading h3{margin:0;color:#142842;font:600 12px "Libre Franklin",sans-serif}
+.fni-an-chart-title p{margin:3px 0 0;color:#68798B;font-size:10px}
+.fni-an-chart-title>strong{color:#142842;font:700 20px "Libre Franklin",sans-serif;font-variant-numeric:tabular-nums}
+.fni-an-chart{width:100%;height:240px;min-width:0}
+.fni-an-panel-heading select{min-height:32px;padding:5px 26px 5px 9px;border:1px solid #DCE3EC;border-radius:6px;background:#fff;color:#354863;font:10px "Source Sans 3",sans-serif}
+.fni-an-distribution-list{display:flex;flex-direction:column;gap:13px;padding-top:7px}
+.fni-an-distribution-list>div{display:grid;grid-template-columns:minmax(80px,1fr) minmax(70px,1.4fr) auto;align-items:center;gap:9px;color:#5A6B7C;font-size:10px}
+.fni-an-distribution-list>div>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fni-an-distribution-list>div>div{height:8px;overflow:hidden;border-radius:999px;background:#E5EAF0}
+.fni-an-distribution-list i{display:block;height:100%;border-radius:999px;background:#8E6C23}
+.fni-an-distribution-list strong{color:#142842;font:600 10px "Libre Franklin",sans-serif;font-variant-numeric:tabular-nums}
+.fni-an-month-pills{display:flex;align-items:center;justify-content:space-between;gap:3px;overflow-x:auto;padding:8px 0 2px;border-top:1px solid #DCE3EC}
+.fni-an-month-pills button{padding:4px 7px;border:0;border-radius:5px;background:transparent;color:#68798B;font:600 9px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-month-pills button.is-active{background:#142842;color:#fff}
+.fni-an-chart-footer{display:flex;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #DCE3EC;color:#68798B;font-size:10px}
+.fni-an-chart-footer strong{color:#142842}
+.fni-an-table-wrap{width:100%;overflow-x:auto}
+.fni-an-table-wrap table{width:100%;border-collapse:collapse;text-align:left;font-size:10px}
+.fni-an-table-wrap th{padding:10px 11px;border-bottom:1px solid #DCE3EC;background:#F7F9FC;color:#5A6B7C;font:600 9px "Libre Franklin",sans-serif;white-space:nowrap}
+.fni-an-table-wrap td{padding:11px;border-bottom:1px solid #EEF2F7;color:#354863;white-space:nowrap}
+.fni-an-table-wrap td:first-child{min-width:110px;white-space:normal}
+.fni-an-table-wrap td strong{display:block;color:#142842;font-size:10px}
+.fni-an-table-wrap td small{display:block;margin-top:3px;color:#7B8795;font-size:9px}
+.fni-an-status{display:inline-flex;align-items:center;padding:4px 7px;border:1px solid #DCE3EC;border-radius:999px;background:#EEF2F7;color:#5A6B7C;font:600 9px "Libre Franklin",sans-serif;white-space:nowrap}
+.fni-an-status.is-success{border-color:#C6E8D2;background:#DCF2E5;color:#1F6E43}
+.fni-an-status.is-warning{border-color:#E9D9AC;background:#FDF8E8;color:#8E6C23}
+.fni-an-status.is-danger{border-color:#FFDAD6;background:#FFDAD6;color:#BA1A1A}
+.fni-an-status.is-neutral{background:#EEF2F7;color:#5A6B7C}
+.fni-an-compliance{display:flex;align-items:center;gap:7px}
+.fni-an-compliance>span,.fni-an-progress>span{display:block;width:62px;height:6px;overflow:hidden;border-radius:999px;background:#E5EAF0}
+.fni-an-compliance i,.fni-an-progress i{display:block;height:100%;border-radius:999px;background:#1F6E43}
+.fni-an-compliance strong{color:#354863;font-size:9px}
+.fni-an-venue-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px;padding-top:12px;border-top:1px solid #EEF2F7;color:#5A6B7C;font-size:10px}
+.fni-an-venue-strip>div,.fni-an-venue-strip button{display:inline-flex;align-items:center;gap:6px}
+.fni-an-venue-strip button{border:0;background:transparent;color:#8E6C23;font:600 10px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-venue-list{display:flex;gap:8px;overflow-x:auto;padding-top:10px}
+.fni-an-venue-list button{display:flex;align-items:center;gap:6px;min-width:0;padding:7px 9px;border:1px solid #DCE3EC;border-radius:7px;background:#fff;color:#354863;font-size:9px;white-space:nowrap;cursor:pointer}
+.fni-an-venue-list button svg{color:#8E6C23;flex:0 0 auto}
+.fni-an-venue-list button small{max-width:150px;overflow:hidden;color:#7B8795;text-overflow:ellipsis}
+.fni-an-selected-venue{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px;padding:8px 10px;border-radius:7px;background:#EEF2F7;color:#354863;font-size:10px}
+.fni-an-selected-venue button{margin-left:auto;border:0;background:transparent;color:#8E6C23;cursor:pointer}
+.fni-an-dual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.fni-an-panel{display:flex;flex-direction:column;gap:12px}
+.fni-an-report-total{display:flex;align-items:center;gap:12px;padding:12px;border-radius:7px;background:#F7F9FC}
+.fni-an-report-total>strong{color:#142842;font:700 24px "Libre Franklin",sans-serif}
+.fni-an-report-total>span{flex:1;color:#5A6B7C;font-size:10px}
+.fni-an-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.fni-an-stat-grid>div{display:flex;flex-direction:column;gap:5px;padding:11px;border:1px solid #DCE3EC;border-radius:7px;background:#fff}
+.fni-an-stat-grid span{color:#68798B;font-size:10px}
+.fni-an-stat-grid strong{color:#142842;font:600 17px "Libre Franklin",sans-serif;font-variant-numeric:tabular-nums}
+.fni-an-progress{display:flex;align-items:center;gap:9px;margin-top:auto;color:#5A6B7C;font-size:10px}
+.fni-an-progress>span{flex:1;width:auto;height:8px}
+.fni-an-progress i{background:#8E6C23}
+.fni-an-harvest-highlight{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fni-an-harvest-highlight>div{display:flex;flex-direction:column;gap:6px;padding:13px;border-radius:7px;background:#FDF8E8}
+.fni-an-harvest-highlight span{color:#73571E;font-size:10px}
+.fni-an-harvest-highlight strong{color:#142842;font:700 22px "Libre Franklin",sans-serif}
+.fni-an-panel-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:10px;border-top:1px solid #EEF2F7;color:#68798B;font-size:10px}
+.fni-an-panel-footer button{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:#8E6C23;font:600 10px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-growth-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fni-an-growth-grid>div{display:flex;flex-direction:column;gap:7px;padding:13px;border:1px solid #DCE3EC;border-radius:7px;background:#F7F9FC}
+.fni-an-growth-grid>div>span{color:#5A6B7C;font-size:10px}
+.fni-an-growth-grid>div>strong{color:#142842;font:700 21px "Libre Franklin",sans-serif}
+.fni-an-growth-grid>div>small{color:#68798B;font-size:9px}
+.fni-an-growth-grid .fni-an-target-card{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;background:#FDF8E8}
+.fni-an-target-card>div:first-child{display:flex;flex-direction:column;gap:5px}
+.fni-an-target-actions{display:flex;gap:7px;flex-wrap:wrap}
+.fni-an-target-actions button{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid #E9D9AC;border-radius:999px;background:#fff;color:#73571E;font:600 9px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-target-track{grid-column:1/-1;height:7px;overflow:hidden;border-radius:999px;background:#E9D9AC}
+.fni-an-target-track i{display:block;height:100%;border-radius:999px;background:#8E6C23}
+.fni-an-insight-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fni-an-insight-grid article{display:flex;flex-direction:column;gap:7px;padding:13px;border:1px solid #DCE3EC;border-radius:7px;background:#fff}
+.fni-an-insight-title{display:flex;align-items:center;gap:7px;color:#8E6C23}
+.fni-an-insight-title h3{margin:0;color:#142842;font:600 11px "Libre Franklin",sans-serif}
+.fni-an-insight-grid article>strong{color:#142842;font:700 16px "Libre Franklin",sans-serif}
+.fni-an-insight-grid article>p{margin:0;color:#68798B;font-size:9px;line-height:1.5}
+.fni-an-insight-grid article>button{display:inline-flex;align-items:center;gap:5px;margin-top:auto;border:0;background:transparent;color:#8E6C23;font:600 9px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-insight-grid .fni-an-insight-wide{grid-column:span 2;background:#F7F9FC}
+.fni-an-insight-wide ul{display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+.fni-an-insight-wide li{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-top:7px;border-top:1px solid #DCE3EC;font-size:9px}
+.fni-an-insight-wide li strong{color:#142842}
+.fni-an-insight-wide li span{color:#68798B;text-align:right}
+.fni-an-activity-tabs{margin-bottom:2px;align-self:flex-start}
+.fni-an-activity-list{display:flex;flex-direction:column}
+.fni-an-activity-list>div{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #EEF2F7}
+.fni-an-activity-list>div:first-child{border-top:0}
+.fni-an-activity-avatar{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#E4ECF7;color:#142842;font:600 10px "Libre Franklin",sans-serif}
+.fni-an-activity-list>div>div{flex:1;min-width:0}
+.fni-an-activity-list strong{display:block;color:#142842;font-size:10px}
+.fni-an-activity-list p{margin:3px 0;color:#5A6B7C;font-size:9px}
+.fni-an-activity-list small{color:#8A96A5;font-size:9px}
+.fni-an-leader-search{display:flex;align-items:center;gap:7px;max-width:320px;padding:0 10px;border:1px solid #DCE3EC;border-radius:7px;color:#7B8795}
+.fni-an-leader-search input{width:100%;min-height:34px;border:0;outline:0;color:#354863;font-size:10px}
+.fni-an-empty{display:grid;place-items:center;min-height:120px;padding:16px;color:#68798B;font-size:10px;text-align:center}
+@media(max-width:1120px){.fni-an-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.fni-an-insight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ .fni-analytics-stitch-page{gap:14px}
+ .fni-an-header{align-items:stretch;flex-direction:column;gap:12px;padding-bottom:14px}
+ .fni-an-header h1{font-size:24px}
+ .fni-an-header>div:first-child>p:last-child{font-size:12px}
+ .fni-an-header-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .fni-an-live-state{grid-column:1/-1}
+ .fni-an-header-actions button{min-height:36px;padding:7px 8px;font-size:9px}
+ .fni-an-filters{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:10px}
+ .fni-an-filters .fni-an-search{grid-column:1/-1;min-width:0}
+ .fni-an-filters>label{min-width:0;padding-inline:8px}
+ .fni-an-filters select{min-width:0;font-size:10px}
+ .fni-an-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .fni-an-kpi{min-height:98px;padding:12px}
+ .fni-an-kpi>strong{font-size:22px}
+ .fni-an-kpi-label{font-size:9px}
+ .fni-an-attendance,.fni-an-cell-performance,.fni-an-panel,.fni-an-growth,.fni-an-insights,.fni-an-activity{padding:14px}
+ .fni-an-section-heading{align-items:flex-start;flex-wrap:wrap;gap:8px}
+ .fni-an-section-heading h2{font-size:12px}
+ .fni-an-section-heading p{font-size:10px}
+ .fni-an-attendance-grid,.fni-an-dual-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+ .fni-an-chart{height:210px}
+ .fni-an-chart-title>strong{font-size:17px}
+ .fni-an-chart-footer{flex-direction:column;gap:5px}
+ .fni-an-distribution-list{gap:10px}
+ .fni-an-table-wrap table{min-width:680px}
+ .fni-an-growth-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fni-an-growth-grid .fni-an-target-card{grid-template-columns:minmax(0,1fr)}
+ .fni-an-target-actions{justify-content:flex-start}
+ .fni-an-insight-grid{grid-template-columns:1fr 1fr;gap:8px}
+ .fni-an-insight-grid .fni-an-insight-wide{grid-column:1/-1}
+ .fni-an-insight-wide li{flex-direction:column;gap:3px}
+ .fni-an-insight-wide li span{text-align:left}
+ .fni-an-activity-list>div{align-items:flex-start}
+ .fni-an-activity-list .fni-an-status{display:none}
+}
