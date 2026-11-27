@@ -854,12 +854,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               <div className="min-w-0 space-y-5">
                 <CellMembersPanel cellId={selectedCell.id} canEdit={false} />
                 <CellLeadershipPanel
-              cell={selectedCell}
-              onUpdated={async () => {
-                await loadCells();
-                const refreshed = await CellService.getCellById(selectedCell.id);
-                if (refreshed) setSelectedCell(refreshed);
-              }}
+                  cell={selectedCell}
+                  onUpdated={async () => {
+                    await loadCells();
+                    const refreshed = await CellService.getCellById(selectedCell.id);
+                    if (refreshed) setSelectedCell(refreshed);
+                  }}
                 />
               </div>
               <div className="min-w-0 space-y-5">
@@ -925,6 +925,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   ))}
                 </div>
               )}
+              </div>
               </div>
             </div>
           </div>
