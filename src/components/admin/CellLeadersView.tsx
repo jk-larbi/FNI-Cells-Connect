@@ -179,7 +179,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
           ) : filteredLeaders.map(leader => {
             const leaderM = meetingReports.filter(m => m.tutorUid === leader.id || m.cellName === leader.cell_name);
             const onTimeCount = leaderM.filter(m => !m.late).length;
-            const consistency = leaderM.length > 0 ? Math.round((onTimeCount / leaderM.length) * 100) : 100;
+            const consistency = leaderM.length > 0 ? Math.round((onTimeCount / leaderM.length) * 100) : null;
             return (
               <button
                 key={leader.id}
@@ -204,8 +204,8 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
                     <span className={`w-1.5 h-1.5 rounded-full ${leader.is_active ? 'bg-[#23845B]' : 'bg-[#C74646]'}`} />
                     {leader.is_active ? 'Active' : 'Suspended'}
                   </span>
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${consistency >= 80 ? 'bg-emerald-50 text-[#23845B]' : 'bg-amber-50 text-[#D99A32]'}`}>
-                    {consistency}% on-time
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${consistency !== null && consistency >= 80 ? 'bg-emerald-50 text-[#23845B]' : 'bg-amber-50 text-[#D99A32]'}`}>
+                    {consistency === null ? 'No reports yet' : `${consistency}% on-time`}
                   </span>
                 </div>
                 <div className="text-[11px] font-semibold text-sky-700 mt-3">View leader profile and submissions</div>
@@ -243,7 +243,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
                 filteredLeaders.map(leader => {
                   const leaderM = meetingReports.filter(m => m.tutorUid === leader.id || m.cellName === leader.cell_name);
                   const onTimeCount = leaderM.filter(m => !m.late).length;
-                  const consistency = leaderM.length > 0 ? Math.round((onTimeCount / leaderM.length) * 100) : 100;
+                  const consistency = leaderM.length > 0 ? Math.round((onTimeCount / leaderM.length) * 100) : null;
                   const isSuspended = !leader.is_active;
 
                   return (
@@ -318,7 +318,9 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
                       </td>
 
                       <td className="py-4 px-4 whitespace-nowrap">
-                        {consistency >= 80 ? (
+                        {consistency === null ? (
+                          <span className="font-medium text-[#667085]">No reports yet</span>
+                        ) : consistency >= 80 ? (
                           <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
                             <span className="w-2 h-2 rounded-full bg-[#23845B]" />
                             {consistency}% On-Time
