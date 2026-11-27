@@ -942,7 +942,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                         onError={event => { event.currentTarget.style.display = 'none'; }}
                       />
                     )}
-                    <span className="fni-profile-avatar-status" aria-label={accountStatus}>{accountStatus === 'Active' ? ' ' : null}</span>
+                    <span className={`fni-profile-avatar-status ${accountStatus === 'Active' ? 'is-active' : accountStatus === 'Pending' ? 'is-pending' : 'is-suspended'}`} aria-hidden="true" />
                   </div>
                   <div className="fni-profile-identity-copy">
                     <h2>{currentUser?.full_name || 'Signed-in Member'}</h2>
