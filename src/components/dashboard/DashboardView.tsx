@@ -7,7 +7,7 @@ import { ReportService } from '../../services/reportService';
 import { CellService } from '../../services/cellService';
 import { SettingsService, DEFAULT_SETTINGS } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
-import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics, CellPerformanceRecord } from '../../types';
+import { DashboardStats, SystemSettings, UnifiedReportItem, SoulTargetMetrics, CellPerformanceRecord, CellMeetingReport } from '../../types';
 import { getCurrentDeadlineInfo, formatLiveSubmissionTracking } from '../../utils/deadlineUtil';
 import {
   Users,
@@ -57,6 +57,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [recentQueue, setRecentQueue] = useState<UnifiedReportItem[]>([]);
   const [cellPerformance, setCellPerformance] = useState<CellPerformanceRecord[]>([]);
+  const [weeklyAttendance, setWeeklyAttendance] = useState<number | null>(null);
+  const [attendanceTrend, setAttendanceTrend] = useState<Array<{ label: string; attendance: number; newMembers: number }>>([]);
   const [soulMetrics, setSoulMetrics] = useState<SoulTargetMetrics | null>(null);
   const [showSoulModal, setShowSoulModal] = useState(false);
   const [showTargetConfigModal, setShowTargetConfigModal] = useState(false);
@@ -128,15 +130,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const loadData = async (showLoader = true) => {
     try {
       if (showLoader) setIsLoading(true);
-      const [dashStats, systemSettings, queue, sMetrics, cPerf, activeCells] = await Promise.all([
+      const [dashStats, systemSettings, queue, sMetrics, cPerf, activeCells, meetingReports] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
         ReportService.getUnifiedReviewQueue(),
         SoulTargetService.calculateMetrics(),
         AnalyticsService.getCellPerformance(),
         CellService.getActiveCells(),
+        ReportService.getCellMeetingReports(),
       ]);
-      const activeCellIds = new Set(activeCells.map(cell => cell.id));
+      const activeCellIds = new Set(activeCells.flatMap(cell => [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))));
+      const activeMeetingReports = (meetingReports as CellMeetingReport[]).filter(report => activeCellIds.has(report.cellId));
+      const weekStart = (date: Date) => {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+        return start;
+      };
+      const currentWeekStart = weekStart(new Date());
+      const sixWeekTrend = Array.from({ length: 6 }, (_, index) => {
+        const start = new Date(currentWeekStart);
+        start.setDate(start.getDate() - (5 - index) * 7);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 7);
+        const reports = activeMeetingReports.filter(report => {
+          const meetingDate = new Date(report.meetingDate);
+          return !Number.isNaN(meetingDate.getTime()) && meetingDate >= start && meetingDate < end;
+        });
+        return {
+          label: start.toLocaleDateString('en-GH', { day: '2-digit', month: 'short' }),
+          attendance: reports.reduce((sum, report) => sum + (Number(report.attendance) || 0), 0),
+          newMembers: reports.reduce((sum, report) => sum + (Number(report.newMembers) || 0), 0),
+        };
+      });
+      setAttendanceTrend(sixWeekTrend);
+      setWeeklyAttendance(sixWeekTrend[5].attendance);
       setStats(dashStats);
       setSettings(systemSettings);
       setRecentQueue(queue.filter(report => activeCellIds.has(report.cellId)).slice(0, 7));
@@ -204,83 +232,124 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end sm:justify-between gap-3 sm:gap-4">
+      {/* Figma-led ministry overview — all figures are supplied by the live services above. */}
+      <header className="space-y-3">
         <div>
-          <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#A88743]">Forerunners Network International</p>
-          <h1 className="text-xl sm:text-2xl font-black text-[#142B4A] tracking-tight">
-            Ministry overview
-          </h1>
-          <p className="mt-1 text-xs text-[#667085]">
-            A clear view of report decisions, cell activity and leadership.
-          </p>
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#84672D]">FNI · Cells Connect</p>
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-[#142B4A] sm:text-3xl">Ministry overview</h1>
+          <p className="mt-1 text-sm text-[#697586]">One network. One shared mission.</p>
         </div>
-        <div className="flex items-center gap-2 text-[11px] font-semibold text-[#667085]">
-          <Calendar className="h-4 w-4 text-[#A88743]" />
-          <span>{today.toLocaleDateString('en-GH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+        <div className="flex items-center gap-2 text-xs font-medium text-[#172B45]">
+          <Calendar className="h-4 w-4 text-[#697586]" />
+          <span>{today.toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
-      </div>
+      </header>
 
-      {/* Premium welcome panel — uses live account context and existing navigation only. */}
-      <section className="relative isolate overflow-hidden rounded-2xl border border-[#203D63] bg-[#142B4A] px-4 py-5 text-white shadow-sm sm:px-6 sm:py-6">
-        <div className="pointer-events-none absolute -right-12 -top-20 h-56 w-56 rounded-full border border-white/10" />
-        <div className="pointer-events-none absolute -right-2 -top-12 h-36 w-36 rounded-full border border-[#C6A45A]/25" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#D9BD7C]">Administrator workspace</p>
-            <h2 className="mt-1 text-lg font-bold tracking-tight sm:text-xl">Welcome back, {(currentUser?.full_name || 'Administrator').trim().split(' ')[0]}.</h2>
-            <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-white/75">Keep ministry operations moving. Review submissions, support cell leaders and stay close to the work happening across FNI.</p>
-          </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[176px]">
-            <button type="button" onClick={() => onNavigateToTab('report-review')} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#C6A45A] px-4 py-2.5 text-xs font-bold text-[#142B4A] transition-colors hover:bg-[#D8BB79] focus:outline-none focus:ring-2 focus:ring-white/70">
-              <FileCheck className="h-4 w-4" /> Review reports <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-            <button type="button" onClick={() => onNavigateToTab('cell-management')} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50">
-              <Building className="h-4 w-4" /> Open cell groups
-            </button>
-          </div>
+      <section className="overflow-hidden rounded-2xl bg-[#142B4A] p-4 text-white shadow-sm sm:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#DDC58C]">Your action centre</p>
+        <h2 className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">
+          {stats.awaitingReviewCount.toLocaleString()} {stats.awaitingReviewCount === 1 ? 'report awaits' : 'reports await'} review
+        </h2>
+        <p className="mt-1 text-xs text-[#CCD6E2]">
+          {stats.missingCellsCount.toLocaleString()} {stats.missingCellsCount === 1 ? 'cell has' : 'cells have'} not submitted a meeting report in the current reporting data.
+        </p>
+        <button type="button" onClick={() => onNavigateToTab('report-review')} className="mt-4 flex min-h-12 w-full items-center justify-between rounded-xl bg-[#C6A45A] px-4 text-sm font-bold text-[#142B4A] transition-colors hover:bg-[#D8BB79] focus:outline-none focus:ring-2 focus:ring-white/70">
+          Review reports <ArrowRight className="h-4 w-4" />
+        </button>
+      </section>
+
+      <section aria-label="Ministry totals" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <button type="button" onClick={() => onNavigateToTab('cell-management')} className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4 text-left transition-colors hover:border-[#C6A45A] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
+          <span className="block text-xs font-medium text-[#697586]">Registered cells</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{stats.totalCells.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#697586]">Active cell directory</span>
+        </button>
+        <button type="button" onClick={() => onNavigateToTab('cell-leaders')} className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4 text-left transition-colors hover:border-[#C6A45A] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
+          <span className="block text-xs font-medium text-[#697586]">Active cell leaders</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{stats.activeCellLeaders.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#697586]">Registered active leaders</span>
+        </button>
+        <div className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4">
+          <span className="block text-xs font-medium text-[#697586]">Weekly attendance</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{weeklyAttendance === null ? '—' : weeklyAttendance.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#697586]">Submitted meeting reports this week</span>
+        </div>
+        <div className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4">
+          <span className="block text-xs font-medium text-[#697586]">Souls won this year</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{currentSoulsWon.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#697586]">Approved conversions</span>
         </div>
       </section>
 
-      {/* Administrator action centre: make outstanding work the first thing visible. */}
-      <section className="overflow-hidden rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#E3E8EF] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div className="min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#A88743]">Your action centre</p>
-            <h2 className="mt-1 text-base font-extrabold tracking-tight text-[#142B4A]">What needs your attention?</h2>
-            <p className="mt-1 text-xs text-[#667085]">Start with pending decisions, then check cell reporting and leadership.</p>
+      <section aria-label="Attendance trend for the last six weeks" className="rounded-2xl border border-[#E4E9F0] bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-[#142B4A]">Growing in fellowship</h2>
+            <p className="mt-1 text-xs text-[#697586]">Weekly attendance across active cells · last 6 weeks</p>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigateToTab('report-review')}
-            className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#203D63] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/50 sm:w-auto"
-          >
-            <FileCheck className="h-4 w-4 text-[#C6A45A]" />
-            Review submissions
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
+          <span className="shrink-0 rounded-lg border border-[#E4E9F0] px-3 py-2 text-[10px] font-semibold text-[#142B4A]">Last 6 weeks</span>
         </div>
-        <div className="grid grid-cols-2 divide-x divide-y divide-[#E3E8EF] sm:grid-cols-4 sm:divide-y-0">
-          <button type="button" onClick={() => onNavigateToTab('report-review')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Awaiting review</span>
-            <span className="mt-1 block text-2xl font-black tabular-nums text-[#B7791F]">{stats.awaitingReviewCount}</span>
-            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">Reports to decide</span>
-          </button>
-          <button type="button" onClick={() => onNavigateToTab('cell-management')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Missing reports</span>
-            <span className="mt-1 block text-2xl font-black tabular-nums text-[#C74646]">{stats.missingCellsCount}</span>
-            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">Cells to follow up</span>
-          </button>
-          <button type="button" onClick={() => onNavigateToTab('cell-management')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Registered cells</span>
-            <span className="mt-1 block text-2xl font-black tabular-nums text-[#142B4A]">{stats.totalCells}</span>
-            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">Open cell directory</span>
-          </button>
-          <button type="button" onClick={() => onNavigateToTab('cell-leaders')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Active leaders</span>
-            <span className="mt-1 block text-2xl font-black tabular-nums text-[#23845B]">{stats.activeCellLeaders}</span>
-            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">View leadership</span>
-          </button>
+        {attendanceTrend.length > 0 && attendanceTrend.some(week => week.attendance > 0 || week.newMembers > 0) ? (
+          <div className="mt-5">
+            <div className="flex h-40 items-end justify-between gap-2 border-b border-[#E4E9F0] px-1">
+              {attendanceTrend.map(week => {
+                const max = Math.max(1, ...attendanceTrend.map(item => item.attendance));
+                const height = week.attendance > 0 ? Math.max(5, (week.attendance / max) * 100) : 0;
+                return (
+                  <div key={week.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                    <div className="flex h-full w-full items-end justify-center gap-1">
+                      <div title={`Attendance: ${week.attendance}`} className="w-5 max-w-[48%] rounded-t bg-[#142B4A] transition-all duration-500" style={{ height: `${height}%` }} />
+                      <div title={`New members: ${week.newMembers}`} className="w-2 max-w-[20%] rounded-t bg-[#C6A45A] transition-all duration-500" style={{ height: `${week.newMembers > 0 ? Math.max(4, (week.newMembers / Math.max(1, ...attendanceTrend.map(item => item.newMembers))) * 35) : 0}%` }} />
+                    </div>
+                    <span className="whitespace-nowrap text-[9px] text-[#697586]">{week.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-[10px] text-[#697586]">
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#142B4A]" /> Attendance</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#C6A45A]" /> New members</span>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 rounded-xl border border-dashed border-[#D7DEE8] bg-[#FAFBFC] px-4 py-8 text-center">
+            <p className="text-sm font-semibold text-[#142B4A]">No attendance trend available yet</p>
+            <p className="mt-1 text-xs text-[#697586]">Submitted meeting reports from the last six weeks will appear here.</p>
+          </div>
+        )}
+      </section>
+
+      <button type="button" onClick={() => setShowSoulModal(true)} className="w-full rounded-2xl border border-[#E4E9F0] bg-white p-4 text-left transition-all hover:border-[#C6A45A] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40 sm:p-5">
+        <span className="block text-base font-semibold text-[#142B4A]">A shared mission</span>
+        <span className="mt-1 block text-xs text-[#697586]">{soulMetrics?.year ?? today.getFullYear()} annual soul-winning target</span>
+        <span className="mt-3 flex items-end justify-between gap-3">
+          <span>
+            <span className="block text-3xl font-bold tabular-nums text-[#142B4A]">{currentSoulsWon.toLocaleString()}</span>
+            <span className="mt-1 block text-xs text-[#697586]">of {soulTarget.toLocaleString()} approved souls</span>
+          </span>
+          <span className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border-[5px] border-[#E8EDF2] text-sm font-bold tabular-nums text-[#142B4A]" style={{ background: `conic-gradient(#C6A45A ${targetPercent * 3.6}deg, transparent 0deg)` }}>
+            <span className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-white">{targetPercent}%</span>
+          </span>
+        </span>
+        <span className="mt-3 block h-2 overflow-hidden rounded-full bg-[#E9EDF2]" role="progressbar" aria-label="Annual soul-winning target progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={targetPercent}>
+          <span className="block h-full rounded-full bg-[#C6A45A] transition-all duration-700" style={{ width: `${targetPercent}%` }} />
+        </span>
+        <span className="mt-2 block text-[11px] font-medium text-[#84672D]">{remainingTarget.toLocaleString()} remaining to reach the target</span>
+        <span className="mt-4 flex items-center justify-between border-t border-[#E4E9F0] pt-3 text-xs font-semibold text-[#142B4A]">
+          View harvest breakdown <ArrowRight className="h-4 w-4" />
+        </span>
+      </button>
+
+      <section className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-[#E4E9F0] bg-white p-4">
+          <span className="block text-xs text-[#697586]">Total attendance recorded</span>
+          <strong className="mt-1 block text-2xl font-bold tabular-nums text-[#142B4A]">{stats.totalAttendance.toLocaleString()}</strong>
+          <span className="mt-1 block text-[10px] text-[#697586]">From submitted meeting reports</span>
+        </div>
+        <div className="rounded-2xl border border-[#E4E9F0] bg-white p-4">
+          <span className="block text-xs text-[#697586]">People reached</span>
+          <strong className="mt-1 block text-2xl font-bold tabular-nums text-[#142B4A]">{stats.peopleReached.toLocaleString()}</strong>
+          <span className="mt-1 block text-[10px] text-[#697586]">From evangelism reports</span>
         </div>
       </section>
 

@@ -43,7 +43,10 @@ export class AnalyticsService {
     }
 
     const totalCells = scopedCells.length;
+    // Count only real, active leader profiles linked to cells in this user's scope.
+    // Never substitute an assumed leader count when no matching account exists.
     const registeredTutors = allProfiles.filter(profile =>
+      profile.is_active &&
       (profile.role === 'tutor' || profile.role === 'cell_leader') &&
       scopedCells.some(cell =>
         cell.id === profile.cell_id ||
@@ -51,7 +54,7 @@ export class AnalyticsService {
         (profile.cell_name && cell.name.toLowerCase() === profile.cell_name.toLowerCase())
       )
     );
-    const activeCellLeaders = isAdmin ? registeredTutors.length : (scopedCells.filter(c => c.is_active && c.tutorUid).length || 1);
+    const activeCellLeaders = registeredTutors.length;
 
     // Meeting and Evangelism counts
     const meetingReportsSubmitted = scopedMeetings.length;
@@ -194,7 +197,7 @@ export class AnalyticsService {
       const tutorProfile = allProfiles.find(
         p => p.cell_id === cell.id || p.cell_id === cell.firebase_id || p.id === cell.tutorUid || p.full_name.toLowerCase() === (cell.leader_name || '').toLowerCase()
       );
-      const leaderName = cell.leader_name || tutorProfile?.full_name || 'Assigned Tutor';
+      const leaderName = cell.leader_name || tutorProfile?.full_name || '';
       const leaderPhone = cell.leader_phone || tutorProfile?.phone_number || '';
 
       // Attendance
@@ -265,11 +268,11 @@ export class AnalyticsService {
       return {
         id: cell.id,
         name: cell.name,
-        code: cell.code || `FNI-CEL-${cell.name.slice(0, 3).toUpperCase()}`,
+        code: cell.code || '',
         leaderName,
         leaderPhone,
-        location: cell.venue_address || cell.location || 'Local Fellowship Base',
-        targetAttendance: cell.target_attendance || 20,
+        location: cell.venue_address || cell.location || '',
+        targetAttendance: Number(cell.target_attendance) || 0,
         meetingReportsCount: cellMeetings.length,
         evangelismReportsCount: cellEvang.length,
         totalAttendance,
