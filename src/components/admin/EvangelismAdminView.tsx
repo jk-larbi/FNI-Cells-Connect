@@ -202,23 +202,22 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
   };
 
   return (
-    <div className="space-y-6">
+    <div className="fni-evangelism-stitch space-y-6">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
-            Evangelism & Soul-Winning Directorate
-          </h1>
-          <p className="text-xs text-[#667085] mt-0.5">
-            Central repository of all street outreaches, campus missions, cell fellowship returns, and soul-winning harvest.
-          </p>
+          <div className="fni-evangelism-heading">
+            <p className="fni-evangelism-eyebrow">FNI ADMIN WORKSPACE · OUTREACH & CARE</p>
+            <h1>Evangelism &amp; follow-ups</h1>
+            <p>Outreach harvest progress and new-convert care assignments.</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => setIsScheduleModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-[#142B4A] text-white text-xs font-bold hover:shadow-md transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+            className="fni-evangelism-primary-action"
           >
             <Calendar className="w-3.5 h-3.5 text-emerald-300" />
             <span>Schedule Outreach</span>
@@ -228,7 +227,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
             type="button"
             onClick={() => loadData(false)}
             disabled={isRefreshing}
-            className="px-3.5 py-2 rounded-xl bg-white border border-[#E3E8EF] text-[#142B4A] text-xs font-bold hover:bg-[#F5F7FA] transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+            className="fni-evangelism-secondary-action"
             title="Refresh reports"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#142B4A] ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -237,7 +236,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
 
           <button
             onClick={handleExportCsv}
-            className="px-3.5 py-2 rounded-xl bg-white border border-[#E3E8EF] text-[#182230] text-xs font-bold hover:bg-[#F5F7FA] transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+            className="fni-evangelism-secondary-action"
           >
             <Download className="w-3.5 h-3.5 text-[#142B4A]" />
             <span>Export CSV</span>
@@ -245,32 +244,24 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
         </div>
       </div>
 
-      <LocationSharingPanel mode="admin" />\n\n      {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-xs">
-          <div className="text-[11px] font-semibold text-[#667085]">Total Conversions</div>
-          <div className="text-2xl font-black text-[#23845B] mt-1">+{totalSouls}</div>
-          <div className="text-[10px] text-[#23845B] font-semibold mt-0.5">Souls Saved & New Members</div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-xs">
-          <div className="text-[11px] font-semibold text-[#667085]">People Reached / Attendance</div>
-          <div className="text-2xl font-black text-[#182230] mt-1">{totalReached}</div>
-          <div className="text-[10px] text-[#667085] font-semibold mt-0.5">Heard the Gospel & Gathered</div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-xs">
-          <div className="text-[11px] font-semibold text-[#667085]">Contacts Captured</div>
-          <div className="text-2xl font-black text-[#C6A45A] mt-1">{totalContacts}</div>
-          <div className="text-[10px] text-[#667085] font-semibold mt-0.5">In Follow-up Funnel</div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-xs">
-          <div className="text-[11px] font-semibold text-[#667085]">Total Reports Filed</div>
-          <div className="text-2xl font-black text-[#142B4A] mt-1">{reports.length}</div>
-          <div className="text-[10px] text-[#23845B] font-semibold mt-0.5">Outreaches & Cell Returns</div>
-        </div>
-      </div>
+      <LocationSharingPanel mode="admin" />\n\n      {/* Live harvest KPIs — values are aggregated from submitted reports */}
+      <section className="fni-evangelism-metrics" aria-label="Evangelism harvest summary">
+        <article className="fni-evangelism-metric">
+          <div className="fni-evangelism-metric-label"><span>Souls won</span><Flame /></div>
+          <strong>+{totalSouls.toLocaleString()}</strong>
+          <small>Conversions and new members reported</small>
+        </article>
+        <article className="fni-evangelism-metric fni-evangelism-metric-highlight">
+          <div className="fni-evangelism-metric-label"><span>People reached</span><Users /></div>
+          <strong>{totalReached.toLocaleString()}</strong>
+          <small>People spoken to and meeting attendance</small>
+        </article>
+        <article className="fni-evangelism-metric">
+          <div className="fni-evangelism-metric-label"><span>Contacts captured</span><HeartHandshake /></div>
+          <strong>{totalContacts.toLocaleString()}</strong>
+          <small>Contacts recorded for follow-up care</small>
+        </article>
+      </section>
 
       {/* Filters & Category Switcher */}
       <div className="bg-white p-4 rounded-2xl border border-[#E3E8EF] shadow-xs space-y-3">
@@ -358,6 +349,50 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
         </div>
       </div>
 
+      {/* Mobile harvest cards use the same live records as the desktop table */}
+      <section className="fni-evangelism-mobile-list md:hidden" aria-label="Harvest submissions">
+        <div className="fni-evangelism-mobile-list-heading">
+          <div>
+            <h2>Recent harvest submissions</h2>
+            <p>{filteredReports.length} matching reports</p>
+          </div>
+          {isRefreshing && <RefreshCw className="w-4 h-4 animate-spin" aria-label="Refreshing" />}
+        </div>
+        {isLoading ? (
+          <div className="fni-evangelism-empty"><RefreshCw className="w-5 h-5 animate-spin" /><span>Loading harvest reports...</span></div>
+        ) : filteredReports.length === 0 ? (
+          <div className="fni-evangelism-empty"><Flame className="w-6 h-6" /><strong>No harvest reports found</strong><span>Submitted outreach and cell returns will appear here.</span></div>
+        ) : filteredReports.map(report => {
+          const isEvangelism = report.reportType === 'evangelism';
+          const dateStr = isEvangelism ? report.date : report.meetingDate;
+          const locStr = isEvangelism ? (report.location || 'Outreach territory') : (report.meetingLocation || (report as any).location || 'Fellowship venue');
+          const soulsCount = isEvangelism ? Number(report.conversions || 0) : Number(report.newMembers || 0);
+          const reachedCount = isEvangelism ? Number(report.peopleSpokenTo || 0) : Number(report.attendance || 0);
+          return (
+            <article className="fni-evangelism-mobile-card" key={report.id}>
+              <div className="fni-evangelism-mobile-card-top">
+                <div className="fni-evangelism-avatar">{report.tutorName ? report.tutorName.split(' ').map(n => n[0]).slice(0, 2).join('') : 'TL'}</div>
+                <div className="fni-evangelism-person">
+                  <strong>{report.tutorName || 'Cell leader'}</strong>
+                  <span>{report.cellName || 'Cell fellowship'}</span>
+                </div>
+                <span className={`fni-evangelism-status ${report.status === 'Approved' ? 'is-approved' : report.status === 'Needs Correction' ? 'is-correction' : 'is-pending'}`}>{report.status}</span>
+              </div>
+              <div className="fni-evangelism-mobile-meta">
+                <span className={`fni-evangelism-type ${isEvangelism ? 'is-outreach' : 'is-meeting'}`}>{isEvangelism ? 'Outreach' : 'Cell meeting'}</span>
+                <span><MapPin />{locStr}</span>
+                <span><Calendar />{dateStr || 'Date not recorded'}</span>
+              </div>
+              <div className="fni-evangelism-mobile-stats">
+                <div><strong>+{soulsCount}</strong><small>{isEvangelism ? 'Souls won' : 'New members'}</small></div>
+                <div><strong>{reachedCount}</strong><small>{isEvangelism ? 'People reached' : 'Attendance'}</small></div>
+              </div>
+              <button type="button" className="fni-evangelism-view-report" onClick={() => setInspectingReport(report)}>View report <Eye /></button>
+            </article>
+          );
+        })}
+      </section>
+
       {/* Reports Table */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-xs overflow-hidden">
         <div className="py-4 px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-2">
@@ -376,7 +411,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
           </span>
         </div>
 
-        <div className="table-scroll-container">
+        <div className="table-scroll-container fni-evangelism-desktop-table">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
@@ -530,8 +565,8 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
 
       {/* INSPECTION MODAL */}
       {inspectingReport && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-[#E3E8EF] max-h-[90vh] overflow-y-auto custom-scrollbar space-y-4">
+        <div className="fni-evangelism-inspection-overlay fixed inset-0 z-50 bg-[#142B4A]/55 flex items-center justify-center p-4">
+          <div className="fni-evangelism-inspection-panel bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-[#E3E8EF] max-h-[90vh] overflow-y-auto custom-scrollbar space-y-4">
             {/* Modal Header */}
             <div className="flex items-start justify-between pb-3 border-b border-[#E3E8EF]">
               <div className="flex items-center gap-2.5">
