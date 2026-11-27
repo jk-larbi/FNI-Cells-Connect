@@ -939,69 +939,68 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
         </div>
       )}
 
-      {/* CREATE / EDIT CELL MODAL */}
+      {/* CREATE / EDIT CELL MODAL — Stitch desktop and mobile */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#142842]/50 flex items-center justify-center p-4">
-          <div className="flex h-full w-full max-w-md flex-col space-y-4 overflow-y-auto overscroll-contain border border-[#DCE3EC] bg-white p-5 shadow-xl sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl sm:p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-[#DCE3EC]">
-              <h3 className="text-base font-bold text-[#142842]">
-                {editingCell.id ? 'Edit Cell Details' : 'Register New Cell'}
-              </h3>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-xs text-[#5A6B7C] hover:text-[#182230]"
-              >
-                Cancel
+        <div className="fni-edit-cell-overlay fixed inset-0 z-50 flex items-stretch justify-center bg-[#142842]/55 p-0 backdrop-blur-[2px] sm:items-center sm:p-4">
+          <div className="fni-edit-cell-panel flex h-full w-full max-w-4xl flex-col overflow-y-auto overscroll-contain bg-white p-4 shadow-2xl sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl sm:border sm:border-[#DCE3EC] sm:p-6">
+            <div className="mb-5 flex items-center justify-between border-b border-[#DCE3EC] pb-4">
+              <div>
+                <p className="fni-edit-cell-eyebrow">FNI ADMIN WORKSPACE · CELL DIRECTORY</p>
+                <h3 className="text-xl font-bold text-[#142842] sm:text-2xl">
+                  {editingCell.id ? 'Edit cell details' : 'Register a cell'}
+                </h3>
+                <p className="mt-1 text-sm text-[#5A6B7C]">Update the cell identity, meeting schedule and verified venue information.</p>
+              </div>
+              <button type="button" onClick={() => setIsEditModalOpen(false)} aria-label="Close cell form" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DCE3EC] text-[#5A6B7C] hover:bg-[#F7F9FC]">
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCell} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">Cell Name</label>
-                <input
-                  type="text"
-                  value={editingCell.name || ''}
-                  onChange={e => setEditingCell({ ...editingCell, name: e.target.value })}
-                  required
-                  maxLength={120}
-                  placeholder="e.g. Agape Cell"
-                  className="w-full p-3 rounded-xl border border-[#DCE3EC] focus:ring-2 focus:ring-[#142842]/20 focus:outline-none"
-                />
+            <form onSubmit={handleSaveCell} className="fni-edit-cell-form grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="fni-edit-cell-field">
+                <label htmlFor="fni-cell-name">Cell name</label>
+                <input id="fni-cell-name" type="text" value={editingCell.name || ''} onChange={e => setEditingCell({ ...editingCell, name: e.target.value })} required maxLength={120} placeholder="e.g. Agape Cell" />
               </div>
-              <div>
-                <label className="block font-bold text-[#182230] mb-1">Meeting Venue Address</label>
-                <input
-                  type="text"
-                  value={editingCell.venue_address || ''}
-                  onChange={e => setEditingCell({ ...editingCell, venue_address: e.target.value })}
-                  placeholder="Enter the actual cell meeting venue"
-                  className="w-full p-3 rounded-xl border border-[#DCE3EC] focus:ring-2 focus:ring-[#142842]/20 focus:outline-none"
-                />
+              <div className="fni-edit-cell-field">
+                <label htmlFor="fni-cell-leader">Assigned leader</label>
+                <input id="fni-cell-leader" type="text" value={editingCell.leader_name || ''} readOnly aria-readonly="true" placeholder="No leader assigned" />
+                <small>Leader assignments are managed from Cell Leaders to preserve account links.</small>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="fni-edit-cell-field">
+                <label htmlFor="fni-cell-day">Meeting day</label>
+                <select id="fni-cell-day" value={editingCell.meeting_day || ''} onChange={e => setEditingCell({ ...editingCell, meeting_day: e.target.value })}>
+                  <option value="">Select meeting day</option>
+                  {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(day => <option key={day} value={day}>{day}</option>)}
+                </select>
+              </div>
+              <div className="fni-edit-cell-field">
+                <label htmlFor="fni-cell-time">Meeting time</label>
+                <input id="fni-cell-time" type="time" value={editingCell.meeting_time || ''} onChange={e => setEditingCell({ ...editingCell, meeting_time: e.target.value })} />
+              </div>
+              <div className="fni-edit-cell-field md:col-span-2">
+                <label htmlFor="fni-cell-venue">Meeting venue address</label>
+                <input id="fni-cell-venue" type="text" value={editingCell.venue_address || ''} onChange={e => setEditingCell({ ...editingCell, venue_address: e.target.value })} placeholder="Enter the actual cell meeting venue" />
+              </div>
+              <div className="fni-edit-cell-coordinate md:col-span-2">
                 <div>
-                  <label className="block font-bold text-[#182230] mb-1">Latitude</label>
-                  <input type="number" step="any" min="-90" max="90"
-                    value={editingCell.meeting_latitude ?? ''}
-                    onChange={e => setEditingCell({ ...editingCell, meeting_latitude: e.target.value === '' ? null : Number(e.target.value) })}
-                    placeholder="e.g. 5.6037"
-                    className="w-full p-3 rounded-xl border border-[#DCE3EC] focus:ring-2 focus:ring-[#142842]/20 focus:outline-none"
-                  />
+                  <strong>Verified map coordinates</strong>
+                  <p>Only enter coordinates copied from the actual venue pin. Unverified locations are not plotted on the cell map.</p>
                 </div>
-                <div>
-                  <label className="block font-bold text-[#182230] mb-1">Longitude</label>
-                  <input type="number" step="any" min="-180" max="180"
-                    value={editingCell.meeting_longitude ?? ''}
-                    onChange={e => setEditingCell({ ...editingCell, meeting_longitude: e.target.value === '' ? null : Number(e.target.value) })}
-                    placeholder="e.g. -0.1870"
-                    className="w-full p-3 rounded-xl border border-[#DCE3EC] focus:ring-2 focus:ring-[#142842]/20 focus:outline-none"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="fni-edit-cell-field">
+                    <label htmlFor="fni-cell-latitude">Latitude</label>
+                    <input id="fni-cell-latitude" type="number" step="any" min="-90" max="90" value={editingCell.meeting_latitude ?? ''} onChange={e => setEditingCell({ ...editingCell, meeting_latitude: e.target.value === '' ? null : Number(e.target.value) })} placeholder="Latitude" />
+                  </div>
+                  <div className="fni-edit-cell-field">
+                    <label htmlFor="fni-cell-longitude">Longitude</label>
+                    <input id="fni-cell-longitude" type="number" step="any" min="-180" max="180" value={editingCell.meeting_longitude ?? ''} onChange={e => setEditingCell({ ...editingCell, meeting_longitude: e.target.value === '' ? null : Number(e.target.value) })} placeholder="Longitude" />
+                  </div>
                 </div>
               </div>
-              <p className="text-[11px] text-[#5A6B7C]">Enter coordinates from the real venue pin in Google Maps. Do not use estimated coordinates; the map only plots verified locations.</p>
-              <button type="submit" className="w-full rounded-xl bg-[#142842] hover:bg-[#203D63] text-white font-bold py-3">
-                {editingCell.id ? 'Save Cell Details' : 'Create Cell'}
-              </button>
+              <div className="fni-edit-cell-actions md:col-span-2">
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="fni-edit-cell-cancel">Cancel</button>
+                <button type="submit" className="fni-edit-cell-save">{editingCell.id ? 'Save changes' : 'Create cell'}</button>
+              </div>
             </form>
           </div>
         </div>
