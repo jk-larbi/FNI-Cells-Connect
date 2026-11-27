@@ -186,7 +186,7 @@ export const AnalyticsStitchDashboard: React.FC<AnalyticsStitchDashboardProps> =
     : selectedMetric === 'souls' ? 'Souls won'
       : selectedMetric === 'offerings' ? 'Offerings (GHS)'
         : 'Reporting compliance (%)';
-  const chartData = timeDimension === 'monthly' ? waveChartData : weeklyTrends;
+  const chartData = timeDimension === 'monthly' ? waveChartData.map(item => ({ ...item, soulsWon: item.souls })) : weeklyTrends;
   const chartValueKey = overviewMetric === 'attendance' ? 'attendance' : 'soulsWon';
   const chartTitle = overviewMetric === 'attendance' ? 'Attendance trend' : 'Souls won trend';
   const averagePeriodAttendance = weeklyTrends.length
@@ -201,7 +201,6 @@ export const AnalyticsStitchDashboard: React.FC<AnalyticsStitchDashboardProps> =
   const reportApprovalRate = stats.reportsSubmitted
     ? Math.round((stats.approvedReports / stats.reportsSubmitted) * 100)
     : 0;
-  const eventPeriod = timeDimension === 'monthly' ? 'monthly' : 'reporting period';
 
   const kpis = [
     { label: 'Total Members', value: number(totalMembers), note: 'Recorded across active cells', icon: Users },
@@ -231,7 +230,7 @@ export const AnalyticsStitchDashboard: React.FC<AnalyticsStitchDashboardProps> =
       <section className="fni-an-filters" aria-label="Analytics filters">
         <label className="fni-an-search"><Search className="h-4 w-4" /><input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search cell, leader or code…" aria-label="Search cells by name, leader, or cell code" />{searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear cell search"><X className="h-4 w-4" /></button>}</label>
         <label><Filter className="h-4 w-4" /><select value={selectedCell} onChange={event => setSelectedCell(event.target.value)} aria-label="Filter by cell"><option value="All">All fellowship cells</option>{cells.map(cell => <option key={cell.id} value={cell.name}>{cell.name}</option>)}</select></label>
-        <label><Calendar className="h-4 w-4" /><select value={timeDimension} onChange={event => setTimeDimension(event.target.value as PeriodKey)} aria-label="Select reporting period"><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="ytd">Year to date</option></select></label>
+        <label><Calendar className="h-4 w-4" /><select value={timeDimension} onChange={event => setTimeDimension(event.target.value as PeriodKey)} aria-label="Select reporting period"><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
       </section>
 
       <section className="fni-an-kpis" aria-label="Key Performance Indicators">
@@ -255,7 +254,7 @@ export const AnalyticsStitchDashboard: React.FC<AnalyticsStitchDashboardProps> =
             {timeDimension === 'monthly' && (
               <div className="fni-an-month-pills">{waveChartData.map((item, index) => <button type="button" key={item.month} onClick={() => setSelectedMonthIdx(index)} className={selectedMonthIdx === index ? 'is-active' : ''}>{item.month}</button>)}</div>
             )}
-            <div className="fni-an-chart-footer"><span>Average attendance per report: <strong>{number(averageAttendance)}</strong></span><span>Meeting reports: <strong>{number(stats.meetingReportsSubmitted)}</strong></span></div>
+            <div className="fni-an-chart-footer"><span>Average attendance per report: <strong>{number(averageAttendance)}</strong></span><span>{timeDimension === 'monthly' ? `${activeMonthData.month}: ${number(activeMonthData.attendance)} attendance · ${number(activeMonthData.souls)} souls` : `Meeting reports: ${number(stats.meetingReportsSubmitted)}`}</span></div>
           </article>
           <article className="fni-an-distribution-panel">
             <div className="fni-an-panel-heading"><h3>Distribution by cell</h3><select value={selectedMetric} onChange={event => setSelectedMetric(event.target.value as MetricKey)} aria-label="Select cell distribution metric"><option value="attendance">Attendance</option><option value="souls">Souls won</option><option value="offerings">Offerings</option><option value="compliance">Compliance</option></select></div>
