@@ -104,6 +104,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
   // Right sidebar tab: 'activities' or 'tutors'
   const [sidebarTab, setSidebarTab] = useState<'activities' | 'tutors'>('activities');
+  const [leaderSearchQuery, setLeaderSearchQuery] = useState('');
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
   const [isCoreFoundationModalOpen, setIsCoreFoundationModalOpen] = useState(false);
   const [deadlineSettings, setDeadlineSettings] = useState(DeadlineService.getDeadlineSettingsSync());
@@ -943,7 +944,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-sm font-black text-[#182230] dark:text-white flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#C6A45A]" />
-                <span>Tutors & Leaders</span>
+                <span>Cell Leaders</span>
               </h3>
 
               {/* Segmented pill switch: [Activities] [Active Tutors] */}
@@ -968,7 +969,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
-                  Online
+                  Leaders
                 </button>
               </div>
             </div>
@@ -1031,8 +1032,22 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
             {/* FEED: TUTORS (ONLINE/REGISTERED) TAB */}
             {sidebarTab === 'tutors' && (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[290px] overflow-y-auto pr-1 mt-1">
-                {cells.filter(cell => cell.leader_name?.trim()).slice(0, 6).map(cell => (
+              <>
+                <div className="relative mt-2 mb-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <input
+                    type="search"
+                    value={leaderSearchQuery}
+                    onChange={event => setLeaderSearchQuery(event.target.value)}
+                    placeholder="Search leaders or cells"
+                    aria-label="Search cell leaders"
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#C6A45A]/40 focus:border-[#C6A45A]"
+                  />
+                </div>
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[290px] overflow-y-auto pr-1 mt-1">
+                {cells.filter(cell => cell.leader_name?.trim())
+                  .filter(cell => (cell.leader_name + ' ' + cell.name).toLowerCase().includes(leaderSearchQuery.trim().toLowerCase()))
+                  .map(cell => (
                   <div key={cell.id} className="py-2.5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#142B4A] dark:text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
@@ -1051,7 +1066,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 {cells.filter(cell => cell.leader_name?.trim()).length === 0 && (
                   <p className="py-6 text-center text-xs text-slate-400">No cell leaders have been assigned yet.</p>
                 )}
-              </div>
+                {cells.some(cell => cell.leader_name?.trim()) &&
+                  !cells.some(cell => cell.leader_name?.trim() && (cell.leader_name + ' ' + cell.name).toLowerCase().includes(leaderSearchQuery.trim().toLowerCase())) && (
+                    <p className="py-6 text-center text-xs text-slate-400">No leaders or cells match “{leaderSearchQuery}”.</p>
+                  )}
+                </div>
+              </>
             )}
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
