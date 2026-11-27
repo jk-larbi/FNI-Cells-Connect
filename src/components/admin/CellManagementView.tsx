@@ -286,7 +286,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       <div className="hidden md:flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-black text-[#142842] tracking-tight">
-            Cell Management
+            Cell groups
           </h1>
           <p className="text-xs text-[#5A6B7C] mt-0.5">
             Find a cell. See what needs attention across your network.
@@ -305,10 +305,10 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             </button>
           )}
           <details className="relative">
-            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border border-[#DCE3EC] bg-white px-3 py-2 text-xs font-bold text-[#667085] hover:bg-[#F8FAFC] [&::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-center gap-1.5 rounded-md border border-[#DCE3EC] bg-white px-3 py-2 text-xs font-bold text-[#5A6B7C] hover:bg-[#F8FAFC] [&::-webkit-details-marker]:hidden">
               <Filter className="h-3.5 w-3.5" /> Directory tools
             </summary>
-            <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-[#E3E8EF] bg-white p-2 shadow-none">
+            <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-[#DCE3EC] bg-white p-2 shadow-none">
               <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#667085]">Maintenance</p>
               <button type="button" disabled={!cells.length || isDeletingCells} onClick={() => handleArchiveCells(cells.map(cell => cell.id), 'all registered cells')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-bold text-[#5D4200] hover:bg-[#FDF8E8] disabled:opacity-50">
                 <Archive className="h-3.5 w-3.5 shrink-0" /> Archive all cells (keep records)
@@ -333,37 +333,48 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
         </div>
       </div>
 
+      <article className="hidden md:flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#DCE3EC] bg-[#FDF8E8] p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#DCE3EC] bg-white text-[#8E6C23]"><Calendar className="h-5 w-5" /></span>
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-[#142842]">{cellsNeedingAttention} {cellsNeedingAttention === 1 ? 'cell needs' : 'cells need'} attention</h2>
+            <p className="text-sm text-[#8E6C23]">{missingReportCount} missing weekly reports · {cells.filter(cell => !cell.is_archived && (!cell.meeting_day?.trim() || !cell.meeting_time?.trim())).length} unconfirmed meeting schedules</p>
+          </div>
+        </div>
+        <button type="button" onClick={() => setMobileFilter('attention')} className="inline-flex items-center justify-center rounded-full border border-[#DCE3EC] bg-white px-4 py-2 text-sm font-semibold text-[#142842] hover:bg-[#EEF2F7]">View flagged cells</button>
+      </article>
+
       <section aria-label="Cell directory summary" className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-        <div className="min-w-0 rounded-lg border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+        <div className="min-w-0 rounded-lg border border-[#DCE3EC] bg-white p-4">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold text-[#667085]">Registered cells</span>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#E4ECF7] text-[#142B4A]"><Building className="h-4 w-4" /></span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#E4ECF7] text-[#142842]"><Building className="h-4 w-4" /></span>
           </div>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : cells.length}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : cells.length}</p>
           <p className="mt-0.5 text-[10px] text-[#667085]">In the active directory</p>
         </div>
-        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+        <div className="min-w-0 rounded-lg border border-[#DCE3EC] bg-white p-4">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold text-[#667085]">Active cell leaders</span>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#DCF2E5] text-[#0B3D22]"><CheckCircle2 className="h-4 w-4" /></span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#DCF2E5] text-[#0B3D22]"><CheckCircle2 className="h-4 w-4" /></span>
           </div>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : activeCellCount}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : Math.max(0, cells.filter(cell => !cell.is_archived).length - cellsNeedingAttention)}</p>
           <p className="mt-0.5 text-[10px] text-[#667085]">Cells with no outstanding flags</p>
         </div>
-        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+        <div className="min-w-0 rounded-lg border border-[#E3E8EF] bg-white p-3.5 shadow-none sm:p-4">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold text-[#667085]">On track</span>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FDF8E8] text-[#8E6C23]"><UserCheck className="h-4 w-4" /></span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#FDF8E8] text-[#8E6C23]"><UserCheck className="h-4 w-4" /></span>
           </div>
           <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : assignedLeaderCount}</p>
-          <p className="mt-0.5 text-[10px] text-[#667085]">Cells with a recorded leader</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]" >Cells with no outstanding flags</p>
         </div>
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold text-[#667085]">Missing reports</span>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#E4ECF7] text-[#142842]"><MapPin className="h-4 w-4" /></span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#FDF8E8] text-[#8E6C23]"><FileText className="h-4 w-4" /></span>
           </div>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : venueDetailsCount}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : missingReportCount}</p>
           <p className="mt-0.5 text-[10px] text-[#667085]">Follow-up required</p>
         </div>
       </section>
@@ -417,7 +428,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               <h1 className="mt-1 text-[28px] font-bold leading-9 tracking-tight text-[#142842]">Cell groups</h1>
               <p className="mt-1 text-sm text-[#5A6B7C]">Find a cell. See what needs attention.</p>
             </div>
-            <button type="button" onClick={() => { setEditingCell({ meeting_day: 'Wednesday', meeting_time: '18:30', target_attendance: 25 }); setIsEditModalOpen(true); }} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#142B4A] text-white shadow-sm transition-colors hover:bg-[#203D63]" aria-label="Register a new cell">
+            <button type="button" onClick={() => { setEditingCell({ meeting_day: 'Wednesday', meeting_time: '18:30', target_attendance: 25 }); setIsEditModalOpen(true); }} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#142842] text-white shadow-sm transition-colors hover:bg-[#203D63]" aria-label="Register a new cell">
               <Plus className="h-5 w-5 text-white" />
             </button>
           </div>
@@ -428,35 +439,35 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             <span className="block text-xs text-[#5A6B7C]">Registered cells</span>
             <strong className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{isLoading && cells.length === 0 ? '—' : cells.length}</strong>
           </div>
-          <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4">
+          <div className="rounded-lg border border-[#DCE3EC] bg-white p-4">
             <span className="block text-xs text-[#5A6B7C]">Missing reports</span>
             <strong className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{isLoading && cells.length === 0 ? '—' : missingReportCount}</strong>
           </div>
         </div>
 
-        <label className="block rounded-2xl border border-[#E1E7EF] bg-white p-3.5">
-          <span className="mb-2 block text-xs font-medium text-[#697586]">Find a cell</span>
+        <label className="block rounded-lg border border-[#DCE3EC] bg-white p-3.5">
+          <span className="mb-2 block text-xs font-medium text-[#5A6B7C]">Find a cell</span>
           <span className="flex items-center gap-2">
             <Search className="h-4 w-4 shrink-0 text-[#697586]" />
             <input type="search" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search cell name or leader" className="w-full min-w-0 border-0 bg-transparent p-0 text-sm text-[#142B4A] outline-none placeholder:text-[#5A6B7C] focus:ring-0" />
           </span>
         </label>
 
-        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-[#EEF2F7] p-1">
+        <div className="grid grid-cols-2 gap-1 rounded-full bg-[#EEF2F7] p-1">
           <button type="button" onClick={() => setMobileFilter('all')} className={`min-h-10 rounded-xl px-3 text-xs font-semibold transition-colors ${mobileFilter === 'all' ? 'bg-white text-[#142B4A] shadow-sm' : 'text-[#697586]'}`}>All cells</button>
           <button type="button" onClick={() => setMobileFilter('attention')} className={`min-h-10 rounded-xl px-3 text-xs font-semibold transition-colors ${mobileFilter === 'attention' ? 'bg-white text-[#142B4A] shadow-sm' : 'text-[#697586]'}`}>Needs attention</button>
         </div>
 
         <div className="space-y-3">
           {isLoading && cells.length === 0 ? (
-            <div className="rounded-2xl border border-[#E1E7EF] bg-white p-6 text-center text-sm text-[#697586]">Loading cells…</div>
+            <div className="rounded-2xl border border-[#DCE3EC] bg-white p-6 text-center text-sm text-[#697586]">Loading cells…</div>
           ) : loadError && cells.length === 0 ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-center text-sm text-[#93000A]">The cell directory could not be loaded. Please retry.</div>
           ) : filteredCells.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#DCE3EC] bg-white p-6 text-center">
               <Building className="mx-auto h-6 w-6 text-[#98A2B3]" />
-              <p className="mt-2 text-sm font-semibold text-[#142B4A]">{mobileFilter === 'attention' ? 'No cells need attention' : 'No cells found'}</p>
-              <p className="mt-1 text-xs text-[#697586]">{mobileFilter === 'attention' ? 'All recorded cell details are up to date.' : 'Try another search or register a cell.'}</p>
+              <p className="mt-2 text-sm font-semibold text-[#142B4A]">{mobileFilter === 'attention' ? 'No cells need attention' : mobileFilter === 'ontrack' ? 'No cells are currently on track' : 'No cells found'}</p>
+              <p className="mt-1 text-xs text-[#697586]">{mobileFilter === 'attention' ? 'All recorded cell details are up to date.' : mobileFilter === 'ontrack' ? 'Review the attention list for outstanding items.' : 'Try another search or register a cell.'}</p>
             </div>
           ) : filteredCells.map(cell => {
             const status = cell.status || (cell.is_active ? 'Active' : 'Suspended');
@@ -475,23 +486,23 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                     <span className="block break-words text-base font-bold text-[#142B4A]">{cell.name}</span>
                     <span className="mt-1 block text-xs text-[#697586]">{cell.leader_name || 'Leader not assigned'}{cell.location ? ` · ${cell.location}` : ''}</span>
                   </span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{status}</span>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${status === 'Active' ? 'bg-[#DCF2E5] text-[#0B3D22]' : 'bg-[#FFDAD6] text-[#93000A]'}`}>{status}</span>
                 </span>
                 <span className="mt-3 block text-xs font-medium text-[#142B4A]">
                   {latestReport
                     ? `${latestReport.attendance} attended · ${latestReport.meetingDate}`
                     : missingSchedule ? 'Meeting schedule: Not set' : `Meeting: ${cell.meeting_day} · ${cell.meeting_time}`}
                 </span>
-                <span className={`mt-1 block text-[11px] font-medium ${submittedThisWeek ? 'text-emerald-700' : 'text-[#8E6C23]'}`}>
+                <span className={`mt-1 block text-[11px] font-medium ${submittedThisWeek ? 'text-[#1F6E43]' : 'text-[#8E6C23]'}`}>
                   {submittedThisWeek ? 'Weekly report submitted' : 'Weekly report not submitted'}
                 </span>
                 {needsAttention && (
-                  <span className="mt-1 block text-[11px] font-medium text-[#946200]">
+                  <span className="mt-1 block text-[11px] font-medium text-[#8E6C23]">
                     {missingLeader ? 'Assign a cell leader' : missingSchedule ? 'Confirm schedule with the leader' : 'Review cell status'}
                   </span>
                 )}
                 <span className="mt-3 flex items-center justify-between border-t border-[#DCE3EC] pt-3 text-xs font-semibold text-[#142B4A]">
-                  View cell details <ArrowRight className="h-4 w-4 text-[#84672D]" />
+                  View cell details <ArrowRight className="h-4 w-4 text-[#8E6C23]" />
                 </span>
               </button>
             );
@@ -603,7 +614,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                       className={`cursor-pointer transition-colors ${
                         isSuspended
                           ? 'bg-[#FDF8E8] border-l-4 border-[#BA1A1A]'
-                          : 'hover:bg-[#F5F7FA]'
+                          : 'hover:bg-[#EEF2F7]'
                       }`}
                     >
                       <td className="py-4 px-5 text-center" onClick={event => event.stopPropagation()}>
