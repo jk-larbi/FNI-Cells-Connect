@@ -41,6 +41,9 @@ export const AdminManagementView: React.FC = () => {
   const [regions, setRegions] = useState<Region[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
+  const [managementLoadError, setManagementLoadError] = useState<string | null>(null);
+  const [isLoadingManagement, setIsLoadingManagement] = useState(true);
+  const [managementLoadAttempt, setManagementLoadAttempt] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'cell' | 'region' | 'period' | 'user'>('user');
 
@@ -65,6 +68,7 @@ export const AdminManagementView: React.FC = () => {
   const [selectedCellForReports, setSelectedCellForReports] = useState<Cell | null>(null);
   const [cellReports, setCellReports] = useState<CellReport[]>([]);
   const [isLoadingCellReports, setIsLoadingCellReports] = useState(false);
+  const [cellReportsError, setCellReportsError] = useState<string | null>(null);
 
   // Creation form states
   const [newUser, setNewUser] = useState({
@@ -104,25 +108,37 @@ export const AdminManagementView: React.FC = () => {
   });
 
   useEffect(() => {
+    let isActive = true;
     async function loadData() {
-      const [r, c, p, remoteUsers, deactList] = await Promise.all([
-        ReportService.getRegions(),
-        ReportService.getCells(),
-        ReportService.getPeriods(),
-        SupabaseService.getProfiles(),
-        UserSettingsService.getPendingDeactivationRequests(),
-      ]);
-      setRegions(r);
-      setCells(c.filter(cell => !cell.is_archived));
-      setPeriods(p);
-      setUsers(remoteUsers || AuthService.getAllProfiles());
-      setDeactivationRequests(deactList);
-      if (r.length > 0) {
-        setNewCell(prev => ({ ...prev, region_id: r[0].id }));
+      setIsLoadingManagement(true);
+      setManagementLoadError(null);
+      try {
+        const [r, c, p, remoteUsers, deactList] = await Promise.all([
+          ReportService.getRegions(),
+          ReportService.getCells(),
+          ReportService.getPeriods(),
+          SupabaseService.getProfiles(),
+          UserSettingsService.getPendingDeactivationRequests(),
+        ]);
+        if (!isActive) return;
+        setRegions(r);
+        setCells(c.filter(cell => !cell.is_archived));
+        setPeriods(p);
+        setUsers(remoteUsers || AuthService.getAllProfiles());
+        setDeactivationRequests(deactList);
+        if (r.length > 0) {
+          setNewCell(prev => ({ ...prev, region_id: r[0].id }));
+        }
+      } catch (error) {
+        console.error('Could not load administration records:', error);
+        if (isActive) setManagementLoadError('Some management records could not be loaded. Check your connection and retry.');
+      } finally {
+        if (isActive) setIsLoadingManagement(false);
       }
     }
-    loadData();
-  }, []);
+    void loadData();
+    return () => { isActive = false; };
+  }, [managementLoadAttempt]);
 
   const loadDeactivations = async () => {
     setIsLoadingDeactivations(true);
@@ -179,9 +195,17 @@ export const AdminManagementView: React.FC = () => {
   const handleViewCellReports = async (cell: Cell) => {
     setSelectedCellForReports(cell);
     setIsLoadingCellReports(true);
-    const repList = await ReportService.getReports({ cellId: cell.id });
-    setCellReports(repList);
-    setIsLoadingCellReports(false);
+    setCellReportsError(null);
+    setCellReports([]);
+    try {
+      const repList = await ReportService.getReports({ cellId: cell.id });
+      setCellReports(repList);
+    } catch (error) {
+      console.error('Could not load cell reports:', error);
+      setCellReportsError('Cell reports could not be loaded. Check your connection and retry.');
+    } finally {
+      setIsLoadingCellReports(false);
+    }
   };
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -297,6 +321,13 @@ export const AdminManagementView: React.FC = () => {
         </div>
         <span className="hidden sm:inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-500">Administrator workspace</span>
       </div>
+      {(managementLoadError || isLoadingManagement) && (
+        <div className={managementLoadError ? "flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 sm:flex-row sm:items-center sm:justify-between" : "flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800 sm:flex-row sm:items-center sm:justify-between"} role={managementLoadError ? 'alert' : 'status'} aria-live="polite">
+          <span>{managementLoadError || 'Loading users, cells, regions and reporting cycles…'}</span>
+          {managementLoadError && <button type="button" onClick={() => setManagementLoadAttempt(value => value + 1)} disabled={isLoadingManagement} className="min-h-9 rounded-lg border border-rose-300 px-3 font-bold disabled:opacity-50">Retry loading records</button>}
+        </div>
+      )}
+
       {/* Keep all management areas accessible in a compact desktop grid and swipeable mobile tab strip. */}
       <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-2 text-xs font-bold overflow-x-auto md:overflow-visible -mx-1 px-1 snap-x snap-mandatory md:grid md:grid-cols-5 md:gap-2 md:mx-0 md:px-0">
         <button
@@ -1304,6 +1335,7 @@ export const AdminManagementView: React.FC = () => {
               </span>
             </div>
 
+            {cellReportsError && <div role="alert" className="flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-rose-800 sm:flex-row sm:items-center sm:justify-between"><span>{cellReportsError}</span><button type="button" onClick={() => void handleViewCellReports(selectedCellForReports)} disabled={isLoadingCellReports} className="min-h-9 rounded-lg border border-rose-300 px-3 font-bold disabled:opacity-50">Retry reports</button></div>}
             {isLoadingCellReports ? (
               <div className="py-8 text-center text-slate-400">Loading cell returns...</div>
             ) : cellReports.length === 0 ? (
