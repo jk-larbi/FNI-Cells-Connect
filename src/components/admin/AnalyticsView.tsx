@@ -382,7 +382,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     return (
       <div className="py-24 text-center text-xs text-[#667085] font-medium">
         <div className="inline-block w-8 h-8 border-3 border-[#C6A45A] border-t-transparent rounded-full animate-spin mb-3" />
-        <p>Loading real-time ministry intelligence & telemetry...</p>
+        <p>Loading ministry analytics...</p>
       </div>
     );
   }
@@ -401,11 +401,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              Live Telemetry Active
+              Database-backed
             </span>
           </div>
           <p className="text-xs text-[#667085] dark:text-slate-400 mt-1">
-            Real-time ministry growth curve, attendance velocity, soul-winning telemetry, and tutor activity stream.
+            Review recorded ministry growth, attendance, soul-winning, and tutor activity. Refresh to load the latest records.
           </p>
         </div>
 
@@ -715,7 +715,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                       <span className="text-[10px] font-bold text-slate-400 ml-1">Attendees</span>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
-                      Live
+                      Recorded
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
@@ -984,7 +984,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     </div>
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No Recent Activity Logged</p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                      Activities will update in real time as tutors submit meeting returns and outreach reports.
+                      Submitted meeting returns and outreach reports will appear here after the next data refresh.
                     </p>
                   </div>
                 ) : (
@@ -1334,7 +1334,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             </p>
           </div>
           <span className="rounded-full border border-[#142B4A]/15 dark:border-white/10 bg-[#142B4A]/5 dark:bg-white/5 px-3 py-1 text-[11px] font-semibold text-[#142B4A] dark:text-[#C6A45A]">
-            {selectedCell === 'All' ? `${cellStats.length} cells` : 'Selected cell'} &bull; Live Database Data
+            {selectedCell === 'All' ? `${cellStats.length} cells` : 'Selected cell'} &bull; Database Records
           </span>
         </div>
 
