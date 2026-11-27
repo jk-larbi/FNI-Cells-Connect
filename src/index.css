@@ -2517,3 +2517,66 @@ html.dark .fni-chat-composer textarea:focus-visible {
     gap: 1rem;
   }
 }
+
+
+/* Cell Leaders — Stitch desktop and mobile implementation */
+.fni-admin-stitch-shell .fni-cell-leaders-stitch {
+  width: 100%; max-width: 1152px; margin-inline: auto;
+  color: #142842; font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch h1,
+.fni-admin-stitch-shell .fni-cell-leaders-stitch h2,
+.fni-admin-stitch-shell .fni-cell-leaders-stitch h3,
+.fni-admin-stitch-shell .fni-cell-leaders-stitch button {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch p,
+.fni-admin-stitch-shell .fni-cell-leaders-stitch input,
+.fni-admin-stitch-shell .fni-cell-leaders-stitch td,
+.fni-admin-stitch-shell .fni-cell-leaders-stitch th {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined'; font-weight: 400; font-style: normal;
+  line-height: 1; font-feature-settings: 'liga';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch .fni-leaders-eyebrow {
+  margin-bottom: .25rem; color: #5A6B7C;
+  font: 600 11px/16px 'Libre Franklin', system-ui, sans-serif; letter-spacing: .08em;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch section[aria-label="Cell leader summary"] > div {
+  border: 1px solid #DCE3EC !important; border-radius: 12px !important;
+  background: #FFFFFF !important; box-shadow: none !important;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch section[aria-label="Cell leader summary"] p:first-child {
+  color: #5A6B7C !important; font-size: 12px !important; font-weight: 600 !important;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch section[aria-label="Cell leader summary"] p:nth-child(2) {
+  color: #142842 !important; font: 700 26px/32px 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch input {
+  min-height: 42px; border-color: #DCE3EC !important; border-radius: 10px !important;
+  color: #142842 !important; font-size: 14px !important;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch input::placeholder { color: #7A8999 !important; }
+.fni-admin-stitch-shell .fni-cell-leaders-stitch button:focus-visible,
+.fni-admin-stitch-shell .fni-cell-leaders-stitch input:focus-visible {
+  outline: 2px solid #8E6C23; outline-offset: 2px;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch > div:has(> div > h2),
+.fni-admin-stitch-shell .fni-cell-leaders-stitch > div:has(> div.md\\:hidden) {
+  border-color: #DCE3EC !important; border-radius: 16px !important; box-shadow: none !important;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch table { border-collapse: separate; border-spacing: 0; }
+.fni-admin-stitch-shell .fni-cell-leaders-stitch thead { background: #EEF2F7 !important; color: #5A6B7C !important; }
+.fni-admin-stitch-shell .fni-cell-leaders-stitch tbody tr {
+  border-bottom: 1px solid #DCE3EC; transition: background-color 120ms ease-out;
+}
+.fni-admin-stitch-shell .fni-cell-leaders-stitch tbody tr:hover { background: #F7F9FC !important; }
+.fni-admin-stitch-shell .fni-cell-leaders-stitch .table-scroll-container td { color: #354863; }
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-cell-leaders-stitch { padding-bottom: 1rem; }
+  .fni-admin-stitch-shell .fni-cell-leaders-stitch section[aria-label="Cell leader summary"] { gap: .75rem !important; }
+  .fni-admin-stitch-shell .fni-cell-leaders-stitch section[aria-label="Cell leader summary"] > div { padding: 1rem !important; }
+}
