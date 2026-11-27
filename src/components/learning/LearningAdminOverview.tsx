@@ -89,6 +89,7 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
   onNavigateSection,
 }) => {
   const [dateRange, setDateRange] = useState<'all' | '30' | '90'>('all');
+  const [trendCadence, setTrendCadence] = useState<'weekly' | 'monthly'>('weekly');
   const [participantQuery, setParticipantQuery] = useState('');
   const [cellFilter, setCellFilter] = useState('all');
   const [participantSort, setParticipantSort] = useState<'participation' | 'score' | 'name'>('participation');
@@ -137,6 +138,22 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
   ]).size;
   const participationRate = activeTutorsCount > 0
     ? Math.min(100, Math.round((uniqueParticipants / activeTutorsCount) * 100))
+    : null;
+  const completedTaskKeys = new Set([
+    ...rangeSubmissions.map(item => `${item.tutor_id}:assignment:${item.assignment_id}`),
+    ...rangeAttempts
+      .filter(item => !['not_started', 'in_progress'].includes(item.status))
+      .map(item => `${item.tutor_id}:quiz:${item.quiz_id}`),
+  ]);
+  const completedCount = completedTaskKeys.size;
+  const expectedTaskCount = activeTutorsCount * (publishedAssignments.length + publishedQuizzes.length);
+  const pendingSubmissionCount = Math.max(0, expectedTaskCount - completedCount);
+  const gradedQuizAttempts = rangeAttempts.filter(item => item.status === 'graded' || item.results_released);
+  const passRate = gradedQuizAttempts.length
+    ? Math.round((gradedQuizAttempts.filter(item => item.passed).length / gradedQuizAttempts.length) * 100)
+    : null;
+  const completionRate = expectedTaskCount > 0
+    ? Math.min(100, Math.round((completedCount / expectedTaskCount) * 100))
     : null;
 
   const deadlines = [
@@ -224,12 +241,40 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
         : b.participation - a.participation);
 
   const scoreBands = [
-    { label: '0–49%', count: gradedScores.filter(value => value < 50).length },
-    { label: '50–69%', count: gradedScores.filter(value => value >= 50 && value < 70).length },
-    { label: '70–89%', count: gradedScores.filter(value => value >= 70 && value < 90).length },
-    { label: '90–100%', count: gradedScores.filter(value => value >= 90).length },
+    { label: 'Excellent', range: '90–100%', count: gradedScores.filter(value => value >= 90).length },
+    { label: 'Good', range: '80–89%', count: gradedScores.filter(value => value >= 80 && value < 90).length },
+    { label: 'Average', range: '70–79%', count: gradedScores.filter(value => value >= 70 && value < 80).length },
+    { label: 'Below average', range: '50–69%', count: gradedScores.filter(value => value >= 50 && value < 70).length },
+    { label: 'Failed', range: 'Below 50%', count: gradedScores.filter(value => value < 50).length },
   ];
   const maxBand = Math.max(1, ...scoreBands.map(item => item.count));
+  const trendRecords = [
+    ...rangeSubmissions.filter(item => item.grade !== undefined && item.grade !== null).map(item => {
+      const assessment = assignments.find(row => row.id === item.assignment_id);
+      return { date: item.submitted_at, score: assessment?.total_marks ? Math.round((Number(item.grade) / assessment.total_marks) * 100) : Number(item.grade) };
+    }),
+    ...gradedQuizAttempts.map(item => ({ date: item.completed_at, score: Number(item.percentage) })),
+  ].filter(item => Number.isFinite(new Date(item.date).getTime()) && Number.isFinite(item.score));
+  const trendBuckets = Array.from({ length: trendCadence === 'weekly' ? 8 : 6 }, (_, index) => {
+    const date = new Date();
+    if (trendCadence === 'weekly') {
+      const day = (date.getDay() + 6) % 7;
+      date.setDate(date.getDate() - day - (7 * (7 - index)));
+      date.setHours(0, 0, 0, 0);
+      const end = new Date(date); end.setDate(end.getDate() + 7);
+      return { key: date.toISOString().slice(0, 10), label: date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }), start: date.getTime(), end: end.getTime() };
+    }
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - index));
+    const end = new Date(date); end.setMonth(end.getMonth() + 1);
+    return { key: date.toISOString().slice(0, 7), label: date.toLocaleDateString('en-GB', { month: 'short' }), start: date.getTime(), end: end.getTime() };
+  }).map(bucket => {
+    const scores = trendRecords.filter(item => {
+      const time = new Date(item.date).getTime();
+      return time >= bucket.start && time < bucket.end;
+    }).map(item => item.score);
+    return { ...bucket, score: average(scores), count: scores.length };
+  });
 
   const handleExport = () => {
     const rows = reportType === 'quizzes'
@@ -252,12 +297,12 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
   };
 
   const kpis = [
-    { label: 'Quizzes & assignments', value: assignments.length + quizzes.length, detail: `${publishedAssignments.length + publishedQuizzes.length} published`, icon: GraduationCap },
-    { label: 'Active tutors', value: activeTutorsCount, detail: 'Registered fellowship leaders', icon: Users },
-    { label: 'Submissions', value: submissions.length + quizAttempts.length, detail: `${pendingSubmissions.length + pendingQuizReviews.length} awaiting review`, icon: Send },
-    { label: 'Participation', value: participationRate === null ? '—' : `${participationRate}%`, detail: `${uniqueParticipants} participants in selected period`, icon: BarChart3 },
-    { label: 'Average score', value: averageScore === null ? '—' : `${averageScore}%`, detail: gradedScores.length ? `${gradedScores.length} graded results` : 'No graded results yet', icon: Award },
-    { label: 'Upcoming deadlines', value: deadlines.length, detail: 'Published assessments', icon: Calendar },
+    { label: 'Total Assessments', value: assignments.length + quizzes.length, detail: 'Quizzes & assignments' },
+    { label: 'Total Participants', value: uniqueParticipants, detail: 'Unique members in selected period' },
+    { label: 'Completed', value: completedCount, detail: 'Submitted assessments' },
+    { label: 'Pending Submissions', value: pendingSubmissionCount, detail: 'Yet to submit' },
+    { label: 'Average Score', value: averageScore === null ? '—' : `${averageScore}%`, detail: 'Graded assessments only' },
+    { label: 'Pass Rate', value: passRate === null ? '—' : `${passRate}%`, detail: 'Met configured quiz threshold' },
   ];
 
   const alerts = [
@@ -309,16 +354,13 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
       </header>
 
       <section className="fni-la-kpis" aria-label="Learning KPIs">
-        {kpis.map(item => {
-          const Icon = item.icon;
-          return (
-            <article className="fni-la-kpi" key={item.label}>
-              <div className="fni-la-kpi-top"><span>{item.label}</span><Icon className="h-4 w-4" /></div>
-              <strong>{item.value}</strong>
-              <small>{item.detail}</small>
-            </article>
-          );
-        })}
+        {kpis.map(item => (
+          <article className={`fni-la-kpi ${item.label === 'Pending Submissions' ? 'is-highlighted' : ''}`} key={item.label}>
+            <span className="fni-la-kpi-label">{item.label}</span>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </article>
+        ))}
       </section>
 
       <section className="fni-la-alerts" aria-label="Administrative Alerts">
@@ -342,30 +384,39 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
 
       <section className="fni-la-analytics" aria-label="Performance Analytics">
         <div className="fni-la-section-heading">
-          <div><span className="fni-la-heading-icon"><BarChart3 className="h-4 w-4" /></span><div><h2>Performance Analytics</h2><p>Score distribution and average performance from graded records only.</p></div></div>
-          <span className="fni-la-data-caption">{gradedScores.length} graded results</span>
+          <div><span className="fni-la-heading-icon"><BarChart3 className="h-4 w-4" /></span><div><h2>Performance Analytics</h2><p>Score distribution (excluding ungraded), average performance, participation rates and assessment trends.</p></div></div>
+          <div className="fni-la-cadence" role="tablist" aria-label="Performance trend cadence">
+            <button type="button" role="tab" aria-selected={trendCadence === 'weekly'} className={trendCadence === 'weekly' ? 'is-active' : ''} onClick={() => setTrendCadence('weekly')}>Weekly</button>
+            <button type="button" role="tab" aria-selected={trendCadence === 'monthly'} className={trendCadence === 'monthly' ? 'is-active' : ''} onClick={() => setTrendCadence('monthly')}>Monthly</button>
+          </div>
         </div>
         <div className="fni-la-analytics-grid">
           <div className="fni-la-chart-card">
             <h3>Score Distribution</h3>
             {gradedScores.length ? (
-              <div className="fni-la-bars" role="img" aria-label="Score distribution by percentage band">
+              <div className="fni-la-score-bands">
                 {scoreBands.map(item => (
-                  <div className="fni-la-bar-column" key={item.label}>
+                  <div className="fni-la-score-band" key={item.label}>
+                    <span className={`fni-la-band-label band-${item.label.toLowerCase().replace(/\s/g, '-')}`}>{item.label}<small>{item.range}</small></span>
                     <strong>{item.count}</strong>
-                    <div className="fni-la-bar-track"><span style={{ height: `${Math.max(4, item.count / maxBand * 100)}%` }} /></div>
-                    <small>{item.label}</small>
                   </div>
                 ))}
               </div>
             ) : (
-              <EmptyState title="No graded assessment history" detail="Score distribution will appear after submissions and quizzes have been graded and released." />
+              <EmptyState title="No graded assessment history" detail="Ungraded submissions are tracked separately from failed assessments." />
             )}
           </div>
-          <div className="fni-la-score-summary">
-            <div><span>Average quiz score</span><strong>{average(gradedQuizScores) === null ? '—' : `${average(gradedQuizScores)}%`}</strong></div>
-            <div><span>Average assignment score</span><strong>{average(gradedAssignmentScores) === null ? '—' : `${average(gradedAssignmentScores)}%`}</strong></div>
-            <div><span>Participation rate</span><strong>{participationRate === null ? '—' : `${participationRate}%`}</strong></div>
+          <div className="fni-la-trend-card">
+            <div className="fni-la-trend-summary">
+              <div><span>Avg Quiz Score</span><strong>{average(gradedQuizScores) === null ? '—' : `${average(gradedQuizScores)}%`}</strong></div>
+              <div><span>Avg Assignment</span><strong>{average(gradedAssignmentScores) === null ? '—' : `${average(gradedAssignmentScores)}%`}</strong></div>
+              <div><span>Completion Rate</span><strong>{completionRate === null ? '—' : `${completionRate}%`}</strong></div>
+            </div>
+            {trendRecords.length ? (
+              <div className="fni-la-trend-bars" role="img" aria-label={`${trendCadence} average assessment score trend`}>
+                {trendBuckets.map(bucket => <div key={bucket.key}><span style={{ height: bucket.score === null ? '2px' : `${Math.max(3, bucket.score)}%` }} /><small>{bucket.label}</small></div>)}
+              </div>
+            ) : <EmptyState title="No graded assessment history synced yet" detail="Weekly and monthly trends appear as graded results are recorded." />}
           </div>
         </div>
       </section>
