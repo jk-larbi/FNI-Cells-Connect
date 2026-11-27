@@ -1409,14 +1409,16 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 <input type="checkbox" checked={notifPrefs.cellAnnouncements !== false} onChange={() => handleToggleNotif('cellAnnouncements')} />
               </label>
               <label className="fni-notification-toggle-row">
-                <span className="fni-notification-row-copy"><strong>Learning Hub updates</strong><span>Assignments, quizzes, teaching materials and learning updates</span></span>
-                <input type="checkbox" checked={notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false} onChange={() => {
-                  const next = { ...notifPrefs, learningMaterials: !(notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false), assignments: !(notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false), quizzes: !(notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false) };
-                  setNotifPrefs(next);
-                  if (currentUser?.id) NotificationService.saveUserNotificationPreferences(currentUser.id, next);
-                  setNotifSaveNotice('Notification preferences saved.');
-                  setTimeout(() => setNotifSaveNotice(null), 3000);
-                }} />
+                <span className="fni-notification-row-copy"><strong>Learning Hub materials</strong><span>New teaching notes, study resources and ministerial outlines</span></span>
+                <input type="checkbox" checked={notifPrefs.learningMaterials !== false} onChange={() => handleToggleNotif('learningMaterials')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Assignments</strong><span>New assignments, upcoming deadlines and grading updates</span></span>
+                <input type="checkbox" checked={notifPrefs.assignments !== false} onChange={() => handleToggleNotif('assignments')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Quizzes</strong><span>Quiz publishing, availability windows and score releases</span></span>
+                <input type="checkbox" checked={notifPrefs.quizzes !== false} onChange={() => handleToggleNotif('quizzes')} />
               </label>
               <label className="fni-notification-toggle-row">
                 <span className="fni-notification-row-copy"><strong>Calls &amp; meeting notifications</strong><span>Incoming voice and video calls, group meetings and missed calls</span></span>
@@ -1425,6 +1427,10 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               <label className="fni-notification-toggle-row">
                 <span className="fni-notification-row-copy"><strong>Direct messages</strong><span>Private and group messages in the Communication Hub</span></span>
                 <input type="checkbox" checked={notifPrefs.messages !== false} onChange={() => handleToggleNotif('messages')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Group chats &amp; cell channels</strong><span>Messages sent in fellowship groups and cell spaces</span></span>
+                <input type="checkbox" checked={notifPrefs.groupMessages !== false} onChange={() => handleToggleNotif('groupMessages')} />
               </label>
               <label className="fni-notification-toggle-row">
                 <span className="fni-notification-row-copy"><strong>Evangelism activity reminders</strong><span>Outreach reminders and scheduled activity notices</span></span>
