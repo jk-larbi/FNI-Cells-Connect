@@ -67,8 +67,8 @@ export const ReceivedReportsView: React.FC = () => {
           <p className="mt-1 text-sm text-[#667085]">A read-only archive of reports that have been reviewed and accepted.</p>
         </div>
         <button type="button" onClick={() => void loadReports(true)} disabled={refreshing}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E3E8EF] bg-white px-3 py-2 text-xs font-bold text-[#142B4A] hover:bg-[#F5F7FA] disabled:opacity-60">
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
+          className="min-h-10 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-[#E3E8EF] bg-white px-4 sm:px-3 py-2 text-xs font-bold text-[#142B4A] hover:bg-[#F5F7FA] disabled:opacity-60">
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /> {refreshing ? 'Refreshing...' : 'Refresh archive'}
         </button>
       </div>
 
@@ -108,10 +108,15 @@ export const ReceivedReportsView: React.FC = () => {
       {loading ? (
         <div className="rounded-2xl border border-[#E3E8EF] bg-white p-10 text-center text-sm text-[#667085]">Loading accepted reports...</div>
       ) : visibleReports.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#D0D5DD] bg-white p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-[#D0D5DD] bg-white px-5 py-10 text-center">
           <FileText className="mx-auto h-8 w-8 text-[#98A2B3]" />
-          <p className="mt-3 text-sm font-bold text-[#142B4A]">No accepted reports here yet</p>
-          <p className="mt-1 text-xs text-[#667085]">Reports will appear in this section after an administrator approves them.</p>
+          <p className="mt-3 text-sm font-bold text-[#142B4A]">{reports.filter(report => report.reportType === group).length === 0 ? 'No accepted reports here yet' : 'No reports match your search'}</p>
+          <p className="mt-1 text-xs text-[#667085]">{reports.filter(report => report.reportType === group).length === 0 ? 'Approved reports will appear here automatically.' : 'Try another cell, tutor or location name, or clear your search.'}</p>
+          {search.trim() && (
+            <button type="button" onClick={() => setSearch('')} className="mt-4 min-h-10 rounded-xl bg-[#142B4A] px-4 py-2 text-xs font-bold text-white hover:bg-[#203D63]">
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
