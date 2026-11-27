@@ -4978,3 +4978,68 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-profile-designation { align-items:flex-start; gap:5px; }
   .fni-profile-designation .fni-profile-designation-readonly { flex-basis:100%; }
 }
+
+
+/* Account Security — Stitch password/authentication card, mobile-first and desktop responsive */
+.fni-account-section-password_security { background:#F7F9FC; }
+.fni-account-section-password_security .fni-account-security-page { display:flex; flex-direction:column; gap:18px; max-width:900px; margin:0 auto; }
+.fni-account-section-password_security .fni-account-security-card { display:flex; flex-direction:column; gap:0; padding:18px; border:1px solid #DCE3EC; border-radius:10px; background:#EEF2F7; box-shadow:0 1px 2px rgba(20,40,66,.04); }
+.fni-account-section-password_security .fni-account-security-card-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:14px; border-bottom:1px solid #DCE3EC; }
+.fni-account-section-password_security .fni-account-security-card-heading h2 { margin:0; color:#142842; font:600 14px "Libre Franklin",sans-serif; }
+.fni-account-section-password_security .fni-account-security-card-heading p,.fni-account-section-password_security .fni-account-security-panel-heading p { margin:4px 0 0; color:#5A6B7C; font-size:11px; }
+.fni-account-section-password_security .fni-account-security-outline { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:34px; padding:7px 12px; border:1px solid #DCE3EC; border-radius:999px; background:#fff; color:#142842; font:600 10px "Libre Franklin",sans-serif; cursor:pointer; }
+.fni-account-section-password_security .fni-account-security-outline:hover,.fni-account-section-password_security .fni-account-security-cancel:hover { background:#F7F9FC; }
+.fni-account-section-password_security .fni-account-security-feedback { display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 12px; border:1px solid #C6E8D2; border-radius:7px; background:#DCF2E5; color:#1F6E43; font-size:11px; }
+.fni-account-section-password_security .fni-account-security-feedback.is-error { border-color:#FFDAD6; background:#FFDAD6; color:#BA1A1A; }
+.fni-account-section-password_security .fni-account-password-panel { display:flex; flex-direction:column; gap:13px; margin:14px 0; padding:15px; border:1px solid #DCE3EC; border-radius:8px; background:#fff; }
+.fni-account-section-password_security .fni-account-security-panel-heading h3 { margin:0; color:#142842; font:600 13px "Libre Franklin",sans-serif; }
+.fni-account-section-password_security .fni-account-password-field { display:flex; flex-direction:column; gap:6px; }
+.fni-account-section-password_security .fni-account-password-field>label { color:#354863; font:600 10px "Libre Franklin",sans-serif; }
+.fni-account-section-password_security .fni-account-password-field>label span { color:#BA1A1A; }
+.fni-account-section-password_security .fni-account-password-input { display:flex; align-items:center; gap:8px; min-height:40px; padding:0 10px 0 12px; border:1px solid #DCE3EC; border-radius:7px; background:#F7F9FC; }
+.fni-account-section-password_security .fni-account-password-input:focus-within { border-color:#8E6C23; box-shadow:0 0 0 2px rgba(142,108,35,.12); }
+.fni-account-section-password_security .fni-account-password-input input { flex:1; min-width:0; min-height:38px; border:0; outline:0; background:transparent; color:#142842; font:12px "Source Sans 3",sans-serif; }
+.fni-account-section-password_security .fni-account-password-input button { display:grid; place-items:center; width:28px; height:28px; border:0; border-radius:50%; background:transparent; color:#68798B; cursor:pointer; }
+.fni-account-section-password_security .fni-account-password-strength { display:flex; align-items:center; gap:10px; color:#68798B; font-size:10px; }
+.fni-account-section-password_security .fni-account-password-strength>span { white-space:nowrap; }
+.fni-account-section-password_security .fni-account-password-strength strong { color:#354863; font-weight:600; }
+.fni-account-section-password_security .fni-account-password-strength-bars { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; width:105px; }
+.fni-account-section-password_security .fni-account-password-strength-bars span { height:5px; border-radius:999px; background:#DCE3EC; }
+.fni-account-section-password_security .fni-account-password-strength-bars span.is-weak { background:#BA1A1A; }
+.fni-account-section-password_security .fni-account-password-strength-bars span.is-good { background:#8E6C23; }
+.fni-account-section-password_security .fni-account-password-strength-bars span.is-strong { background:#1F6E43; }
+.fni-account-section-password_security .fni-account-password-match { font-size:10px; }
+.fni-account-section-password_security .fni-account-password-match.is-match { color:#1F6E43; }
+.fni-account-section-password_security .fni-account-password-match.is-mismatch { color:#BA1A1A; }
+.fni-account-section-password_security .fni-account-password-actions { display:flex; justify-content:flex-end; gap:8px; padding-top:5px; }
+.fni-account-section-password_security .fni-account-security-cancel,.fni-account-section-password_security .fni-account-security-submit { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:35px; padding:7px 13px; border:1px solid #DCE3EC; border-radius:999px; background:#fff; color:#354863; font:600 10px "Libre Franklin",sans-serif; cursor:pointer; }
+.fni-account-section-password_security .fni-account-security-submit { border-color:#142842; background:#142842; color:#fff; }
+.fni-account-section-password_security .fni-account-security-submit:disabled { opacity:.45; cursor:not-allowed; }
+.fni-account-section-password_security .fni-account-security-info-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:13px; padding:12px; border:1px solid #DCE3EC; border-radius:7px; background:#fff; }
+.fni-account-section-password_security .fni-account-security-info-row>div { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.fni-account-section-password_security .fni-account-security-info-row>div>span { color:#5A6B7C; font-size:10px; }
+.fni-account-section-password_security .fni-account-security-info-row>div>strong { color:#142842; font:600 11px "Libre Franklin",sans-serif; }
+.fni-account-section-password_security .fni-account-security-managed { color:#68798B; font-size:9px; text-align:right; }
+.fni-account-section-password_security .fni-account-security-current { display:inline-flex; align-items:center; gap:6px; color:#1F6E43; font-size:10px; white-space:nowrap; }
+.fni-account-section-password_security .fni-account-security-current i { width:7px; height:7px; border-radius:50%; background:#1F6E43; }
+.fni-account-section-password_security .fni-account-current-device { display:flex; align-items:center; gap:11px; margin-top:10px; padding:12px; border:1px solid #DCE3EC; border-radius:7px; background:#fff; }
+.fni-account-section-password_security .fni-account-current-device-icon { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:8px; background:#E4ECF7; color:#142842; }
+.fni-account-section-password_security .fni-account-current-device-copy { display:flex; flex:1; flex-direction:column; gap:4px; min-width:0; }
+.fni-account-section-password_security .fni-account-current-device-copy strong { color:#142842; font:600 11px "Libre Franklin",sans-serif; }
+.fni-account-section-password_security .fni-account-current-device-copy span { color:#68798B; font-size:9px; }
+.fni-account-section-password_security .fni-account-security-session-pill { padding:4px 8px; border-radius:999px; background:#DCF2E5; color:#1F6E43; font:600 9px "Libre Franklin",sans-serif; white-space:nowrap; }
+.fni-account-section-password_security .fni-account-security-signout { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:40px; margin-top:13px; padding:9px 12px; border:1px solid #DCE3EC; border-radius:999px; background:#fff; color:#354863; font:600 10px "Libre Franklin",sans-serif; cursor:pointer; }
+.fni-account-section-password_security .fni-account-security-signout:hover { border-color:#BA1A1A; color:#BA1A1A; }
+.fni-account-section-password_security .fni-account-security-signout:disabled { opacity:.5; cursor:wait; }
+@media(max-width:640px) {
+ .fni-account-section-password_security .fni-account-security-card { padding:13px; }
+ .fni-account-section-password_security .fni-account-security-card-heading { align-items:flex-start; flex-direction:column; }
+ .fni-account-section-password_security .fni-account-security-outline { align-self:flex-start; }
+ .fni-account-section-password_security .fni-account-security-info-row { align-items:flex-start; flex-direction:column; gap:7px; }
+ .fni-account-section-password_security .fni-account-security-managed { text-align:left; }
+ .fni-account-section-password_security .fni-account-security-session-pill { display:none; }
+ .fni-account-section-password_security .fni-account-password-actions { flex-direction:column-reverse; }
+ .fni-account-section-password_security .fni-account-password-actions button { width:100%; }
+}
+
+.fni-account-section-password_security .fni-account-security-device-feedback{margin-top:10px;padding:10px 12px;border:1px solid #DCE3EC;border-radius:7px;background:#F7F9FC;color:#354863;font-size:10px}
