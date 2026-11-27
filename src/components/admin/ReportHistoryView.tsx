@@ -38,6 +38,7 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
   const [cells, setCells] = useState<Cell[]>([]);
   const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,6 +76,7 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
 
   const loadHistoricalData = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [allReports, cellList, periodList] = await Promise.all([
         ReportService.getUnifiedReviewQueue(),
@@ -86,6 +88,7 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
       setPeriods(periodList);
     } catch (err) {
       console.warn('Notice loading historical reports:', err);
+      setLoadError('The report archive could not be loaded. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -435,11 +438,24 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
       </div>
 
       {/* 4. Table / Records List */}
+      {loadError && reports.length > 0 && (
+        <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <span>{loadError} Previously loaded reports are still shown.</span>
+          <button type="button" onClick={() => void loadHistoricalData()} className="min-h-9 px-3 rounded-lg border border-amber-300 font-bold hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/40">Retry</button>
+        </div>
+      )}
       <div className="bg-white dark:bg-[#111c2d] rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] shadow-2xs overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center text-xs text-[#667085]">
             <Clock className="w-6 h-6 animate-spin mx-auto text-[#C6A45A] mb-2" />
             <span>Loading historical archives...</span>
+          </div>
+        ) : loadError && reports.length === 0 ? (
+          <div role="alert" className="p-10 text-center text-xs text-[#667085]">
+            <AlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-3" />
+            <p className="font-bold text-[#142B4A] dark:text-white">Unable to load report archive</p>
+            <p className="mt-1">{loadError}</p>
+            <button type="button" onClick={() => void loadHistoricalData()} className="mt-4 min-h-10 px-4 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63]">Try again</button>
           </div>
         ) : filteredReports.length === 0 ? (
           <div className="p-12 text-center text-xs text-[#667085]">
