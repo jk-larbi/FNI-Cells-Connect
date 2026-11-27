@@ -173,11 +173,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className={`p-4 border-b border-slate-200/80 dark:border-white/10 shrink-0 ${isCollapsed ? 'px-2 py-3.5 flex flex-col items-center' : ''}`}>
           {/* macOS Window Controls + Collapse Pill */}
           <div className={`flex items-center justify-between gap-2 mb-3.5 ${isCollapsed ? 'flex-col gap-3 mb-2' : ''}`}>
-            {/* macOS 3 Dots */}
-            <div className="flex items-center gap-1.5 shrink-0" title="FNI Cells Connect">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 shadow-2xs" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 shadow-2xs" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 shadow-2xs" />
+            {/* Ministry workspace identity */}
+            <div className="flex min-w-0 items-center gap-2" title="FNI Cells Connect">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[#C6A45A] shadow-[0_0_0_4px_rgba(198,164,90,0.12)]" />
+              {!isCollapsed && (
+                <span className="truncate text-[9px] font-extrabold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  {isAdmin ? 'Ministry administration' : 'Cell leadership workspace'}
+                </span>
+              )}
             </div>
 
             {/* Desktop Collapse / Expand Toggle Button */}
@@ -239,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* MENU Category Header */}
           <div className="px-1">
             <span className={`text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500 block ${isCollapsed ? 'text-center' : ''}`}>
-              MENU
+              {isAdmin ? 'ADMIN WORKSPACE' : 'TUTOR WORKSPACE'}
             </span>
           </div>
 
@@ -256,7 +259,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               const isReports = item.id === 'reports-dropdown';
               const isReportsActive = currentTab === 'report-review' || currentTab === 'report-history' || currentTab === 'report-deadlines';
 
-              const isActive = isLearning ? isLearningActive : isCells ? isCellsActive : isReports ? isReportsActive : currentTab === item.id;
+              const isActive = isAdmin
+                ? item.id === 'cells-hub'
+                  ? ['cells-hub', 'cell-management', 'cell-leaders', 'cell-location-history', 'location-sharing'].includes(currentTab)
+                  : item.id === 'reports-hub'
+                    ? ['reports-hub', 'report-review', 'report-history', 'received-reports', 'report-deadlines'].includes(currentTab)
+                    : item.id === 'ministry-hub'
+                      ? ['ministry-hub', 'evangelism', 'follow-ups', 'finance', 'materials', 'messages', 'call-history'].includes(currentTab)
+                      : item.id === 'more-hub'
+                        ? currentTab === 'more-hub' || currentTab === 'analytics' || currentTab === 'settings' || currentTab === 'notifications' || currentTab.startsWith('learning-')
+                        : currentTab === item.id
+                : isLearning ? isLearningActive : isCells ? isCellsActive : isReports ? isReportsActive : currentTab === item.id;
 
               // Collapsed Slim Rail Item
               if (isCollapsed) {
@@ -556,19 +569,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onSelectTab(item.id as AppNavTab);
                     onCloseMobile();
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`group relative w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'bg-[#142B4A] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5'
+                      ? 'bg-[#142B4A] text-white shadow-md shadow-[#142B4A]/15 ring-1 ring-[#C6A45A]/30'
+                      : 'text-slate-600 hover:text-[#142B4A] hover:bg-slate-100/90 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.06]'
                   }`}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                    <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                       isActive
-                        ? 'bg-white/15 text-[#C6A45A]'
+                        ? 'bg-white/12 text-[#E5C77E]'
                         : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
                     } transition-colors`}>
-                      <Icon className="w-4 h-4 shrink-0" />
+                      <Icon className="w-[18px] h-[18px] shrink-0" />
                     </span>
                     <span className="truncate">{item.label}</span>
                   </div>
