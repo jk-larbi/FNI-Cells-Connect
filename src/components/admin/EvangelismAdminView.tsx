@@ -36,11 +36,13 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'evangelism' | 'meeting'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [inspectingReport, setInspectingReport] = useState<UnifiedReportItem | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const loadData = async (showLoading = true) => {
     try {
+      setLoadError('');
       if (showLoading) setIsLoading(true);
       else setIsRefreshing(true);
 
@@ -54,6 +56,7 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
       setCells(activeCells);
     } catch (err) {
       console.warn('Error loading evangelism & cell harvest reports:', err);
+      setLoadError('Evangelism reports could not be loaded. Please try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -201,8 +204,27 @@ export const EvangelismAdminView: React.FC<EvangelismAdminViewProps> = ({ onBack
     document.body.removeChild(link);
   };
 
+  if (!isLoading && loadError && reports.length === 0 && cells.length === 0) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-xs sm:p-8" role="alert" aria-live="polite">
+        <Flame className="mx-auto mb-3 h-8 w-8 text-rose-600" />
+        <h2 className="text-base font-bold text-[#142B4A]">Evangelism records are temporarily unavailable</h2>
+        <p className="mt-2 text-sm text-[#667085]">{loadError}</p>
+        <button type="button" onClick={() => void loadData(true)} className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#203D63]">
+          <RefreshCw className="h-4 w-4" /> Try again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 sm:flex-row sm:items-center sm:justify-between" role="alert" aria-live="polite">
+          <p className="text-sm text-rose-800">Refresh failed. Previously loaded records are still shown. {loadError}</p>
+          <button type="button" onClick={() => void loadData(false)} disabled={isRefreshing} className="min-h-10 shrink-0 rounded-lg border border-rose-200 bg-white px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-60">Try again</button>
+        </div>
+      )}
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
