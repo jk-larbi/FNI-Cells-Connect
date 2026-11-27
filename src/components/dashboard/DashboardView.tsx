@@ -207,36 +207,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg sm:text-xl font-black text-[#142B4A] tracking-tight">
-              Administrator Dashboard
-            </h1>
-            <span className="px-2 py-0.5 rounded-full bg-[#142B4A] text-[#C6A45A] text-[10px] font-bold uppercase tracking-wider">
-              Leadership
-            </span>
-          </div>
-          <p className="text-xs text-[#667085] mt-0.5">
-            Centralised oversight of fellowship cells, weekly reporting, evangelism outreach, and discipleship.
+          <h1 className="text-xl sm:text-2xl font-black text-[#142B4A] tracking-tight">
+            Admin overview
+          </h1>
+          <p className="mt-1 text-xs text-[#667085]">
+            A clear view of report decisions, cell activity and leadership.
           </p>
-        </div>
-
-        <div className="flex w-full sm:w-auto items-center gap-2">
-          <button
-            onClick={() => onNavigateToTab('report-review')}
-            className="w-full sm:w-auto justify-center px-3 sm:px-4 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-extrabold hover:bg-[#203D63] transition-colors shadow-sm flex items-center gap-2 cursor-pointer border border-[#C6A45A]/30"
-          >
-            <FileCheck className="w-4 h-4 text-[#C6A45A]" />
-            <span>Accept / Decline Reports</span>
-            {stats.awaitingReviewCount > 0 ? (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-[#D99A32] text-white text-[10px] font-bold animate-pulse">
-                {stats.awaitingReviewCount} Awaiting Decision
-              </span>
-            ) : (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-700/60 text-white text-[10px] font-semibold">
-                All Cleared
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
