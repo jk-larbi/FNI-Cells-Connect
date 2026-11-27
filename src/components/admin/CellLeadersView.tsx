@@ -119,38 +119,38 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
-            Cell Leaders Directory
+            Cell leaders
           </h1>
           <p className="text-xs text-[#667085] mt-0.5">
-            Manage authenticated cell leaders/tutors, track weekly reporting compliance, and inspect cell returns.
+            Find a leader, check account status and open their report history.
           </p>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="relative flex-1 min-w-[240px]">
+      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
+        <div className="relative w-full min-w-0 flex-1">
           <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-3" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search leader by name, email, or cell..."
+            placeholder="Search leaders, email or cell..."
             className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 overflow-x-auto sm:w-auto sm:shrink-0">
           {(['All', 'Active', 'Suspended'] as const).map(st => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`min-h-10 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === st
                   ? 'bg-[#142B4A] text-white'
                   : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
@@ -164,12 +164,12 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
 
       {/* Reference Image Styled Table */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
-        <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center justify-between">
+        <div className="py-3 px-4 sm:py-4 sm:px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-bold text-[#182230]">
             Cell Leaders ({filteredLeaders.length})
           </h2>
           <span className="text-xs text-[#667085]">
-            Passwords securely encrypted and hidden from administrative views
+            Select a leader to view details and submissions
           </span>
         </div>
 
