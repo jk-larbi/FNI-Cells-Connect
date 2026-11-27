@@ -2839,3 +2839,88 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-admin-stitch-shell .fni-audit-refresh { min-height: 44px; padding-inline: 12px; }
   .fni-admin-stitch-shell .fni-audit-meta { font-size: 11px; }
 }
+
+/* Calls & Meetings — Stitch desktop + mobile */
+.fni-admin-stitch-shell .fni-calls-meetings-stitch {
+  width: 100%; max-width: 1280px; margin-inline: auto; color: #142842;
+  font-family: "Source Sans 3", system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-calls-meetings-stitch h1,
+.fni-admin-stitch-shell .fni-calls-meetings-stitch h2,
+.fni-admin-stitch-shell .fni-calls-meetings-stitch h3,
+.fni-admin-stitch-shell .fni-calls-meetings-stitch button,
+.fni-admin-stitch-shell .fni-calls-meetings-stitch label {
+  font-family: "Libre Franklin", system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-calls-eyebrow {
+  margin: 0 0 7px; color: #8E6C23; font: 600 11px/16px "Libre Franklin", sans-serif;
+  letter-spacing: .09em; text-transform: uppercase;
+}
+.fni-admin-stitch-shell .fni-calls-title {
+  margin: 0; color: #142842; font: 700 clamp(28px, 3vw, 36px)/1.2 "Libre Franklin", sans-serif;
+  letter-spacing: -.035em;
+}
+.fni-admin-stitch-shell .fni-calls-count {
+  padding: 5px 10px; border: 1px solid #DCE3EC; border-radius: 999px;
+  background: #EEF2F7; color: #354863; font: 600 11px/16px "Libre Franklin", sans-serif;
+}
+.fni-admin-stitch-shell .fni-calls-subtitle { margin: 7px 0 0; color: #5A6B7C; font-size: 15px; }
+.fni-admin-stitch-shell .fni-calls-metrics {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;
+}
+.fni-admin-stitch-shell .fni-calls-metric {
+  min-width: 0; padding: 17px; border: 1px solid #DCE3EC; border-radius: 15px;
+  background: #FFFFFF; box-shadow: 0 1px 2px rgba(20,40,66,.035);
+}
+.fni-admin-stitch-shell .fni-calls-metric-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  color: #5A6B7C; font: 600 11px/16px "Libre Franklin", sans-serif;
+}
+.fni-admin-stitch-shell .fni-calls-metric-top svg { width: 17px; height: 17px; color: #8E6C23; }
+.fni-admin-stitch-shell .fni-calls-metric strong {
+  display: block; margin-top: 12px; color: #142842;
+  font: 700 27px/32px "Libre Franklin", sans-serif; font-variant-numeric: tabular-nums;
+}
+.fni-admin-stitch-shell .fni-calls-metric small { display: block; margin-top: 3px; color: #7A8999; font-size: 12px; }
+.fni-admin-stitch-shell .fni-calls-upcoming,
+.fni-admin-stitch-shell .fni-calls-toolbar,
+.fni-admin-stitch-shell .fni-calls-blocked,
+.fni-admin-stitch-shell .fni-calls-history {
+  border: 1px solid #DCE3EC; border-radius: 16px; background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(20,40,66,.025);
+}
+.fni-admin-stitch-shell .fni-calls-upcoming { padding: 18px; }
+.fni-admin-stitch-shell .fni-calls-upcoming h3,
+.fni-admin-stitch-shell .fni-calls-blocked h2 { color: #142842; font: 600 14px/20px "Libre Franklin", sans-serif; }
+.fni-admin-stitch-shell .fni-calls-toolbar { padding: 12px; }
+.fni-admin-stitch-shell .fni-calls-toolbar input {
+  min-height: 42px; border: 1px solid #DCE3EC !important; border-radius: 999px !important;
+  background: #F7F9FC !important; color: #142842 !important;
+}
+.fni-admin-stitch-shell .fni-calls-toolbar input:focus-visible,
+.fni-admin-stitch-shell .fni-calls-meetings-stitch button:focus-visible {
+  outline: 2px solid #8E6C23; outline-offset: 2px;
+}
+.fni-admin-stitch-shell .fni-calls-blocked { background: #FFFFFF; }
+.fni-admin-stitch-shell .fni-calls-history { overflow-x: hidden; }
+.fni-admin-stitch-shell .fni-calls-history > div > div { border-color: #E8EDF3; }
+.fni-admin-stitch-shell .fni-calls-history > div > div:hover { background: #F7F9FC; }
+.fni-admin-stitch-shell .fni-calls-meetings-stitch button { transition-duration: 120ms; }
+@media (max-width: 900px) {
+  .fni-admin-stitch-shell .fni-calls-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-calls-meetings-stitch { padding-bottom: 12px; }
+  .fni-admin-stitch-shell .fni-calls-meetings-stitch > div:first-child { align-items: stretch; }
+  .fni-admin-stitch-shell .fni-calls-meetings-stitch > div:first-child > div:last-child { display: grid; grid-template-columns: 1fr 1fr; }
+  .fni-admin-stitch-shell .fni-calls-meetings-stitch > div:first-child > div:last-child button { justify-content: center; min-width: 0; padding-inline: 10px; }
+  .fni-admin-stitch-shell .fni-calls-metric { padding: 13px; }
+  .fni-admin-stitch-shell .fni-calls-metric strong { margin-top: 9px; font-size: 24px; }
+  .fni-admin-stitch-shell .fni-calls-toolbar { padding: 10px; }
+  .fni-admin-stitch-shell .fni-calls-toolbar > div:first-child { width: 100%; overflow-x: auto; }
+  .fni-admin-stitch-shell .fni-calls-toolbar > div:first-child button { flex: 1 0 auto; }
+  .fni-admin-stitch-shell .fni-calls-toolbar > div:last-child { width: 100%; }
+  .fni-admin-stitch-shell .fni-calls-upcoming { padding: 14px; }
+  .fni-admin-stitch-shell .fni-calls-history > div > div { align-items: flex-start; gap: 10px; }
+  .fni-admin-stitch-shell .fni-calls-history > div > div > div:last-child { flex-wrap: wrap; }
+}
