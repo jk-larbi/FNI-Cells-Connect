@@ -70,6 +70,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   const [cells, setCells] = useState<Cell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [liveTicker, setLiveTicker] = useState(Date.now());
 
   // Live real-time ticker updating elapsed submission times every 15s
@@ -178,6 +179,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
 
       setReports(activeQueue);
       setCells(loadedCells);
+      setLoadError(null);
       setSelectedIds(new Set());
       setInspectingItem(current =>
         current && !activeQueue.some(report => report.id === current.id) ? null : current
@@ -190,6 +192,9 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           setInspectingItem(found);
         }
       }
+    } catch (error) {
+      console.error('Could not load the report review queue:', error);
+      setLoadError('The report queue could not be loaded. Check your connection and try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -704,6 +709,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
+              aria-label="Search reports by cell, tutor or report details"
               placeholder="Search cells, tutors or report details..."
               className="w-full pl-10 pr-9 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
             />
@@ -711,6 +717,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
+                aria-label="Clear report search"
+                title="Clear search"
                 className="absolute right-3 top-2.5 text-[#667085] hover:text-[#182230] cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
@@ -990,7 +998,26 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-[#667085]">
                     <RefreshCw className="w-7 h-7 text-[#C6A45A] animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-semibold">Loading live report queue...</p>
+                    <p className="text-xs font-semibold">Loading report queue...</p>
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={8} className="py-12 px-4 text-center">
+                    <div className="mx-auto max-w-md rounded-2xl border border-rose-200 bg-rose-50 p-5">
+                      <AlertCircle className="mx-auto mb-2 h-7 w-7 text-[#C74646]" />
+                      <h3 className="text-sm font-bold text-[#142B4A]">Unable to load reports</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-[#667085]">{loadError}</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadData(true)}
+                        disabled={isRefreshing}
+                        className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-xs font-bold text-white hover:bg-[#203D63] disabled:opacity-60"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        {isRefreshing ? 'Retrying...' : 'Try again'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : filteredReports.length === 0 ? (
