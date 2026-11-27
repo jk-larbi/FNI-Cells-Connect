@@ -1,0 +1,723 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ministry Analytics — FNI Cells Connect (Desktop)</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#1F6E43',
+        'on-success': '#FFFFFF',
+        'success-container': '#DCF2E5',
+        'on-success-container': '#0B3D22',
+        'warning': '#8E6C23',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FDF8E8',
+        'on-warning-container': '#5D4200',
+        'light-primary': '#142842',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#E4ECF7',
+        'light-on-primary-container': '#142842',
+        'light-secondary': '#8E6C23',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FDF8E8',
+        'light-on-secondary-container': '#5D4200',
+        'light-tertiary': '#354863',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#EBF1FF',
+        'light-on-tertiary-container': '#1E314C',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F7F9FC',
+        'light-on-background': '#142842',
+        'light-surface': '#F7F9FC',
+        'light-surface-dim': '#E2E8F0',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FFFFFF',
+        'light-surface-container': '#EEF2F7',
+        'light-surface-container-high': '#E4ECF7',
+        'light-surface-container-highest': '#DCE3EC',
+        'light-on-surface': '#142842',
+        'light-surface-variant': '#E4ECF7',
+        'light-on-surface-variant': '#5A6B7C',
+        'light-outline': '#6B7C8F',
+        'light-outline-variant': '#DCE3EC',
+        'light-inverse-surface': '#1E314C',
+        'light-inverse-on-surface': '#F7F9FC',
+        'light-inverse-primary': '#B4C8E9',
+        'dark-primary': '#B4C8E9',
+        'dark-on-primary': '#142842',
+        'dark-primary-container': '#1E314C',
+        'dark-on-primary-container': '#D4E3FF',
+        'dark-secondary': '#EEC068',
+        'dark-on-secondary': '#412D00',
+        'dark-secondary-container': '#5D4200',
+        'dark-on-secondary-container': '#FFEFD7',
+        'dark-tertiary': '#99ACCC',
+        'dark-on-tertiary': '#061C35',
+        'dark-tertiary-container': '#354863',
+        'dark-on-tertiary-container': '#EBF1FF',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#101620',
+        'dark-on-background': '#E8EDF5',
+        'dark-surface': '#101620',
+        'dark-surface-dim': '#0C1119',
+        'dark-surface-bright': '#232D3D',
+        'dark-surface-container-lowest': '#0C1119',
+        'dark-surface-container-low': '#161E2B',
+        'dark-surface-container': '#1C2636',
+        'dark-surface-container-high': '#253145',
+        'dark-surface-container-highest': '#303E54',
+        'dark-on-surface': '#E8EDF5',
+        'dark-surface-variant': '#253145',
+        'dark-on-surface-variant': '#A8B6C8',
+        'dark-outline': '#7E8FA4',
+        'dark-outline-variant': '#2E3B4E',
+        'dark-inverse-surface': '#E8EDF5',
+        'dark-inverse-on-surface': '#142842',
+        'dark-inverse-primary': '#142842',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '16px',
+      },
+      fontFamily: {
+        'display': ['"Libre Franklin"', 'sans-serif'],
+        'headline': ['"Libre Franklin"', 'sans-serif'],
+        'title': ['"Libre Franklin"', 'sans-serif'],
+        'body': ['"Source Sans 3"', 'sans-serif'],
+        'label': ['"Libre Franklin"', 'sans-serif'],
+        'mono': ['"Source Code Pro"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.15px', fontWeight: '700' }],
+        'title-lg': ['18px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '220ms',
+        'surface-exit': '150ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'surface-exit': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'surface-exit': 'cubic-bezier(0.3, 0, 1, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700&amp;family=Source+Code+Pro:wght@500&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons {
+      display: inline-block; width: 1em; height: 1em; line-height: 1 !important;
+      box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle;
+    }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body class="bg-light-surface text-light-on-surface antialiased">
+  <div class="min-h-[1024px] flex bg-light-surface" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Dark Navy Sidebar Rail -->
+    <aside class="hidden lg:flex w-64 shrink-0 min-h-[1024px] bg-light-primary text-light-on-primary flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col px-2 pt-1">
+          <span data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-primary tracking-tight">FNI</span>
+          <span data-design-text-token="label-sm" class="font-label text-label-sm text-dark-secondary uppercase">CELLS CONNECT</span>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span data-design-text-token="label-sm" class="px-3 font-label text-label-sm text-light-inverse-primary uppercase">Workspace</span>
+          <nav aria-label="Workspace menu">
+            <ul data-component-id="list-interactive" data-component-type="list" data-component-variant="interactive" class="flex flex-col gap-1">
+              <li><a href="../overview-desktop/OverviewDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">grid_view</span><span data-design-text-token="label-lg" class="font-label text-label-lg">Overview</span></a></li>
+              <li><a href="../reports-desktop/ReportsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">description</span><span data-design-text-token="label-lg" class="font-label text-label-lg">Report review</span></a></li>
+              <li><a href="../cell-groups-desktop/CellGroupsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">group</span><span data-design-text-token="label-lg" class="font-label text-label-lg">Cell groups</span></a></li>
+              <li><a href="../leaders-desktop/LeadersDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">badge</span><span data-design-text-token="label-lg" class="font-label text-label-lg">Cell leaders</span></a></li>
+              <li><a href="../evangelism-desktop/EvangelismDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">campaign</span><span data-design-text-token="label-lg" class="font-label text-label-lg">Evangelism</span></a></li>
+              <li><a href="AnalyticsDesktop.html" aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded-md bg-light-tertiary text-light-on-primary"><span class="material-symbols-outlined text-title-md" style="font-variation-settings: &#39;FILL&#39; 1;" aria-hidden="true">analytics</span><span data-design-text-token="label-lg" class="font-label text-label-lg">Ministry analytics</span></a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1 px-2">
+        <span data-design-text-token="label-sm" class="font-label text-label-sm text-dark-secondary">Supabase Connected</span>
+        <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-inverse-primary">Forerunners Network Int&#39;l</span>
+      </div>
+    </aside>
+
+    <!-- Main Column -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- Top Bar -->
+      <header class="sticky top-0 z-20 bg-light-surface-container-low border-b border-light-outline-variant px-4 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-2 font-label text-label-md text-light-on-surface-variant">
+          <a href="../overview-desktop/OverviewDesktop.html" class="hover:text-light-on-surface">Workspace</a>
+          <span aria-hidden="true">&gt;</span>
+          <span class="text-light-on-surface">Ministry Analytics</span>
+        </nav>
+        <div class="flex items-center gap-4">
+          <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-light-surface-container border border-light-outline-variant" role="group" aria-label="Data state preview">
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant px-1">State:</span>
+            <button type="button" data-state-btn="empty" class="px-2.5 py-0.5 rounded-full font-label text-label-sm bg-light-primary text-light-on-primary">Ready</button>
+            <button type="button" data-state-btn="loading" class="px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant hover:text-light-on-surface">Loading</button>
+            <button type="button" data-state-btn="error" class="px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant hover:text-light-on-surface">Error</button>
+          </div>
+          <div class="hidden sm:flex flex-col text-right">
+            <span data-design-text-token="label-lg" class="font-label text-label-lg text-light-on-surface">Administrator</span>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">FNI leadership</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 lg:px-8 py-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
+
+        <!-- Page Header + Primary Actions -->
+        <section class="flex flex-wrap items-start justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-secondary uppercase">FNI CELLS CONNECT · ANALYTICS</span>
+            <h1 data-design-text-token="display-lg" class="font-display text-display-lg-mobile lg:text-display-lg text-light-on-surface">Ministry Analytics</h1>
+            <p data-design-text-token="body-lg" class="font-body text-body-lg text-light-on-surface-variant">Insights into ministry growth, engagement and performance.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Date-Range Selector -->
+            <div class="inline-flex items-center gap-2 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-2">
+              <span class="material-symbols-outlined text-title-md text-light-on-surface-variant" aria-hidden="true">calendar_today</span>
+              <label for="date-range-select" class="sr-only">Date range</label>
+              <select id="date-range-select" class="border-0 bg-transparent p-0 pr-6 font-label text-label-lg text-light-on-surface focus:ring-0">
+                <option value="week">This Week</option>
+                <option value="month" selected>This Month</option>
+                <option value="quarter">This Quarter</option>
+                <option value="year">This Year</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            <!-- Refresh Data -->
+            <button id="refresh-btn" type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-light-surface-container-low border border-light-outline-variant text-light-on-surface hover:bg-light-surface-container">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">refresh</span>
+              <span data-design-text-token="label-lg" class="font-label text-label-lg">Refresh data</span>
+            </button>
+
+            <!-- COMPONENT: button-primary -->
+            <button id="export-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-light-primary text-light-on-primary hover:bg-light-tertiary">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">download</span>
+              <span data-design-text-token="label-lg" class="font-label text-label-lg">Export report</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Custom Range Bar (toggled when Custom Range selected) -->
+        <section id="custom-range-bar" hidden class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-wrap items-end gap-4">
+          <div class="flex flex-col gap-1">
+            <label for="custom-start" class="font-label text-label-sm text-light-on-surface-variant">Start date</label>
+            <input id="custom-start" type="date" class="rounded-md border-light-outline-variant bg-light-surface text-body-md text-light-on-surface">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="custom-end" class="font-label text-label-sm text-light-on-surface-variant">End date</label>
+            <input id="custom-end" type="date" class="rounded-md border-light-outline-variant bg-light-surface text-body-md text-light-on-surface">
+          </div>
+          <button type="button" class="px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">Apply range</button>
+        </section>
+
+        <!-- Global Filter Bar -->
+        <section aria-label="Analytics filters" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-wrap items-end justify-between gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+            <div class="flex flex-col gap-1">
+              <label for="filter-cell" class="font-label text-label-sm text-light-on-surface-variant">Cell group</label>
+              <select id="filter-cell" class="rounded-md border-light-outline-variant bg-light-surface font-body text-body-md text-light-on-surface">
+                <option value="all">All cell groups</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="filter-leader" class="font-label text-label-sm text-light-on-surface-variant">Cell leader</label>
+              <select id="filter-leader" class="rounded-md border-light-outline-variant bg-light-surface font-body text-body-md text-light-on-surface">
+                <option value="all">All cell leaders</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="filter-status" class="font-label text-label-sm text-light-on-surface-variant">Report status</label>
+              <select id="filter-status" class="rounded-md border-light-outline-variant bg-light-surface font-body text-body-md text-light-on-surface">
+                <option value="all">All statuses</option>
+                <option value="submitted">Submitted</option>
+                <option value="pending">Pending</option>
+                <option value="late">Submitted Late</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="filter-category" class="font-label text-label-sm text-light-on-surface-variant">Activity category</label>
+              <select id="filter-category" class="rounded-md border-light-outline-variant bg-light-surface font-body text-body-md text-light-on-surface">
+                <option value="all">All categories</option>
+                <option value="meetings">Cell meetings</option>
+                <option value="evangelism">Evangelism</option>
+                <option value="followups">Follow-ups</option>
+                <option value="membership">Membership</option>
+              </select>
+            </div>
+          </div>
+          <button id="reset-filters-btn" type="button" class="px-3.5 py-2 rounded-full border border-light-outline-variant font-label text-label-md text-light-on-surface-variant hover:text-light-on-surface hover:bg-light-surface-container">Reset filters</button>
+        </section>
+
+        <!-- Error State Banner (hidden by default) -->
+        <section id="analytics-error-state" hidden role="alert" class="rounded-lg bg-light-error-container border border-light-outline-variant p-5 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined text-headline-md text-light-on-error-container" aria-hidden="true">error_outline</span>
+            <div class="flex flex-col gap-0.5">
+              <h2 class="font-title text-title-md text-light-on-error-container">Unable to load ministry analytics</h2>
+              <p class="font-body text-body-md text-light-on-error-container">The connection to Supabase timed out or returned an error. Check your session and try again.</p>
+            </div>
+          </div>
+          <button id="retry-load-btn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">refresh</span>
+            <span>Retry</span>
+          </button>
+        </section>
+
+        <!-- Loading State Banner (hidden by default) -->
+        <section id="analytics-loading-state" hidden aria-live="polite" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex items-center gap-3">
+          <span class="material-symbols-outlined text-headline-md text-light-primary animate-spin" aria-hidden="true">progress_activity</span>
+          <div class="flex flex-col gap-0.5">
+            <span class="font-title text-title-md text-light-on-surface">Retrieving ministry records from Supabase…</span>
+            <span class="font-body text-body-md text-light-on-surface-variant">Aggregating cell meetings, attendance, reports, evangelism, and membership data.</span>
+          </div>
+        </section>
+
+        <!-- 1. Key Performance Indicators (6-card balanced grid) -->
+        <section aria-label="Key Performance Indicators" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <article data-kpi="total_members" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-label text-label-md text-light-on-surface-variant">Total Members</span>
+              <span class="material-symbols-outlined text-title-md text-light-primary" aria-hidden="true">groups</span>
+            </div>
+            <span class="kpi-value font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-body text-body-md text-light-on-surface-variant">Registered members</span>
+              <span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">No baseline period</span>
+            </div>
+          </article>
+
+          <article data-kpi="active_cells" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-label text-label-md text-light-on-surface-variant">Active Cells</span>
+              <span class="material-symbols-outlined text-title-md text-light-primary" aria-hidden="true">hub</span>
+            </div>
+            <span class="kpi-value font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-body text-body-md text-light-on-surface-variant">Active cell groups</span>
+              <span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">No baseline period</span>
+            </div>
+          </article>
+
+          <article data-kpi="total_leaders" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-label text-label-md text-light-on-surface-variant">Total Cell Leaders</span>
+              <span class="material-symbols-outlined text-title-md text-light-primary" aria-hidden="true">badge</span>
+            </div>
+            <span class="kpi-value font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-body text-body-md text-light-on-surface-variant">Active cell leaders</span>
+              <span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">No baseline period</span>
+            </div>
+          </article>
+
+          <article data-kpi="avg_attendance" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-label text-label-md text-light-on-surface-variant">Average Attendance</span>
+              <span class="material-symbols-outlined text-title-md text-light-secondary" aria-hidden="true">event_available</span>
+            </div>
+            <span class="kpi-value font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-body text-body-md text-light-on-surface-variant">Across cell meetings</span>
+              <span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">No baseline period</span>
+            </div>
+          </article>
+
+          <article data-kpi="reports_submitted" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-label text-label-md text-light-on-surface-variant">Reports Submitted</span>
+              <span class="material-symbols-outlined text-title-md text-success" aria-hidden="true">fact_check</span>
+            </div>
+            <span class="kpi-value font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-body text-body-md text-light-on-surface-variant">Completion rate</span>
+              <span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">No baseline period</span>
+            </div>
+          </article>
+
+          <article data-kpi="new_members" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-label text-label-md text-light-on-surface-variant">New Members</span>
+              <span class="material-symbols-outlined text-title-md text-light-secondary" aria-hidden="true">person_add</span>
+            </div>
+            <span class="kpi-value font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-body text-body-md text-light-on-surface-variant">Selected period</span>
+              <span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">No baseline period</span>
+            </div>
+          </article>
+        </section>
+
+        <!-- 2. Attendance Analytics -->
+        <section aria-label="Attendance Analytics" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-5">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-col gap-0.5">
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Attendance Analytics</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Attendance trends over time, weekly vs. monthly comparisons, and distribution across cell groups.</p>
+            </div>
+            <!-- COMPONENT: tabs-horizontal -->
+            <div data-component-id="tabs-horizontal" data-component-type="tabs" data-component-variant="horizontal" role="tablist" aria-label="Attendance cadence" class="inline-flex items-center gap-1 p-1 rounded-full bg-light-surface-container">
+              <button type="button" role="tab" aria-selected="true" class="px-4 py-1.5 rounded-full bg-light-surface-container-low text-light-on-surface font-label text-label-md">Weekly</button>
+              <button type="button" role="tab" aria-selected="false" class="px-4 py-1.5 rounded-full text-light-on-surface-variant font-label text-label-md hover:text-light-on-surface">Monthly</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <!-- Line Chart Canvas -->
+            <div class="lg:col-span-2 flex flex-col gap-3">
+              <div class="grid grid-cols-3 gap-3">
+                <div class="rounded-md bg-light-surface border border-light-outline-variant px-3.5 py-2.5 flex flex-col">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Average attendance</span>
+                  <span class="font-title text-title-md text-light-on-surface tabular-nums">--</span>
+                </div>
+                <div class="rounded-md bg-light-surface border border-light-outline-variant px-3.5 py-2.5 flex flex-col">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Highest period</span>
+                  <span class="font-title text-title-md text-light-on-surface tabular-nums">--</span>
+                </div>
+                <div class="rounded-md bg-light-surface border border-light-outline-variant px-3.5 py-2.5 flex flex-col">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Period comparison</span>
+                  <span class="font-title text-title-md text-light-on-surface tabular-nums">--</span>
+                </div>
+              </div>
+
+              <!-- SVG Chart Frame with Gridlines & Empty Overlay -->
+              <div class="relative rounded-md border border-light-outline-variant bg-light-surface p-4 min-h-[240px] flex flex-col justify-between">
+                <svg viewBox="0 0 640 180" class="w-full h-44" role="img" aria-label="Attendance trend chart">
+                  <line x1="40" y1="20" x2="620" y2="20" stroke="#DCE3EC" stroke-dasharray="3 3"></line>
+                  <line x1="40" y1="60" x2="620" y2="60" stroke="#DCE3EC" stroke-dasharray="3 3"></line>
+                  <line x1="40" y1="100" x2="620" y2="100" stroke="#DCE3EC" stroke-dasharray="3 3"></line>
+                  <line x1="40" y1="140" x2="620" y2="140" stroke="#DCE3EC"></line>
+                  <text x="12" y="24" class="fill-light-on-surface-variant text-[10px]">100%</text>
+                  <text x="16" y="64" class="fill-light-on-surface-variant text-[10px]">75%</text>
+                  <text x="16" y="104" class="fill-light-on-surface-variant text-[10px]">50%</text>
+                  <text x="20" y="144" class="fill-light-on-surface-variant text-[10px]">0%</text>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                  <span class="material-symbols-outlined text-headline-md text-light-on-surface-variant mb-1" aria-hidden="true">show_chart</span>
+                  <span class="font-title text-title-md text-light-on-surface">No attendance records synced yet</span>
+                  <span class="font-body text-body-md text-light-on-surface-variant">Connect or refresh Supabase attendance logs to render trendlines and tooltips.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Attendance Breakdown by Cell -->
+            <div class="rounded-md border border-light-outline-variant bg-light-surface p-4 flex flex-col justify-between gap-3">
+              <div class="flex flex-col gap-0.5">
+                <h3 class="font-title text-title-md text-light-on-surface">Distribution by cell</h3>
+                <span class="font-body text-body-md text-light-on-surface-variant">Share of total attendance across active cells</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center justify-center py-8 text-center gap-1">
+                <span class="material-symbols-outlined text-headline-md text-light-on-surface-variant" aria-hidden="true">donut_small</span>
+                <span class="font-label text-label-lg text-light-on-surface">No cell breakdown available</span>
+                <span class="font-body text-body-md text-light-on-surface-variant">Cell-level distribution appears once meeting records are recorded.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Cell Group Performance Table -->
+        <section aria-label="Cell Group Performance" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-col gap-0.5">
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Cell Group Performance</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Select a cell group to inspect detailed attendance consistency, reporting status, and growth.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <label for="cell-sort" class="font-label text-label-sm text-light-on-surface-variant">Sort by</label>
+              <select id="cell-sort" class="rounded-full border-light-outline-variant bg-light-surface font-label text-label-md text-light-on-surface py-1.5 pl-3 pr-7">
+                <option value="name">Cell name</option>
+                <option value="members">Registered members</option>
+                <option value="attendance">Latest attendance</option>
+                <option value="consistency">Consistency</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-md border border-light-outline-variant bg-light-surface">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-light-outline-variant bg-light-surface-container">
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Cell name</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Assigned cell leader</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Members</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Latest attendance</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Report status</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Consistency</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Growth trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="7" class="px-4 py-10 text-center">
+                    <div class="flex flex-col items-center gap-1">
+                      <span class="material-symbols-outlined text-headline-md text-light-on-surface-variant" aria-hidden="true">table_rows</span>
+                      <span class="font-title text-title-md text-light-on-surface">No cell group records in selected range</span>
+                      <span class="font-body text-body-md text-light-on-surface-variant">Data will populate directly from Supabase cell_groups and meeting_reports tables.</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 4. Reporting Analytics & 5. Evangelism Analytics -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Reporting Analytics -->
+          <article aria-label="Reporting Analytics" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+            <div class="flex flex-col gap-0.5">
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Reporting Analytics</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Leader report compliance, submission timing, and cell-by-cell status.</p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div class="rounded-md bg-light-surface border border-light-outline-variant p-3 flex flex-col">
+                <span class="font-label text-label-sm text-light-on-surface-variant">Expected</span>
+                <span class="font-headline text-headline-md text-light-on-surface tabular-nums">--</span>
+              </div>
+              <div class="rounded-md bg-success-container p-3 flex flex-col">
+                <span class="font-label text-label-sm text-on-success-container">Submitted</span>
+                <span class="font-headline text-headline-md text-on-success-container tabular-nums">--</span>
+              </div>
+              <div class="rounded-md bg-warning-container p-3 flex flex-col">
+                <span class="font-label text-label-sm text-on-warning-container">Pending</span>
+                <span class="font-headline text-headline-md text-on-warning-container tabular-nums">--</span>
+              </div>
+              <div class="rounded-md bg-light-error-container p-3 flex flex-col">
+                <span class="font-label text-label-sm text-light-on-error-container">Submitted Late</span>
+                <span class="font-headline text-headline-md text-light-on-error-container tabular-nums">--</span>
+              </div>
+              <div class="sm:col-span-2 rounded-md bg-light-surface border border-light-outline-variant p-3 flex flex-col">
+                <span class="font-label text-label-sm text-light-on-surface-variant">Completion percentage</span>
+                <span class="font-headline text-headline-md text-light-on-surface tabular-nums">--%</span>
+              </div>
+            </div>
+
+            <div class="rounded-md border border-light-outline-variant bg-light-surface p-5 text-center flex flex-col items-center gap-1">
+              <span class="font-label text-label-lg text-light-on-surface">Submission trends &amp; cell performance</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Awaiting report submission records for the selected period.</span>
+            </div>
+          </article>
+
+          <!-- Evangelism Analytics -->
+          <article aria-label="Evangelism Analytics" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+            <div class="flex flex-col gap-0.5">
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Evangelism Analytics</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Outreach activity volume, souls reached, converts, and follow-up completion.</p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div class="rounded-md bg-light-surface border border-light-outline-variant p-3 flex flex-col">
+                <span class="font-label text-label-sm text-light-on-surface-variant">Activities</span>
+                <span class="font-headline text-headline-md text-light-on-surface tabular-nums">--</span>
+              </div>
+              <div class="rounded-md bg-light-surface border border-light-outline-variant p-3 flex flex-col">
+                <span class="font-label text-label-sm text-light-on-surface-variant">People reached</span>
+                <span class="font-headline text-headline-md text-light-on-surface tabular-nums">--</span>
+              </div>
+              <div class="rounded-md bg-light-secondary-container p-3 flex flex-col">
+                <span class="font-label text-label-sm text-light-on-secondary-container">New converts</span>
+                <span class="font-headline text-headline-md text-light-on-secondary-container tabular-nums">--</span>
+              </div>
+              <div class="rounded-md bg-success-container p-3 flex flex-col">
+                <span class="font-label text-label-sm text-on-success-container">Follow-ups done</span>
+                <span class="font-headline text-headline-md text-on-success-container tabular-nums">--</span>
+              </div>
+              <div class="sm:col-span-2 rounded-md bg-warning-container p-3 flex flex-col">
+                <span class="font-label text-label-sm text-on-warning-container">Follow-ups pending</span>
+                <span class="font-headline text-headline-md text-on-warning-container tabular-nums">--</span>
+              </div>
+            </div>
+
+            <div class="rounded-md border border-light-outline-variant bg-light-surface p-5 text-center flex flex-col items-center gap-1">
+              <span class="font-label text-label-lg text-light-on-surface">Evangelism growth &amp; cell breakdown</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Awaiting evangelism and follow-up logs from Supabase.</span>
+            </div>
+          </article>
+        </section>
+
+        <!-- 6. Membership & Growth Analytics -->
+        <section aria-label="Membership and Growth Analytics" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-col gap-0.5">
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Membership &amp; Growth Analytics</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Total membership, period additions, cell distribution, and new member integration progress.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="rounded-md bg-light-surface border border-light-outline-variant p-4 flex flex-col gap-1">
+              <span class="font-label text-label-sm text-light-on-surface-variant">Total membership</span>
+              <span class="font-headline text-headline-md text-light-on-surface tabular-nums">--</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Active registered members</span>
+            </div>
+            <div class="rounded-md bg-light-surface border border-light-outline-variant p-4 flex flex-col gap-1">
+              <span class="font-label text-label-sm text-light-on-surface-variant">New members (period)</span>
+              <span class="font-headline text-headline-md text-light-on-surface tabular-nums">--</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Added within selected range</span>
+            </div>
+            <div class="rounded-md bg-light-surface border border-light-outline-variant p-4 flex flex-col gap-1">
+              <span class="font-label text-label-sm text-light-on-surface-variant">Integration &amp; follow-up</span>
+              <span class="font-headline text-headline-md text-light-on-surface tabular-nums">--</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Discipleship &amp; onboarding status</span>
+            </div>
+          </div>
+
+          <div class="rounded-md border border-light-outline-variant bg-light-surface p-6 text-center flex flex-col items-center gap-1">
+            <span class="font-label text-label-lg text-light-on-surface">Membership growth trajectory &amp; distribution by cell</span>
+            <span class="font-body text-body-md text-light-on-surface-variant">No membership history records available for the selected filters.</span>
+          </div>
+        </section>
+
+        <!-- 7. Insights & Performance Summary -->
+        <section aria-label="Insights and Performance Summary" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+          <div class="flex flex-col gap-0.5">
+            <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Insights &amp; Performance Summary</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Data-driven highlights derived strictly from verified ministry records.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <article class="rounded-md border border-light-outline-variant bg-light-surface p-4 flex flex-col gap-1.5">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-title-md text-success" aria-hidden="true">trending_up</span>
+                <h3 class="font-title text-title-md text-light-on-surface">Improving attendance</h3>
+              </div>
+              <p class="font-body text-body-md text-light-on-surface-variant">Awaiting multi-week attendance records to identify upward trends.</p>
+            </article>
+
+            <article class="rounded-md border border-light-outline-variant bg-light-surface p-4 flex flex-col gap-1.5">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-title-md text-light-error" aria-hidden="true">trending_down</span>
+                <h3 class="font-title text-title-md text-light-on-surface">Declining attendance</h3>
+              </div>
+              <p class="font-body text-body-md text-light-on-surface-variant">No declining cell trends detected in current dataset.</p>
+            </article>
+
+            <article class="rounded-md border border-light-outline-variant bg-light-surface p-4 flex flex-col gap-1.5">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-title-md text-success" aria-hidden="true">verified</span>
+                <h3 class="font-title text-title-md text-light-on-surface">Consistent reporting</h3>
+              </div>
+              <p class="font-body text-body-md text-light-on-surface-variant">Awaiting report submission history across cell leaders.</p>
+            </article>
+
+            <article class="rounded-md border border-light-outline-variant bg-light-secondary-container p-4 flex flex-col gap-1.5">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-title-md text-light-on-secondary-container" aria-hidden="true">pending_actions</span>
+                <h3 class="font-title text-title-md text-light-on-secondary-container">Outstanding reports</h3>
+              </div>
+              <p class="font-body text-body-md text-light-on-secondary-container">Pending or overdue reports will surface here when synced.</p>
+            </article>
+
+            <article class="md:col-span-2 rounded-md border border-light-outline-variant bg-light-surface p-4 flex flex-col gap-1.5">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-title-md text-light-primary" aria-hidden="true">priority_high</span>
+                <h3 class="font-title text-title-md text-light-on-surface">Areas requiring leadership attention</h3>
+              </div>
+              <p class="font-body text-body-md text-light-on-surface-variant">No leadership alerts triggered. Alerts appear automatically when attendance drops or reports remain unsubmitted.</p>
+            </article>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const dateSelect = document.getElementById('date-range-select');
+      const customBar = document.getElementById('custom-range-bar');
+      const errorBanner = document.getElementById('analytics-error-state');
+      const loadingBanner = document.getElementById('analytics-loading-state');
+      const stateBtns = document.querySelectorAll('[data-state-btn]');
+
+      function setState(state) {
+        errorBanner.hidden = state !== 'error';
+        loadingBanner.hidden = state !== 'loading';
+        stateBtns.forEach(btn => {
+          const active = btn.getAttribute('data-state-btn') === state;
+          btn.className = active
+            ? 'px-2.5 py-0.5 rounded-full font-label text-label-sm bg-light-primary text-light-on-primary'
+            : 'px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant hover:text-light-on-surface';
+        });
+      }
+
+      dateSelect.addEventListener('change', () => {
+        customBar.hidden = dateSelect.value !== 'custom';
+      });
+
+      stateBtns.forEach(btn => {
+        btn.addEventListener('click', () => setState(btn.getAttribute('data-state-btn')));
+      });
+
+      document.getElementById('refresh-btn').addEventListener('click', () => {
+        setState('loading');
+        setTimeout(() => setState('empty'), 600);
+      });
+
+      document.getElementById('retry-load-btn').addEventListener('click', () => {
+        setState('loading');
+        setTimeout(() => setState('empty'), 600);
+      });
+
+      document.getElementById('reset-filters-btn').addEventListener('click', () => {
+        ['filter-cell', 'filter-leader', 'filter-status', 'filter-category'].forEach(id => {
+          document.getElementById(id).value = 'all';
+        });
+        dateSelect.value = 'month';
+        customBar.hidden = true;
+      });
+    })();
+  </script>
+
+
+</body></html>

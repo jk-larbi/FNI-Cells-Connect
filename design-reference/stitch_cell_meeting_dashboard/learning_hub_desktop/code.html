@@ -1,0 +1,720 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning &amp; Assessment — FNI Cells Connect (Desktop)</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#1F6E43',
+        'on-success': '#FFFFFF',
+        'success-container': '#DCF2E5',
+        'on-success-container': '#0B3D22',
+        'warning': '#8E6C23',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FDF8E8',
+        'on-warning-container': '#5D4200',
+        'light-primary': '#142842',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#E4ECF7',
+        'light-on-primary-container': '#142842',
+        'light-secondary': '#8E6C23',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FDF8E8',
+        'light-on-secondary-container': '#5D4200',
+        'light-tertiary': '#354863',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#EBF1FF',
+        'light-on-tertiary-container': '#1E314C',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F7F9FC',
+        'light-on-background': '#142842',
+        'light-surface': '#F7F9FC',
+        'light-surface-dim': '#E2E8F0',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FFFFFF',
+        'light-surface-container': '#EEF2F7',
+        'light-surface-container-high': '#E4ECF7',
+        'light-surface-container-highest': '#DCE3EC',
+        'light-on-surface': '#142842',
+        'light-surface-variant': '#E4ECF7',
+        'light-on-surface-variant': '#5A6B7C',
+        'light-outline': '#6B7C8F',
+        'light-outline-variant': '#DCE3EC',
+        'light-inverse-surface': '#1E314C',
+        'light-inverse-on-surface': '#F7F9FC',
+        'light-inverse-primary': '#B4C8E9',
+        'dark-primary': '#B4C8E9',
+        'dark-on-primary': '#142842',
+        'dark-primary-container': '#1E314C',
+        'dark-on-primary-container': '#D4E3FF',
+        'dark-secondary': '#EEC068',
+        'dark-on-secondary': '#412D00',
+        'dark-secondary-container': '#5D4200',
+        'dark-on-secondary-container': '#FFEFD7',
+        'dark-tertiary': '#99ACCC',
+        'dark-on-tertiary': '#061C35',
+        'dark-tertiary-container': '#354863',
+        'dark-on-tertiary-container': '#EBF1FF',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#101620',
+        'dark-on-background': '#E8EDF5',
+        'dark-surface': '#101620',
+        'dark-surface-dim': '#0C1119',
+        'dark-surface-bright': '#232D3D',
+        'dark-surface-container-lowest': '#0C1119',
+        'dark-surface-container-low': '#161E2B',
+        'dark-surface-container': '#1C2636',
+        'dark-surface-container-high': '#253145',
+        'dark-surface-container-highest': '#303E54',
+        'dark-on-surface': '#E8EDF5',
+        'dark-surface-variant': '#253145',
+        'dark-on-surface-variant': '#A8B6C8',
+        'dark-outline': '#7E8FA4',
+        'dark-outline-variant': '#2E3B4E',
+        'dark-inverse-surface': '#E8EDF5',
+        'dark-inverse-on-surface': '#142842',
+        'dark-inverse-primary': '#142842',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '16px',
+      },
+      fontFamily: {
+        'display': ['"Libre Franklin"', 'sans-serif'],
+        'headline': ['"Libre Franklin"', 'sans-serif'],
+        'title': ['"Libre Franklin"', 'sans-serif'],
+        'body': ['"Source Sans 3"', 'sans-serif'],
+        'label': ['"Libre Franklin"', 'sans-serif'],
+        'mono': ['"Source Code Pro"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.15px', fontWeight: '700' }],
+        'title-lg': ['18px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '220ms',
+        'surface-exit': '150ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'surface-exit': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'surface-exit': 'cubic-bezier(0.3, 0, 1, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700&amp;family=Source+Code+Pro:wght@500&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons {
+      display: inline-block; width: 1em; height: 1em; line-height: 1 !important;
+      box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle;
+    }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body class="bg-light-surface text-light-on-surface antialiased">
+  <div class="min-h-[1024px] flex bg-light-surface" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Dark Navy Sidebar Rail: Learning & Assessment Module -->
+    <aside class="hidden lg:flex w-64 shrink-0 min-h-[1024px] bg-light-primary text-light-on-primary flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col px-2 pt-1">
+          <span data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-primary tracking-tight">FNI</span>
+          <span data-design-text-token="label-sm" class="font-label text-label-sm text-dark-secondary uppercase">CELLS CONNECT</span>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <span data-design-text-token="label-sm" class="px-3 font-label text-label-sm text-light-inverse-primary uppercase">Learning &amp; Assessment</span>
+          <nav aria-label="Learning administration menu">
+            <ul data-component-id="list-interactive" data-component-type="list" data-component-variant="interactive" class="flex flex-col gap-1">
+              <li><button type="button" data-nav-section="overview" aria-current="page" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md bg-light-tertiary text-light-on-primary"><span class="material-symbols-outlined text-title-md" style="font-variation-settings: &#39;FILL&#39; 1;" aria-hidden="true">dashboard</span><span class="font-label text-label-lg">Learning Overview</span></button></li>
+              <li><button type="button" data-nav-section="quizzes" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">quiz</span><span class="font-label text-label-lg">Quizzes</span></button></li>
+              <li><button type="button" data-nav-section="assignments" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">assignment</span><span class="font-label text-label-lg">Assignments</span></button></li>
+              <li><button type="button" data-nav-section="participants" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">groups</span><span class="font-label text-label-lg">Participants</span></button></li>
+              <li><button type="button" data-nav-section="analytics" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">monitoring</span><span class="font-label text-label-lg">Performance Analytics</span></button></li>
+              <li><button type="button" data-nav-section="grading" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">grading</span><span class="font-label text-label-lg">Results &amp; Grading</span></button></li>
+              <li><button type="button" data-nav-section="reports" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">summarize</span><span class="font-label text-label-lg">Reports</span></button></li>
+              <li><button type="button" data-nav-section="settings" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">settings</span><span class="font-label text-label-lg">Settings</span></button></li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="pt-3 border-t border-light-tertiary">
+          <a href="../overview-desktop/OverviewDesktop.html" class="flex items-center gap-2 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary font-label text-label-md">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+            <span>Back to Admin Portal</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1 px-2">
+        <span class="font-label text-label-sm text-dark-secondary">Admin-Only Module</span>
+        <span class="font-label text-label-sm text-light-inverse-primary">Forerunners Network Int&#39;l</span>
+      </div>
+    </aside>
+
+    <!-- Main Column -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- Top Bar -->
+      <header class="sticky top-0 z-20 bg-light-surface-container-low border-b border-light-outline-variant px-4 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-2 font-label text-label-md text-light-on-surface-variant">
+          <a href="../overview-desktop/OverviewDesktop.html" class="hover:text-light-on-surface">Admin Portal</a>
+          <span aria-hidden="true">&gt;</span>
+          <span class="text-light-on-surface">Learning &amp; Assessment</span>
+        </nav>
+        <div class="flex items-center gap-4">
+          <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-light-surface-container border border-light-outline-variant" role="group" aria-label="Data state preview">
+            <span class="font-label text-label-sm text-light-on-surface-variant px-1">Supabase:</span>
+            <button type="button" data-state-btn="empty" class="px-2.5 py-0.5 rounded-full font-label text-label-sm bg-light-primary text-light-on-primary">Ready</button>
+            <button type="button" data-state-btn="loading" class="px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant hover:text-light-on-surface">Loading</button>
+            <button type="button" data-state-btn="error" class="px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant hover:text-light-on-surface">Error</button>
+          </div>
+          <div class="hidden sm:flex flex-col text-right">
+            <span class="font-label text-label-lg text-light-on-surface">Administrator</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">Assessment permissions</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 lg:px-8 py-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
+
+        <!-- Page Header + Date-Range Filter + Actions -->
+        <section class="flex flex-wrap items-start justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <span class="font-label text-label-sm text-light-secondary uppercase">ADMINISTRATION · SUPABASE BACKED</span>
+            <h1 data-design-text-token="display-lg" class="font-display text-display-lg-mobile lg:text-display-lg text-light-on-surface">Learning &amp; Assessment</h1>
+            <p class="font-body text-body-lg text-light-on-surface-variant">Monitor assessments, participation and learning performance across the ministry.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div class="inline-flex items-center gap-2 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-2">
+              <span class="material-symbols-outlined text-title-md text-light-on-surface-variant" aria-hidden="true">calendar_today</span>
+              <label for="la-date-range" class="sr-only">Date range</label>
+              <select id="la-date-range" class="border-0 bg-transparent p-0 pr-6 font-label text-label-lg text-light-on-surface focus:ring-0">
+                <option value="week">This Week</option>
+                <option value="month" selected>This Month</option>
+                <option value="quarter">This Quarter</option>
+                <option value="year">This Year</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+            </div>
+
+            <button id="open-question-builder-btn" type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-light-surface-container-low border border-light-outline-variant text-light-on-surface hover:bg-light-surface-container">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">quiz</span>
+              <span class="font-label text-label-lg">New quiz</span>
+            </button>
+
+            <!-- COMPONENT: button-primary -->
+            <button id="new-assignment-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-light-primary text-light-on-primary hover:bg-light-tertiary">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">add</span>
+              <span class="font-label text-label-lg">New assignment</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Custom Date Range Bar -->
+        <section id="la-custom-range" hidden class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-wrap items-end gap-4">
+          <div class="flex flex-col gap-1">
+            <label for="la-start-date" class="font-label text-label-sm text-light-on-surface-variant">Start date</label>
+            <input id="la-start-date" type="date" class="rounded-md border-light-outline-variant bg-light-surface text-body-md text-light-on-surface">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="la-end-date" class="font-label text-label-sm text-light-on-surface-variant">End date</label>
+            <input id="la-end-date" type="date" class="rounded-md border-light-outline-variant bg-light-surface text-body-md text-light-on-surface">
+          </div>
+          <button type="button" class="px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">Apply range</button>
+        </section>
+
+        <!-- Error & Loading States -->
+        <section id="la-error-state" hidden role="alert" class="rounded-lg bg-light-error-container border border-light-outline-variant p-5 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined text-headline-md text-light-on-error-container" aria-hidden="true">error_outline</span>
+            <div class="flex flex-col gap-0.5">
+              <h2 class="font-title text-title-md text-light-on-error-container">Unable to load assessment records</h2>
+              <p class="font-body text-body-md text-light-on-error-container">Supabase query failed or timed out. Verify administrator permissions and retry.</p>
+            </div>
+          </div>
+          <button id="la-retry-btn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">refresh</span>
+            <span>Retry</span>
+          </button>
+        </section>
+
+        <section id="la-loading-state" hidden aria-live="polite" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex items-center gap-3">
+          <span class="material-symbols-outlined text-headline-md text-light-primary animate-spin" aria-hidden="true">progress_activity</span>
+          <div class="flex flex-col gap-0.5">
+            <span class="font-title text-title-md text-light-on-surface">Syncing Learning &amp; Assessment records from Supabase…</span>
+            <span class="font-body text-body-md text-light-on-surface-variant">Fetching quizzes, assignments, submissions, grading rules, and cell performance.</span>
+          </div>
+        </section>
+
+        <!-- 6 KPI Cards -->
+        <section aria-label="Learning KPIs" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <span class="font-label text-label-md text-light-on-surface-variant">Total Assessments</span>
+            <span class="font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">Quizzes &amp; assignments</span>
+          </article>
+          <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <span class="font-label text-label-md text-light-on-surface-variant">Total Participants</span>
+            <span class="font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">Unique members</span>
+          </article>
+          <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <span class="font-label text-label-md text-light-on-surface-variant">Completed</span>
+            <span class="font-headline text-headline-lg text-light-on-surface tabular-nums">--</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">Submitted assessments</span>
+          </article>
+          <article class="rounded-lg bg-light-secondary-container border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <span class="font-label text-label-md text-light-on-secondary-container">Pending Submissions</span>
+            <span class="font-headline text-headline-lg text-light-on-secondary-container tabular-nums">--</span>
+            <span class="font-label text-label-sm text-light-on-secondary-container">Yet to submit</span>
+          </article>
+          <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <span class="font-label text-label-md text-light-on-surface-variant">Average Score</span>
+            <span class="font-headline text-headline-lg text-light-on-surface tabular-nums">--%</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">Graded assessments only</span>
+          </article>
+          <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col justify-between gap-2">
+            <span class="font-label text-label-md text-light-on-surface-variant">Pass Rate</span>
+            <span class="font-headline text-headline-lg text-light-on-surface tabular-nums">--%</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">Met passing threshold</span>
+          </article>
+        </section>
+
+        <!-- Notifications & Administrative Alerts -->
+        <section aria-label="Administrative Alerts" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-title-lg text-light-secondary" aria-hidden="true">notifications_active</span>
+              <h2 class="font-title text-title-lg text-light-on-surface">Administrative Alerts &amp; Notifications</h2>
+            </div>
+            <span class="font-label text-label-sm text-light-on-surface-variant">0 active alerts</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="rounded-md border border-light-outline-variant bg-light-surface p-3.5 flex flex-col gap-1">
+              <span class="font-label text-label-md text-light-on-surface">Submissions &amp; Grading Queue</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">New quiz/assignment submissions and ungraded items appear here.</span>
+            </div>
+            <div class="rounded-md border border-light-outline-variant bg-light-surface p-3.5 flex flex-col gap-1">
+              <span class="font-label text-label-md text-light-on-surface">Deadlines &amp; Overdue</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Upcoming closing dates and overdue assignments are flagged automatically.</span>
+            </div>
+            <div class="rounded-md border border-light-outline-variant bg-light-surface p-3.5 flex flex-col gap-1">
+              <span class="font-label text-label-md text-light-on-surface">Participation &amp; Score Shifts</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Low participation or significant score changes surface from Supabase logs.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Performance Analytics: Score Distribution, Averages, Participation, Trends -->
+        <section data-section-panel="analytics" aria-label="Performance Analytics" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-5">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-col gap-0.5">
+              <h2 class="font-title text-title-lg text-light-on-surface">Performance Analytics</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Score distribution (excluding ungraded), average performance, participation rates, and weekly/monthly trends.</p>
+            </div>
+            <!-- COMPONENT: tabs-horizontal -->
+            <div data-component-id="tabs-horizontal" data-component-type="tabs" data-component-variant="horizontal" role="tablist" aria-label="Performance trend cadence" class="inline-flex items-center gap-1 p-1 rounded-full bg-light-surface-container">
+              <button type="button" role="tab" aria-selected="true" class="px-4 py-1.5 rounded-full bg-light-surface-container-low text-light-on-surface font-label text-label-md">Weekly</button>
+              <button type="button" role="tab" aria-selected="false" class="px-4 py-1.5 rounded-full text-light-on-surface-variant font-label text-label-md hover:text-light-on-surface">Monthly</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <!-- Score Distribution -->
+            <div class="rounded-md border border-light-outline-variant bg-light-surface p-4 flex flex-col gap-3">
+              <h3 class="font-title text-title-md text-light-on-surface">Score Distribution</h3>
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between text-body-md"><span class="text-on-success-container font-label text-label-sm px-2 py-0.5 rounded bg-success-container">Excellent</span><span class="font-label text-label-md tabular-nums">--</span></div>
+                <div class="flex items-center justify-between text-body-md"><span class="text-light-on-primary-container font-label text-label-sm px-2 py-0.5 rounded bg-light-primary-container">Good</span><span class="font-label text-label-md tabular-nums">--</span></div>
+                <div class="flex items-center justify-between text-body-md"><span class="text-light-on-surface font-label text-label-sm px-2 py-0.5 rounded bg-light-surface-container">Average</span><span class="font-label text-label-md tabular-nums">--</span></div>
+                <div class="flex items-center justify-between text-body-md"><span class="text-on-warning-container font-label text-label-sm px-2 py-0.5 rounded bg-warning-container">Below Average</span><span class="font-label text-label-md tabular-nums">--</span></div>
+                <div class="flex items-center justify-between text-body-md"><span class="text-light-on-error-container font-label text-label-sm px-2 py-0.5 rounded bg-light-error-container">Failed</span><span class="font-label text-label-md tabular-nums">--</span></div>
+              </div>
+              <span class="font-label text-label-sm text-light-on-surface-variant pt-1 border-t border-light-outline-variant">Ungraded submissions are tracked separately from failed assessments.</span>
+            </div>
+
+            <!-- Performance Trends Chart Frame -->
+            <div class="lg:col-span-2 relative rounded-md border border-light-outline-variant bg-light-surface p-4 min-h-[220px] flex flex-col justify-between">
+              <div class="grid grid-cols-3 gap-3 mb-3">
+                <div class="rounded bg-light-surface-container px-3 py-2 flex flex-col">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Avg Quiz Score</span>
+                  <span class="font-title text-title-md text-light-on-surface tabular-nums">--%</span>
+                </div>
+                <div class="rounded bg-light-surface-container px-3 py-2 flex flex-col">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Avg Assignment</span>
+                  <span class="font-title text-title-md text-light-on-surface tabular-nums">--%</span>
+                </div>
+                <div class="rounded bg-light-surface-container px-3 py-2 flex flex-col">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Completion Rate</span>
+                  <span class="font-title text-title-md text-light-on-surface tabular-nums">--%</span>
+                </div>
+              </div>
+              <svg viewBox="0 0 640 140" class="w-full h-36" role="img" aria-label="Assessment performance trend chart">
+                <line x1="40" y1="15" x2="620" y2="15" stroke="#DCE3EC" stroke-dasharray="3 3"></line>
+                <line x1="40" y1="60" x2="620" y2="60" stroke="#DCE3EC" stroke-dasharray="3 3"></line>
+                <line x1="40" y1="105" x2="620" y2="105" stroke="#DCE3EC"></line>
+                <text x="12" y="19" class="fill-light-on-surface-variant text-[10px]">100%</text>
+                <text x="16" y="64" class="fill-light-on-surface-variant text-[10px]">50%</text>
+                <text x="20" y="109" class="fill-light-on-surface-variant text-[10px]">0%</text>
+              </svg>
+              <div class="text-center font-body text-body-md text-light-on-surface-variant">No graded assessment history synced yet.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Quiz Management + Quiz Question Builder -->
+        <section data-section-panel="quizzes" aria-label="Quiz Management" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-col gap-0.5">
+              <h2 class="font-title text-title-lg text-light-on-surface">Quiz Management</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Create, schedule, publish, and configure time limits, passing scores, attempts, and eligible groups.</p>
+            </div>
+            <button id="toggle-builder-btn" type="button" class="px-4 py-2 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-md text-light-on-surface hover:bg-light-surface-container">Open Question Builder</button>
+          </div>
+
+          <div class="overflow-x-auto rounded-md border border-light-outline-variant bg-light-surface">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-light-outline-variant bg-light-surface-container">
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Quiz title</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Category</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Created</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Status</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Questions / Marks</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Participants</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Avg / Completion</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="7" class="px-4 py-8 text-center font-body text-body-md text-light-on-surface-variant">No quizzes created yet. Use &#34;New quiz&#34; or &#34;Open Question Builder&#34; to configure a ministry quiz.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Quiz Question Builder Panel (toggled) -->
+          <div id="quiz-builder-panel" hidden class="rounded-md border border-light-outline-variant bg-light-surface p-4 flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-light-outline-variant pb-3">
+              <h3 class="font-title text-title-md text-light-on-surface">Quiz Question Builder</h3>
+              <button type="button" class="px-3.5 py-1.5 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">Preview Quiz</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div class="flex flex-col gap-1">
+                <label for="qb-type" class="font-label text-label-sm text-light-on-surface-variant">Question type</label>
+                <select id="qb-type" class="rounded-md border-light-outline-variant bg-light-surface-container-low text-body-md">
+                  <option>Multiple-choice</option>
+                  <option>True or False</option>
+                  <option>Short-answer</option>
+                  <option>Multiple-select</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label for="qb-marks" class="font-label text-label-sm text-light-on-surface-variant">Marks</label>
+                <input id="qb-marks" type="number" min="1" value="5" class="rounded-md border-light-outline-variant bg-light-surface-container-low text-body-md">
+              </div>
+              <div class="flex flex-col gap-1">
+                <label for="qb-time" class="font-label text-label-sm text-light-on-surface-variant">Time limit (mins)</label>
+                <input id="qb-time" type="number" min="1" placeholder="Optional" class="rounded-md border-light-outline-variant bg-light-surface-container-low text-body-md">
+              </div>
+              <div class="flex flex-col gap-1">
+                <label for="qb-attempts" class="font-label text-label-sm text-light-on-surface-variant">Attempts allowed</label>
+                <input id="qb-attempts" type="number" min="1" value="1" class="rounded-md border-light-outline-variant bg-light-surface-container-low text-body-md">
+              </div>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="qb-prompt" class="font-label text-label-sm text-light-on-surface-variant">Question prompt &amp; instructions</label>
+              <textarea id="qb-prompt" rows="2" placeholder="Enter question text and grading instructions…" class="rounded-md border-light-outline-variant bg-light-surface-container-low text-body-md"></textarea>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button type="button" class="px-4 py-2 rounded-full border border-light-outline-variant font-label text-label-md">Add question</button>
+              <button type="button" class="px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">Save draft</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Assignment Management -->
+        <section data-section-panel="assignments" aria-label="Assignment Management" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-col gap-0.5">
+              <h2 class="font-title text-title-lg text-light-on-surface">Assignment Management</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Manage instructions, PDF/document attachments, deadlines, target cells, and submission statuses.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="px-2.5 py-0.5 rounded-full bg-light-surface-container font-label text-label-sm text-light-on-surface-variant">Not Started</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-light-primary-container font-label text-label-sm text-light-on-primary-container">Submitted</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-warning-container font-label text-label-sm text-on-warning-container">Submitted Late</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-light-secondary-container font-label text-label-sm text-light-on-secondary-container">Pending Review</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-success-container font-label text-label-sm text-on-success-container">Graded</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-light-error-container font-label text-label-sm text-light-on-error-container">Overdue</span>
+            </div>
+          </div>
+          <div class="overflow-x-auto rounded-md border border-light-outline-variant bg-light-surface">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-light-outline-variant bg-light-surface-container">
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Assignment title</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Deadline</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Total marks</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Assigned</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Submitted</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Pending</th>
+                  <th scope="col" class="px-4 py-3 font-label text-label-md text-light-on-surface-variant">Graded / Avg</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="7" class="px-4 py-8 text-center font-body text-body-md text-light-on-surface-variant">No assignments found for the selected period.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Participant Performance & Cell Performance Comparison -->
+        <section data-section-panel="participants" class="grid grid-cols-1 gap-6">
+          <article aria-label="Participant Performance" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-col gap-0.5">
+                <h2 class="font-title text-title-lg text-light-on-surface">Participant Performance</h2>
+                <p class="font-body text-body-md text-light-on-surface-variant">Select any participant row to open their Individual Performance Profile.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <input type="search" aria-label="Search participant" placeholder="Search participant…" class="rounded-full border-light-outline-variant bg-light-surface px-3.5 py-1.5 text-body-md">
+                <select aria-label="Filter by cell" class="rounded-full border-light-outline-variant bg-light-surface py-1.5 pl-3 pr-7 font-label text-label-md"><option>All cells</option></select>
+                <select aria-label="Sort participants" class="rounded-full border-light-outline-variant bg-light-surface py-1.5 pl-3 pr-7 font-label text-label-md"><option>Sort: Average score</option><option>Sort: Participation</option><option>Sort: Completion rate</option></select>
+              </div>
+            </div>
+            <div class="overflow-x-auto rounded-md border border-light-outline-variant bg-light-surface">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-light-outline-variant bg-light-surface-container">
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Participant</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Member ID</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Assigned cell</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Taken / Done</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Avg / High / Low</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Pass rate</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Status</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Last active</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="8" class="px-4 py-8 text-center font-body text-body-md text-light-on-surface-variant">No participant assessment records loaded from Supabase.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <!-- Cell Performance Comparison -->
+          <article aria-label="Cell Performance Comparison" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+            <div class="flex flex-col gap-0.5">
+              <h2 class="font-title text-title-lg text-light-on-surface">Cell Performance Comparison</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Compare cell rankings, average scores, participation rates, and pending assignments across FNI cells.</p>
+            </div>
+            <div class="overflow-x-auto rounded-md border border-light-outline-variant bg-light-surface">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-light-outline-variant bg-light-surface-container">
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Cell name</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Participants</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Completed</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Average score</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Highest score</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Pass rate</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Participation</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Pending</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="8" class="px-4 py-8 text-center font-body text-body-md text-light-on-surface-variant">Select a cell once synced to inspect its participants and assessment trends.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- Assessment Results & Grading + Reports & Export + Settings -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Results & Grading -->
+          <article data-section-panel="grading" class="lg:col-span-2 rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-4">
+            <div class="flex flex-col gap-0.5">
+              <h2 class="font-title text-title-lg text-light-on-surface">Assessment Results &amp; Grading</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Review answers, mark assignments, adjust scores, add feedback, and finalise results.</p>
+            </div>
+            <div class="overflow-x-auto rounded-md border border-light-outline-variant bg-light-surface">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-light-outline-variant bg-light-surface-container">
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Participant</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Assessment</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Score / Marks</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">% / Result</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Submitted</th>
+                    <th scope="col" class="px-3 py-2.5 font-label text-label-sm text-light-on-surface">Grading status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="6" class="px-4 py-8 text-center font-body text-body-md text-light-on-surface-variant">No submissions awaiting grading or review.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <!-- Reports & Export + Settings -->
+          <div class="flex flex-col gap-6">
+            <article data-section-panel="reports" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-3">
+              <h2 class="font-title text-title-lg text-light-on-surface">Reports &amp; Export</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">Generate filtered reports for ministry leadership.</p>
+              <select aria-label="Report type" class="rounded-md border-light-outline-variant bg-light-surface text-body-md">
+                <option>Overall ministry assessment performance</option>
+                <option>Individual participant performance</option>
+                <option>Cell performance comparison</option>
+                <option>Quiz results summary</option>
+                <option>Assignment submissions &amp; outstanding</option>
+              </select>
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <button type="button" class="px-3 py-2 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-md text-light-on-surface">Export PDF</button>
+                <button type="button" class="px-3 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">Export Excel</button>
+              </div>
+            </article>
+
+            <article data-section-panel="settings" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-3">
+              <h2 class="font-title text-title-lg text-light-on-surface">Assessment Settings</h2>
+              <div class="flex items-center justify-between text-body-md border-b border-light-outline-variant pb-2">
+                <span class="text-light-on-surface-variant">Default passing score</span>
+                <span class="font-label text-label-md text-light-on-surface">Configurable</span>
+              </div>
+              <div class="flex items-center justify-between text-body-md border-b border-light-outline-variant pb-2">
+                <span class="text-light-on-surface-variant">Result visibility</span>
+                <span class="font-label text-label-md text-light-on-surface">Admin controlled</span>
+              </div>
+              <div class="flex items-center justify-between text-body-md">
+                <span class="text-light-on-surface-variant">Attempt limits &amp; rules</span>
+                <span class="font-label text-label-md text-light-on-surface">Per assessment</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const dateSelect = document.getElementById('la-date-range');
+      const customBar = document.getElementById('la-custom-range');
+      const errorBanner = document.getElementById('la-error-state');
+      const loadingBanner = document.getElementById('la-loading-state');
+      const builderPanel = document.getElementById('quiz-builder-panel');
+      const stateBtns = document.querySelectorAll('[data-state-btn]');
+      const navBtns = document.querySelectorAll('[data-nav-section]');
+
+      function setState(state) {
+        errorBanner.hidden = state !== 'error';
+        loadingBanner.hidden = state !== 'loading';
+        stateBtns.forEach(btn => {
+          const active = btn.getAttribute('data-state-btn') === state;
+          btn.className = active
+            ? 'px-2.5 py-0.5 rounded-full font-label text-label-sm bg-light-primary text-light-on-primary'
+            : 'px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant hover:text-light-on-surface';
+        });
+      }
+
+      dateSelect.addEventListener('change', () => {
+        customBar.hidden = dateSelect.value !== 'custom';
+      });
+
+      stateBtns.forEach(btn => {
+        btn.addEventListener('click', () => setState(btn.getAttribute('data-state-btn')));
+      });
+
+      document.getElementById('la-retry-btn').addEventListener('click', () => {
+        setState('loading');
+        setTimeout(() => setState('empty'), 600);
+      });
+
+      document.getElementById('toggle-builder-btn').addEventListener('click', () => {
+        builderPanel.hidden = !builderPanel.hidden;
+      });
+
+      document.getElementById('open-question-builder-btn').addEventListener('click', () => {
+        builderPanel.hidden = false;
+        builderPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      navBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          navBtns.forEach(b => {
+            b.removeAttribute('aria-current');
+            b.className = 'w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary';
+          });
+          btn.setAttribute('aria-current', 'page');
+          btn.className = 'w-full text-left flex items-center gap-3 px-3 py-2 rounded-md bg-light-tertiary text-light-on-primary';
+          const target = btn.getAttribute('data-nav-section');
+          if (target === 'overview') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            const el = document.querySelector(`[data-section-panel="${target}"]`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    })();
+  </script>
+
+
+</body></html>

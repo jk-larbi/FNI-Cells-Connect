@@ -1,0 +1,478 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ministry Settings — FNI Cells Connect (Desktop)</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#1F6E43',
+        'on-success': '#FFFFFF',
+        'success-container': '#DCF2E5',
+        'on-success-container': '#0B3D22',
+        'warning': '#8E6C23',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FDF8E8',
+        'on-warning-container': '#5D4200',
+        'light-primary': '#142842',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#E4ECF7',
+        'light-on-primary-container': '#142842',
+        'light-secondary': '#8E6C23',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FDF8E8',
+        'light-on-secondary-container': '#5D4200',
+        'light-tertiary': '#354863',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#EBF1FF',
+        'light-on-tertiary-container': '#1E314C',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F7F9FC',
+        'light-on-background': '#142842',
+        'light-surface': '#F7F9FC',
+        'light-surface-dim': '#E2E8F0',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FFFFFF',
+        'light-surface-container': '#EEF2F7',
+        'light-surface-container-high': '#E4ECF7',
+        'light-surface-container-highest': '#DCE3EC',
+        'light-on-surface': '#142842',
+        'light-surface-variant': '#E4ECF7',
+        'light-on-surface-variant': '#5A6B7C',
+        'light-outline': '#6B7C8F',
+        'light-outline-variant': '#DCE3EC',
+        'light-inverse-surface': '#1E314C',
+        'light-inverse-on-surface': '#F7F9FC',
+        'light-inverse-primary': '#B4C8E9',
+        'dark-primary': '#B4C8E9',
+        'dark-on-primary': '#142842',
+        'dark-primary-container': '#1E314C',
+        'dark-on-primary-container': '#D4E3FF',
+        'dark-secondary': '#EEC068',
+        'dark-on-secondary': '#412D00',
+        'dark-secondary-container': '#5D4200',
+        'dark-on-secondary-container': '#FFEFD7',
+        'dark-tertiary': '#99ACCC',
+        'dark-on-tertiary': '#061C35',
+        'dark-tertiary-container': '#354863',
+        'dark-on-tertiary-container': '#EBF1FF',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#101620',
+        'dark-on-background': '#E8EDF5',
+        'dark-surface': '#101620',
+        'dark-surface-dim': '#0C1119',
+        'dark-surface-bright': '#232D3D',
+        'dark-surface-container-lowest': '#0C1119',
+        'dark-surface-container-low': '#161E2B',
+        'dark-surface-container': '#1C2636',
+        'dark-surface-container-high': '#253145',
+        'dark-surface-container-highest': '#303E54',
+        'dark-on-surface': '#E8EDF5',
+        'dark-surface-variant': '#253145',
+        'dark-on-surface-variant': '#A8B6C8',
+        'dark-outline': '#7E8FA4',
+        'dark-outline-variant': '#2E3B4E',
+        'dark-inverse-surface': '#E8EDF5',
+        'dark-inverse-on-surface': '#142842',
+        'dark-inverse-primary': '#142842',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '16px',
+      },
+      fontFamily: {
+        'display': ['"Libre Franklin"', 'sans-serif'],
+        'headline': ['"Libre Franklin"', 'sans-serif'],
+        'title': ['"Libre Franklin"', 'sans-serif'],
+        'body': ['"Source Sans 3"', 'sans-serif'],
+        'label': ['"Libre Franklin"', 'sans-serif'],
+        'mono': ['"Source Code Pro"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.15px', fontWeight: '700' }],
+        'title-lg': ['18px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '220ms',
+        'surface-exit': '150ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'surface-exit': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'surface-exit': 'cubic-bezier(0.3, 0, 1, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700&amp;family=Source+Code+Pro:wght@500&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; } [hidden] { display: none !important; }</style>
+</head>
+<body class="bg-light-surface text-light-on-surface antialiased">
+  <div class="min-h-[1024px] flex bg-light-surface" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Dark Navy Sidebar Rail -->
+    <aside class="hidden lg:flex w-64 shrink-0 min-h-[1024px] bg-light-primary text-light-on-primary flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col px-2 pt-1">
+          <span class="font-headline text-headline-md text-light-on-primary tracking-tight">FNI</span>
+          <span class="font-label text-label-sm text-dark-secondary uppercase">CELLS CONNECT</span>
+        </div>
+        <nav aria-label="Workspace menu">
+          <ul data-component-id="list-interactive" data-component-type="list" data-component-variant="interactive" class="flex flex-col gap-1">
+            <li><a href="../overview-desktop/OverviewDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">grid_view</span><span class="font-label text-label-lg">Overview</span></a></li>
+            <li><a href="../reports-desktop/ReportsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">description</span><span class="font-label text-label-lg">Report review</span></a></li>
+            <li><a href="../cell-groups-desktop/CellGroupsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">group</span><span class="font-label text-label-lg">Cell groups</span></a></li>
+            <li><a href="MinistrySettingsDesktop.html" aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded-md bg-light-tertiary text-light-on-primary"><span class="material-symbols-outlined text-title-md" style="font-variation-settings: &#39;FILL&#39; 1;" aria-hidden="true">tune</span><span class="font-label text-label-lg">Ministry Settings</span></a></li>
+            <li><a href="../admin-security-desktop/AdminSecurityDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">shield</span><span class="font-label text-label-lg">Admin security</span></a></li>
+            <li><a href="../audit-trail-desktop/AuditTrailDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">history</span><span class="font-label text-label-lg">Audit trail</span></a></li>
+          </ul>
+        </nav>
+      </div>
+      <span class="px-2 font-label text-label-sm text-light-inverse-primary">Forerunners Network Int&#39;l</span>
+    </aside>
+
+    <!-- Main Column -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="sticky top-0 z-20 bg-light-surface-container-low border-b border-light-outline-variant px-4 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-2 font-label text-label-md text-light-on-surface-variant">
+          <a href="../more-desktop/MoreDesktop.html" class="hover:text-light-on-surface">Admin Portal</a>
+          <span aria-hidden="true">&gt;</span>
+          <span class="text-light-on-surface">Ministry Settings</span>
+        </nav>
+        <div class="flex items-center gap-4">
+          <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-light-surface-container border border-light-outline-variant" role="group" aria-label="Data state">
+            <button type="button" data-ms-state="ready" class="px-2.5 py-0.5 rounded-full font-label text-label-sm bg-light-primary text-light-on-primary">Ready</button>
+            <button type="button" data-ms-state="loading" class="px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant">Loading</button>
+            <button type="button" data-ms-state="error" class="px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant">Error</button>
+          </div>
+          <div class="hidden sm:flex flex-col text-right">
+            <span class="font-label text-label-lg text-light-on-surface">Administrator</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">FNI leadership</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 lg:px-8 py-6 max-w-5xl w-full mx-auto flex flex-col gap-6">
+
+        <!-- Header + Search Settings -->
+        <section class="flex flex-wrap items-end justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <h1 data-design-text-token="display-lg" class="font-display text-display-lg-mobile lg:text-display-lg text-light-on-surface">Ministry Settings</h1>
+            <p class="font-body text-body-lg text-light-on-surface-variant">Manage your ministry&#39;s information and application preferences.</p>
+          </div>
+          <div class="relative w-full sm:w-72">
+            <span class="material-symbols-outlined text-title-md text-light-on-surface-variant absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true">search</span>
+            <input id="ms-search" type="search" aria-label="Search settings" placeholder="Search settings…" class="w-full rounded-full border-light-outline-variant bg-light-surface-container-low pl-10 pr-4 py-2 font-body text-body-md text-light-on-surface">
+          </div>
+        </section>
+
+        <!-- Loading / Error / Unsaved / Saved Banners -->
+        <section id="ms-loading" hidden aria-live="polite" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex items-center gap-3">
+          <span class="material-symbols-outlined text-title-lg text-light-primary animate-spin" aria-hidden="true">progress_activity</span>
+          <span class="font-body text-body-md text-light-on-surface">Loading ministry configuration from Supabase…</span>
+        </section>
+
+        <section id="ms-error" hidden role="alert" class="rounded-lg bg-light-error-container p-4 flex items-center justify-between gap-4">
+          <div class="flex flex-col">
+            <span class="font-title text-title-md text-light-on-error-container">Unable to load settings</span>
+            <span class="font-body text-body-md text-light-on-error-container">Check your administrator permissions or connection and retry.</span>
+          </div>
+          <button id="ms-retry-btn" type="button" class="px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md shrink-0">Retry</button>
+        </section>
+
+        <section id="ms-unsaved" hidden class="rounded-lg bg-light-secondary-container border border-light-outline-variant px-4 py-3 flex items-center justify-between gap-4">
+          <span class="font-label text-label-md text-light-on-secondary-container">You have unsaved changes in this category.</span>
+          <button type="button" id="ms-quick-save" class="px-4 py-1.5 rounded-full bg-light-primary text-light-on-primary font-label text-label-sm shrink-0">Save Changes</button>
+        </section>
+
+        <section id="ms-saved" hidden aria-live="polite" class="rounded-lg bg-success-container px-4 py-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-title-md text-on-success-container" aria-hidden="true">check_circle</span>
+          <span class="font-label text-label-md text-on-success-container">Settings saved to Supabase.</span>
+        </section>
+
+        <!-- Category Overview Grid (6 Simple Categories) -->
+        <section id="ms-categories-grid" aria-label="Settings categories" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <button type="button" data-cat-card="info" data-keywords="ministry information name logo contact location" class="text-left rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-2.5 hover:border-light-primary">
+            <div class="w-10 h-10 rounded-full bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">church</span></div>
+            <h2 class="font-title text-title-md text-light-on-surface">1. Ministry Information</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Ministry name, logo, contact details, and location.</p>
+          </button>
+
+          <button type="button" data-cat-card="cells" data-keywords="cells leadership names assign leaders roles activate deactivate" class="text-left rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-2.5 hover:border-light-primary">
+            <div class="w-10 h-10 rounded-full bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">groups</span></div>
+            <h2 class="font-title text-title-md text-light-on-surface">2. Cells &amp; Leadership</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Cell names, leader assignments, roles, and active status.</p>
+          </button>
+
+          <button type="button" data-cat-card="reports" data-keywords="reports deadlines meeting evangelism requirements late submission" class="text-left rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-2.5 hover:border-light-primary">
+            <div class="w-10 h-10 rounded-full bg-light-secondary-container text-light-on-secondary-container inline-flex items-center justify-center"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">event_note</span></div>
+            <h2 class="font-title text-title-md text-light-on-surface">3. Reports &amp; Deadlines</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Meeting and evangelism cutoffs, requirements, and late rules.</p>
+          </button>
+
+          <button type="button" data-cat-card="notifications" data-keywords="notifications enable disable report reminders meeting alerts" class="text-left rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-2.5 hover:border-light-primary">
+            <div class="w-10 h-10 rounded-full bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">notifications</span></div>
+            <h2 class="font-title text-title-md text-light-on-surface">4. Notifications</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Notification toggles, report reminders, and admin alerts.</p>
+          </button>
+
+          <button type="button" data-cat-card="finance" data-keywords="finance learning offering categories quiz assignment grading passing scores" class="text-left rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-2.5 hover:border-light-primary">
+            <div class="w-10 h-10 rounded-full bg-light-secondary-container text-light-on-secondary-container inline-flex items-center justify-center"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">account_balance_wallet</span></div>
+            <h2 class="font-title text-title-md text-light-on-surface">5. Finance &amp; Learning</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Offering categories, quiz/assignment grading rules, and deadlines.</p>
+          </button>
+
+          <button type="button" data-cat-card="security" data-keywords="access security administrator roles permissions accounts activity" class="text-left rounded-lg bg-light-surface-container-low border border-light-outline-variant p-5 flex flex-col gap-2.5 hover:border-light-primary">
+            <div class="w-10 h-10 rounded-full bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">admin_panel_settings</span></div>
+            <h2 class="font-title text-title-md text-light-on-surface">6. Access &amp; Security</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Administrator roles, permissions, account status, and activity.</p>
+          </button>
+        </section>
+
+        <!-- Category Detail Panel (shown when a category is selected) -->
+        <section id="ms-detail-panel" hidden class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-6 flex flex-col gap-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-light-outline-variant pb-4">
+            <div class="flex items-center gap-3">
+              <button id="ms-back-btn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-light-outline-variant font-label text-label-md text-light-on-surface hover:bg-light-surface-container">
+                <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+                <span>All categories</span>
+              </button>
+              <h2 id="ms-panel-title" class="font-title text-title-lg text-light-on-surface">Ministry Information</h2>
+            </div>
+            <button id="ms-save-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="px-5 py-2.5 rounded-full bg-light-primary text-light-on-primary hover:bg-light-tertiary font-label text-label-lg">Save Changes</button>
+          </div>
+
+          <!-- 1. Ministry Information -->
+          <div data-cat-content="info" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label for="f-name" class="font-label text-label-md text-light-on-surface">Ministry name</label>
+              <input id="f-name" type="text" value="Forerunners Network International" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md">
+              <span class="font-body text-body-md text-light-on-surface-variant">Displayed across admin portals and exported reports.</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="f-location" class="font-label text-label-md text-light-on-surface">Ministry location</label>
+              <input id="f-location" type="text" placeholder="Enter primary city or headquarters" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md">
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="f-contact" class="font-label text-label-md text-light-on-surface">Contact details</label>
+              <input id="f-contact" type="text" placeholder="Official ministry email or phone" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md">
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="f-logo" class="font-label text-label-md text-light-on-surface">Ministry logo</label>
+              <input id="f-logo" type="file" accept="image/*" class="ms-input rounded-md border border-light-outline-variant bg-light-surface p-1.5 text-body-md">
+            </div>
+          </div>
+
+          <!-- 2. Cells & Leadership -->
+          <div data-cat-content="cells" hidden class="flex flex-col gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label for="c-role" class="font-label text-label-md text-light-on-surface">Default leadership role</label>
+                <select id="c-role" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md"><option>Cell Leader</option><option>Assistant Cell Leader</option><option>Zonal Coordinator</option></select>
+                <span class="font-body text-body-md text-light-on-surface-variant">Applied when assigning new leaders to a cell group.</span>
+              </div>
+              <div class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5">
+                <div class="flex flex-col">
+                  <span class="font-label text-label-md text-light-on-surface">Allow cell deactivation</span>
+                  <span class="font-body text-body-md text-light-on-surface-variant">Requires confirmation before archiving a cell.</span>
+                </div>
+                <input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary">
+              </div>
+            </div>
+            <div class="rounded-md bg-light-error-container p-4 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-col">
+                <span class="font-label text-label-md text-light-on-error-container">Deactivate a cell group</span>
+                <span class="font-body text-body-md text-light-on-error-container">Preserves historical reports while stopping new submissions.</span>
+              </div>
+              <button type="button" data-confirm-action="Deactivate selected cell group?" class="px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md">Manage cell status</button>
+            </div>
+          </div>
+
+          <!-- 3. Reports & Deadlines -->
+          <div data-cat-content="reports" hidden class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label for="r-meeting" class="font-label text-label-md text-light-on-surface">Cell meeting report deadline</label>
+              <select id="r-meeting" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md"><option>Sunday 11:59 PM</option><option>Monday 12:00 PM</option><option>Tuesday 6:00 PM</option></select>
+              <span class="font-body text-body-md text-light-on-surface-variant">Submissions after this cutoff are marked Submitted Late.</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="r-evangelism" class="font-label text-label-md text-light-on-surface">Evangelism report deadline</label>
+              <select id="r-evangelism" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md"><option>Sunday 11:59 PM</option><option>Wednesday 6:00 PM</option></select>
+            </div>
+            <div class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5">
+              <span class="font-label text-label-md text-light-on-surface">Require attendance headcount</span>
+              <input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary">
+            </div>
+            <div class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5">
+              <span class="font-label text-label-md text-light-on-surface">Allow late report submissions</span>
+              <input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary">
+            </div>
+          </div>
+
+          <!-- 4. Notifications -->
+          <div data-cat-content="notifications" hidden class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5"><span class="font-label text-label-md">Enable ministry notifications</span><input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary"></label>
+            <label class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5"><span class="font-label text-label-md">Weekly report reminders</span><input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary"></label>
+            <label class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5"><span class="font-label text-label-md">Cell meeting reminders</span><input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary"></label>
+            <label class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5"><span class="font-label text-label-md">Administrative alerts</span><input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary"></label>
+          </div>
+
+          <!-- 5. Finance & Learning -->
+          <div data-cat-content="finance" hidden class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label for="fl-offering" class="font-label text-label-md text-light-on-surface">Default offering categories</label>
+              <input id="fl-offering" type="text" value="Cell Offering, Tithe, Missions" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md">
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="fl-pass" class="font-label text-label-md text-light-on-surface">Assessment passing score (%)</label>
+              <input id="fl-pass" type="number" min="0" max="100" value="70" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md tabular-nums">
+              <span class="font-body text-body-md text-light-on-surface-variant">Used to calculate Pass Rate across quizzes and assignments.</span>
+            </div>
+          </div>
+
+          <!-- 6. Access & Security -->
+          <div data-cat-content="security" hidden class="flex flex-col gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label for="s-role" class="font-label text-label-md text-light-on-surface">Administrator role</label>
+                <select id="s-role" class="ms-input rounded-md border-light-outline-variant bg-light-surface text-body-md"><option>Super Administrator</option><option>Ministry Reviewer</option><option>Finance &amp; Learning Admin</option></select>
+              </div>
+              <div class="flex items-center justify-between rounded-md border border-light-outline-variant bg-light-surface p-3.5">
+                <span class="font-label text-label-md">Require 2FA for admins</span>
+                <input type="checkbox" checked class="ms-input rounded border-light-outline-variant text-light-primary">
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-light-outline-variant bg-light-surface p-4">
+              <span class="font-body text-body-md text-light-on-surface-variant">Review important account activity in the Audit Trail.</span>
+              <div class="flex items-center gap-2">
+                <a href="../audit-trail-desktop/AuditTrailDesktop.html" class="px-4 py-2 rounded-full border border-light-outline-variant font-label text-label-md text-light-on-surface">View activity</a>
+                <button type="button" data-confirm-action="Deactivate administrator account?" class="px-4 py-2 rounded-full bg-light-error-container text-light-on-error-container font-label text-label-md">Deactivate account</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const grid = document.getElementById('ms-categories-grid');
+      const panel = document.getElementById('ms-detail-panel');
+      const panelTitle = document.getElementById('ms-panel-title');
+      const unsaved = document.getElementById('ms-unsaved');
+      const saved = document.getElementById('ms-saved');
+      const loading = document.getElementById('ms-loading');
+      const error = document.getElementById('ms-error');
+      const titles = {
+        info: '1. Ministry Information',
+        cells: '2. Cells & Leadership',
+        reports: '3. Reports & Deadlines',
+        notifications: '4. Notifications',
+        finance: '5. Finance & Learning',
+        security: '6. Access & Security'
+      };
+
+      document.querySelectorAll('[data-cat-card]').forEach(card => {
+        card.addEventListener('click', () => {
+          const cat = card.getAttribute('data-cat-card');
+          grid.hidden = true;
+          panel.hidden = false;
+          panelTitle.textContent = titles[cat];
+          document.querySelectorAll('[data-cat-content]').forEach(c => {
+            c.hidden = c.getAttribute('data-cat-content') !== cat;
+          });
+          saved.hidden = true;
+        });
+      });
+
+      document.getElementById('ms-back-btn').addEventListener('click', () => {
+        panel.hidden = true;
+        grid.hidden = false;
+        unsaved.hidden = true;
+      });
+
+      document.querySelectorAll('.ms-input').forEach(el => {
+        el.addEventListener('change', () => { unsaved.hidden = false; saved.hidden = true; });
+      });
+
+      function saveSettings() {
+        unsaved.hidden = true;
+        saved.hidden = false;
+      }
+      document.getElementById('ms-save-btn').addEventListener('click', saveSettings);
+      document.getElementById('ms-quick-save').addEventListener('click', saveSettings);
+
+      document.getElementById('ms-search').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        document.querySelectorAll('[data-cat-card]').forEach(card => {
+          const kw = card.getAttribute('data-keywords') + ' ' + card.textContent.toLowerCase();
+          card.hidden = q && !kw.includes(q);
+        });
+      });
+
+      document.querySelectorAll('[data-ms-state]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const s = btn.getAttribute('data-ms-state');
+          loading.hidden = s !== 'loading';
+          error.hidden = s !== 'error';
+          document.querySelectorAll('[data-ms-state]').forEach(b => {
+            b.className = b === btn
+              ? 'px-2.5 py-0.5 rounded-full font-label text-label-sm bg-light-primary text-light-on-primary'
+              : 'px-2.5 py-0.5 rounded-full font-label text-label-sm text-light-on-surface-variant';
+          });
+        });
+      });
+
+      document.getElementById('ms-retry-btn').addEventListener('click', () => {
+        error.hidden = true;
+      });
+    })();
+  </script>
+
+
+</body></html>
