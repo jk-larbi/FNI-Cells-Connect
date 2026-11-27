@@ -291,6 +291,12 @@ export const AuthView: React.FC<AuthViewProps> = ({
         </div>
       </div>
 
+      {currentView === 'admin-login' && (
+        <header className="fni-admin-signin-mobile-header">
+          <span>FNI</span><span className="fni-admin-signin-mobile-divider" aria-hidden="true" /><span>CELLS CONNECT</span>
+        </header>
+      )}
+
       {/* Top Header / Back Navigation */}
       <div
         className={`w-full max-w-md mx-auto flex items-center justify-between z-10 mb-2 transition-all duration-700 ${
@@ -799,8 +805,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
       {/* Subtle Minimal Footer Attribution */}
       <footer className="w-full text-center pb-2 z-10 pt-4">
-        <p className="text-[11px] font-semibold tracking-wider text-[#667085]/70 uppercase">
-          Forerunners Network International &bull; For Internal Ministry Use Only
+        <p className="fni-auth-footer-copy text-[11px] font-semibold tracking-wider text-[#667085]/70 uppercase">
+          {currentView === 'admin-login'
+            ? 'Administrator access is provided by your ministry. Need an account? Contact your FNI leadership.'
+            : 'Forerunners Network International • For Internal Ministry Use Only'}
         </p>
       </footer>
     </div>
