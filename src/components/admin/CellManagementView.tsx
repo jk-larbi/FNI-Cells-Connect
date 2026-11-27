@@ -350,7 +350,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             <span className="text-[11px] font-semibold text-[#5A6B7C]">Registered cells</span>
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#E4ECF7] text-[#142842]"><Building className="h-4 w-4" /></span>
           </div>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : cells.length}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : cells.filter(cell => !cell.is_archived).length}</p>
           <p className="mt-0.5 text-[10px] text-[#5A6B7C]">In the active directory</p>
         </div>
         <div className="min-w-0 rounded-lg border border-[#DCE3EC] bg-white p-4">
@@ -358,7 +358,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             <span className="text-[11px] font-semibold text-[#5A6B7C]">Active cell leaders</span>
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#DCF2E5] text-[#0B3D22]"><CheckCircle2 className="h-4 w-4" /></span>
           </div>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : Math.max(0, cells.filter(cell => !cell.is_archived).length - cellsNeedingAttention)}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : assignedLeaderCount}</p>
           <p className="mt-0.5 text-[10px] text-[#5A6B7C]">{assignedLeaderCount} of {cells.filter(cell => !cell.is_archived).length} cells assigned</p>
         </div>
         <div className="min-w-0 rounded-lg border border-[#DCE3EC] bg-white p-3.5 shadow-none sm:p-4">
@@ -366,7 +366,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             <span className="text-[11px] font-semibold text-[#5A6B7C]">On track</span>
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#FDF8E8] text-[#8E6C23]"><UserCheck className="h-4 w-4" /></span>
           </div>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : assignedLeaderCount}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : Math.max(0, cells.filter(cell => !cell.is_archived).length - cellsNeedingAttention)}</p>
           <p className="mt-0.5 text-[10px] text-[#5A6B7C]" >Cells with no outstanding flags</p>
         </div>
         <div className="min-w-0 rounded-lg border border-[#DCE3EC] bg-white p-3.5 shadow-none sm:p-4">
