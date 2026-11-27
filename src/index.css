@@ -4541,3 +4541,107 @@ html.dark .fni-chat-composer textarea:focus-visible {
 @media(prefers-reduced-motion:reduce) {
   .fni-account-settings .fni-account-category-card {transition:none;}
 }
+
+
+/* Personal Preferences — Stitch account sub-page */
+.fni-account-settings .fni-preferences-page {max-width:860px;margin:0 auto;}
+.fni-account-settings .fni-preferences-card {
+  display:flex;flex-direction:column;gap:17px;
+  padding:20px;border:1px solid #DCE3EC;border-radius:12px;
+  background:#fff;box-shadow:0 1px 2px rgba(20,40,66,.035);
+}
+.fni-account-settings .fni-preferences-card-heading {
+  display:flex;align-items:center;gap:12px;padding-bottom:13px;
+  border-bottom:1px solid #E8EDF3;
+}
+.fni-account-settings .fni-preferences-card-heading h2 {
+  margin:0;color:#142842;font-family:"Libre Franklin",sans-serif;font-size:14px;font-weight:700;
+}
+.fni-account-settings .fni-preferences-card-heading p {
+  margin:4px 0 0;color:#5A6B7C;font-family:"Source Sans 3",sans-serif;font-size:12px;
+}
+.fni-account-settings .fni-preferences-icon {
+  display:flex;align-items:center;justify-content:center;flex:0 0 40px;
+  width:40px;height:40px;border-radius:10px;background:#E4ECF7;color:#142842;
+}
+.fni-account-settings .fni-preferences-icon svg {width:19px;height:19px;}
+.fni-account-settings .fni-preferences-field {display:flex;flex-direction:column;gap:7px;min-width:0;}
+.fni-account-settings .fni-preferences-field > label {
+  color:#142842;font-family:"Libre Franklin",sans-serif;font-size:11px;font-weight:700;
+}
+.fni-account-settings .fni-preferences-field select {
+  width:100%;min-height:42px;padding:9px 12px;
+  border:1px solid #DCE3EC;border-radius:8px;background:#fff;color:#142842;
+  font-family:"Source Sans 3",sans-serif;font-size:13px;outline:none;
+}
+.fni-account-settings .fni-preferences-field select:focus {border-color:#8E6C23;box-shadow:0 0 0 2px rgba(142,108,35,.13);}
+.fni-account-settings .fni-preferences-field small {
+  color:#6B7C8F;font-family:"Source Sans 3",sans-serif;font-size:11px;
+}
+.fni-account-settings .fni-preferences-readonly {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:42px;padding:8px 12px;border:1px solid #DCE3EC;border-radius:8px;background:#F7F9FC;
+  color:#354863;font-family:"Source Sans 3",sans-serif;font-size:13px;
+}
+.fni-account-settings .fni-preferences-readonly button {
+  display:inline-flex;align-items:center;gap:3px;color:#142842;
+  font-family:"Libre Franklin",sans-serif;font-size:11px;font-weight:700;white-space:nowrap;
+}
+.fni-account-settings .fni-preferences-readonly button svg {width:14px;height:14px;}
+.fni-account-settings .fni-preferences-timezone {
+  display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;
+  padding:14px;border:1px solid #F0E4C7;border-radius:9px;background:#FDF8E8;
+}
+.fni-account-settings .fni-preferences-timezone > div {display:flex;flex-direction:column;gap:4px;}
+.fni-account-settings .fni-preferences-overline {
+  color:#8E6C23;font-family:"Libre Franklin",sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;
+}
+.fni-account-settings .fni-preferences-timezone strong {
+  color:#142842;font-family:"Libre Franklin",sans-serif;font-size:14px;font-weight:700;
+}
+.fni-account-settings .fni-preferences-timezone small {
+  color:#6B5A37;font-family:"Source Sans 3",sans-serif;font-size:11px;
+}
+.fni-account-settings .fni-preferences-live-clock {align-items:flex-end;text-align:right;}
+.fni-account-settings .fni-preferences-live-clock span {color:#6B5A37;font-family:"Source Sans 3",sans-serif;font-size:10px;}
+.fni-account-settings .fni-preferences-live-clock strong {font-size:16px;font-variant-numeric:tabular-nums;}
+.fni-account-settings .fni-preferences-segments {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;
+  padding:5px;border:1px solid #DCE3EC;border-radius:999px;background:#EEF2F7;
+}
+.fni-account-settings .fni-preferences-segments button {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  min-height:48px;border-radius:999px;color:#354863;
+  font-family:"Libre Franklin",sans-serif;font-size:12px;font-weight:600;
+}
+.fni-account-settings .fni-preferences-segments button small {color:inherit;font-size:10px;font-weight:400;}
+.fni-account-settings .fni-preferences-segments button.is-selected {
+  background:#142842;color:#fff;box-shadow:0 1px 3px rgba(20,40,66,.16);
+}
+.fni-account-settings .fni-preferences-policy {
+  margin:0;padding:11px 12px;border-left:3px solid #8E6C23;border-radius:0 7px 7px 0;
+  background:#F7F9FC;color:#5A6B7C;font-family:"Source Sans 3",sans-serif;font-size:11px;line-height:1.5;
+}
+.fni-account-settings .fni-preferences-theme-options {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;}
+.fni-account-settings .fni-preferences-theme-options button {
+  display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;
+  border:1px solid #DCE3EC;border-radius:9px;background:#fff;color:#354863;
+  font-family:"Libre Franklin",sans-serif;font-size:12px;font-weight:600;
+}
+.fni-account-settings .fni-preferences-theme-options button svg {width:16px;height:16px;}
+.fni-account-settings .fni-preferences-theme-options button.is-selected {
+  border-color:#142842;background:#E4ECF7;color:#142842;box-shadow:inset 0 0 0 1px #142842;
+}
+.fni-account-settings .fni-preferences-autosave {
+  display:flex;align-items:center;gap:7px;margin:0;color:#1F6E43;
+  font-family:"Source Sans 3",sans-serif;font-size:11px;
+}
+.fni-account-settings .fni-preferences-autosave svg {width:15px;height:15px;flex:0 0 auto;}
+@media(max-width:767px) {
+  .fni-account-settings .fni-preferences-page {gap:14px;}
+  .fni-account-settings .fni-preferences-card {padding:15px;gap:15px;}
+  .fni-account-settings .fni-preferences-timezone {grid-template-columns:1fr;gap:10px;}
+  .fni-account-settings .fni-preferences-live-clock {align-items:flex-start;text-align:left;padding-top:9px;border-top:1px solid #F0E4C7;}
+  .fni-account-settings .fni-preferences-theme-options {gap:6px;}
+  .fni-account-settings .fni-preferences-theme-options button {flex-direction:column;gap:4px;min-height:62px;font-size:11px;}
+}
