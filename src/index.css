@@ -3233,3 +3233,106 @@ html.dark .fni-chat-composer textarea:focus-visible {
 @media(prefers-reduced-motion:reduce) {
   .fni-admin-stitch-shell .fni-admin-security-view * { scroll-behavior:auto !important; transition-duration:0.01ms !important; }
 }
+
+
+/* FNI Admin Sign In — Stitch desktop/mobile implementation */
+.fni-auth-portal[data-auth-view="admin-login"] {
+  min-height:100dvh; justify-content:center; align-items:stretch; gap:18px;
+  padding:32px 16px; overflow-x:hidden; overflow-y:auto; background:#F7F9FC;
+  color:#142842; font-family:"Source Sans 3",system-ui,sans-serif;
+}
+.fni-auth-portal[data-auth-view="admin-login"] > div:first-child { display:none; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mobile-header { display:none; }
+.fni-auth-portal[data-auth-view="admin-login"] > div:nth-of-type(2) {
+  width:100%; max-width:448px; margin:0 auto; justify-content:flex-start;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-main {
+  display:flex; flex:1; justify-content:center; align-items:stretch;
+  width:100%; max-width:448px; margin:0 auto; text-align:left;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-logo { display:none; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-card {
+  width:100%; padding:30px; border:1px solid #DCE3EC; border-radius:20px;
+  background:#fff; box-shadow:0 8px 28px rgba(20,40,66,.055); backdrop-filter:none;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form { display:flex; flex-direction:column; gap:20px; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-brand { min-height:30px; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-eyebrow {
+  display:block; margin-bottom:7px; color:#5A6B7C;
+  font:600 11px/16px "Libre Franklin",sans-serif; letter-spacing:.08em;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form h2 {
+  margin:0; color:#142842; font:700 clamp(28px,4vw,36px)/1.2 "Libre Franklin",sans-serif;
+  letter-spacing:-.035em;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form p { margin-top:5px; color:#5A6B7C; font-size:15px; line-height:22px; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mission {
+  border-radius:12px; border-color:#DCE3EC; background:#F7F9FC;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form { display:flex; flex-direction:column; gap:16px; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > div { text-align:left; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form label {
+  display:block; margin-bottom:6px; color:#5A6B7C;
+  font:600 12px/17px "Libre Franklin",sans-serif;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form input {
+  min-height:48px; border:1px solid #DCE3EC; border-radius:9px;
+  background:#F7F9FC; color:#142842; font:400 14px/20px "Source Sans 3",sans-serif;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form input::placeholder { color:#7A8999; opacity:1; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form input:focus {
+  border-color:#8E6C23; outline:2px solid rgba(142,108,35,.14); outline-offset:1px;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > button[type="submit"] {
+  min-height:48px; margin-top:2px; border:0; border-radius:999px;
+  background:#142842; box-shadow:none; color:#fff; font:600 14px/20px "Libre Franklin",sans-serif;
+  letter-spacing:0; text-transform:none; transition:background-color 120ms ease-out;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > button[type="submit"]:hover { background:#354863; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > button[type="submit"] svg { color:#EEC068; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form > div:last-child { text-align:left; margin-top:-7px; }
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form > div:last-child button {
+  color:#142842; font:600 12px/18px "Libre Franklin",sans-serif; text-decoration:underline; text-underline-offset:3px;
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-footer-copy {
+  max-width:448px; margin:0 auto; padding:0; color:#5A6B7C;
+  font:400 13px/19px "Source Sans 3",sans-serif; letter-spacing:0; text-transform:none;
+}
+.fni-auth-portal[data-auth-view="admin-login"] button:focus-visible {
+  outline:2px solid #8E6C23; outline-offset:3px;
+}
+@media(max-width:639px) {
+  .fni-auth-portal[data-auth-view="admin-login"] {
+    min-height:100dvh; justify-content:flex-start; gap:0; padding:0;
+    background:#F7F9FC;
+  }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mobile-header {
+    display:flex; min-height:52px; align-items:center; gap:12px; padding:10px 16px;
+    border-bottom:1px solid #DCE3EC; background:#fff; color:#142842;
+    font-family:"Libre Franklin",sans-serif;
+  }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mobile-header span:first-child {
+    font-size:18px; font-weight:700; letter-spacing:-.03em;
+  }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mobile-divider { width:1px; height:18px; background:#DCE3EC; }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mobile-header span:last-child {
+    color:#8E6C23; font-size:10px; font-weight:600; letter-spacing:.1em;
+  }
+  .fni-auth-portal[data-auth-view="admin-login"] > div:nth-of-type(2) {
+    max-width:448px; padding:14px 16px 0; margin:0 auto;
+  }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-auth-main {
+    flex:1; justify-content:flex-start; padding:16px; max-width:448px;
+  }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-auth-card {
+    padding:20px; border-radius:14px; box-shadow:0 2px 10px rgba(20,40,66,.035);
+  }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form { gap:16px; }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-brand { display:none; }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form h2 { font-size:26px; }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form p { font-size:14px; }
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-auth-footer-copy { padding:14px 16px 22px; text-align:left; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fni-auth-portal[data-auth-view="admin-login"] * { animation:none !important; transition-duration:0.01ms !important; }
+}
