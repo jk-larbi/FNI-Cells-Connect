@@ -111,7 +111,7 @@ export const CellLocationsMap: React.FC<Props> = ({ cells }) => {
           <span className={missing ? 'text-amber-700' : 'text-slate-500'}>{missing} awaiting location</span>
         </div>
       </div>
-      <div ref={containerRef} className="w-full h-72 sm:h-96 rounded-xl overflow-hidden bg-slate-100" />
+      <div ref={containerRef} className="w-full h-64 sm:h-80 rounded-xl overflow-hidden bg-slate-100" />
       {mapError && <p role="alert" className="text-xs text-rose-600">{mapError}</p>}
       {located.length === 0 && !mapError && (
         <p className="text-xs text-[#667085]">No cell venue coordinates have been entered yet. Add the real venue address and map coordinates in Edit Cell Details to place a marker.</p>
