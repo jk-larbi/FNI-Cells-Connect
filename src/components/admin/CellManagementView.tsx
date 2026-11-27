@@ -557,7 +557,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       {/* CELL PROFILE MODAL (Showing Meeting History, Evangelism History, Follow-ups, etc.) */}
       {selectedCell && (
         <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-[#142B4A]/50 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:items-center sm:justify-center sm:p-4 sm:pt-4 sm:pb-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-xl border border-[#E3E8EF] max-h-[90vh] overflow-y-auto custom-scrollbar space-y-5">
+          <div className="bg-white h-full w-full max-w-2xl p-4 shadow-xl border border-[#E3E8EF] overflow-y-auto overscroll-contain custom-scrollbar space-y-5 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:p-6">
             <div className="flex items-start justify-between pb-3 border-b border-[#E3E8EF]">
               <div>
                 <div className="flex items-center gap-2">
@@ -628,15 +628,15 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
                   <div className="text-[10px] text-[#667085] font-semibold">Total Members</div>
-                  <div className="text-base font-black text-[#142B4A] mt-0.5">{selectedCell.total_members ?? 10}</div>
+                  <div className="text-base font-black text-[#142B4A] mt-0.5">{selectedCell.total_members ?? '—'}</div>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
                   <div className="text-[10px] text-[#667085] font-semibold">Active Members</div>
-                  <div className="text-base font-black text-[#23845B] mt-0.5">{selectedCell.active_members ?? 8}</div>
+                  <div className="text-base font-black text-[#23845B] mt-0.5">{selectedCell.active_members ?? '—'}</div>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
                   <div className="text-[10px] text-[#667085] font-semibold">New Members</div>
-                  <div className="text-base font-black text-[#C6A45A] mt-0.5">{selectedCell.new_members ?? 2}</div>
+                  <div className="text-base font-black text-[#C6A45A] mt-0.5">{selectedCell.new_members ?? '—'}</div>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-[#E3E8EF]">
                   <div className="text-[10px] text-[#667085] font-semibold">Requiring Follow-up</div>
