@@ -205,16 +205,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end sm:justify-between gap-3 sm:gap-4">
         <div>
+          <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#A88743]">Forerunners Network International</p>
           <h1 className="text-xl sm:text-2xl font-black text-[#142B4A] tracking-tight">
-            Admin overview
+            Ministry overview
           </h1>
           <p className="mt-1 text-xs text-[#667085]">
             A clear view of report decisions, cell activity and leadership.
           </p>
         </div>
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-[#667085]">
+          <Calendar className="h-4 w-4 text-[#A88743]" />
+          <span>{today.toLocaleDateString('en-GH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+        </div>
       </div>
+
+      {/* Premium welcome panel — uses live account context and existing navigation only. */}
+      <section className="relative isolate overflow-hidden rounded-2xl border border-[#203D63] bg-[#142B4A] px-4 py-5 text-white shadow-sm sm:px-6 sm:py-6">
+        <div className="pointer-events-none absolute -right-12 -top-20 h-56 w-56 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -right-2 -top-12 h-36 w-36 rounded-full border border-[#C6A45A]/25" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#D9BD7C]">Administrator workspace</p>
+            <h2 className="mt-1 text-lg font-bold tracking-tight sm:text-xl">Welcome back, {(currentUser?.full_name || 'Administrator').trim().split(' ')[0]}.</h2>
+            <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-white/75">Keep ministry operations moving. Review submissions, support cell leaders and stay close to the work happening across FNI.</p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[176px]">
+            <button type="button" onClick={() => onNavigateToTab('report-review')} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#C6A45A] px-4 py-2.5 text-xs font-bold text-[#142B4A] transition-colors hover:bg-[#D8BB79] focus:outline-none focus:ring-2 focus:ring-white/70">
+              <FileCheck className="h-4 w-4" /> Review reports <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={() => onNavigateToTab('cell-management')} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50">
+              <Building className="h-4 w-4" /> Open cell groups
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* Administrator action centre: make outstanding work the first thing visible. */}
       <section className="overflow-hidden rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
