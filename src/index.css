@@ -2992,3 +2992,49 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-cell-meeting-dossier { max-width: none !important; box-shadow: none !important; border: 0 !important; }
   .fni-cell-meeting-dossier > div:first-child { position: static !important; }
 }
+
+
+/* Edit cell — Stitch desktop/mobile form */
+.fni-admin-stitch-shell .fni-edit-cell-panel { color:#142842; font-family:"Source Sans 3",system-ui,sans-serif; }
+.fni-admin-stitch-shell .fni-edit-cell-panel h3,
+.fni-admin-stitch-shell .fni-edit-cell-panel button,
+.fni-admin-stitch-shell .fni-edit-cell-panel label,
+.fni-admin-stitch-shell .fni-edit-cell-eyebrow { font-family:"Libre Franklin",system-ui,sans-serif; }
+.fni-admin-stitch-shell .fni-edit-cell-eyebrow { margin:0 0 6px; color:#8E6C23; font-size:10px; font-weight:700; letter-spacing:.1em; }
+.fni-admin-stitch-shell .fni-edit-cell-form { align-content:start; }
+.fni-admin-stitch-shell .fni-edit-cell-field { display:flex; min-width:0; flex-direction:column; gap:7px; }
+.fni-admin-stitch-shell .fni-edit-cell-field label { color:#5A6B7C; font-size:12px; font-weight:600; }
+.fni-admin-stitch-shell .fni-edit-cell-field input,
+.fni-admin-stitch-shell .fni-edit-cell-field select {
+  width:100%; min-height:46px; border:1px solid #DCE3EC; border-radius:9px; background:#FFFFFF;
+  padding:10px 13px; color:#142842; font:400 14px/20px "Source Sans 3",sans-serif;
+}
+.fni-admin-stitch-shell .fni-edit-cell-field input[readonly] { background:#F7F9FC; color:#5A6B7C; cursor:not-allowed; }
+.fni-admin-stitch-shell .fni-edit-cell-field input:focus-visible,
+.fni-admin-stitch-shell .fni-edit-cell-field select:focus-visible {
+  outline:2px solid #8E6C23; outline-offset:2px; border-color:#8E6C23;
+}
+.fni-admin-stitch-shell .fni-edit-cell-field small { color:#7A8999; font-size:11px; line-height:1.45; }
+.fni-admin-stitch-shell .fni-edit-cell-coordinate {
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); align-items:center; gap:18px;
+  padding:16px; border:1px solid #DCE3EC; border-radius:13px; background:#F7F9FC;
+}
+.fni-admin-stitch-shell .fni-edit-cell-coordinate strong { color:#142842; font:600 13px/19px "Libre Franklin",sans-serif; }
+.fni-admin-stitch-shell .fni-edit-cell-coordinate p { margin-top:5px; color:#5A6B7C; font-size:12px; line-height:1.5; }
+.fni-admin-stitch-shell .fni-edit-cell-actions {
+  display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #DCE3EC; padding-top:18px; margin-top:4px;
+}
+.fni-admin-stitch-shell .fni-edit-cell-cancel,
+.fni-admin-stitch-shell .fni-edit-cell-save { min-height:44px; padding:10px 22px; border-radius:999px; font-size:12px; font-weight:700; }
+.fni-admin-stitch-shell .fni-edit-cell-cancel { border:1px solid #DCE3EC; background:#F7F9FC; color:#142842; }
+.fni-admin-stitch-shell .fni-edit-cell-save { background:#142842; color:#FFFFFF; }
+.fni-admin-stitch-shell .fni-edit-cell-save:hover { background:#354863; }
+.fni-admin-stitch-shell .fni-edit-cell-panel button:focus-visible { outline:2px solid #8E6C23; outline-offset:2px; }
+@media(max-width:767px) {
+  .fni-admin-stitch-shell .fni-edit-cell-overlay { align-items:stretch; }
+  .fni-admin-stitch-shell .fni-edit-cell-panel { max-width:none; border:0; padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); }
+  .fni-admin-stitch-shell .fni-edit-cell-panel > div:first-child { position:sticky; top:calc(-16px - env(safe-area-inset-top)); z-index:2; margin:-16px -16px 0; padding:16px; background:rgba(255,255,255,.97); }
+  .fni-admin-stitch-shell .fni-edit-cell-coordinate { grid-template-columns:1fr; gap:12px; padding:13px; }
+  .fni-admin-stitch-shell .fni-edit-cell-actions { display:grid; grid-template-columns:1fr; }
+  .fni-admin-stitch-shell .fni-edit-cell-actions button { min-height:48px; }
+}
