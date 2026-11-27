@@ -31,6 +31,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
   const [periodFilter, setPeriodFilter] = useState<'weekly' | 'monthly' | 'quarterly' | 'annual'>('weekly');
   const [selectedCurrency, setSelectedCurrency] = useState<'ALL' | 'GHS' | 'GBP' | 'USD'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const loadFinanceData = async (showLoader = true) => {
     try {
@@ -41,8 +42,10 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
       ]);
       setAggregation(agg);
       setRecords(recs);
+      setLoadError(false);
     } catch (err) {
       console.error('Failed to load finance data:', err);
+      setLoadError(true);
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -157,6 +160,16 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </Button>
         </div>
       </div>
+
+      {loadError && (
+        <div role="alert" aria-live="polite" className="flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-rose-800">Financial records could not be refreshed</p>
+            <p className="mt-1 text-xs text-rose-700">{records.length > 0 ? 'Previously loaded records are still shown.' : 'The ledger and totals are unavailable until the data can be retrieved.'}</p>
+          </div>
+          <button type="button" onClick={() => void loadFinanceData()} className="min-h-10 shrink-0 rounded-lg border border-rose-200 bg-white px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100">Try again</button>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
