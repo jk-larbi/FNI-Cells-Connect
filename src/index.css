@@ -2924,3 +2924,71 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-admin-stitch-shell .fni-calls-history > div > div { align-items: flex-start; gap: 10px; }
   .fni-admin-stitch-shell .fni-calls-history > div > div > div:last-child { flex-wrap: wrap; }
 }
+
+
+/* Cell Meeting — Stitch desktop + mobile review dossier */
+.fni-admin-stitch-shell .fni-cell-meeting-dossier {
+  max-width: 1180px !important; padding: 24px !important; gap: 20px !important;
+  color: #142842; font-family: "Source Sans 3", system-ui, sans-serif;
+  border: 1px solid #DCE3EC !important; border-radius: 18px !important;
+  box-shadow: 0 18px 55px rgba(20,40,66,.16) !important;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier h3,
+.fni-admin-stitch-shell .fni-cell-meeting-dossier button,
+.fni-admin-stitch-shell .fni-cell-meeting-dossier label { font-family: "Libre Franklin", system-ui, sans-serif; }
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:first-child {
+  position: sticky; top: -24px; z-index: 5; margin: -24px -24px 0; padding: 16px 24px;
+  background: rgba(255,255,255,.97); backdrop-filter: blur(12px); border-color: #DCE3EC;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(2) {
+  padding: 18px; border: 1px solid rgba(142,108,35,.24); border-radius: 16px;
+  background: #FDF8E8; align-items: center;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(2) > div:first-child > div:first-child {
+  width: 52px; height: 52px; border-radius: 14px; background: #142842; color: #EEC068;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(3) {
+  padding: 0 2px 12px; border-bottom: 1px solid #DCE3EC; color: #5A6B7C;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(4) > div:first-child {
+  grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(4) > div:first-child > div {
+  min-height: 102px; display: flex; flex-direction: column; justify-content: center;
+  border: 1px solid #DCE3EC; border-radius: 14px; background: #FFFFFF; padding: 16px 12px;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(4) > div:first-child > div > div:first-child {
+  letter-spacing: .06em; font-family: "Libre Franklin",sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(4) > div:nth-child(2) > div,
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(4) > div:nth-child(n+3) {
+  border: 1px solid #DCE3EC; border-radius: 14px; background: #F7F9FC; padding: 16px;
+}
+.fni-admin-stitch-shell .fni-cell-meeting-dossier > div:last-child { padding-top: 18px; }
+.fni-admin-stitch-shell .fni-cell-meeting-dossier button:focus-visible,
+.fni-admin-stitch-shell .fni-cell-meeting-dossier a:focus-visible,
+.fni-admin-stitch-shell .fni-cell-meeting-dossier textarea:focus-visible {
+  outline: 2px solid #8E6C23; outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier {
+    max-width: none !important; padding: 16px !important; border: 0 !important; border-radius: 0 !important;
+    gap: 16px !important;
+  }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:first-child {
+    top: calc(-1 * max(1rem,env(safe-area-inset-top))); margin: calc(-1 * max(1rem,env(safe-area-inset-top))) -16px 0;
+    padding: 14px 16px; min-height: 58px;
+  }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(2) { padding: 14px; gap: 12px; }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(2) > div:last-child { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(2) > div:last-child a,
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(2) > div:last-child button { justify-content: center; min-width: 0; }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(4) > div:first-child { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:nth-child(4) > div:first-child > div { min-height: 88px; padding: 12px 8px; }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:last-child > div:first-child { align-items: stretch; }
+  .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:last-child > div:first-child button { min-height: 46px; }
+}
+@media print {
+  .fni-cell-meeting-dossier { max-width: none !important; box-shadow: none !important; border: 0 !important; }
+  .fni-cell-meeting-dossier > div:first-child { position: static !important; }
+}
