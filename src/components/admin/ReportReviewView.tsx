@@ -567,967 +567,148 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
     searchQuery !== '' ||
     sortBy !== 'newest';
 
+  if (reviewOutcome === 'approved' && lastReviewedReport) {
+    const approvedAttendance = lastReviewedReport.reportType === 'meeting' ? Number((lastReviewedReport as any).attendance) || 0 : null;
+    const approvedOffering = lastReviewedReport.reportType === 'meeting' ? (lastReviewedReport as any).offering : null;
+    const approvedSouls = lastReviewedReport.reportType === 'evangelism'
+      ? Number((lastReviewedReport as any).conversions) || 0
+      : Number((lastReviewedReport as any).newMembers) || 0;
+    return (
+      <div className="fni-report-approved-page">
+        <article className="fni-report-approved-card">
+          <span className="fni-report-approved-icon"><CheckCircle2 className="w-8 h-8" /></span>
+          <p className="fni-report-approved-eyebrow">REPORT REVIEW COMPLETE</p>
+          <h1>Report approved</h1>
+          <p className="fni-report-approved-description">
+            <strong>{lastReviewedReport.cellName}</strong>'s {lastReviewedReport.reportType === 'meeting' ? 'weekly fellowship report' : 'evangelism report'} has been approved and recorded.
+            {pendingCount > 0 ? ` ${pendingCount} reports remain in your queue.` : ' There are no pending reports in your queue.'}
+          </p>
+          <div className="fni-report-approved-summary">
+            {approvedAttendance !== null && <div><span>Attendance</span><strong>{approvedAttendance.toLocaleString()}</strong></div>}
+            {approvedOffering !== null && approvedOffering !== undefined && <div><span>Offering</span><strong>{(lastReviewedReport as any).currency || 'GHS'} {Number(approvedOffering).toLocaleString()}</strong></div>}
+            <div><span>Souls / new members</span><strong>{approvedSouls.toLocaleString()}</strong></div>
+          </div>
+          <div className="fni-report-approved-actions">
+            <button type="button" className="fni-report-secondary-action" onClick={() => { setReviewOutcome(null); setLastReviewedReport(null); onBack?.(); }}>Back to overview</button>
+            <button type="button" className="fni-report-primary-action" onClick={() => { setReviewOutcome(null); setLastReviewedReport(null); setInspectingItem(null); setStatusFilter('Newly Submitted'); setSelectedIds(new Set()); }}>
+              Review next report <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </article>
+      </div>
+    );
+  }
+
   return (
-    <div className="fni-report-review-stitch space-y-4 sm:space-y-6">
-      {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 sm:gap-4">
+    <div className="fni-report-review-stitch">
+      <header className="fni-rr-header">
         <div>
-          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#142B4A] text-[#C6A45A] flex items-center justify-center shadow-sm">
-              <FileCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8E6C23] mb-1">Admin workspace / Performance</div>
-              <h1 className="text-lg sm:text-xl font-black text-[#142842] tracking-tight">
-                Review reports
-              </h1>
-              <p className="text-[11px] sm:text-xs text-[#667085] mt-0.5 leading-snug">
-                Check submissions, read the details, then accept or return them with clear feedback.
-              </p>
-            </div>
-          </div>
+          <p className="fni-rr-eyebrow">ADMIN WORKSPACE / PERFORMANCE</p>
+          <h1>Review reports</h1>
+          <p>Review cell meeting and evangelism submissions, approve them or return them with clear guidance.</p>
         </div>
-
-        {/* Global Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => loadData(true)}
-            disabled={isRefreshing}
-            className="px-3.5 py-2 rounded-xl bg-white border border-[#E3E8EF] text-[#142B4A] text-xs font-bold hover:bg-[#F5F7FA] transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-            title="Refresh submissions"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#C6A45A]' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
+        <div className="fni-rr-header-actions">
+          <button type="button" onClick={() => void loadData(true)} disabled={isRefreshing}>
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
           </button>
-
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            disabled={filteredReports.length === 0}
-            className="px-3.5 py-2 rounded-xl bg-white border border-[#E3E8EF] text-[#142B4A] text-xs font-bold hover:bg-[#F5F7FA] disabled:opacity-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-            title="Export filtered reports to CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-[#C6A45A]" />
-            <span>Export CSV</span>
+          <button type="button" onClick={handleExportCSV} disabled={filteredReports.length === 0}>
+            <Download className="w-4 h-4" /> Export CSV
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* EXECUTIVE KPI SUMMARY CARDS (Clickable Fast-Filters) */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3.5">
-        {/* Pending / Action Required */}
-        <button
-          type="button"
-          onClick={() => setStatusFilter(statusFilter === 'Newly Submitted' ? 'all' : 'Newly Submitted')}
-          className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
-            statusFilter === 'Newly Submitted'
-              ? 'bg-amber-50 border-amber-300 ring-2 ring-[#D99A32]/30 shadow-sm'
-              : 'bg-white border-[#E3E8EF] hover:border-amber-200 hover:shadow-2xs'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
-              Action Required
-            </span>
-            {pendingCount > 0 && (
-              <span className="w-2.5 h-2.5 rounded-full bg-[#D99A32] animate-pulse" />
-            )}
-          </div>
-          <div className="text-2xl font-black text-[#142B4A] mt-2 group-hover:scale-105 transition-transform">
-            {pendingCount}
-          </div>
-          <div className="text-[11px] font-semibold text-[#D99A32] mt-1 flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>Pending Review</span>
-          </div>
-        </button>
-
-        {/* Needs Correction / Declined */}
-        <button
-          type="button"
-          onClick={() => setStatusFilter(statusFilter === 'Needs Correction' ? 'all' : 'Needs Correction')}
-          className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
-            statusFilter === 'Needs Correction'
-              ? 'bg-rose-50 border-rose-300 ring-2 ring-[#C74646]/30 shadow-sm'
-              : 'bg-white border-[#E3E8EF] hover:border-rose-200 hover:shadow-2xs'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
-              Declined
-            </span>
-            <AlertCircle className="w-3.5 h-3.5 text-[#C74646]" />
-          </div>
-          <div className="text-2xl font-black text-[#C74646] mt-2 group-hover:scale-105 transition-transform">
-            {needsCorrectionCount}
-          </div>
-          <div className="text-[11px] font-semibold text-[#C74646] mt-1">
-            Returned for Revision
-          </div>
-        </button>
-
-        {/* Approved / Accepted */}
-        <button
-          type="button"
-          onClick={() => setStatusFilter(statusFilter === 'Approved' ? 'all' : 'Approved')}
-          className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
-            statusFilter === 'Approved'
-              ? 'bg-emerald-50 border-emerald-300 ring-2 ring-[#23845B]/30 shadow-sm'
-              : 'bg-white border-[#E3E8EF] hover:border-emerald-200 hover:shadow-2xs'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
-              Accepted
-            </span>
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#23845B]" />
-          </div>
-          <div className="text-2xl font-black text-[#23845B] mt-2 group-hover:scale-105 transition-transform">
-            {approvedCount}
-          </div>
-          <div className="text-[11px] font-semibold text-[#23845B] mt-1">
-            Verified & Approved
-          </div>
-        </button>
-
-        {/* Souls Won Harvest */}
-        <div className="p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] bg-white text-left relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
-              Souls Harvest
-            </span>
-            <Flame className="w-3.5 h-3.5 text-[#C6A45A]" />
-          </div>
-          <div className="text-2xl font-black text-[#142B4A] mt-2 flex items-baseline gap-1">
-            <span>+{totalSoulsWon}</span>
-            <span className="text-xs font-semibold text-[#667085]">souls</span>
-          </div>
-          <div className="text-[11px] font-semibold text-[#C6A45A] mt-1">
-            Evangelism + Converts
-          </div>
-        </div>
-
-        {/* On-Time Filing Rate */}
-        <div className="p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] bg-white text-left relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">
-              On-Time Rate
-            </span>
-            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-[#FAF6EE] text-[#C6A45A] border border-[#C6A45A]/20">
-              Sun 6pm GMT
-            </span>
-          </div>
-          <div className="text-2xl font-black text-[#142B4A] mt-2">
-            {onTimeRate}%
-          </div>
-          <div className="text-[11px] font-semibold text-[#667085] mt-1">
-            {onTimeCount} of {reports.length} On-Time
-          </div>
-        </div>
-      </div>
-
-      {/* FILTER, SEARCH & BATCH TOOLKIT */}
-      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] shadow-sm space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Search bar */}
-          <div className="relative flex-1 min-w-0 w-full sm:min-w-[260px]">
-            <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              aria-label="Search reports by cell, tutor or report details"
-              placeholder="Search cells, tutors or report details..."
-              className="w-full pl-10 pr-9 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear report search"
-                title="Clear search"
-                className="absolute right-3 top-2.5 text-[#667085] hover:text-[#182230] cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* ── Report Type Section Tabs ── */}
-          <div className="flex w-full sm:w-auto items-center gap-0 border border-[#E3E8EF] rounded-xl overflow-x-auto shadow-2xs text-xs font-semibold">
-            <button
-              onClick={() => setTypeFilter('all')}
-              className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all border-r border-[#E3E8EF] ${
-                typeFilter === 'all' ? 'bg-[#142B4A] text-white' : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-              }`}
-            >
-              <span>All Reports</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
-                typeFilter === 'all' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#E3E8EF] text-[#667085]'
-              }`}>{reports.length}</span>
-            </button>
-            <button
-              onClick={() => setTypeFilter('meeting')}
-              className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all border-r border-[#E3E8EF] ${
-                typeFilter === 'meeting' ? 'bg-[#142B4A] text-white' : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-              }`}
-            >
-              <FileText className="w-3 h-3" />
-              <span>Cell Meetings</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
-                typeFilter === 'meeting' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#E3E8EF] text-[#667085]'
-              }`}>{reports.filter(r => r.reportType === 'meeting').length}</span>
-            </button>
-            <button
-              onClick={() => setTypeFilter('evangelism')}
-              className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all ${
-                typeFilter === 'evangelism' ? 'bg-[#C6A45A] text-[#142B4A]' : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-              }`}
-            >
-              <Flame className="w-3 h-3" />
-              <span>Evangelism</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
-                typeFilter === 'evangelism' ? 'bg-[#142B4A] text-[#C6A45A]' : 'bg-[#E3E8EF] text-[#667085]'
-              }`}>{reports.filter(r => r.reportType === 'evangelism').length}</span>
-            </button>
-          </div>
-
-          {/* Sort Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-[#667085] uppercase">Sort:</span>
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as any)}
-              className="px-3 py-1.5 text-xs rounded-xl border border-[#E3E8EF] bg-[#F5F7FA] text-[#142B4A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 cursor-pointer"
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="attendance">Highest Attendance</option>
-              <option value="souls">Most Souls Won</option>
-              <option value="cell">Cell Name (A-Z)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Keep less-used filters available without crowding the mobile review screen. */}
-        <details className="group border-t border-[#E3E8EF] pt-2">
-          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 text-xs font-bold text-[#142B4A] [&::-webkit-details-marker]:hidden">
-            <span className="flex items-center gap-2"><SlidersHorizontal className="h-3.5 w-3.5 text-[#A88743]" /> More filters <span className="font-normal text-[#667085]">Status and submission timing</span></span>
-            <span className="text-[11px] font-semibold text-[#667085] group-open:hidden">Show</span>
-            <span className="hidden text-[11px] font-semibold text-[#667085] group-open:inline">Hide</span>
-          </summary>
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-[11px] font-bold text-[#667085] uppercase mr-1">Status:</span>
-            {[
-              { id: 'all', label: 'All Statuses' },
-              { id: 'Newly Submitted', label: 'Awaiting Decision' },
-              { id: 'Approved', label: 'Accepted' },
-              { id: 'Needs Correction', label: 'Declined' },
-            ].map(st => (
-              <button
-                key={st.id}
-                onClick={() => setStatusFilter(st.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  statusFilter === st.id
-                    ? 'bg-[#142B4A] text-white shadow-2xs'
-                    : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-                }`}
-              >
-                {st.label}
-              </button>
-            ))}
-
-            <div className="h-4 w-px bg-[#E3E8EF] mx-1" />
-
-            <span className="text-[11px] font-bold text-[#667085] uppercase mr-1">Timing:</span>
-            <button
-              onClick={() => setDeadlineFilter('all')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                deadlineFilter === 'all'
-                  ? 'bg-[#142B4A] text-white shadow-2xs'
-                  : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-              }`}
-            >
-              All Timings
-            </button>
-            <button
-              onClick={() => setDeadlineFilter('on_time')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
-                deadlineFilter === 'on_time'
-                  ? 'bg-[#23845B] text-white shadow-2xs'
-                  : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#23845B]" />
-              <span>On-Time Only</span>
-            </button>
-            <button
-              onClick={() => setDeadlineFilter('late')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
-                deadlineFilter === 'late'
-                  ? 'bg-[#C74646] text-white shadow-2xs'
-                  : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C74646]" />
-              <span>Late Returns</span>
-            </button>
-          </div>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="text-xs font-bold text-[#C6A45A] hover:text-[#142B4A] flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Filters</span>
-            </button>
-          )}
-          </div>
-        </details>
-      </div>
-
-      {/* ── Active Section Banner ── */}
-      {typeFilter !== 'all' && (
-        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${
-          typeFilter === 'meeting'
-            ? 'bg-[#EEF4FB] border-[#142B4A]/20'
-            : 'bg-[#FDF8EE] border-[#C6A45A]/30'
-        }`}>
-          {typeFilter === 'meeting'
-            ? <FileText className="w-4 h-4 text-[#142B4A] shrink-0" />
-            : <Flame className="w-4 h-4 text-[#C6A45A] shrink-0" />}
-          <div className="flex-1">
-            <div className={`text-xs font-black ${typeFilter === 'meeting' ? 'text-[#142B4A]' : 'text-[#8B6914]'}`}>
-              {typeFilter === 'meeting' ? 'Cell Meeting Reports Section' : 'Evangelism Outreach Reports Section'}
-            </div>
-            <div className="text-[11px] text-[#667085] mt-0.5">
-              {typeFilter === 'meeting'
-                ? 'Viewing only cell meeting returns. Click "All Reports" or "Evangelism" above to switch sections.'
-                : 'Viewing only evangelism outreach reports. Click "All Reports" or "Cell Meetings" above to switch sections.'}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setTypeFilter('all')}
-            className="text-[11px] font-bold text-[#667085] hover:text-[#142B4A] border border-[#E3E8EF] px-3 py-1 rounded-lg bg-white transition-colors cursor-pointer"
-          >
-            View All
+      <section className="fni-rr-queue-panel" aria-label="Report review queue">
+        <div className="fni-rr-status-tabs" role="tablist" aria-label="Report status">
+          <button type="button" role="tab" aria-selected={statusFilter === 'Newly Submitted'} className={statusFilter === 'Newly Submitted' ? 'is-active is-pending' : ''} onClick={() => setStatusFilter('Newly Submitted')}>
+            Pending <span>{pendingCount}</span>
+          </button>
+          <button type="button" role="tab" aria-selected={statusFilter === 'Needs Correction'} className={statusFilter === 'Needs Correction' ? 'is-active is-returned' : ''} onClick={() => setStatusFilter('Needs Correction')}>
+            Returned <span>{needsCorrectionCount}</span>
+          </button>
+          <button type="button" role="tab" aria-selected={statusFilter === 'Approved'} className={statusFilter === 'Approved' ? 'is-active is-approved' : ''} onClick={() => setStatusFilter('Approved')}>
+            Approved <span>{approvedCount}</span>
           </button>
         </div>
-      )}
 
-      {/* BATCH ACTION BAR (Shown when items are selected) */}
-      {selectedIds.size > 0 && (
-        <div className="bg-[#142B4A] text-white px-5 py-3 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-3 animate-fade-in">
-          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
-            <span className="w-7 h-7 rounded-full bg-[#C6A45A] text-[#142B4A] font-extrabold text-xs flex items-center justify-center">
-              {selectedIds.size}
-            </span>
-            <span className="text-xs font-bold">
-              {selectedIds.size} {selectedIds.size === 1 ? 'report' : 'reports'} selected for bulk review
-            </span>
-          </div>
-
-          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setIsBulkApproveModalOpen(true)}
-              className="min-h-10 flex-1 justify-center px-3 sm:px-4 py-2 rounded-xl bg-[#23845B] hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer sm:flex-none"
-            >
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Bulk Accept</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsBulkReturnModalOpen(true)}
-              className="min-h-10 flex-1 justify-center px-3 sm:px-4 py-2 rounded-xl bg-[#C74646] hover:bg-rose-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer sm:flex-none"
-            >
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>Bulk Decline</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedIds(new Set())}
-              className="min-h-10 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white cursor-pointer"
-            >
-              Clear Selection
-            </button>
-          </div>
-        </div>
-      )}
-
-      {loadError && reports.length > 0 && (
-        <div role="alert" className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-[#C74646] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold text-[#142B4A]">Refresh failed</p>
-              <p className="text-xs text-[#667085]">{loadError} Previously loaded reports are still shown.</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => void loadData(true)} disabled={isRefreshing} className="min-h-9 shrink-0 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-[#142B4A] disabled:opacity-60">
-            {isRefreshing ? 'Retrying…' : 'Try again'}
-          </button>
-        </div>
-      )}
-
-      {/* REVIEW QUEUE DATA TABLE */}
-      <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
-        <div className="py-4 px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-3 bg-white">
-          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
-            <button
-              type="button"
-              onClick={toggleSelectAll}
-              className="text-[#667085] hover:text-[#142B4A] transition-colors cursor-pointer"
-              title="Select / Deselect All on page"
-            >
-              {selectedIds.size > 0 && selectedIds.size === filteredReports.length ? (
-                <CheckSquare className="w-4 h-4 text-[#142B4A]" />
-              ) : (
-                <Square className="w-4 h-4" />
-              )}
-            </button>
-            <div>
-              <h2 className="text-base font-bold text-[#182230]">
-                Active Submissions Queue ({filteredReports.length})
-              </h2>
-              <span className="text-[11px] text-[#667085]">
-                {filteredReports.length === 0
-                  ? 'No matching submissions found'
-                  : `Showing ${filteredReports.length} of ${reports.length} total submissions in database`}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs text-[#667085]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#23845B]" />
-              Approved
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
-              Action Required
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#C74646]" />
-              Needs Correction
-            </span>
-          </div>
+        <div className="fni-rr-filter-row">
+          <label className="fni-rr-search"><Search className="w-4 h-4" /><input type="search" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search by cell or leader" aria-label="Search by cell or leader" />{searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search"><X className="w-4 h-4" /></button>}</label>
+          <label><Filter className="w-4 h-4" /><select value={typeFilter} onChange={event => setTypeFilter(event.target.value as 'all' | 'meeting' | 'evangelism')} aria-label="Filter report type"><option value="all">All report types</option><option value="meeting">Cell meeting</option><option value="evangelism">Evangelism</option></select></label>
+          <label><Clock className="w-4 h-4" /><select value={deadlineFilter} onChange={event => setDeadlineFilter(event.target.value as 'all' | 'on_time' | 'late')} aria-label="Filter submission time"><option value="all">All submissions</option><option value="on_time">On time</option><option value="late">Submitted late</option></select></label>
+          <label><SlidersHorizontal className="w-4 h-4" /><select value={sortBy} onChange={event => setSortBy(event.target.value as 'newest' | 'oldest' | 'attendance' | 'souls' | 'cell')} aria-label="Sort reports"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="attendance">Highest attendance</option><option value="souls">Most souls</option><option value="cell">Cell name</option></select></label>
         </div>
 
-        {/* Desktop Table View (Hidden on mobile phones) */}
-        <div className="hidden md:block table-scroll-container">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
-                <th className="py-3 px-5 w-12 text-center">SELECT</th>
-                <th className="py-3 px-4">TUTOR & CELL</th>
-                <th className="py-3 px-4">CATEGORY & DATE</th>
-                <th className="py-3 px-4">ATTENDANCE / SOULS</th>
-                <th className="py-3 px-4">FINANCE / OFFERING</th>
-                <th className="py-3 px-4">STATUS</th>
-                <th className="py-3 px-4">SUBMISSION TIME & LIVE TRACKING</th>
-                <th className="py-3 px-5 text-right">QUICK ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E3E8EF]">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-16 text-center text-[#667085]">
-                    <RefreshCw className="w-7 h-7 text-[#C6A45A] animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-semibold">Loading report queue...</p>
-                  </td>
-                </tr>
-              ) : loadError && reports.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 px-4 text-center">
-                    <div className="mx-auto max-w-md rounded-2xl border border-rose-200 bg-rose-50 p-5">
-                      <AlertCircle className="mx-auto mb-2 h-7 w-7 text-[#C74646]" />
-                      <h3 className="text-sm font-bold text-[#142B4A]">Unable to load reports</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-[#667085]">{loadError}</p>
-                      <button
-                        type="button"
-                        onClick={() => void loadData(true)}
-                        disabled={isRefreshing}
-                        className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-xs font-bold text-white hover:bg-[#203D63] disabled:opacity-60"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        {isRefreshing ? 'Retrying...' : 'Try again'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredReports.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-16 text-center text-[#667085]">
-                    <div className="w-14 h-14 rounded-2xl bg-[#F5F7FA] text-[#142B4A] flex items-center justify-center mx-auto mb-3 border border-[#E3E8EF] shadow-2xs">
-                      <FileCheck className="w-7 h-7 text-[#C6A45A]" />
-                    </div>
-                    <h3 className="text-sm font-bold text-[#142B4A]">
-                      {reports.length === 0
-                        ? 'No Reports Submitted Yet'
-                        : 'No Submissions Match Filters'}
-                    </h3>
-                    <p className="text-xs text-[#667085] max-w-md mx-auto mt-1">
-                      {reports.length === 0
-                        ? 'As soon as cell tutors submit their weekly Cell Meeting or Evangelism reports, they will immediately appear here for your review.'
-                        : 'Try adjusting your search criteria or resetting the active status/category filters above.'}
-                    </p>
-                    {hasActiveFilters && (
-                      <button
-                        type="button"
-                        onClick={resetFilters}
-                        className="mt-3 px-4 py-1.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] cursor-pointer"
-                      >
-                        Reset All Filters
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                filteredReports.map(item => {
-                  const isNeedsCorrection =
-                    item.status === 'Needs Correction' || item.status === 'needs_revision';
-                  const isApproved = item.status === 'Approved' || item.status === 'approved';
-                  const isNewlySubmitted =
-                    item.status === 'Newly Submitted' ||
-                    item.status === 'submitted' ||
-                    item.status === 'under_review';
-                  const isSelected = selectedIds.has(item.id);
-                  const isQuickProcessing = quickActionProcessingId === item.id;
-                  const cellMeta = getCellForReport(item);
-                  const cleanPhone = cellMeta?.leader_phone?.replace(/[^0-9]/g, '') || '';
-                  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
+        {selectedIds.size > 0 && (
+          <div className="fni-rr-bulk-bar">
+            <span>{selectedIds.size} report(s) selected</span>
+            <button type="button" onClick={() => setIsBulkApproveModalOpen(true)}><CheckCircle2 className="w-4 h-4" /> Approve selected</button>
+            <button type="button" onClick={() => setIsBulkReturnModalOpen(true)}><RotateCcw className="w-4 h-4" /> Return selected</button>
+            <button type="button" className="fni-rr-clear-selection" onClick={() => setSelectedIds(new Set())}>Clear selection</button>
+          </div>
+        )}
+      </section>
 
-                  return (
-                    <tr
-                      key={item.id}
-                      onClick={() => setInspectingItem(item)}
-                      className={`cursor-pointer transition-colors group ${
-                        isNeedsCorrection
-                          ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]'
-                          : isSelected
-                          ? 'bg-[#F0F5FA]'
-                          : 'hover:bg-[#F8FAFC]'
-                      }`}
-                    >
-                      {/* Checkbox indicator */}
-                      <td
-                        className="py-4 px-5 text-center"
-                        onClick={e => {
-                          e.stopPropagation();
-                          toggleSelectOne(item.id);
-                        }}
-                      >
-                        <div
-                          className={`w-4 h-4 rounded border mx-auto flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? 'bg-[#142B4A] border-[#142B4A] text-white'
-                              : 'border-[#CBD5E1] hover:border-[#142B4A]'
-                          }`}
-                        >
-                          {isSelected && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                      </td>
+      {loadError && <div className="fni-rr-error" role="alert"><AlertCircle className="w-4 h-4" /><span>{loadError}</span><button type="button" onClick={() => void loadData(true)}>Try again</button></div>}
 
-                      {/* Tutor & Cell info */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                            {item.tutorName
-                              ? item.tutorName
-                                  .split(' ')
-                                  .map(n => n[0])
-                                  .slice(0, 2)
-                                  .join('')
-                              : 'TL'}
-                          </div>
-                          <div>
-                            <div className="font-bold text-[#182230] leading-tight group-hover:text-[#142B4A] transition-colors">
-                              {item.tutorName}
-                            </div>
-                            <div className="text-[11px] font-semibold text-[#667085] mt-0.5 flex items-center gap-2">
-                              <span>{item.cellName}</span>
-                              {cellMeta?.leader_phone && (
-                                <span className="text-[10px] text-[#142B4A]/70 bg-[#F5F7FA] px-1.5 py-0.2 rounded border border-[#E3E8EF]">
-                                  {cellMeta.leader_phone}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Category & Date */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 font-bold text-[#182230]">
-                          {item.reportType === 'meeting' ? (
-                            <>
-                              <FileText className="w-3.5 h-3.5 text-[#142B4A]" />
-                              <span>Cell Meeting</span>
-                            </>
-                          ) : (
-                            <>
-                              <Flame className="w-3.5 h-3.5 text-[#C6A45A]" />
-                              <span>Evangelism</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-[#667085] mt-0.5 flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-[#667085]" />
-                          <span>
-                            {item.reportType === 'meeting'
-                              ? (item as any).meetingDate
-                              : (item as any).date}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Attendance / Harvest Metrics */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {item.reportType === 'meeting' ? (
-                          <div>
-                            <div className="font-extrabold text-[#182230] flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5 text-[#142B4A]" />
-                              <span>{(item as any).attendance} Attended</span>
-                            </div>
-                            <div className="text-[11px] text-[#667085] mt-0.5">
-                              {(item as any).members} Total &bull;{' '}
-                              <span className="text-[#23845B] font-bold">
-                                +{(item as any).newMembers || 0} New
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="font-extrabold text-[#23845B] flex items-center gap-1">
-                              <Flame className="w-3.5 h-3.5 text-[#23845B]" />
-                              <span>+{(item as any).conversions} Conversions</span>
-                            </div>
-                            <div className="text-[11px] text-[#667085] mt-0.5">
-                              {(item as any).peopleSpokenTo} Reached &bull;{' '}
-                              {(item as any).contactsCaptured} Contacts
-                            </div>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Finance / Offering */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {item.reportType === 'meeting' ? (
-                          (item as any).offering ? (
-                            <div className="font-bold text-[#182230]">
-                              GHS {(item as any).offering?.toLocaleString()}
-                            </div>
-                          ) : (
-                            <span className="text-[11px] text-[#667085]">None filed</span>
-                          )
-                        ) : (
-                          <span className="text-[11px] text-[#667085]">—</span>
-                        )}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {isApproved && (
-                          <span className="inline-flex items-center gap-1.5 font-bold text-[#23845B] bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#23845B]" />
-                            Approved
-                          </span>
-                        )}
-                        {isNewlySubmitted && (
-                          <span className="inline-flex items-center gap-1.5 font-bold text-[#D99A32] bg-amber-50 px-2 py-0.5 rounded-full text-[11px] border border-amber-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#D99A32] animate-pulse" />
-                            Newly Submitted
-                          </span>
-                        )}
-                        {isNeedsCorrection && (
-                          <span className="inline-flex items-center gap-1.5 font-bold text-[#C74646] bg-rose-50 px-2 py-0.5 rounded-full text-[11px] border border-rose-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#C74646]" />
-                            Needs Correction
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Deadline Timing */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {item.late ? (
-                          <span className="inline-flex items-center gap-1.5 font-semibold text-[#C74646] text-[11px]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#C74646]" />
-                            Late Submission
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 font-semibold text-[#23845B] text-[11px]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#23845B]" />
-                            On-Time (Sun 6pm)
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Quick Action Buttons */}
-                      <td className="py-4 px-5 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Quick WhatsApp Leader */}
-                          {whatsappUrl && (
-                            <a
-                              href={whatsappUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={e => e.stopPropagation()}
-                              className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                              title={`WhatsApp ${item.tutorName}`}
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-
-                          {/* Quick Accept */}
-                          {!isApproved && (
-                            <button
-                              type="button"
-                              disabled={isQuickProcessing}
-                              onClick={e => handleQuickApprove(item, e)}
-                              className="px-2 py-1 rounded-lg bg-emerald-50 text-[#23845B] hover:bg-emerald-100 inline-flex items-center gap-1 text-[11px] font-bold transition-colors shadow-2xs cursor-pointer border border-emerald-200"
-                              title="Accept Report"
-                            >
-                              {isQuickProcessing ? (
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Check className="w-3.5 h-3.5" />
-                              )}
-                              <span>Accept</span>
-                            </button>
-                          )}
-
-                          {/* Quick Decline */}
-                          {!isNeedsCorrection && (
-                            <button
-                              type="button"
-                              onClick={e => handleQuickReturn(item, e)}
-                              className="px-2 py-1 rounded-lg bg-rose-50 text-[#C74646] hover:bg-rose-100 inline-flex items-center gap-1 text-[11px] font-bold transition-colors shadow-2xs cursor-pointer border border-rose-200"
-                              title="Decline Report"
-                            >
-                              <AlertCircle className="w-3.5 h-3.5" />
-                              <span>Decline</span>
-                            </button>
-                          )}
-
-                          {/* Inspect Full Dossier Modal */}
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setInspectingItem(item);
-                            }}
-                            className="w-8 h-8 rounded-xl bg-[#F5F7FA] text-[#142B4A] hover:bg-[#142B4A] hover:text-[#C6A45A] flex items-center justify-center transition-all shadow-2xs cursor-pointer"
-                            title="Inspect Full Report Dossier"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-        {/* Mobile Touch Cards View (Optimized for smartphones, hidden on md+) */}
-        <div className="block md:hidden divide-y divide-[#E3E8EF]">
-          {isLoading ? (
-            <div className="py-12 text-center text-[#667085]">
-              <RefreshCw className="w-7 h-7 text-[#C6A45A] animate-spin mx-auto mb-2" />
-              <p className="text-xs font-semibold">Loading live report queue...</p>
-            </div>
-          ) : loadError && reports.length === 0 ? (
-            <div className="py-12 px-4 text-center">
-              <AlertCircle className="w-7 h-7 text-[#C74646] mx-auto mb-2" />
-              <p className="text-sm font-bold text-[#142B4A]">Unable to load reports</p>
-              <p className="text-xs text-[#667085] mt-1">{loadError}</p>
-              <button type="button" onClick={() => void loadData()} className="mt-3 min-h-10 px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] cursor-pointer">Try again</button>
-            </div>
-          ) : filteredReports.length === 0 ? (
-            <div className="py-12 px-4 text-center text-[#667085]">
-              <div className="w-14 h-14 rounded-2xl bg-[#F5F7FA] text-[#142B4A] flex items-center justify-center mx-auto mb-3 border border-[#E3E8EF] shadow-2xs">
-                <FileCheck className="w-7 h-7 text-[#C6A45A]" />
-              </div>
-              <h3 className="text-sm font-bold text-[#142B4A]">
-                {reports.length === 0 ? 'No Reports Submitted Yet' : 'No Submissions Match Filters'}
-              </h3>
-              <p className="text-xs text-[#667085] mt-1">
-                {reports.length === 0
-                  ? 'When cell tutors submit reports, they will appear here.'
-                  : 'Try adjusting your search criteria or resetting filters.'}
-              </p>
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="mt-3 px-4 py-1.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] cursor-pointer"
-                >
-                  Reset All Filters
-                </button>
-              )}
-            </div>
-          ) : (
-            filteredReports.map(item => {
-              const isNeedsCorrection = item.status === 'Needs Correction' || item.status === 'needs_revision';
-              const isApproved = item.status === 'Approved' || item.status === 'approved';
-              const isSelected = selectedIds.has(item.id);
+      {isLoading ? (
+        <div className="fni-rr-empty-state"><RefreshCw className="w-5 h-5 animate-spin" /><strong>Loading report queue…</strong><span>Fetching the latest submissions from the ministry database.</span></div>
+      ) : filteredReports.length === 0 ? (
+        <div className="fni-rr-empty-state"><FileCheck className="w-6 h-6" /><strong>No reports in this view</strong><span>{searchQuery ? 'Try changing your search or filters.' : 'New submissions will appear here when cell leaders submit their reports.'}</span></div>
+      ) : (
+        <section className="fni-rr-report-list" aria-label="Reports">
+          <div className="fni-rr-list-toolbar">
+            <label className="fni-rr-select-all"><input type="checkbox" checked={selectedIds.size === filteredReports.length && filteredReports.length > 0} onChange={toggleSelectAll} /> Select all visible</label>
+            <span>{filteredReports.length} report(s)</span>
+          </div>
+          <div className="fni-rr-report-grid">
+            {filteredReports.map(item => {
               const cellMeta = getCellForReport(item);
-              const cleanPhone = cellMeta?.leader_phone?.replace(/[^0-9]/g, '') || '';
-              const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
               const isQuickProcessing = quickActionProcessingId === item.id;
-
+              const liveTime = formatLiveSubmissionTracking(item.submittedAt, liveTicker);
+              const statusText = item.status === 'Newly Submitted' || item.status === 'submitted' || item.status === 'under_review'
+                ? 'Pending review'
+                : item.status === 'Needs Correction' || item.status === 'needs_revision'
+                  ? 'Returned'
+                  : item.status === 'Approved' || item.status === 'approved' ? 'Approved' : item.status;
+              const metricLabel = item.reportType === 'meeting' ? 'Attendance' : 'Souls won';
+              const metricValue = item.reportType === 'meeting' ? Number((item as any).attendance) || 0 : Number((item as any).conversions) || 0;
+              const secondaryMetric = item.reportType === 'meeting'
+                ? `Offering: ${(item as any).currency || 'GHS'} ${Number((item as any).offering || 0).toLocaleString()}`
+                : `People reached: ${Number((item as any).peopleSpokenTo || 0).toLocaleString()}`;
               return (
-                <div
-                  key={item.id}
-                  onClick={() => setInspectingItem(item)}
-                  className={`p-4 transition-colors cursor-pointer ${
-                    isNeedsCorrection ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]' : isSelected ? 'bg-[#F0F5FA]' : 'bg-white hover:bg-[#F8FAFC]'
-                  }`}
-                >
-                  {/* Top: Tutor info, checkbox, status */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        onClick={e => {
-                          e.stopPropagation();
-                          toggleSelectOne(item.id);
-                        }}
-                        className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 cursor-pointer ${
-                          isSelected ? 'bg-[#142B4A] border-[#142B4A] text-white' : 'border-[#CBD5E1]'
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                      </div>
-                      <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                        {item.tutorName ? item.tutorName.split(' ').map(n => n[0]).slice(0, 2).join('') : 'TL'}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-extrabold text-xs text-[#182230] truncate">{item.tutorName}</h4>
-                        <p className="text-[11px] text-[#667085] truncate">{item.cellName}</p>
-                      </div>
-                    </div>
-
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
-                      isApproved ? 'bg-emerald-50 text-[#23845B] border border-emerald-200' :
-                      isNeedsCorrection ? 'bg-rose-50 text-[#C74646] border border-rose-200' :
-                      'bg-amber-50 text-[#D99A32] border border-amber-200'
-                    }`}>
-                      {isApproved ? 'Accepted' : isNeedsCorrection ? 'Declined' : 'Pending'}
-                    </span>
+                <article key={item.id} className="fni-rr-report-card" onClick={() => setInspectingItem(item)}>
+                  <div className="fni-rr-card-top">
+                    <label className="fni-rr-select-report" onClick={event => event.stopPropagation()}>
+                      <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelectOne(item.id)} aria-label={`Select report from ${item.cellName}`} />
+                    </label>
+                    <StatusPill status={statusText} />
+                    <span className={`fni-rr-type-pill ${item.reportType === 'meeting' ? 'is-meeting' : 'is-evangelism'}`}>{item.reportType === 'meeting' ? 'Cell meeting' : 'Evangelism'}</span>
+                    <span className={item.late ? 'fni-rr-deadline is-late' : 'fni-rr-deadline is-on-time'}>{item.late ? 'Submitted late' : 'On time'}</span>
                   </div>
-
-                  {/* Live Submission Timing Banner */}
-                  {(() => {
-                    const liveTime = formatLiveSubmissionTracking(item.submittedAt, liveTicker);
-                    return (
-                      <div className="mt-2.5 flex items-center justify-between text-[11px] bg-[#F5F7FA] px-2.5 py-1.5 rounded-xl border border-[#E3E8EF]">
-                        <div className="flex items-center gap-1.5 text-[#142B4A] font-semibold truncate">
-                          <Clock className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />
-                          <span className="truncate">{liveTime.timeFormatted} GMT ({liveTime.relativeTime})</span>
-                        </div>
-                        <span className={item.late ? 'text-[#C74646] font-bold text-[10px] shrink-0' : 'text-[#23845B] font-bold text-[10px] shrink-0'}>
-                          {item.late ? '● Late' : '● On-Time'}
-                        </span>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Category & Date Bar */}
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-[#667085] bg-white px-2.5 py-1 rounded-xl border border-[#E3E8EF]">
-                    <span className="font-bold text-[#142B4A] flex items-center gap-1">
-                      {item.reportType === 'meeting' ? <FileText className="w-3 h-3 text-[#142B4A]" /> : <Flame className="w-3 h-3 text-[#C6A45A]" />}
-                      {item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'}
-                    </span>
-                    <span>Meeting: {item.reportType === 'meeting' ? item.meetingDate : item.date}</span>
+                  <div className="fni-rr-card-identity">
+                    <div className="fni-rr-cell-avatar">{item.cellName.split(' ').map(word => word[0]).slice(0, 2).join('').toUpperCase()}</div>
+                    <div><h2>{item.cellName}</h2><p>{item.tutorName} {cellMeta?.leader_phone ? `· ${cellMeta.leader_phone}` : ''}</p><small>Submitted {new Date(item.submittedAt).toLocaleString('en-GB')}</small></div>
                   </div>
-
-                  {/* Metrics 2x2 grid */}
-                  <div className="grid grid-cols-2 gap-2 mt-2.5 text-xs">
-                    <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
-                      <span className="text-[10px] text-[#667085] font-semibold block">
-                        {item.reportType === 'meeting' ? 'Attendance' : 'Conversions'}
-                      </span>
-                      <span className="font-extrabold text-[#182230] text-sm">
-                        {item.reportType === 'meeting' ? `${item.attendance} Present` : `+${item.conversions} Souls`}
-                      </span>
-                    </div>
-                    <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
-                      <span className="text-[10px] text-[#667085] font-semibold block">
-                        {item.reportType === 'meeting' ? 'Offering' : 'Contacts'}
-                      </span>
-                      <span className="font-extrabold text-[#182230] text-sm">
-                        {item.reportType === 'meeting' ? (item.offering ? `GHS ${item.offering}` : 'None') : `${item.contactsCaptured} Captured`}
-                      </span>
-                    </div>
+                  <div className="fni-rr-card-metrics">
+                    <div><span>{metricLabel}</span><strong>{metricValue.toLocaleString()}</strong></div>
+                    <div><span>{item.reportType === 'meeting' ? 'New members' : 'People reached'}</span><strong>{item.reportType === 'meeting' ? Number((item as any).newMembers || 0).toLocaleString() : Number((item as any).peopleSpokenTo || 0).toLocaleString()}</strong></div>
+                    <div><span>Report type</span><strong>{item.reportType === 'meeting' ? 'Fellowship' : 'Outreach'}</strong></div>
                   </div>
-
-                  {/* Touch Action Bar (Thumb-sized buttons) */}
-                  <div className="mt-3 pt-2.5 border-t border-[#E3E8EF] flex items-center gap-1.5">
-                    {!isApproved && (
-                      <button
-                        type="button"
-                        disabled={isQuickProcessing}
-                        onClick={e => handleQuickApprove(item, e)}
-                        className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-50 text-[#23845B] hover:bg-emerald-100 font-extrabold text-xs flex items-center justify-center gap-1 border border-emerald-200 shadow-2xs cursor-pointer min-h-[40px]"
-                      >
-                        {isQuickProcessing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                        <span>Accept</span>
-                      </button>
-                    )}
-
-                    {!isNeedsCorrection && (
-                      <button
-                        type="button"
-                        onClick={e => handleQuickReturn(item, e)}
-                        className="flex-1 py-2 px-2.5 rounded-xl bg-rose-50 text-[#C74646] hover:bg-rose-100 font-extrabold text-xs flex items-center justify-center gap-1 border border-rose-200 shadow-2xs cursor-pointer min-h-[40px]"
-                      >
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        <span>Decline</span>
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={e => {
-                        e.stopPropagation();
-                        setInspectingItem(item);
-                      }}
-                      className="flex-1 py-2 px-3 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer min-h-[40px]"
-                    >
-                      <BookOpen className="w-3.5 h-3.5 text-[#C6A45A]" />
-                      <span>Read Report</span>
-                    </button>
-
-                    {whatsappUrl && (
-                      <a
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        className="p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center border border-emerald-200 shadow-2xs cursor-pointer min-h-[40px] min-w-[40px]"
-                        title="WhatsApp Tutor"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </a>
+                  <div className="fni-rr-live-time"><Clock className="w-3.5 h-3.5" /><span>{liveTime}</span><span className="fni-rr-secondary-metric">{secondaryMetric}</span></div>
+                  <div className="fni-rr-card-actions">
+                    <button type="button" className="fni-rr-review-button" onClick={event => { event.stopPropagation(); setInspectingItem(item); setReviewAction(null); setReviewReasons([]); }}>Review report <ChevronRight className="w-4 h-4" /></button>
+                    {statusText === 'Pending review' && (
+                      <>
+                        <button type="button" className="fni-rr-approve-button" disabled={isQuickProcessing} onClick={event => void handleQuickApprove(item, event)}>{isQuickProcessing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Approve</button>
+                        <button type="button" className="fni-rr-return-button" onClick={event => handleQuickReturn(item, event)}><RotateCcw className="w-3.5 h-3.5" /> Return</button>
+                      </>
                     )}
                   </div>
-                </div>
+                </article>
               );
-            })
-          )}
-        </div>
-
-      </div>
+            })}
+          </div>
+        </section>
+      )}
 
       {/* FULL REPORT INSPECTION & REVIEW DOSSIER MODAL */}
       {inspectingItem && (
