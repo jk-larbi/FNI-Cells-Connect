@@ -77,11 +77,8 @@ interface CellMapBeacon {
   cellName: string;
   tutorName: string;
   venue: string;
-  xPct: number; // 0-100% on map canvas
-  yPct: number; // 0-100% on map canvas
   attendance?: number;
   soulsWon?: number;
-  isActiveNow?: boolean;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
