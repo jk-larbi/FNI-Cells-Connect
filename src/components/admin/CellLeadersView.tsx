@@ -118,6 +118,13 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
     return matchesSearch && matchesStatus;
   });
 
+  const activeLeaderCount = profiles.filter(leader => leader.is_active).length;
+  const suspendedLeaderCount = profiles.length - activeLeaderCount;
+  const leadersWithReportsCount = profiles.filter(leader =>
+    meetingReports.some(report => report.tutorUid === leader.id || report.cellName === leader.cell_name) ||
+    evangReports.some(report => report.tutorUid === leader.id || report.cellName === leader.cell_name)
+  ).length;
+
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Page Header */}
@@ -131,6 +138,29 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
           </p>
         </div>
       </div>
+
+      <section aria-label="Cell leader summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <p className="text-[11px] font-semibold text-[#667085]">Leaders listed</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : profiles.length}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Linked to active cells</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <p className="text-[11px] font-semibold text-[#667085]">Active accounts</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : activeLeaderCount}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Currently enabled</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <p className="text-[11px] font-semibold text-[#667085]">Suspended</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : suspendedLeaderCount}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Accounts needing review</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <p className="text-[11px] font-semibold text-[#667085]">Leaders with reports</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : leadersWithReportsCount}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">At least one submission</p>
+        </div>
+      </section>
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">

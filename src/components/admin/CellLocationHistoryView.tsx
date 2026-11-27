@@ -263,7 +263,7 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
             <span className="truncate">Total Records</span>
           </div>
           <div className="text-xl sm:text-2xl font-black text-[#142B4A] dark:text-white">
-            {records.length}
+            {isLoading ? '—' : records.length}
           </div>
           <div className="text-[10px] sm:text-[11px] text-[#667085] dark:text-slate-400 mt-0.5 truncate">Historical entries preserved</div>
         </div>
@@ -274,7 +274,7 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
             <span className="truncate">Cells Tracked</span>
           </div>
           <div className="text-xl sm:text-2xl font-black text-[#142B4A] dark:text-white">
-            {cells.length}
+            {isLoading ? '—' : cells.length}
           </div>
           <div className="text-[10px] sm:text-[11px] text-[#667085] dark:text-slate-400 mt-0.5 truncate">Active fellowship cells</div>
         </div>
@@ -285,7 +285,7 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
             <span className="truncate">Unique Venues</span>
           </div>
           <div className="text-xl sm:text-2xl font-black text-[#142B4A] dark:text-white">
-            {uniqueVenuesCount}
+            {isLoading ? '—' : uniqueVenuesCount}
           </div>
           <div className="text-[10px] sm:text-[11px] text-[#667085] dark:text-slate-400 mt-0.5 truncate">Documented locations</div>
         </div>
@@ -296,7 +296,7 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
             <span className="truncate">Tutors & Leaders</span>
           </div>
           <div className="text-xl sm:text-2xl font-black text-[#142B4A] dark:text-white">
-            {profiles.filter(p => p.role === 'cell_leader' || p.role === 'tutor').length || cells.length}
+            {isLoading ? '—' : profiles.filter(p => p.role === 'cell_leader' || p.role === 'tutor').length}
           </div>
           <div className="text-[10px] sm:text-[11px] text-[#667085] dark:text-slate-400 mt-0.5 truncate">Cell shepherds</div>
         </div>
