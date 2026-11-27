@@ -71,6 +71,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [liveTicker, setLiveTicker] = useState(Date.now());
 
   // Live real-time ticker updating elapsed submission times every 15s
@@ -161,6 +162,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
     try {
       if (showRefreshIndicator) setIsRefreshing(true);
       else setIsLoading(true);
+      setLoadError(null);
 
       const [queue, loadedCells] = await Promise.all([
         ReportService.getUnifiedReviewQueue({ reportType: typeFilter }),
@@ -192,6 +194,9 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           setInspectingItem(found);
         }
       }
+    } catch (error) {
+      console.error('Could not load the report review queue:', error);
+      setLoadError('The report queue could not be loaded. Check your connection and try again.');
     } catch (error) {
       console.error('Could not load the report review queue:', error);
       setLoadError('The report queue could not be loaded. Check your connection and try again.');
@@ -934,6 +939,21 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
         </div>
       )}
 
+      {loadError && reports.length > 0 && (
+        <div role="alert" className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-[#C74646] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-[#142B4A]">Refresh failed</p>
+              <p className="text-xs text-[#667085]">{loadError} Previously loaded reports are still shown.</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => void loadData(true)} disabled={isRefreshing} className="min-h-9 shrink-0 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-[#142B4A] disabled:opacity-60">
+            {isRefreshing ? 'Retrying…' : 'Try again'}
+          </button>
+        </div>
+      )}
+
       {/* REVIEW QUEUE DATA TABLE */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
         <div className="py-4 px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-3 bg-white">
@@ -1018,6 +1038,15 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                         {isRefreshing ? 'Retrying...' : 'Try again'}
                       </button>
                     </div>
+                  </td>
+                </tr>
+              ) : loadError && reports.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 px-4 text-center">
+                    <AlertCircle className="w-7 h-7 text-[#C74646] mx-auto mb-2" />
+                    <p className="text-sm font-bold text-[#142B4A]">Unable to load reports</p>
+                    <p className="text-xs text-[#667085] mt-1">{loadError}</p>
+                    <button type="button" onClick={() => void loadData()} className="mt-3 min-h-10 px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] cursor-pointer">Try again</button>
                   </td>
                 </tr>
               ) : filteredReports.length === 0 ? (
@@ -1302,6 +1331,13 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             <div className="py-12 text-center text-[#667085]">
               <RefreshCw className="w-7 h-7 text-[#C6A45A] animate-spin mx-auto mb-2" />
               <p className="text-xs font-semibold">Loading live report queue...</p>
+            </div>
+          ) : loadError && reports.length === 0 ? (
+            <div className="py-12 px-4 text-center">
+              <AlertCircle className="w-7 h-7 text-[#C74646] mx-auto mb-2" />
+              <p className="text-sm font-bold text-[#142B4A]">Unable to load reports</p>
+              <p className="text-xs text-[#667085] mt-1">{loadError}</p>
+              <button type="button" onClick={() => void loadData()} className="mt-3 min-h-10 px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] cursor-pointer">Try again</button>
             </div>
           ) : filteredReports.length === 0 ? (
             <div className="py-12 px-4 text-center text-[#667085]">
