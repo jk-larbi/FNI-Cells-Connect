@@ -601,7 +601,7 @@ export const AppLayout: React.FC = () => {
 
             {/* Shared notifications tab */}
             {effectiveTab === 'notifications' && (
-              <div className="max-w-2xl mx-auto space-y-4">
+              <div className="max-w-5xl mx-auto w-full space-y-4">
                 <NotificationCenterModal
                   isOpen={true}
                   onClose={handleGoBack}
