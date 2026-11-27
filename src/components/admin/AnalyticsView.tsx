@@ -486,6 +486,42 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
         </div>
       </div>
 
+      {/* KEY FIGURES: quick read before the detailed charts */}
+      <section aria-label="Ministry figures at a glance" className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
+          <div className="flex items-center gap-2 text-[#667085] dark:text-slate-400">
+            <Building className="h-4 w-4 text-[#C6A45A]" />
+            <span className="text-[11px] font-semibold">Active Cells</span>
+          </div>
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{stats.totalCells.toLocaleString()}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085] dark:text-slate-400">In the cell directory</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
+          <div className="flex items-center gap-2 text-[#667085] dark:text-slate-400">
+            <Users className="h-4 w-4 text-[#C6A45A]" />
+            <span className="text-[11px] font-semibold">Attendance</span>
+          </div>
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{displayAttendance.toLocaleString()}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085] dark:text-slate-400">Recorded in meeting reports</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
+          <div className="flex items-center gap-2 text-[#667085] dark:text-slate-400">
+            <Flame className="h-4 w-4 text-[#C6A45A]" />
+            <span className="text-[11px] font-semibold">Souls Won</span>
+          </div>
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{displaySouls.toLocaleString()}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085] dark:text-slate-400">From approved outreach reports</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
+          <div className="flex items-center gap-2 text-[#667085] dark:text-slate-400">
+            <FileCheck className="h-4 w-4 text-[#C6A45A]" />
+            <span className="text-[11px] font-semibold">Reporting Rate</span>
+          </div>
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{displayCompliance}%</p>
+          <p className="mt-0.5 text-[10px] text-[#667085] dark:text-slate-400">Weekly cell reporting</p>
+        </div>
+      </section>
+
       {/* =========================================================================
           MAIN DASHBOARD GRID (Hero Wave Card + Highlight Cards + Right Sidebar)
           Strictly matching the visual balance of the reference UI
