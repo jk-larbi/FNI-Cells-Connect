@@ -30,6 +30,7 @@ import {
   UserCheck,
   Archive,
   Video,
+  ArrowRight,
 } from 'lucide-react';
 
 interface CellManagementViewProps {
