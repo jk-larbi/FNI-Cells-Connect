@@ -484,6 +484,8 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       if (reviewAction === 'Approved') {
         setLastReviewedReport(reviewedItem);
         setReviewOutcome('approved');
+      } else {
+        setStatusFilter('Needs Correction');
       }
     } catch (error: any) {
       alert(error?.message || 'The report decision could not be saved. Please try again.');
@@ -1322,7 +1324,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     </div>
                   )}
                 </section>
-              )}
               )}
             </div>
           </div>
