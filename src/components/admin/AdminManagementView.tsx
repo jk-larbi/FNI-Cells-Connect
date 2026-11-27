@@ -322,7 +322,7 @@ export const AdminManagementView: React.FC = () => {
         <span className="hidden sm:inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-500">Administrator workspace</span>
       </div>
       {(managementLoadError || isLoadingManagement) && (
-        <div className={\`flex flex-col gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center sm:justify-between \${managementLoadError ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-blue-200 bg-blue-50 text-blue-800'}\`} role={managementLoadError ? 'alert' : 'status'} aria-live="polite">
+        <div className={managementLoadError ? "flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 sm:flex-row sm:items-center sm:justify-between" : "flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800 sm:flex-row sm:items-center sm:justify-between"} role={managementLoadError ? 'alert' : 'status'} aria-live="polite">
           <span>{managementLoadError || 'Loading users, cells, regions and reporting cycles…'}</span>
           {managementLoadError && <button type="button" onClick={() => setManagementLoadAttempt(value => value + 1)} disabled={isLoadingManagement} className="min-h-9 rounded-lg border border-rose-300 px-3 font-bold disabled:opacity-50">Retry loading records</button>}
         </div>
