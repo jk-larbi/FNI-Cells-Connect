@@ -2580,3 +2580,62 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-admin-stitch-shell .fni-cell-leaders-stitch section[aria-label="Cell leader summary"] { gap: .75rem !important; }
   .fni-admin-stitch-shell .fni-cell-leaders-stitch section[aria-label="Cell leader summary"] > div { padding: 1rem !important; }
 }
+
+
+/* Ministry Analytics — Stitch desktop and mobile visual system */
+.fni-admin-stitch-shell .fni-analytics-stitch {
+  width: 100%; max-width: 1280px; margin-inline: auto;
+  color: #142842; font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch h1,
+.fni-admin-stitch-shell .fni-analytics-stitch h2,
+.fni-admin-stitch-shell .fni-analytics-stitch h3,
+.fni-admin-stitch-shell .fni-analytics-stitch button,
+.fni-admin-stitch-shell .fni-analytics-stitch label {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch p,
+.fni-admin-stitch-shell .fni-analytics-stitch input,
+.fni-admin-stitch-shell .fni-analytics-stitch select,
+.fni-admin-stitch-shell .fni-analytics-stitch td,
+.fni-admin-stitch-shell .fni-analytics-stitch th {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch .fni-analytics-eyebrow {
+  margin: 0 0 .3rem; color: #5A6B7C;
+  font: 600 11px/16px 'Libre Franklin', system-ui, sans-serif;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch section[aria-label="Ministry figures at a glance"] > div {
+  border: 1px solid #DCE3EC !important; border-radius: 14px !important;
+  background: #FFFFFF !important; box-shadow: none !important;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch section[aria-label="Ministry figures at a glance"] span {
+  color: #5A6B7C;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch section[aria-label="Ministry figures at a glance"] p:nth-of-type(1) {
+  color: #142842 !important;
+  font: 700 26px/32px 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch input,
+.fni-admin-stitch-shell .fni-analytics-stitch select {
+  min-height: 40px; border-color: #DCE3EC !important; border-radius: 10px !important;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch button:focus-visible,
+.fni-admin-stitch-shell .fni-analytics-stitch input:focus-visible,
+.fni-admin-stitch-shell .fni-analytics-stitch select:focus-visible {
+  outline: 2px solid #8E6C23; outline-offset: 2px;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch table { border-collapse: separate; border-spacing: 0; }
+.fni-admin-stitch-shell .fni-analytics-stitch thead { background: #EEF2F7 !important; color: #5A6B7C !important; }
+.fni-admin-stitch-shell .fni-analytics-stitch tbody tr {
+  border-bottom: 1px solid #DCE3EC; transition: background-color 120ms ease-out;
+}
+.fni-admin-stitch-shell .fni-analytics-stitch tbody tr:hover { background: #F7F9FC !important; }
+.fni-admin-stitch-shell .fni-analytics-stitch .recharts-cartesian-grid line { stroke: #DCE3EC; }
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-analytics-stitch { padding-bottom: 1rem; }
+  .fni-admin-stitch-shell .fni-analytics-stitch section[aria-label="Ministry figures at a glance"] { gap: .65rem !important; }
+  .fni-admin-stitch-shell .fni-analytics-stitch section[aria-label="Ministry figures at a glance"] > div { padding: .85rem !important; }
+  .fni-admin-stitch-shell .fni-analytics-stitch > div:first-child { align-items: stretch; }
+}
