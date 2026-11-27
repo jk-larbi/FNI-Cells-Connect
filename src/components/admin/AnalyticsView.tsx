@@ -23,6 +23,7 @@ import {
   FileCheck,
   AlertTriangle,
   Search,
+  X,
   Radio,
   MapPin,
   Clock,
@@ -448,14 +449,26 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
       {/* SEARCH & FILTER BAR */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-white dark:bg-slate-900 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 shadow-xs">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search fellowship cells, tutors, venues, or regions..."
+            placeholder="Search by cell name, leader, or cell code..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-[#182230] dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
+            className="w-full pl-9 pr-10 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-[#182230] dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
+            aria-label="Search cells by name, leader, or cell code"
           />
+          {searchQuery.trim() && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
+              aria-label="Clear cell search"
+              title="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
