@@ -30,7 +30,7 @@ const MaterialSymbol: React.FC<{ name: string; className?: string }> = ({ name, 
 
 interface CellLeadersViewProps {
   onBack?: () => void;
-  onNavigateToTab?: (tab: string) => void;
+  onNavigateToTab?: (tab: 'cell-management') => void;
 }
 
 export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack, onNavigateToTab }) => {
