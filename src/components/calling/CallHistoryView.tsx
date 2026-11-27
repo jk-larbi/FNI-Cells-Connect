@@ -17,6 +17,7 @@ import {
   Filter,
   User,
   Shield,
+  Users,
   Plus,
   Trash2,
   Bell,
@@ -184,21 +185,16 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
+    <div className="fni-calls-meetings-stitch space-y-6 animate-fadeIn">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-[#142B4A] dark:text-white tracking-tight">
-              Call & Meeting History
-            </h1>
-            <span className="text-xs bg-[#142B4A]/10 dark:bg-white/10 text-[#142B4A] dark:text-slate-200 px-2.5 py-0.5 rounded-full font-bold">
-              {history.length} records
-            </span>
+          <p className="fni-calls-eyebrow">FNI ADMIN · SUPABASE BACKED</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="fni-calls-title">Calls &amp; Meetings</h1>
+            <span className="fni-calls-count">{history.length} call records</span>
           </div>
-          <p className="text-xs text-[#667085] dark:text-slate-400 mt-0.5">
-            Logs of your one-to-one voice calls, video calls, and group fellowship meetings
-          </p>
+          <p className="fni-calls-subtitle">Manage ministry meetings, online calls and meeting activities.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -238,9 +234,31 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
         </div>
       </div>
 
+      {/* Live summary cards — sourced only from the current Supabase-backed records */}
+      <section className="fni-calls-metrics" aria-label="Calls and meetings overview">
+        {[
+          { label: 'Upcoming meetings', value: scheduledActivities.length, note: 'Scheduled activities', icon: Calendar },
+          { label: 'Call records', value: history.length, note: 'Recorded calls', icon: Phone },
+          { label: 'Group meetings', value: history.filter(record => record.call_mode !== 'direct').length, note: 'Group and cell calls', icon: Users },
+          { label: 'Blocked callers', value: blockedCallers.length, note: 'Current account blocks', icon: Shield },
+        ].map(metric => {
+          const MetricIcon = metric.icon;
+          return (
+            <article key={metric.label} className="fni-calls-metric">
+              <div className="fni-calls-metric-top">
+                <span>{metric.label}</span>
+                <MetricIcon aria-hidden="true" />
+              </div>
+              <strong>{metric.value.toLocaleString()}</strong>
+              <small>{metric.note}</small>
+            </article>
+          );
+        })}
+      </section>
+
       {/* Upcoming Scheduled Fellowship Meetings */}
       {scheduledActivities.length > 0 && (
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#182533] border border-slate-200 dark:border-white/10 space-y-3">
+        <div className="fni-calls-upcoming space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
@@ -332,7 +350,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
       )}
 
       {/* Filter Tabs & Search Bar */}
-      <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-white/10 p-3 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="fni-calls-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Filter Pills */}
         <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400">
           <button
@@ -394,7 +412,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
         </div>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] p-4 space-y-3">
+      <section className="fni-calls-blocked p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-bold text-[#142B4A] dark:text-white">Blocked callers</h2>
@@ -424,7 +442,7 @@ export const CallHistoryView: React.FC<CallHistoryViewProps> = ({ onBack }) => {
       </section>
 
       {/* History List */}
-      <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-white/10 shadow-xs overflow-hidden">
+      <div className="fni-calls-history overflow-hidden">
         {isLoading ? (
           <div className="py-16 text-center text-xs text-slate-400">Loading call history...</div>
         ) : filteredHistory.length === 0 ? (
