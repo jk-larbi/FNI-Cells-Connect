@@ -419,6 +419,20 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     );
   }
 
+  // Keep the view out of a null-stats state if a request resolves without usable dashboard data.
+  if (!stats) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-[#E3E8EF] bg-white p-6 text-center shadow-xs sm:p-8" role="status" aria-live="polite">
+        <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-[#C6A45A]" />
+        <h2 className="text-base font-bold text-[#142B4A]">Analytics data is unavailable</h2>
+        <p className="mt-2 text-sm text-[#667085]">No dashboard figures were returned. Try loading the data again.</p>
+        <button type="button" onClick={() => void loadData(true)} className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#203D63]">
+          <RefreshCw className="h-4 w-4" /> Try again
+        </button>
+      </div>
+    );
+  }
+
   const soulTarget = settings?.annualSoulWinningTarget || 5000;
   const targetPercent = Math.min(100, Math.round((displaySouls / soulTarget) * 100));
 
