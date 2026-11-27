@@ -660,7 +660,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
 
       {/* TAB 2: ADMINISTRATOR PROFILE & SECURITY */}
       {activeTab === 'security' && (
-        <div className="fni-admin-security-view space-y-6 max-w-5xl w-full min-w-0">
+        <div className="fni-admin-security-view max-w-5xl w-full min-w-0">
           <div className="fni-admin-security-top-grid">
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-3">
             <div className="flex items-center gap-3">
@@ -1004,7 +1004,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
           </div>
 
           {/* Android Application Updates & Version Distribution */}
-          <AppUpdateSettingsSection />
+          <div className="fni-admin-security-app-update"><AppUpdateSettingsSection /></div>
 
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
