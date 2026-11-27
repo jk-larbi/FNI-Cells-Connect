@@ -398,7 +398,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg sm:text-2xl font-black text-[#142B4A] dark:text-white tracking-tight">
-              Primary Analytics Dashboard
+              Ministry Overview
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
@@ -406,7 +406,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             </span>
           </div>
           <p className="text-xs text-[#667085] dark:text-slate-400 mt-1">
-            Review recorded ministry growth, attendance, soul-winning, and tutor activity. Refresh to load the latest records.
+            A simple view of cell activity, attendance, outreach and reports. Refresh to load the latest records.
           </p>
         </div>
 
@@ -1174,10 +1174,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
           <div>
             <h2 className="text-base font-bold text-[#182230] dark:text-white flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#C6A45A]" />
-              Comparative Period Analytics
+              Progress Over Time
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Side-by-side performance trends across weekly cycles, calendar months, quarters, and full ministry year.
+              See how attendance, outreach and giving change over time.
             </p>
           </div>
 
@@ -1340,10 +1340,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
           <div>
             <h2 className="flex items-center gap-2 text-base font-bold text-[#182230] dark:text-white">
               <BarChart3 className="h-4 w-4 text-[#C6A45A]" />
-              Cell Performance Comparison
+              Compare Cells
             </h2>
             <p className="mt-1 text-xs text-[#667085] dark:text-slate-400">
-              Rank and inspect individual cell contributions across attendance, soul-winning harvest, and compliance.
+              Compare attendance, outreach and reporting across your cells.
             </p>
           </div>
           <span className="rounded-full border border-[#142B4A]/15 dark:border-white/10 bg-[#142B4A]/5 dark:bg-white/5 px-3 py-1 text-[11px] font-semibold text-[#142B4A] dark:text-[#C6A45A]">
@@ -1420,10 +1420,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
         <div className="py-4 px-6 border-b border-[#E3E8EF] dark:border-slate-800 flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-[#182230] dark:text-white">
-              Cells Breakdown & Operational Compliance
+              Cell Summary
             </h2>
             <p className="text-xs text-[#667085] dark:text-slate-400 mt-0.5">
-              Live operational breakdown of attendance, soul-winning harvest, offerings, and reporting compliance for registered cells.
+              A clear summary of each cell’s attendance, outreach, offerings and reports.
             </p>
           </div>
           <span className="px-2.5 py-1 rounded-full bg-[#142B4A]/5 dark:bg-white/5 border border-[#142B4A]/10 text-xs font-bold text-[#142B4A] dark:text-[#C6A45A]">
