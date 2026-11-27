@@ -3461,3 +3461,52 @@ html.dark .fni-chat-composer textarea:focus-visible {
 @media(prefers-reduced-motion:reduce) {
   .fni-admin-ministry-settings-view * { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; }
 }
+
+
+/* More hub — Stitch-aligned visual refresh; keeps the existing destinations and actions intact. */
+.fni-admin-more-hub { max-width: 1120px; gap: 24px; }
+.fni-admin-more-hub > header {
+  position:relative; overflow:hidden; border:1px solid #DCE3EC; border-radius:16px;
+  background:linear-gradient(115deg,#FFFFFF 0%,#F7F9FC 72%,#FDF8E8 100%);
+  padding:24px 28px; box-shadow:none;
+}
+.fni-admin-more-hub > header > p:first-child {
+  color:#8E6C23; font:600 11px/16px "Libre Franklin",sans-serif; letter-spacing:.12em;
+}
+.fni-admin-more-hub > header h1 {
+  color:#142842; font:700 28px/36px "Libre Franklin",sans-serif; letter-spacing:-.3px;
+}
+.fni-admin-more-hub > header p:last-child {
+  color:#5A6B7C; font:400 14px/21px "Source Sans 3",sans-serif;
+}
+.fni-admin-more-hub > div:last-child { gap:12px; }
+.fni-admin-more-hub > div:last-child > button {
+  min-height:104px; padding:18px; border:1px solid #DCE3EC; border-radius:16px;
+  background:#FFFFFF; box-shadow:none; gap:16px; transition:background-color 120ms ease-out,border-color 120ms ease-out,transform 120ms ease-out;
+}
+.fni-admin-more-hub > div:last-child > button:hover {
+  background:#F7F9FC; border-color:rgba(142,108,35,.55); transform:translateY(-1px);
+}
+.fni-admin-more-hub > div:last-child > button > span:first-child {
+  width:44px; height:44px; border-radius:12px; background:#E4ECF7; color:#142842;
+}
+.fni-admin-more-hub > div:last-child > button > span:nth-child(2) > span:first-child {
+  color:#142842; font:600 15px/21px "Libre Franklin",sans-serif;
+}
+.fni-admin-more-hub > div:last-child > button > span:nth-child(2) > span:last-child {
+  color:#5A6B7C; font:400 13px/19px "Source Sans 3",sans-serif;
+}
+.fni-admin-more-hub > div:last-child > button > svg { color:#8E6C23; }
+@media(max-width:767px) {
+  .fni-admin-more-hub { gap:18px; padding:0; }
+  .fni-admin-more-hub > header { padding:18px 16px; border-radius:14px; }
+  .fni-admin-more-hub > header h1 { font-size:26px; line-height:34px; }
+  .fni-admin-more-hub > div:last-child { grid-template-columns:minmax(0,1fr); gap:10px; }
+  .fni-admin-more-hub > div:last-child > button {
+    min-height:78px; padding:14px; border-radius:12px; gap:12px;
+  }
+  .fni-admin-more-hub > div:last-child > button > span:first-child { width:40px; height:40px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fni-admin-more-hub * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
+}

@@ -418,6 +418,7 @@ export const AppLayout: React.FC = () => {
                 { title: 'Calls & Meetings', description: 'Review call and meeting history.', icon: Phone, onClick: () => navigateToTab('call-history') },
               ]} />}
             {isAdmin && effectiveTab === 'more-hub' && <SectionHub
+              className="fni-admin-more-hub"
               title="More" description="Other tools and settings for managing FNI Cells Connect."
               items={[
                 { title: 'Learning Portal', description: 'Assignments, quizzes, participation and grades.', icon: GraduationCap, onClick: () => navigateToTab('learning-portal') },
