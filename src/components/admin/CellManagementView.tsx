@@ -291,24 +291,24 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       <CellLocationsMap cells={cells.filter(cell => cell.is_active && !cell.is_archived)} />
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="relative flex-1 min-w-[240px]">
+      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex min-w-0 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="relative w-full min-w-0 flex-1">
           <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-3" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search by cell name, leader, location..."
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
+            className="w-full min-w-0 pl-10 pr-4 py-2.5 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto sm:w-auto sm:shrink-0">
           {(['All', 'Active', 'Suspended', 'Deactivated'] as const).map(st => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`min-h-10 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === st
                   ? 'bg-[#142B4A] text-white'
                   : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
