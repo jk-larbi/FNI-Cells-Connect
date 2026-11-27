@@ -30,6 +30,8 @@ export const ReportDeadlineSettingsView: React.FC<ReportDeadlineSettingsViewProp
   const { currentUser } = useAuth();
   const [settings, setSettings] = useState<SystemDeadlineSettings>(DEFAULT_DEADLINE_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -43,10 +45,13 @@ export const ReportDeadlineSettingsView: React.FC<ReportDeadlineSettingsViewProp
   const [evangReminders, setEvangReminders] = useState(true);
 
   useEffect(() => {
+    let isActive = true;
     async function load() {
+      setIsLoading(true);
+      setLoadError('');
       try {
-        setIsLoading(true);
         const data = await DeadlineService.getDeadlineSettings();
+        if (!isActive) return;
         setSettings(data);
         setMeetingDay(data.meeting.dayOfWeek);
         setMeetingTime(data.meeting.deadlineTime);
@@ -55,12 +60,16 @@ export const ReportDeadlineSettingsView: React.FC<ReportDeadlineSettingsViewProp
         setEvangDay(data.evangelism.dayOfWeek);
         setEvangTime(data.evangelism.deadlineTime);
         setEvangReminders(data.evangelism.remindersEnabled);
+      } catch (error) {
+        console.error('Failed to load report deadline settings:', error);
+        if (isActive) setLoadError('Report deadline settings could not be loaded. Please try again.');
       } finally {
-        setIsLoading(false);
+        if (isActive) setIsLoading(false);
       }
     }
-    load();
-  }, []);
+    void load();
+    return () => { isActive = false; };
+  }, [loadAttempt]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +138,21 @@ export const ReportDeadlineSettingsView: React.FC<ReportDeadlineSettingsViewProp
       remindersEnabled: evangReminders,
     },
   });
+
+  if (isLoading) {
+    return <div className="py-20 text-center text-sm text-slate-500" role="status" aria-live="polite">Loading report deadline settings...</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm sm:p-8" role="alert">
+        <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-rose-600" />
+        <h2 className="text-base font-bold text-[#142B4A]">Deadline settings are unavailable</h2>
+        <p className="mt-2 text-sm text-slate-500">{loadError}</p>
+        <button type="button" onClick={() => setLoadAttempt(value => value + 1)} className="mt-5 min-h-10 rounded-xl bg-[#142B4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#203D63]">Try again</button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
