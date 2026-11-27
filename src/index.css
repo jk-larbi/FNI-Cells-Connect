@@ -3677,3 +3677,191 @@ html.dark .fni-chat-composer textarea:focus-visible {
 @media(prefers-reduced-motion:reduce) {
   .fni-notification-center * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
 }
+
+
+/* Offering Ledger — Stitch visual refresh; data and finance permissions remain unchanged. */
+.fni-finance-view {
+  color:#142842;
+  font-family:"Source Sans 3",sans-serif;
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+}
+.fni-finance-view h1,.fni-finance-view h2,.fni-finance-view h3,.fni-finance-view h4 {
+  font-family:"Libre Franklin",sans-serif;
+  letter-spacing:-.02em;
+}
+.fni-finance-view > div:first-child {
+  align-items:flex-end;
+  padding-bottom:18px;
+  border-bottom:1px solid #DCE3EC;
+}
+.fni-finance-view > div:first-child h1 {
+  font-size:clamp(22px,2.1vw,30px);
+  line-height:1.2;
+  font-weight:700;
+  color:#142842;
+}
+.fni-finance-view > div:first-child p { font-size:14px; color:#5A6B7C; }
+.fni-finance-view > div:first-child > div:last-child {
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.fni-finance-view > div:first-child > div:last-child > div {
+  background:#FFFFFF;
+  border:1px solid #DCE3EC;
+  border-radius:12px;
+  padding:4px;
+}
+.fni-finance-view > div:first-child > div:last-child button {
+  min-height:34px;
+  border-radius:9px;
+  transition:background-color 120ms ease-out,color 120ms ease-out;
+}
+.fni-finance-view > div:first-child > div:last-child button[class*="bg-[#142B4A]"] {
+  background:#142842;
+  box-shadow:none;
+}
+.fni-finance-view > div:first-child > div:last-child > button {
+  min-height:40px;
+  border-radius:12px;
+  border-color:#DCE3EC;
+  font-weight:700;
+}
+.fni-finance-view > div:nth-child(2) > div {
+  border:1px solid #DCE3EC;
+  border-radius:16px;
+  padding:20px;
+  background:#FFFFFF;
+  box-shadow:none;
+  min-width:0;
+}
+.fni-finance-view > div:nth-child(2) > div:last-child {
+  background:#142842;
+  border-color:#142842;
+}
+.fni-finance-view > div:nth-child(2) > div > div:first-child {
+  align-items:center;
+  color:#5A6B7C;
+}
+.fni-finance-view > div:nth-child(2) > div > div:first-child span {
+  font-family:"Libre Franklin",sans-serif;
+  font-size:11px;
+  letter-spacing:.07em;
+}
+.fni-finance-view > div:nth-child(2) > div > div:last-of-type {
+  font-family:"Libre Franklin",sans-serif;
+  font-size:clamp(18px,1.8vw,25px);
+  line-height:1.3;
+  letter-spacing:-.03em;
+  overflow-wrap:anywhere;
+}
+.fni-finance-view > div:nth-child(2) > div > span {
+  font-size:12px;
+}
+.fni-finance-view > div:nth-child(3),
+.fni-finance-view > div:nth-child(4) {
+  background:#FFFFFF;
+  border:1px solid #DCE3EC;
+  border-radius:16px;
+  box-shadow:none;
+}
+.fni-finance-view > div:nth-child(3) { padding:24px; }
+.fni-finance-view > div:nth-child(3) > div:first-child {
+  border-color:#DCE3EC;
+  padding-bottom:18px;
+}
+.fni-finance-view > div:nth-child(3) h2,
+.fni-finance-view > div:nth-child(4) h3 {
+  color:#142842;
+  font-size:16px;
+  font-weight:700;
+}
+.fni-finance-view > div:nth-child(3) > div:last-child > div {
+  background:#F7F9FC;
+  border:1px solid #DCE3EC;
+  border-radius:12px;
+  padding:16px;
+  gap:12px;
+}
+.fni-finance-view > div:nth-child(3) > div:last-child h4 {
+  font-size:13px;
+  color:#142842;
+}
+.fni-finance-view > div:nth-child(3) > div:last-child > div > div:last-child > div:first-child {
+  font-family:"Libre Franklin",sans-serif;
+  font-variant-numeric:tabular-nums;
+  color:#142842;
+  font-size:14px;
+}
+.fni-finance-view > div:nth-child(4) { overflow:hidden; }
+.fni-finance-view > div:nth-child(4) > div:first-child {
+  padding:20px 24px;
+  border-color:#DCE3EC;
+}
+.fni-finance-view > div:nth-child(4) > div:first-child span {
+  color:#5A6B7C;
+  font-size:12px;
+}
+.fni-finance-view table { font-family:"Source Sans 3",sans-serif; }
+.fni-finance-view table thead { background:#EEF2F7; color:#5A6B7C; }
+.fni-finance-view table th {
+  font-family:"Libre Franklin",sans-serif;
+  font-size:10px;
+  letter-spacing:.07em;
+  font-weight:700;
+  padding-top:14px;
+  padding-bottom:14px;
+}
+.fni-finance-view table td {
+  border-color:#DCE3EC;
+  padding-top:15px;
+  padding-bottom:15px;
+}
+.fni-finance-view table tbody tr:hover { background:#F7F9FC; }
+.fni-finance-view .md\:hidden article {
+  padding:16px 20px;
+  background:#FFFFFF;
+}
+.fni-finance-view .md\:hidden article + article { border-color:#DCE3EC; }
+.fni-finance-view .md\:hidden article p:first-child { color:#142842; }
+.fni-finance-view .md\:hidden article > div:last-child { flex-wrap:wrap; }
+@media(max-width:767px) {
+  .fni-finance-view { gap:18px; }
+  .fni-finance-view > div:first-child {
+    align-items:stretch;
+    flex-direction:column;
+    gap:14px;
+    padding-bottom:16px;
+  }
+  .fni-finance-view > div:first-child > div:last-child {
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    width:100%;
+  }
+  .fni-finance-view > div:first-child > div:last-child > div {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    width:100%;
+  }
+  .fni-finance-view > div:first-child > div:last-child button {
+    padding-left:5px;
+    padding-right:5px;
+    font-size:11px;
+    white-space:nowrap;
+  }
+  .fni-finance-view > div:first-child > div:last-child > button { width:100%; justify-content:center; }
+  .fni-finance-view > div:nth-child(2) { gap:10px; }
+  .fni-finance-view > div:nth-child(2) > div { padding:15px; border-radius:14px; }
+  .fni-finance-view > div:nth-child(2) > div > div:last-of-type { font-size:18px; }
+  .fni-finance-view > div:nth-child(3) { padding:16px; }
+  .fni-finance-view > div:nth-child(3) > div:first-child { align-items:flex-start; }
+  .fni-finance-view > div:nth-child(3) > div:last-child { grid-template-columns:1fr; }
+  .fni-finance-view > div:nth-child(4) > div:first-child { padding:16px; }
+  .fni-finance-view .md\:hidden article { padding:16px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fni-finance-view * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
+}
