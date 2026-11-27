@@ -291,9 +291,17 @@ export const AdminManagementView: React.FC = () => {
   const leaderCount = users.filter(u => u.role === 'regional_leader' || u.role === 'cell_leader').length;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Tab Navigation header */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-2 text-xs font-bold overflow-x-auto -mx-1 px-1 snap-x snap-mandatory">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#B18A3D]">Administration</p>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#142B4A]">People &amp; structure</h1>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">Manage accounts, leadership, cell records, regions and reporting cycles from one workspace.</p>
+        </div>
+        <span className="hidden sm:inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-500">Administrator workspace</span>
+      </div>
+      {/* Keep all management areas accessible in a compact desktop grid and swipeable mobile tab strip. */}
+      <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-2 text-xs font-bold overflow-x-auto md:overflow-visible -mx-1 px-1 snap-x snap-mandatory md:grid md:grid-cols-5 md:gap-2 md:mx-0 md:px-0">
         <button
           onClick={() => setActiveTab('users')}
           className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap snap-start ${
