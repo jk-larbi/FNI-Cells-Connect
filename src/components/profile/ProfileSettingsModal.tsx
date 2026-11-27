@@ -932,19 +932,28 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
 
               <div className="fni-profile-identity-content">
                 <div className="fni-profile-identity-row">
-                  <div className="fni-profile-avatar" aria-label={`${currentUser?.full_name || 'Member'} profile photograph`}>
-                    {currentUser?.avatar_url ? (
-                      <img src={currentUser.avatar_url} alt={currentUser?.full_name || 'Member profile'} />
-                    ) : (
-                      <span>{currentUser?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'FN'}</span>
+                  <div className="fni-profile-avatar" data-profile-avatar="true" role="img" aria-label={`${currentUser?.full_name || 'Member'} profile photograph`}>
+                    <span className="fni-profile-avatar-fallback" aria-hidden="true"><User className="w-9 h-9" /></span>
+                    {currentUser?.avatar_url && (
+                      <img
+                        src={currentUser.avatar_url}
+                        alt=""
+                        loading="eager"
+                        onError={event => { event.currentTarget.style.display = 'none'; }}
+                      />
                     )}
+                    <span className={`fni-profile-avatar-status ${accountStatus === 'Active' ? 'is-active' : accountStatus === 'Pending' ? 'is-pending' : 'is-suspended'}`} aria-hidden="true" />
                   </div>
                   <div className="fni-profile-identity-copy">
                     <h2>{currentUser?.full_name || 'Signed-in Member'}</h2>
                     <span className={`fni-profile-status ${accountStatus === 'Active' ? 'is-active' : accountStatus === 'Pending' ? 'is-pending' : 'is-suspended'}`}>
                       <span aria-hidden="true" />{accountStatus}
                     </span>
-                    <p>Account designation: {roleDisplayTitle} <span>· Read-only</span></p>
+                    <div className="fni-profile-designation">
+                      <span>Account designation</span>
+                      <strong>{roleDisplayTitle}</strong>
+                      <span className="fni-profile-designation-readonly">Read-only · Admin managed</span>
+                    </div>
                   </div>
                   <div className="fni-profile-photo-actions">
                     <ProfilePhotoUploader
