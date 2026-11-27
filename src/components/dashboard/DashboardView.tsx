@@ -231,149 +231,149 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const currentQuarterSouls = soulMetrics?.quarterlyProgress.find(item => item.quarter === currentQuarterLabel)?.souls ?? 0;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="mx-auto w-full max-w-[1440px] space-y-6 sm:space-y-8">
       {/* Figma-led ministry overview — all figures are supplied by the live services above. */}
-      <header className="space-y-3">
+      <header className="flex flex-col gap-3 border-b border-[#DCE3EC] pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#84672D]">FNI · Cells Connect</p>
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-[#142B4A] sm:text-3xl">Ministry overview</h1>
-          <p className="mt-1 text-sm text-[#697586]">One network. One shared mission.</p>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8E6C23]">Admin workspace · FNI Cells Connect</p>
+          <h1 className="text-[28px] font-bold leading-tight tracking-[-0.025em] text-[#142842] sm:text-[36px]">Ministry overview</h1>
+          <p className="mt-1 text-sm text-[#5A6B7C]">Every cell. Every report. One shared mission.</p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-medium text-[#172B45]">
-          <Calendar className="h-4 w-4 text-[#697586]" />
+        <div className="flex items-center gap-2 text-xs font-medium text-[#5A6B7C]">
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">calendar_today</span>
           <span>{today.toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
       </header>
 
-      <section className="overflow-hidden rounded-2xl bg-[#142B4A] p-4 text-white shadow-sm sm:p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#DDC58C]">Your action centre</p>
-        <h2 className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">
+      <section className="overflow-hidden rounded-2xl border border-[#DCE3EC] bg-[#FDF8E8] p-4 text-[#142842] sm:p-5 lg:flex lg:items-center lg:justify-between lg:gap-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8E6C23]">Your action centre</p>
+        <h2 className="mt-2 text-xl font-bold tracking-tight text-[#142842] sm:text-2xl">
           {stats.awaitingReviewCount.toLocaleString()} {stats.awaitingReviewCount === 1 ? 'report awaits' : 'reports await'} review
         </h2>
-        <p className="mt-1 text-xs text-[#CCD6E2]">
+        <p className="mt-1 text-sm text-[#5A6B7C]">
           {stats.missingCellsCount.toLocaleString()} {stats.missingCellsCount === 1 ? 'cell has' : 'cells have'} not submitted a meeting report in the current reporting data.
         </p>
-        <button type="button" onClick={() => onNavigateToTab('report-review')} className="mt-4 flex min-h-12 w-full items-center justify-between rounded-xl bg-[#C6A45A] px-4 text-sm font-bold text-[#142B4A] transition-colors hover:bg-[#D8BB79] focus:outline-none focus:ring-2 focus:ring-white/70">
-          Review reports <ArrowRight className="h-4 w-4" />
+        <button type="button" onClick={() => onNavigateToTab('report-review')} className="mt-4 flex min-h-12 w-full items-center justify-between rounded-xl bg-[#142842] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#354863] focus:outline-none focus:ring-2 focus:ring-[#8E6C23]/40 lg:mt-0 lg:w-auto lg:min-w-[190px]">
+          Review reports <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
         </button>
       </section>
 
       <section aria-label="Ministry totals" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <button type="button" onClick={() => onNavigateToTab('cell-management')} className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4 text-left transition-colors hover:border-[#C6A45A] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
-          <span className="block text-xs font-medium text-[#697586]">Registered cells</span>
-          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{stats.totalCells.toLocaleString()}</span>
-          <span className="mt-1 block text-[10px] text-[#697586]">Active cell directory</span>
+        <button type="button" onClick={() => onNavigateToTab('cell-management')} className="min-w-0 rounded-2xl border border-[#DCE3EC] bg-white p-4 text-left transition-colors hover:border-[#8E6C23] focus:outline-none focus:ring-2 focus:ring-[#8E6C23]/25 sm:p-5">
+          <span className="block text-xs font-medium text-[#5A6B7C]">Registered cells</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142842]">{stats.totalCells.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#5A6B7C]">Active cell directory</span>
         </button>
-        <button type="button" onClick={() => onNavigateToTab('cell-leaders')} className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4 text-left transition-colors hover:border-[#C6A45A] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
-          <span className="block text-xs font-medium text-[#697586]">Active cell leaders</span>
-          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{stats.activeCellLeaders.toLocaleString()}</span>
-          <span className="mt-1 block text-[10px] text-[#697586]">Registered active leaders</span>
+        <button type="button" onClick={() => onNavigateToTab('cell-leaders')} className="min-w-0 rounded-2xl border border-[#DCE3EC] bg-white p-4 text-left transition-colors hover:border-[#8E6C23] focus:outline-none focus:ring-2 focus:ring-[#8E6C23]/25 sm:p-5">
+          <span className="block text-xs font-medium text-[#5A6B7C]">Active cell leaders</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142842]">{stats.activeCellLeaders.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#5A6B7C]">Registered active leaders</span>
         </button>
-        <div className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4">
-          <span className="block text-xs font-medium text-[#697586]">Weekly attendance</span>
-          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{weeklyAttendance === null ? '—' : weeklyAttendance.toLocaleString()}</span>
-          <span className="mt-1 block text-[10px] text-[#697586]">Submitted meeting reports this week</span>
+        <div className="min-w-0 rounded-2xl border border-[#DCE3EC] bg-white p-4 sm:p-5">
+          <span className="block text-xs font-medium text-[#5A6B7C]">Weekly attendance</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142842]">{weeklyAttendance === null ? '—' : weeklyAttendance.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#5A6B7C]">Submitted meeting reports this week</span>
         </div>
-        <div className="min-w-0 rounded-xl border border-[#E4E9F0] bg-white p-4">
-          <span className="block text-xs font-medium text-[#697586]">Souls won this year</span>
-          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{currentSoulsWon.toLocaleString()}</span>
-          <span className="mt-1 block text-[10px] text-[#697586]">Approved conversions</span>
+        <div className="min-w-0 rounded-2xl border border-[#DCE3EC] bg-white p-4 sm:p-5">
+          <span className="block text-xs font-medium text-[#5A6B7C]">Souls won this year</span>
+          <span className="mt-1 block text-3xl font-bold tabular-nums text-[#142842]">{currentSoulsWon.toLocaleString()}</span>
+          <span className="mt-1 block text-[10px] text-[#5A6B7C]">Approved conversions</span>
         </div>
       </section>
 
-      <section aria-label="Attendance trend for the last six weeks" className="rounded-2xl border border-[#E4E9F0] bg-white p-4 shadow-sm sm:p-5">
+      <section aria-label="Attendance trend for the last six weeks" className="rounded-2xl border border-[#DCE3EC] bg-white p-4 shadow-sm sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-[#142B4A]">Growing in fellowship</h2>
-            <p className="mt-1 text-xs text-[#697586]">Weekly attendance across active cells · last 6 weeks</p>
+            <h2 className="text-base font-semibold text-[#142842]">Growing in fellowship</h2>
+            <p className="mt-1 text-xs text-[#5A6B7C]">Weekly attendance across active cells · last 6 weeks</p>
           </div>
-          <span className="shrink-0 rounded-lg border border-[#E4E9F0] px-3 py-2 text-[10px] font-semibold text-[#142B4A]">Last 6 weeks</span>
+          <span className="shrink-0 rounded-lg border border-[#DCE3EC] px-3 py-2 text-[10px] font-semibold text-[#142842]">Last 6 weeks</span>
         </div>
         {attendanceTrend.length > 0 && attendanceTrend.some(week => week.attendance > 0 || week.newMembers > 0) ? (
           <div className="mt-5">
-            <div className="flex h-40 items-end justify-between gap-2 border-b border-[#E4E9F0] px-1">
+            <div className="flex h-40 items-end justify-between gap-2 border-b border-[#DCE3EC] px-1">
               {attendanceTrend.map(week => {
                 const max = Math.max(1, ...attendanceTrend.map(item => item.attendance));
                 const height = week.attendance > 0 ? Math.max(5, (week.attendance / max) * 100) : 0;
                 return (
                   <div key={week.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
                     <div className="flex h-full w-full items-end justify-center gap-1">
-                      <div title={`Attendance: ${week.attendance}`} className="w-5 max-w-[48%] rounded-t bg-[#142B4A] transition-all duration-500" style={{ height: `${height}%` }} />
-                      <div title={`New members: ${week.newMembers}`} className="w-2 max-w-[20%] rounded-t bg-[#C6A45A] transition-all duration-500" style={{ height: `${week.newMembers > 0 ? Math.max(4, (week.newMembers / Math.max(1, ...attendanceTrend.map(item => item.newMembers))) * 35) : 0}%` }} />
+                      <div title={`Attendance: ${week.attendance}`} className="w-5 max-w-[48%] rounded-t bg-[#142842] transition-all duration-500" style={{ height: `${height}%` }} />
+                      <div title={`New members: ${week.newMembers}`} className="w-2 max-w-[20%] rounded-t bg-[#8E6C23] transition-all duration-500" style={{ height: `${week.newMembers > 0 ? Math.max(4, (week.newMembers / Math.max(1, ...attendanceTrend.map(item => item.newMembers))) * 35) : 0}%` }} />
                     </div>
-                    <span className="whitespace-nowrap text-[9px] text-[#697586]">{week.label}</span>
+                    <span className="whitespace-nowrap text-[9px] text-[#5A6B7C]">{week.label}</span>
                   </div>
                 );
               })}
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-[10px] text-[#697586]">
-              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#142B4A]" /> Attendance</span>
-              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#C6A45A]" /> New members</span>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-[10px] text-[#5A6B7C]">
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#142842]" /> Attendance</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#8E6C23]" /> New members</span>
             </div>
           </div>
         ) : (
           <div className="mt-5 rounded-xl border border-dashed border-[#D7DEE8] bg-[#FAFBFC] px-4 py-8 text-center">
-            <p className="text-sm font-semibold text-[#142B4A]">No attendance trend available yet</p>
-            <p className="mt-1 text-xs text-[#697586]">Submitted meeting reports from the last six weeks will appear here.</p>
+            <p className="text-sm font-semibold text-[#142842]">No attendance trend available yet</p>
+            <p className="mt-1 text-xs text-[#5A6B7C]">Submitted meeting reports from the last six weeks will appear here.</p>
           </div>
         )}
       </section>
 
-      <button type="button" onClick={() => setShowSoulModal(true)} className="w-full rounded-2xl border border-[#E4E9F0] bg-white p-4 text-left transition-all hover:border-[#C6A45A] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40 sm:p-5">
-        <span className="block text-base font-semibold text-[#142B4A]">A shared mission</span>
-        <span className="mt-1 block text-xs text-[#697586]">{soulMetrics?.year ?? today.getFullYear()} annual soul-winning target</span>
+      <button type="button" onClick={() => setShowSoulModal(true)} className="w-full rounded-2xl border border-[#DCE3EC] bg-white p-4 text-left transition-all hover:border-[#8E6C23] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8E6C23]/25 sm:p-5">
+        <span className="block text-base font-semibold text-[#142842]">A shared mission</span>
+        <span className="mt-1 block text-xs text-[#5A6B7C]">{soulMetrics?.year ?? today.getFullYear()} annual soul-winning target</span>
         <span className="mt-3 flex items-end justify-between gap-3">
           <span>
-            <span className="block text-3xl font-bold tabular-nums text-[#142B4A]">{currentSoulsWon.toLocaleString()}</span>
-            <span className="mt-1 block text-xs text-[#697586]">of {soulTarget.toLocaleString()} approved souls</span>
+            <span className="block text-3xl font-bold tabular-nums text-[#142842]">{currentSoulsWon.toLocaleString()}</span>
+            <span className="mt-1 block text-xs text-[#5A6B7C]">of {soulTarget.toLocaleString()} approved souls</span>
           </span>
-          <span className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border-[5px] border-[#E8EDF2] text-sm font-bold tabular-nums text-[#142B4A]" style={{ background: `conic-gradient(#C6A45A ${targetPercent * 3.6}deg, transparent 0deg)` }}>
+          <span className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border-[5px] border-[#E8EDF2] text-sm font-bold tabular-nums text-[#142842]" style={{ background: `conic-gradient(#8E6C23 ${targetPercent * 3.6}deg, transparent 0deg)` }}>
             <span className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-white">{targetPercent}%</span>
           </span>
         </span>
         <span className="mt-3 block h-2 overflow-hidden rounded-full bg-[#E9EDF2]" role="progressbar" aria-label="Annual soul-winning target progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={targetPercent}>
-          <span className="block h-full rounded-full bg-[#C6A45A] transition-all duration-700" style={{ width: `${targetPercent}%` }} />
+          <span className="block h-full rounded-full bg-[#8E6C23] transition-all duration-700" style={{ width: `${targetPercent}%` }} />
         </span>
         <span className="mt-2 block text-[11px] font-medium text-[#84672D]">{remainingTarget.toLocaleString()} remaining to reach the target</span>
-        <span className="mt-4 flex items-center justify-between border-t border-[#E4E9F0] pt-3 text-xs font-semibold text-[#142B4A]">
+        <span className="mt-4 flex items-center justify-between border-t border-[#DCE3EC] pt-3 text-xs font-semibold text-[#142842]">
           View harvest breakdown <ArrowRight className="h-4 w-4" />
         </span>
       </button>
 
       <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-[#E4E9F0] bg-white p-4">
-          <span className="block text-xs text-[#697586]">Total attendance recorded</span>
-          <strong className="mt-1 block text-2xl font-bold tabular-nums text-[#142B4A]">{stats.totalAttendance.toLocaleString()}</strong>
-          <span className="mt-1 block text-[10px] text-[#697586]">From submitted meeting reports</span>
+        <div className="rounded-2xl border border-[#DCE3EC] bg-white p-4">
+          <span className="block text-xs text-[#5A6B7C]">Total attendance recorded</span>
+          <strong className="mt-1 block text-2xl font-bold tabular-nums text-[#142842]">{stats.totalAttendance.toLocaleString()}</strong>
+          <span className="mt-1 block text-[10px] text-[#5A6B7C]">From submitted meeting reports</span>
         </div>
-        <div className="rounded-2xl border border-[#E4E9F0] bg-white p-4">
-          <span className="block text-xs text-[#697586]">People reached</span>
-          <strong className="mt-1 block text-2xl font-bold tabular-nums text-[#142B4A]">{stats.peopleReached.toLocaleString()}</strong>
-          <span className="mt-1 block text-[10px] text-[#697586]">From evangelism reports</span>
+        <div className="rounded-2xl border border-[#DCE3EC] bg-white p-4">
+          <span className="block text-xs text-[#5A6B7C]">People reached</span>
+          <strong className="mt-1 block text-2xl font-bold tabular-nums text-[#142842]">{stats.peopleReached.toLocaleString()}</strong>
+          <span className="mt-1 block text-[10px] text-[#5A6B7C]">From evangelism reports</span>
         </div>
       </section>
 
-      <details className="group rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
-        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-bold text-[#142B4A] [&::-webkit-details-marker]:hidden">
+      <details className="group rounded-2xl border border-[#DCE3EC] bg-white shadow-sm">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-bold text-[#142842] [&::-webkit-details-marker]:hidden">
           <span className="flex min-w-0 items-center gap-2"><Compass className="h-4 w-4 shrink-0 text-[#A88743]" /> Ministry vision and annual target</span>
           <span className="text-[11px] font-semibold text-[#667085] group-open:hidden">Show details</span>
           <span className="hidden text-[11px] font-semibold text-[#667085] group-open:inline">Hide details</span>
         </summary>
-        <div className="border-t border-[#E3E8EF] p-3 sm:p-4">
+        <div className="border-t border-[#DCE3EC] p-3 sm:p-4">
       {/* Vision, Mission & Annual Soul-Winning Target Surface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Vision & Mission Card */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-5 shadow-sm relative">
-          <div className="flex items-center justify-between mb-3 border-b border-[#E3E8EF] pb-3">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#DCE3EC] p-4 sm:p-5 shadow-sm relative">
+          <div className="flex items-center justify-between mb-3 border-b border-[#DCE3EC] pb-3">
             <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-[#C6A45A]" aria-label="FNI Vision and Mission" strokeWidth={2} />
-              <h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">
+              <Compass className="w-4 h-4 text-[#8E6C23]" aria-label="FNI Vision and Mission" strokeWidth={2} />
+              <h2 className="text-sm font-bold text-[#142842] uppercase tracking-wider">
                 FNI Vision & Mission
               </h2>
             </div>
             <button
               onClick={() => setIsEditingSettings(true)}
-              className="text-xs font-semibold text-[#142B4A] hover:text-[#203D63] flex items-center gap-1"
+              className="text-xs font-semibold text-[#142842] hover:text-[#354863] flex items-center gap-1"
             >
               <Edit3 className="w-3 h-3" />
               <span>Edit</span>
@@ -381,8 +381,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-3.5 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
-              <div className="text-[11px] font-bold text-[#142B4A] uppercase tracking-wider mb-1">
+            <div className="p-3.5 bg-[#F7F9FC] rounded-xl border border-[#DCE3EC]">
+              <div className="text-[11px] font-bold text-[#142842] uppercase tracking-wider mb-1">
                 Our Vision
               </div>
               <p className="text-xs text-[#182230] leading-relaxed">
@@ -390,8 +390,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </p>
             </div>
 
-            <div className="p-3.5 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
-              <div className="text-[11px] font-bold text-[#142B4A] uppercase tracking-wider mb-1">
+            <div className="p-3.5 bg-[#F7F9FC] rounded-xl border border-[#DCE3EC]">
+              <div className="text-[11px] font-bold text-[#142842] uppercase tracking-wider mb-1">
                 Our Mission
               </div>
               <p className="text-xs text-[#182230] leading-relaxed">
@@ -402,28 +402,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Annual Soul-Winning Target Progress Card */}
-        <div onClick={() => setShowSoulModal(true)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSoulModal(true); } }} className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-5 shadow-sm flex flex-col justify-between hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all group focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40" title="Open the audited annual soul-winning progress and cell contributions">
+        <div onClick={() => setShowSoulModal(true)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSoulModal(true); } }} className="bg-white rounded-2xl border border-[#DCE3EC] p-4 sm:p-5 shadow-sm flex flex-col justify-between hover:border-[#8E6C23] hover:shadow-md cursor-pointer transition-all group focus:outline-none focus:ring-2 focus:ring-[#8E6C23]/25" title="Open the audited annual soul-winning progress and cell contributions">
           <div>
-            <div className="flex items-center justify-between gap-3 mb-4 border-b border-[#E3E8EF] pb-3"><div className="flex items-center gap-2 min-w-0"><Wheat className="w-4 h-4 text-[#C6A45A] shrink-0" aria-label="Kingdom harvest target" /><h2 className="text-sm font-bold text-[#142B4A] uppercase tracking-wider">Soul-Winning Target</h2></div><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200 shrink-0"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live updates</span></div>
-            <div className="flex items-end justify-between gap-3"><div><span className="block text-[10px] font-bold uppercase tracking-wider text-[#667085]">Approved conversions</span><div className="text-3xl font-black leading-tight text-[#142B4A] tabular-nums">{currentSoulsWon.toLocaleString()}</div><span className="text-[11px] text-[#667085]">of {soulTarget.toLocaleString()} annual goal</span></div><div className="text-right shrink-0"><div className="text-2xl font-black text-[#23845B] tabular-nums">{targetPercent}%</div><span className="text-[10px] font-semibold text-[#667085]">achieved</span></div></div>
+            <div className="flex items-center justify-between gap-3 mb-4 border-b border-[#DCE3EC] pb-3"><div className="flex items-center gap-2 min-w-0"><Wheat className="w-4 h-4 text-[#8E6C23] shrink-0" aria-label="Kingdom harvest target" /><h2 className="text-sm font-bold text-[#142842] uppercase tracking-wider">Soul-Winning Target</h2></div><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200 shrink-0"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live updates</span></div>
+            <div className="flex items-end justify-between gap-3"><div><span className="block text-[10px] font-bold uppercase tracking-wider text-[#667085]">Approved conversions</span><div className="text-3xl font-black leading-tight text-[#142842] tabular-nums">{currentSoulsWon.toLocaleString()}</div><span className="text-[11px] text-[#667085]">of {soulTarget.toLocaleString()} annual goal</span></div><div className="text-right shrink-0"><div className="text-2xl font-black text-[#23845B] tabular-nums">{targetPercent}%</div><span className="text-[10px] font-semibold text-[#667085]">achieved</span></div></div>
             <div className="mt-3 w-full bg-[#E9EDF2] rounded-full h-3 overflow-hidden" role="progressbar" aria-label="Annual soul-winning target progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={targetPercent}><div className="bg-[#23845B] h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${targetPercent}%` }} /></div>
-            <div className="grid grid-cols-2 gap-2 mt-4"><div className="rounded-xl bg-[#F5F7FA] border border-[#E3E8EF] p-3"><span className="block text-[10px] text-[#667085] font-semibold">Remaining</span><strong className="block text-lg text-[#142B4A] tabular-nums">{remainingTarget.toLocaleString()}</strong></div><div className="rounded-xl bg-amber-50 border border-amber-200 p-3"><span className="block text-[10px] text-amber-800 font-semibold">Awaiting approval</span><strong className="block text-lg text-amber-900 tabular-nums">{(soulMetrics?.pendingSouls ?? 0).toLocaleString()}</strong></div></div>
-            <div className="grid grid-cols-2 gap-2 mt-2 text-[11px]"><div className="flex items-center justify-between gap-2 rounded-lg border border-[#E3E8EF] px-3 py-2"><span className="text-[#667085]">Outreach conversions</span><strong className="text-[#182230] tabular-nums">+{(soulMetrics?.soulsFromEvangelism ?? 0).toLocaleString()}</strong></div><div className="flex items-center justify-between gap-2 rounded-lg border border-[#E3E8EF] px-3 py-2"><span className="text-[#667085]">First-time visitors</span><strong className="text-[#182230] tabular-nums">+{(soulMetrics?.firstTimersFromCells ?? 0).toLocaleString()}</strong></div></div>
+            <div className="grid grid-cols-2 gap-2 mt-4"><div className="rounded-xl bg-[#F7F9FC] border border-[#DCE3EC] p-3"><span className="block text-[10px] text-[#667085] font-semibold">Remaining</span><strong className="block text-lg text-[#142842] tabular-nums">{remainingTarget.toLocaleString()}</strong></div><div className="rounded-xl bg-amber-50 border border-amber-200 p-3"><span className="block text-[10px] text-amber-800 font-semibold">Awaiting approval</span><strong className="block text-lg text-amber-900 tabular-nums">{(soulMetrics?.pendingSouls ?? 0).toLocaleString()}</strong></div></div>
+            <div className="grid grid-cols-2 gap-2 mt-2 text-[11px]"><div className="flex items-center justify-between gap-2 rounded-lg border border-[#DCE3EC] px-3 py-2"><span className="text-[#667085]">Outreach conversions</span><strong className="text-[#182230] tabular-nums">+{(soulMetrics?.soulsFromEvangelism ?? 0).toLocaleString()}</strong></div><div className="flex items-center justify-between gap-2 rounded-lg border border-[#DCE3EC] px-3 py-2"><span className="text-[#667085]">First-time visitors</span><strong className="text-[#182230] tabular-nums">+{(soulMetrics?.firstTimersFromCells ?? 0).toLocaleString()}</strong></div></div>
           </div>
-          <div className="mt-4 pt-3 border-t border-[#E3E8EF] flex items-center justify-between gap-3 text-[11px]"><div className="min-w-0"><span className="block text-[#142B4A] font-bold group-hover:underline">View full breakdown →</span><span className="block text-[10px] text-[#667085] mt-0.5">{soulMetricsUpdatedAt ? `Updated ${soulMetricsUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Waiting for live data'}</span></div><button onClick={e => { e.stopPropagation(); onNavigateToTab('analytics'); }} className="font-bold text-[#142B4A] hover:underline flex items-center gap-1 shrink-0">Analytics <ArrowRight className="w-3 h-3" /></button></div>
+          <div className="mt-4 pt-3 border-t border-[#DCE3EC] flex items-center justify-between gap-3 text-[11px]"><div className="min-w-0"><span className="block text-[#142842] font-bold group-hover:underline">View full breakdown →</span><span className="block text-[10px] text-[#667085] mt-0.5">{soulMetricsUpdatedAt ? `Updated ${soulMetricsUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Waiting for live data'}</span></div><button onClick={e => { e.stopPropagation(); onNavigateToTab('analytics'); }} className="font-bold text-[#142842] hover:underline flex items-center gap-1 shrink-0">Analytics <ArrowRight className="w-3 h-3" /></button></div>
         </div>
       </div>
 
         </div>
       </details>
 
-      <details className="group rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
-        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-bold text-[#142B4A] [&::-webkit-details-marker]:hidden">
+      <details className="group rounded-2xl border border-[#DCE3EC] bg-white shadow-sm">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-bold text-[#142842] [&::-webkit-details-marker]:hidden">
           <span className="flex min-w-0 items-center gap-2"><TrendingUp className="h-4 w-4 shrink-0 text-[#A88743]" /> Detailed performance metrics</span>
           <span className="text-[11px] font-semibold text-[#667085] group-open:hidden">Show 12 metrics</span>
           <span className="hidden text-[11px] font-semibold text-[#667085] group-open:inline">Hide metrics</span>
         </summary>
-        <div className="border-t border-[#E3E8EF] p-3 sm:p-4">
+        <div className="border-t border-[#DCE3EC] p-3 sm:p-4">
       {/* 13 REAL METRICS GRID (Specified in Prompt Section 5) */}
       <div>
         <h3 className="text-xs font-bold text-[#667085] uppercase tracking-wider mb-3">
@@ -433,7 +433,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 1. Total Registered Cells */}
           <div
             onClick={() => onNavigateToTab('cell-management')}
-            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Total Cells</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.totalCells}</div>
@@ -443,7 +443,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 2. Total Registered Tutors */}
           <div
             onClick={() => onNavigateToTab('cell-leaders')}
-            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Registered Tutors</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.activeCellLeaders}</div>
@@ -453,7 +453,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 3. Meeting Reports Submitted */}
           <div
             onClick={() => onNavigateToTab('report-review')}
-            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Meeting Reports</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.meetingReportsSubmitted || 0}</div>
@@ -463,17 +463,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 4. Evangelism Reports Submitted */}
           <div
             onClick={() => onNavigateToTab('evangelism')}
-            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Evangelism Reports</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.evangelismReportsSubmitted || 0}</div>
-            <div className="text-[10px] text-[#C6A45A] font-semibold mt-0.5">Outreach Records</div>
+            <div className="text-[10px] text-[#8E6C23] font-semibold mt-0.5">Outreach Records</div>
           </div>
 
           {/* 5. Reports Awaiting Review */}
           <div
             onClick={() => onNavigateToTab('report-review')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#D99A32] cursor-pointer transition-all"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#D99A32] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Awaiting Review</div>
             <div className="text-xl font-black text-[#D99A32] mt-1">{stats.awaitingReviewCount}</div>
@@ -483,7 +483,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 6. Approved Reports */}
           <div
             onClick={() => onNavigateToTab('report-review')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#23845B] cursor-pointer transition-all"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#23845B] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Approved Reports</div>
             <div className="text-xl font-black text-[#23845B] mt-1">{stats.approvedReports}</div>
@@ -493,7 +493,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 7. Reports Needing Correction */}
           <div
             onClick={() => onNavigateToTab('report-review')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C74646] cursor-pointer transition-all"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#C74646] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Needs Correction</div>
             <div className="text-xl font-black text-[#C74646] mt-1">{stats.needsCorrectionCount}</div>
@@ -503,7 +503,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 8. Cells with Missing Weekly Reports */}
           <div
             onClick={() => onNavigateToTab('cell-management')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C74646] cursor-pointer transition-all"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#C74646] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Missing Reports</div>
             <div className="text-xl font-black text-[#C74646] mt-1">{stats.missingCellsCount}</div>
@@ -513,7 +513,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 9. Total People Reached */}
           <div
             onClick={() => onNavigateToTab('evangelism')}
-            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">People Reached</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.peopleReached}</div>
@@ -523,7 +523,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 10. Total Conversions Recorded */}
           <div
             onClick={() => onNavigateToTab('evangelism')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#23845B] cursor-pointer transition-all"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#23845B] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Conversions Recorded</div>
             <div className="text-xl font-black text-[#23845B] mt-1">{stats.soulsWon}</div>
@@ -533,17 +533,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* 11. Interested in Joining Ministry */}
           <div
             onClick={() => onNavigateToTab('follow-ups')}
-            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Interested in Joining</div>
             <div className="text-xl font-black text-[#182230] mt-1">{stats.interestedInMinistry || 0}</div>
-            <div className="text-[10px] text-[#C6A45A] font-semibold mt-0.5">Potential Members</div>
+            <div className="text-[10px] text-[#8E6C23] font-semibold mt-0.5">Potential Members</div>
           </div>
 
           {/* 12. Pending & Completed Follow-ups */}
           <div
             onClick={() => onNavigateToTab('follow-ups')}
-            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] cursor-pointer transition-all"
+            className="p-3 sm:p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] cursor-pointer transition-all"
           >
             <div className="text-[11px] font-semibold text-[#667085] truncate">Follow-up Pipeline</div>
             <div className="text-xl font-black text-[#182230] mt-1">
@@ -560,14 +560,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </details>
 
       {/* Real-time Leadership Alerts & Device Push Notification Readiness */}
-      <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-[#DCE3EC] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#142B4A]/5 border border-[#142B4A]/10 flex items-center justify-center text-[#C6A45A] shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#142842]/5 border border-[#142842]/10 flex items-center justify-center text-[#8E6C23] shrink-0">
             <Bell className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#142B4A]">
+              <span className="text-xs font-bold text-[#142842]">
                 Real-Time Administrator Push Notifications
               </span>
               {isPushEnabled ? (
@@ -587,7 +587,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 : 'Enable device push alerts so you are notified immediately when cell tutors file returns, even when this browser tab is closed.'}
             </p>
             {pushStatusMsg && (
-              <p className="text-[11px] text-[#203D63] bg-blue-50/70 px-2 py-1 rounded-md mt-1.5 border border-blue-100">
+              <p className="text-[11px] text-[#354863] bg-blue-50/70 px-2 py-1 rounded-md mt-1.5 border border-blue-100">
                 {pushStatusMsg}
               </p>
             )}
@@ -599,9 +599,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={handleTestPush}
-              className="px-3.5 py-2 rounded-xl bg-[#F5F7FA] hover:bg-[#E3E8EF] text-[#142B4A] text-xs font-bold transition-colors border border-[#E3E8EF] flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#F7F9FC] hover:bg-[#DCE3EC] text-[#142842] text-xs font-bold transition-colors border border-[#DCE3EC] flex items-center gap-1.5 cursor-pointer"
             >
-              <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <Bell className="w-3.5 h-3.5 text-[#8E6C23]" />
               <span>Test Push Alert</span>
             </button>
           ) : (
@@ -609,9 +609,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               type="button"
               onClick={handleEnablePush}
               disabled={isRequestingPush}
-              className="px-3.5 py-2 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#142842] hover:bg-[#354863] text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
-              <Bell className="w-3.5 h-3.5 text-[#C6A45A]" />
+              <Bell className="w-3.5 h-3.5 text-[#8E6C23]" />
               <span>{isRequestingPush ? 'Registering...' : 'Enable Push Alerts'}</span>
             </button>
           )}
@@ -627,14 +627,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Finance / Offering */}
           <div
             onClick={() => onNavigateToTab('finance')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#C6A45A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#8E6C23] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gold-50 border border-[#C6A45A]/20 flex items-center justify-center text-[#C6A45A] shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-gold-50 border border-[#8E6C23]/20 flex items-center justify-center text-[#8E6C23] shrink-0">
                 <DollarSign className="w-5 h-5" />
               </div>
               <div>
-                <div className="font-bold text-[#142B4A] text-xs group-hover:text-gold-700 transition-colors">
+                <div className="font-bold text-[#142842] text-xs group-hover:text-gold-700 transition-colors">
                   Offering
                 </div>
                 <div className="text-[11px] text-[#667085]">
@@ -642,20 +642,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142842] group-hover:translate-x-1 transition-all" />
           </div>
 
           {/* Communications Hub */}
           <div
             onClick={() => onNavigateToTab('messages')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#142B4A] shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#142842] shrink-0">
                 <MessageSquare className="w-5 h-5" />
               </div>
               <div>
-                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#203D63] transition-colors">
+                <div className="font-bold text-[#142842] text-xs group-hover:text-[#354863] transition-colors">
                   Communications Hub
                 </div>
                 <div className="text-[11px] text-[#667085]">
@@ -663,20 +663,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142842] group-hover:translate-x-1 transition-all" />
           </div>
 
           {/* System Settings */}
           <div
             onClick={() => onNavigateToTab('settings')}
-            className="p-4 bg-white rounded-2xl border border-[#E3E8EF] shadow-sm hover:border-[#142B4A] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
+            className="p-4 bg-white rounded-2xl border border-[#DCE3EC] shadow-sm hover:border-[#142842] hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-[#667085] shrink-0">
                 <Settings className="w-5 h-5" />
               </div>
               <div>
-                <div className="font-bold text-[#142B4A] text-xs group-hover:text-[#142B4A] transition-colors">
+                <div className="font-bold text-[#142842] text-xs group-hover:text-[#142842] transition-colors">
                   System Settings
                 </div>
                 <div className="text-[11px] text-[#667085]">
@@ -684,14 +684,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142B4A] group-hover:translate-x-1 transition-all" />
+            <ArrowRight className="w-4 h-4 text-[#667085] group-hover:text-[#142842] group-hover:translate-x-1 transition-all" />
           </div>
         </div>
       </div>
 
       {/* CELLS BREAKDOWN & COMPLIANCE (Live Tracking For Registered Cells) */}
-      <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
-        <div className="py-4 px-6 border-b border-[#E3E8EF] flex items-center justify-between">
+      <div className="bg-white rounded-2xl border border-[#DCE3EC] shadow-sm overflow-hidden">
+        <div className="py-4 px-6 border-b border-[#DCE3EC] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-[#182230]">
@@ -708,7 +708,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <button
             onClick={() => onNavigateToTab('analytics')}
-            className="text-xs font-bold text-[#142B4A] hover:text-[#203D63] flex items-center gap-1 transition-colors"
+            className="text-xs font-bold text-[#142842] hover:text-[#354863] flex items-center gap-1 transition-colors"
           >
             <span>Full Analytics</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -719,7 +719,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
+              <tr className="border-b border-[#DCE3EC] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F7F9FC]">
                 <th className="py-3 px-5 w-12 text-center">
                   <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
                 </th>
@@ -731,7 +731,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <th className="py-3 px-5 text-right">LATEST STATUS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E3E8EF]">
+            <tbody className="divide-y divide-[#DCE3EC]">
               {cellPerformance.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-[#667085]">
@@ -747,7 +747,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <tr
                     key={cell.id}
                     onClick={() => onNavigateToTab('cell-management')}
-                    className="hover:bg-[#F5F7FA] transition-colors cursor-pointer"
+                    className="hover:bg-[#F7F9FC] transition-colors cursor-pointer"
                   >
                     <td className="py-4 px-5 text-center">
                       <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
@@ -755,7 +755,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                     <td className="py-4 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#142842] text-[#8E6C23] font-bold text-xs flex items-center justify-center shrink-0">
                           {cell.name
                             .split(' ')
                             .map(n => n[0])
@@ -767,7 +767,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             {cell.name}
                           </div>
                           <div className="text-[11px] text-[#667085] mt-0.5">
-                            Tutor: <span className="font-semibold text-[#142B4A]">{cell.leaderName}</span>
+                            Tutor: <span className="font-semibold text-[#142842]">{cell.leaderName}</span>
                             {cell.code && <span className="ml-1.5 text-slate-400">({cell.code})</span>}
                           </div>
                         </div>
@@ -803,7 +803,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span className="font-bold text-[#182230] text-sm">
                         {cell.compliance}%
                       </span>
-                      <div className="w-24 bg-[#E3E8EF] rounded-full h-1.5 mt-1">
+                      <div className="w-24 bg-[#DCE3EC] rounded-full h-1.5 mt-1">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             cell.compliance >= 80
@@ -847,13 +847,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
         {/* Mobile Cells Breakdown Cards (Visible on Phones only, hidden on md+) */}
-        <div className="block md:hidden divide-y divide-[#E3E8EF]">
+        <div className="block md:hidden divide-y divide-[#DCE3EC]">
           {cellPerformance.length === 0 ? (
             <div className="py-10 px-4 text-center text-[#667085]">
-              <div className="w-12 h-12 rounded-2xl bg-[#F5F7FA] text-[#C6A45A] flex items-center justify-center mx-auto mb-2 border border-[#E3E8EF]">
-                <Building className="w-6 h-6 text-[#C6A45A]" />
+              <div className="w-12 h-12 rounded-2xl bg-[#F7F9FC] text-[#8E6C23] flex items-center justify-center mx-auto mb-2 border border-[#DCE3EC]">
+                <Building className="w-6 h-6 text-[#8E6C23]" />
               </div>
-              <p className="text-xs font-bold text-[#142B4A]">No registered cells found.</p>
+              <p className="text-xs font-bold text-[#142842]">No registered cells found.</p>
               <p className="text-[11px] text-[#667085] mt-0.5">Cells appear here dynamically as tutors register.</p>
             </div>
           ) : (
@@ -865,7 +865,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                    <div className="w-9 h-9 rounded-full bg-[#142842] text-[#8E6C23] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                       {cell.name.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -886,19 +886,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#DCE3EC]">
                     <span className="text-[10px] text-[#667085] font-semibold block">Attendance</span>
                     <span className="font-extrabold text-[#182230] text-sm">{cell.totalAttendance}</span>
                   </div>
-                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#DCE3EC]">
                     <span className="text-[10px] text-[#667085] font-semibold block">Souls Won</span>
                     <span className="font-extrabold text-[#23845B] text-sm">+{cell.soulsWon}</span>
                   </div>
-                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#DCE3EC]">
                     <span className="text-[10px] text-[#667085] font-semibold block">Offerings</span>
                     <span className="font-extrabold text-[#182230] text-sm">GHS {cell.offeringsGhs.toLocaleString()}</span>
                   </div>
-                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF]">
+                  <div className="p-2 bg-[#F8FAFC] rounded-xl border border-[#DCE3EC]">
                     <span className="text-[10px] text-[#667085] font-semibold block">Compliance</span>
                     <span className={`font-extrabold text-sm ${cell.compliance >= 80 ? 'text-[#23845B]' : cell.compliance >= 50 ? 'text-[#D99A32]' : 'text-[#C74646]'}`}>
                       {cell.compliance}%
@@ -913,9 +913,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* RECENT SUBMISSIONS TABLE (Styled directly after the Reference Image!) */}
-      <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#DCE3EC] shadow-sm overflow-hidden">
         {/* Table Header Section */}
-        <div className="py-4 px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-3">
+        <div className="py-4 px-6 border-b border-[#DCE3EC] flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-[#182230]">
               Recent Submissions — Accept / Decline Queue ({recentQueue.length})
@@ -926,10 +926,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <button
             onClick={() => onNavigateToTab('report-review')}
-            className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] text-[#142B4A] border border-[#C6A45A]/30 text-xs font-bold hover:bg-[#F5F0E4] flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] text-[#142842] border border-[#8E6C23]/30 text-xs font-bold hover:bg-[#F5F0E4] flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <span>Open Accept / Decline Directorate</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A]" />
+            <ArrowRight className="w-3.5 h-3.5 text-[#8E6C23]" />
           </button>
         </div>
 
@@ -937,7 +937,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="hidden md:block table-scroll-container">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
+              <tr className="border-b border-[#DCE3EC] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F7F9FC]">
                 <th className="py-3 px-5 w-12 text-center">
                   <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
                 </th>
@@ -949,14 +949,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <th className="py-3 px-5 text-right">ACTION</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E3E8EF]">
+            <tbody className="divide-y divide-[#DCE3EC]">
               {recentQueue.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[#667085]">
-                    <div className="w-12 h-12 rounded-2xl bg-[#F5F7FA] text-[#C6A45A] flex items-center justify-center mx-auto mb-2.5 border border-[#E3E8EF] shadow-2xs">
-                      <FileCheck className="w-6 h-6 text-[#C6A45A]" />
+                    <div className="w-12 h-12 rounded-2xl bg-[#F7F9FC] text-[#8E6C23] flex items-center justify-center mx-auto mb-2.5 border border-[#DCE3EC] shadow-2xs">
+                      <FileCheck className="w-6 h-6 text-[#8E6C23]" />
                     </div>
-                    <p className="text-xs font-bold text-[#142B4A]">No reports submitted yet.</p>
+                    <p className="text-xs font-bold text-[#142842]">No reports submitted yet.</p>
                     <p className="text-[11px] text-[#667085] mt-0.5">
                       When tutors submit weekly returns, they will appear here in the review stream.
                     </p>
@@ -983,18 +983,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className={`cursor-pointer transition-colors ${
                         isNeedsCorrection
                           ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]' // Exact reference image highlight row!
-                          : 'hover:bg-[#F5F7FA]'
+                          : 'hover:bg-[#F7F9FC]'
                       }`}
                     >
                       {/* Selection indicator circle */}
                       <td className="py-4 px-5 text-center">
-                        <div className="w-4 h-4 rounded-full border border-[#CBD5E1] hover:border-[#142B4A] mx-auto" />
+                        <div className="w-4 h-4 rounded-full border border-[#CBD5E1] hover:border-[#142842] mx-auto" />
                       </td>
 
                       {/* Name & Avatar Column */}
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#142842] text-[#8E6C23] font-bold text-xs flex items-center justify-center shrink-0">
                             {item.tutorName
                               ? item.tutorName
                                   .split(' ')
@@ -1077,11 +1077,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           const liveTime = formatLiveSubmissionTracking(item.submittedAt, liveTicker);
                           return (
                             <div>
-                              <div className="flex items-center gap-1.5 font-bold text-[#142B4A]">
-                                <Clock className="w-3.5 h-3.5 text-[#C6A45A]" />
+                              <div className="flex items-center gap-1.5 font-bold text-[#142842]">
+                                <Clock className="w-3.5 h-3.5 text-[#8E6C23]" />
                                 <span>{liveTime.timeFormatted} GMT</span>
                                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold flex items-center gap-1 ${
-                                  liveTime.isJustNow ? 'bg-emerald-100 text-[#23845B] animate-pulse' : 'bg-[#F0F5FA] text-[#142B4A] border border-[#E3E8EF]'
+                                  liveTime.isJustNow ? 'bg-emerald-100 text-[#23845B] animate-pulse' : 'bg-[#F0F5FA] text-[#142842] border border-[#DCE3EC]'
                                 }`}>
                                   {liveTime.isJustNow && <span className="w-1.5 h-1.5 rounded-full bg-[#23845B] animate-ping" />}
                                   {liveTime.relativeTime}
@@ -1161,10 +1161,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                 onNavigateToTab('report-review');
                               }
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-[#142842] hover:bg-[#354863] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
                             title="Read complete report before approving"
                           >
-                            <BookOpen className="w-3.5 h-3.5 text-[#C6A45A]" />
+                            <BookOpen className="w-3.5 h-3.5 text-[#8E6C23]" />
                             <span>Read Report</span>
                           </button>
                         </div>
@@ -1177,13 +1177,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
         {/* Mobile Submissions Cards (Visible on Phones only, hidden on md+) */}
-        <div className="block md:hidden divide-y divide-[#E3E8EF]">
+        <div className="block md:hidden divide-y divide-[#DCE3EC]">
           {recentQueue.length === 0 ? (
             <div className="py-10 px-4 text-center text-[#667085]">
-              <div className="w-12 h-12 rounded-2xl bg-[#F5F7FA] text-[#C6A45A] flex items-center justify-center mx-auto mb-2 border border-[#E3E8EF]">
-                <FileCheck className="w-6 h-6 text-[#C6A45A]" />
+              <div className="w-12 h-12 rounded-2xl bg-[#F7F9FC] text-[#8E6C23] flex items-center justify-center mx-auto mb-2 border border-[#DCE3EC]">
+                <FileCheck className="w-6 h-6 text-[#8E6C23]" />
               </div>
-              <p className="text-xs font-bold text-[#142B4A]">No reports submitted yet.</p>
+              <p className="text-xs font-bold text-[#142842]">No reports submitted yet.</p>
               <p className="text-[11px] text-[#667085] mt-0.5">When tutors submit weekly returns, they will appear here.</p>
             </div>
           ) : (
@@ -1204,7 +1204,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                      <div className="w-9 h-9 rounded-full bg-[#142842] text-[#8E6C23] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                         {item.tutorName ? item.tutorName.split(' ').map(n => n[0]).slice(0, 2).join('') : 'TL'}
                       </div>
                       <div className="min-w-0">
@@ -1222,9 +1222,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between text-[11px] text-[#667085] bg-[#F5F7FA] px-2.5 py-1.5 rounded-xl border border-[#E3E8EF]">
-                    <span className="font-bold text-[#142B4A] flex items-center gap-1">
-                      {item.reportType === 'meeting' ? <FileText className="w-3 h-3 text-[#142B4A]" /> : <Flame className="w-3 h-3 text-[#C6A45A]" />}
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-[#667085] bg-[#F7F9FC] px-2.5 py-1.5 rounded-xl border border-[#DCE3EC]">
+                    <span className="font-bold text-[#142842] flex items-center gap-1">
+                      {item.reportType === 'meeting' ? <FileText className="w-3 h-3 text-[#142842]" /> : <Flame className="w-3 h-3 text-[#8E6C23]" />}
                       {item.reportType === 'meeting' ? 'Cell Meeting' : 'Evangelism'}
                     </span>
                     <span className={item.late ? 'text-[#C74646] font-bold' : 'text-[#23845B] font-semibold'}>
@@ -1232,7 +1232,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="mt-2.5 p-2 bg-[#F8FAFC] rounded-xl border border-[#E3E8EF] flex items-center justify-between text-xs">
+                  <div className="mt-2.5 p-2 bg-[#F8FAFC] rounded-xl border border-[#DCE3EC] flex items-center justify-between text-xs">
                     <span className="text-[11px] text-[#667085] font-semibold">Key Metric:</span>
                     <span className="font-extrabold text-[#182230]">
                       {item.reportType === 'meeting'
@@ -1242,7 +1242,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
 
                   {/* Touch Action Bar */}
-                  <div className="mt-3 pt-2.5 border-t border-[#E3E8EF] flex items-center gap-2">
+                  <div className="mt-3 pt-2.5 border-t border-[#DCE3EC] flex items-center gap-2">
                     {!isApproved && (
                       <button
                         onClick={async e => {
@@ -1297,7 +1297,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         if (onOpenReport) onOpenReport(item.id);
                         else onNavigateToTab('report-review');
                       }}
-                      className="py-2 px-3 rounded-xl bg-[#142B4A] text-white hover:bg-[#203D63] font-bold text-xs flex items-center justify-center gap-1 shadow-2xs cursor-pointer min-h-[40px]"
+                      className="py-2 px-3 rounded-xl bg-[#142842] text-white hover:bg-[#354863] font-bold text-xs flex items-center justify-center gap-1 shadow-2xs cursor-pointer min-h-[40px]"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Details</span>
@@ -1329,7 +1329,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowTargetConfigModal(true)}
-                  className="px-2.5 py-1 rounded-lg bg-[#C6A45A]/15 text-[#C6A45A] hover:bg-[#C6A45A]/25 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-[#8E6C23]/15 text-[#8E6C23] hover:bg-[#8E6C23]/25 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <Target className="w-3.5 h-3.5" />
                   <span>Configure Targets</span>
@@ -1476,15 +1476,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Modal for Editing FNI Vision, Mission & Annual Target */}
       {isEditingSettings && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-navy-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#E3E8EF] dark:border-navy-700 space-y-4 my-8">
-            <div className="flex items-center justify-between pb-3.5 border-b border-[#E3E8EF] dark:border-navy-700">
+        <div className="fixed inset-0 z-50 bg-[#142842]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#DCE3EC] dark:border-navy-700 space-y-4 my-8">
+            <div className="flex items-center justify-between pb-3.5 border-b border-[#DCE3EC] dark:border-navy-700">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#C6A45A]/15 text-[#C6A45A] flex items-center justify-center">
-                  <Compass className="w-5 h-5 text-[#C6A45A]" />
+                <div className="w-10 h-10 rounded-2xl bg-[#8E6C23]/15 text-[#8E6C23] flex items-center justify-center">
+                  <Compass className="w-5 h-5 text-[#8E6C23]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-[#142B4A] dark:text-white">
+                  <h3 className="text-base font-bold text-[#142842] dark:text-white">
                     FNI Vision & Mission
                   </h3>
                   <p className="text-[11px] text-[#667085] dark:text-slate-400">
@@ -1511,7 +1511,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   value={editVision}
                   onChange={e => setEditVision(e.target.value)}
                   placeholder="Enter church vision statement..."
-                  className="w-full p-3 rounded-xl border border-[#E3E8EF] dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-[#182230] dark:text-white focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  className="w-full p-3 rounded-xl border border-[#DCE3EC] dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-[#182230] dark:text-white focus:ring-2 focus:ring-[#142842]/20 focus:outline-none"
                   required
                 />
               </div>
@@ -1526,7 +1526,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   value={editMission}
                   onChange={e => setEditMission(e.target.value)}
                   placeholder="Enter church mission statement..."
-                  className="w-full p-3 rounded-xl border border-[#E3E8EF] dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-[#182230] dark:text-white focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  className="w-full p-3 rounded-xl border border-[#DCE3EC] dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-[#182230] dark:text-white focus:ring-2 focus:ring-[#142842]/20 focus:outline-none"
                   required
                 />
               </div>
@@ -1534,7 +1534,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="p-3.5 bg-slate-50 dark:bg-navy-950 rounded-2xl border border-slate-200 dark:border-navy-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block font-bold text-[#182230] dark:text-slate-200 flex items-center gap-1.5">
-                    <Wheat className="w-4 h-4 text-[#C6A45A]" />
+                    <Wheat className="w-4 h-4 text-[#8E6C23]" />
                     <span>Annual Soul-Winning Target</span>
                   </label>
                   <button
@@ -1543,7 +1543,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       setIsEditingSettings(false);
                       setShowTargetConfigModal(true);
                     }}
-                    className="text-[11px] text-[#C6A45A] hover:underline font-bold"
+                    className="text-[11px] text-[#8E6C23] hover:underline font-bold"
                   >
                     Configure 16 Cells →
                   </button>
@@ -1553,7 +1553,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   value={editTarget}
                   onChange={e => setEditTarget(Number(e.target.value))}
                   min={1}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-[#182230] dark:text-white font-bold text-sm focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-[#182230] dark:text-white font-bold text-sm focus:ring-2 focus:ring-[#142842]/20 focus:outline-none"
                   required
                 />
                 <span className="text-[10px] text-slate-400 block">
@@ -1565,15 +1565,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEditingSettings(false)}
-                  className="px-4 py-2 rounded-xl text-[#667085] hover:bg-[#F5F7FA] dark:hover:bg-navy-800 font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-[#667085] hover:bg-[#F7F9FC] dark:hover:bg-navy-800 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white font-bold hover:bg-[#203D63] cursor-pointer shadow-sm flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-xl bg-[#142842] text-white font-bold hover:bg-[#354863] cursor-pointer shadow-sm flex items-center gap-1.5"
                 >
-                  <Check className="w-3.5 h-3.5 text-[#C6A45A]" />
+                  <Check className="w-3.5 h-3.5 text-[#8E6C23]" />
                   <span>Save Vision & Mission</span>
                 </button>
               </div>

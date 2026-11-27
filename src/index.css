@@ -2332,3 +2332,124 @@ html.dark .fni-chat-composer textarea:focus-visible {
     padding-bottom: max(.5rem, env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+/* FNI Cells Connect — Stitch admin workspace foundation */
+.fni-admin-stitch-shell {
+  --fni-stitch-primary: #142842;
+  --fni-stitch-bronze: #8E6C23;
+  --fni-stitch-canvas: #F7F9FC;
+  --fni-stitch-surface: #FFFFFF;
+  --fni-stitch-container: #EEF2F7;
+  --fni-stitch-border: #DCE3EC;
+  --fni-stitch-muted: #5A6B7C;
+  min-height: 100vh;
+  background: var(--fni-stitch-canvas) !important;
+  color: var(--fni-stitch-primary);
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell h1,
+.fni-admin-stitch-shell h2,
+.fni-admin-stitch-shell h3,
+.fni-admin-stitch-shell h4,
+.fni-admin-stitch-shell h5,
+.fni-admin-stitch-shell h6 {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: 400;
+  font-style: normal;
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.fni-admin-stitch-shell .fni-glass-sidebar {
+  background: var(--fni-stitch-primary) !important;
+  color: #FFFFFF !important;
+  border-right: 1px solid rgba(255,255,255,.12);
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.fni-admin-stitch-shell header.sticky {
+  background: #EEF2F7 !important;
+  color: var(--fni-stitch-primary) !important;
+  border-bottom: 1px solid var(--fni-stitch-border) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.fni-admin-stitch-shell .fni-app-main {
+  background: var(--fni-stitch-canvas);
+}
+.fni-admin-stitch-shell .fni-app-main > * {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-app-main h1,
+.fni-admin-stitch-shell .fni-app-main h2,
+.fni-admin-stitch-shell .fni-app-main h3 {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-app-main button:focus-visible,
+.fni-admin-stitch-shell header button:focus-visible {
+  outline: 2px solid var(--fni-stitch-bronze);
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-app-main {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    padding-top: 1.25rem !important;
+  }
+}
+
+.fni-admin-stitch-shell aside [class*="bg-[#142B4A]"] {
+  background: #354863 !important;
+  color: #FFFFFF !important;
+}
+.fni-admin-stitch-shell aside [class*="text-slate-600"],
+.fni-admin-stitch-shell aside [class*="text-slate-500"],
+.fni-admin-stitch-shell aside [class*="text-slate-400"] {
+  color: #DCE3EC !important;
+}
+.fni-admin-stitch-shell aside [class*="border-slate-200"] {
+  border-color: rgba(255,255,255,.14) !important;
+}
+.fni-admin-stitch-shell header.sticky button {
+  border-color: var(--fni-stitch-border) !important;
+  box-shadow: none !important;
+}
+.fni-admin-stitch-shell header.sticky button[aria-label="Open left navigation menu"] {
+  background: var(--fni-stitch-primary) !important;
+  color: #FFFFFF !important;
+}
+.fni-admin-stitch-shell header.sticky button[title="Notifications & Dispatches"] {
+  color: var(--fni-stitch-primary) !important;
+  background: #FFFFFF !important;
+}
+.fni-admin-stitch-shell .mobile-bottom-nav {
+  background: #FFFFFF !important;
+  border-color: var(--fni-stitch-border) !important;
+  backdrop-filter: none !important;
+  box-shadow: 0 -2px 10px rgba(20,40,66,.05) !important;
+}
+
+.fni-admin-stitch-shell .mobile-bottom-nav button {
+  color: #5A6B7C !important;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .mobile-bottom-nav button[aria-current="page"] {
+  color: #142842 !important;
+}
+.fni-admin-stitch-shell .mobile-bottom-nav button[aria-current="page"] > span:first-child {
+  background: #E4ECF7 !important;
+  color: #142842 !important;
+}
