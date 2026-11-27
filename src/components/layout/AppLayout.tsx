@@ -411,7 +411,6 @@ export const AppLayout: React.FC = () => {
             {isAdmin && effectiveTab === 'ministry-hub' && <SectionHub
               title="Ministry" description="Access ministry operations and communication tools."
               items={[
-                { title: 'Evangelism', description: 'Monitor outreach activity and records.', icon: Flame, onClick: () => navigateToTab('evangelism') },
                 { title: 'Follow-ups', description: 'Manage contacts and follow-up progress.', icon: UserCheck, onClick: () => navigateToTab('follow-ups') },
                 { title: 'Offering', description: 'Review offering records and summaries.', icon: DollarSign, onClick: () => navigateToTab('finance') },
                 { title: 'Teaching Materials', description: 'Publish and manage teaching resources.', icon: BookOpen, onClick: () => navigateToTab('materials') },
