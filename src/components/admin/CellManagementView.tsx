@@ -52,6 +52,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [cellEvang, setCellEvang] = useState<EvangelismReport[]>([]);
   const [cellContacts, setCellContacts] = useState<EvangelismContact[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
 
   // Edit / Add Cell modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -112,6 +113,10 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const openCellProfile = async (cell: Cell) => {
     setSelectedCell(cell);
     setIsLoadingDetails(true);
+    setDetailsError(null);
+    setCellMeetings([]);
+    setCellEvang([]);
+    setCellContacts([]);
     try {
       const [mList, eList, cList] = await Promise.all([
         ReportService.getCellMeetingReports({ cellId: cell.id }),
@@ -121,6 +126,9 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       setCellMeetings(mList);
       setCellEvang(eList);
       setCellContacts(cList);
+    } catch (error) {
+      console.error('Could not load cell profile details:', error);
+      setDetailsError('Some cell history could not be loaded. Check your connection and retry.');
     } finally {
       setIsLoadingDetails(false);
     }
@@ -381,7 +389,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3 ml-7">
                   <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${status === 'Active' ? 'bg-emerald-50 text-emerald-700' : status === 'Deactivated' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{status}</span>
-                  <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">Target: {cell.target_attendance || 20}</span>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">Target: {cell.target_attendance ?? '—'}</span>
                   <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">{cell.meeting_day || 'Wednesday'} · {cell.meeting_time || '18:30'} GMT</span>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3 ml-7">
@@ -488,7 +496,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
                       <td className="py-4 px-4 whitespace-nowrap">
                         <span className="font-bold text-[#182230] text-sm">
-                          {cell.target_attendance || 20}
+                          {cell.target_attendance ?? '—'}
                         </span>
                         <div className="text-[10px] text-[#667085]">Members Target</div>
                       </td>
@@ -630,6 +638,14 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 Deactivate
               </button>
             </div>
+
+            {detailsError && (
+              <div role="alert" className="flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 sm:flex-row sm:items-center sm:justify-between">
+                <span>{detailsError}</span>
+                <button type="button" onClick={() => void openCellProfile(selectedCell)} disabled={isLoadingDetails} className="min-h-9 shrink-0 rounded-lg border border-rose-300 px-3 font-bold disabled:opacity-50">{isLoadingDetails ? 'Retrying…' : 'Retry history'}</button>
+              </div>
+            )}
+            {isLoadingDetails && <p className="text-xs text-[#667085]">Loading cell history…</p>}
 
             {/* Performance Stats Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
