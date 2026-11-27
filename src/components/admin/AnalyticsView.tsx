@@ -394,32 +394,37 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
         </div>
 
         {/* Live Controls & Export Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2">
           {/* Refresh live data button */}
           <button
             type="button"
             onClick={() => void loadData(true)}
-            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#E3E8EF] dark:border-slate-700 text-[#182230] dark:text-slate-200 text-xs font-bold hover:bg-[#F5F7FA] dark:hover:bg-slate-700 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+            className="min-h-10 flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#E3E8EF] dark:border-slate-700 text-[#182230] dark:text-slate-200 text-xs font-bold hover:bg-[#F5F7FA] dark:hover:bg-slate-700 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
             title="Refresh analytics directly from database"
+            aria-label="Refresh analytics"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#142B4A] dark:text-[#C6A45A]" />
-            <span className="hidden sm:inline">Refresh</span>
+            <RefreshCw className="w-3.5 h-3.5 shrink-0 text-[#142B4A] dark:text-[#C6A45A]" />
+            <span className="text-[11px] sm:text-xs">Refresh</span>
           </button>
 
           <button
+            type="button"
             onClick={handleExportCsv}
-            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#E3E8EF] dark:border-slate-700 text-[#182230] dark:text-slate-200 text-xs font-bold hover:bg-[#F5F7FA] dark:hover:bg-slate-700 transition-colors shadow-xs flex items-center gap-1.5"
+            className="min-h-10 flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#E3E8EF] dark:border-slate-700 text-[#182230] dark:text-slate-200 text-xs font-bold hover:bg-[#F5F7FA] dark:hover:bg-slate-700 transition-colors shadow-xs flex items-center gap-1.5"
+            aria-label="Export analytics as CSV"
           >
-            <Download className="w-3.5 h-3.5 text-[#142B4A] dark:text-[#C6A45A]" />
-            <span className="hidden sm:inline">Export CSV</span>
+            <Download className="w-3.5 h-3.5 shrink-0 text-[#142B4A] dark:text-[#C6A45A]" />
+            <span className="text-[11px] sm:text-xs">Export</span>
           </button>
 
           <button
+            type="button"
             onClick={handlePrint}
-            className="px-3.5 py-2 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5"
+            className="min-h-10 flex-1 sm:flex-none justify-center px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5"
+            aria-label="Print analytics"
           >
-            <Printer className="w-3.5 h-3.5 text-[#C6A45A]" />
-            <span className="hidden sm:inline">Print (PDF)</span>
+            <Printer className="w-3.5 h-3.5 shrink-0 text-[#C6A45A]" />
+            <span className="text-[11px] sm:text-xs">Print</span>
           </button>
         </div>
       </div>
