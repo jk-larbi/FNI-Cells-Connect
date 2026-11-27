@@ -923,6 +923,7 @@ export interface CellLocationRecord {
 export type AdminNavTab =
   | 'dashboard'
   | 'cells-hub'
+  | 'cells-dropdown'
   | 'reports-hub'
   | 'ministry-hub'
   | 'more-hub'

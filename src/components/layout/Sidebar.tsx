@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   });
 
   const [isCellsExpanded, setIsCellsExpanded] = useState<boolean>(() => {
-    return currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history';
+    return currentTab === 'cells-hub' || currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history';
   });
 
   const [isReportsExpanded, setIsReportsExpanded] = useState<boolean>(() => {
@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [currentTab]);
 
   useEffect(() => {
-    if (currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history') {
+    if (currentTab === 'cells-hub' || currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history') {
       setIsCellsExpanded(true);
     }
   }, [currentTab]);
@@ -95,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Keep the administrator drawer concise with dedicated section pages.
   const adminNavItems: { id: AppNavTab | 'cells-dropdown' | 'reports-dropdown'; label: string; icon: any; colorKey: IconColorKey; badge?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: TelegramDashboardIcon, colorKey: 'gold' },
-    { id: 'cells-hub', label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' },
+    { id: 'cells-dropdown', label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' },
     { id: 'reports-hub', label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' },
     { id: 'ministry-hub', label: 'Ministry', icon: TelegramEvangelismIcon, colorKey: 'flame' },
     { id: 'more-hub', label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' },
@@ -120,9 +120,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Submodules
   const cellsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
-    { id: 'cell-management' as AppNavTab, label: 'Cell Management', icon: TelegramCellsIcon, colorKey: 'teal' },
+    { id: 'cell-management' as AppNavTab, label: 'Cell Groups', icon: TelegramCellsIcon, colorKey: 'teal' },
     { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: TelegramUsersIcon, colorKey: 'teal' },
-    { id: 'cell-location-history' as AppNavTab, label: 'Cell Location History', icon: TelegramLocationIcon, colorKey: 'cyan' },
+    { id: 'cell-location-history' as AppNavTab, label: 'Location History', icon: TelegramLocationIcon, colorKey: 'cyan' },
   ];
 
   const reportsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         className={`fixed top-0 bottom-0 left-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${
           'z-50 shadow-2xl'
-        } flex flex-col justify-between transition-all duration-300 ease-in-out fni-glass-sidebar ${
+        } flex flex-col justify-between transition-all duration-200 ease-out motion-reduce:transition-none fni-glass-sidebar ${
           isOpen
             ? 'translate-x-0'
             : isOverlayMode
@@ -254,14 +254,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               const isLearningActive = currentTab.startsWith('learning-') || currentTab === 'learning-portal';
 
               const isCells = item.id === 'cells-dropdown';
-              const isCellsActive = currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history';
+              const isCellsActive = currentTab === 'cells-hub' || currentTab === 'cell-management' || currentTab === 'cell-leaders' || currentTab === 'cell-location-history';
 
               const isReports = item.id === 'reports-dropdown';
               const isReportsActive = currentTab === 'report-review' || currentTab === 'report-history' || currentTab === 'report-deadlines';
 
               const isActive = isAdmin
-                ? item.id === 'cells-hub'
-                  ? ['cells-hub', 'cell-management', 'cell-leaders', 'cell-location-history', 'location-sharing'].includes(currentTab)
+                ? item.id === 'cells-dropdown'
+                  ? ['cells-hub', 'cell-management', 'cell-leaders', 'cell-location-history'].includes(currentTab)
                   : item.id === 'reports-hub'
                     ? ['reports-hub', 'report-review', 'report-history', 'received-reports', 'report-deadlines'].includes(currentTab)
                     : item.id === 'ministry-hub'
@@ -278,7 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        if (isCells) onSelectTab('cell-management');
+                        if (isCells) onSelectTab('cells-hub');
                         else if (isReports) onSelectTab('report-review');
                         else if (isLearning) onSelectTab('learning-portal');
                         else onSelectTab(item.id as AppNavTab);
@@ -326,7 +326,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          onSelectTab('cell-management');
+                          onSelectTab('cells-hub');
                           setIsCellsExpanded(true);
                           onCloseMobile();
                         }}
@@ -360,7 +360,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
 
                     {isCellsExpanded && (
-                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/40 ml-3.5 my-1 animate-fade-in">
+                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-[#C6A45A]/40 ml-3.5 my-1 animate-fade-in motion-reduce:animate-none">
                         {cellsSubItems.map(sub => {
                           const SubIcon = sub.icon;
                           const isSubActive = currentTab === sub.id;
