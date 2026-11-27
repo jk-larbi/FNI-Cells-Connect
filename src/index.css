@@ -2453,3 +2453,67 @@ html.dark .fni-chat-composer textarea:focus-visible {
   background: #E4ECF7 !important;
   color: #142842 !important;
 }
+
+
+/* Cell Groups — Stitch screen styling, scoped to this administrator view */
+.fni-admin-stitch-shell .fni-cell-groups-stitch {
+  width: 100%;
+  max-width: 1152px;
+  margin-inline: auto;
+  color: #142842;
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch h1,
+.fni-admin-stitch-shell .fni-cell-groups-stitch h2,
+.fni-admin-stitch-shell .fni-cell-groups-stitch h3,
+.fni-admin-stitch-shell .fni-cell-groups-stitch summary,
+.fni-admin-stitch-shell .fni-cell-groups-stitch button {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch p,
+.fni-admin-stitch-shell .fni-cell-groups-stitch label,
+.fni-admin-stitch-shell .fni-cell-groups-stitch input,
+.fni-admin-stitch-shell .fni-cell-groups-stitch td,
+.fni-admin-stitch-shell .fni-cell-groups-stitch th {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  vertical-align: middle;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch button:focus-visible,
+.fni-admin-stitch-shell .fni-cell-groups-stitch input:focus-visible,
+.fni-admin-stitch-shell .fni-cell-groups-stitch summary:focus-visible {
+  outline: 2px solid #8E6C23;
+  outline-offset: 2px;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch thead {
+  background: #EEF2F7;
+  color: #5A6B7C;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch tbody tr {
+  border-bottom: 1px solid #DCE3EC;
+  transition: background-color 120ms ease-out;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch tbody tr:hover {
+  background: #F7F9FC;
+}
+.fni-admin-stitch-shell .fni-cell-groups-stitch input[type="checkbox"] {
+  accent-color: #142842;
+}
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-cell-groups-stitch {
+    padding-bottom: 1rem;
+  }
+  .fni-admin-stitch-shell .fni-cell-groups-stitch > section.md\:hidden {
+    gap: 1rem;
+  }
+}
