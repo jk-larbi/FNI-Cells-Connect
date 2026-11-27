@@ -35,6 +35,7 @@ export const AdminManagementView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods' | 'deactivations'>('users');
   const [deactivationRequests, setDeactivationRequests] = useState<AccountDeactivationRequest[]>([]);
   const [isLoadingDeactivations, setIsLoadingDeactivations] = useState(false);
+  const [deactivationsLoadError, setDeactivationsLoadError] = useState<string | null>(null);
   const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [users, setUsers] = useState<Profile[]>([]);
@@ -140,15 +141,25 @@ export const AdminManagementView: React.FC = () => {
     return () => { isActive = false; };
   }, [managementLoadAttempt]);
 
-  const loadDeactivations = async () => {
+  const loadDeactivations = async (): Promise<boolean> => {
     setIsLoadingDeactivations(true);
+    setDeactivationsLoadError(null);
     try {
       const list = await UserSettingsService.getPendingDeactivationRequests();
       setDeactivationRequests(list);
+      return true;
+    } catch (error) {
+      console.error('Could not load deactivation requests:', error);
+      setDeactivationsLoadError('Deactivation requests could not be loaded. Check your connection and retry.');
+      return false;
     } finally {
       setIsLoadingDeactivations(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === 'deactivations') void loadDeactivations();
+  }, [activeTab]);
 
   const handleReviewDeactivation = async (requestId: string, decision: 'approved' | 'declined') => {
     if (!currentUser?.id) return;
@@ -167,10 +178,12 @@ export const AdminManagementView: React.FC = () => {
       if (!res.success) {
         window.alert(res.error || 'Failed to review deactivation request.');
       } else {
-        await loadDeactivations();
+        const refreshed = await loadDeactivations();
         const remoteUsers = await SupabaseService.getProfiles();
         if (remoteUsers) setUsers(remoteUsers);
-        window.alert(`Deactivation request ${decision} successfully.`);
+        window.alert(refreshed
+          ? `Deactivation request ${decision} successfully.`
+          : `The request was ${decision}, but the list could not refresh. Use Refresh to reload the latest status.`);
       }
     } finally {
       setReviewingRequestId(null);
@@ -898,7 +911,15 @@ export const AdminManagementView: React.FC = () => {
             </div>
 
             {/* Requests List */}
-            {isLoadingDeactivations ? (
+            {deactivationsLoadError ? (
+              <div role="alert" className="py-8 px-4 text-center bg-rose-50 rounded-2xl border border-rose-200">
+                <p className="text-sm font-semibold text-rose-800">Deactivation requests are unavailable</p>
+                <p className="mt-1 text-xs text-rose-700">{deactivationsLoadError}</p>
+                <button type="button" onClick={() => void loadDeactivations()} disabled={isLoadingDeactivations} className="mt-3 min-h-10 px-4 rounded-lg bg-white border border-rose-200 text-xs font-semibold text-rose-800 disabled:opacity-60">
+                  {isLoadingDeactivations ? 'Refreshing...' : 'Try again'}
+                </button>
+              </div>
+            ) : isLoadingDeactivations && deactivationRequests.length === 0 ? (
               <div className="py-12 text-center text-slate-400 text-xs">Loading deactivation requests...</div>
             ) : deactivationRequests.length === 0 ? (
               <div className="py-12 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
