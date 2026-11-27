@@ -4883,6 +4883,8 @@ html.dark .fni-chat-composer textarea:focus-visible {
   width:13px; height:13px; border:2px solid #fff; border-radius:50%;
   background:#1F6E43;
 }
+.fni-profile-avatar-status.is-pending { background:#8E6C23; }
+.fni-profile-avatar-status.is-suspended { background:#BA1A1A; }
 .fni-profile-designation {
   display:flex; flex-wrap:wrap; align-items:center; gap:6px;
   margin:0; color:#5A6B7C; font-size:12px;
