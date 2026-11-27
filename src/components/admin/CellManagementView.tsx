@@ -242,30 +242,6 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     }
   };
 
-  // Filter cells
-  const filteredCells = cells.filter(cell => !cell.is_archived).filter(cell => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      !q ||
-      cell.name.toLowerCase().includes(q) ||
-      (cell.location && cell.location.toLowerCase().includes(q)) ||
-      (cell.leader_name && cell.leader_name.toLowerCase().includes(q));
-
-    const currentStatus = cell.status || (cell.is_active ? 'Active' : 'Suspended');
-    const matchesStatus = statusFilter === 'All' || currentStatus === statusFilter;
-    const needsAttention = !cell.leader_name?.trim() || !cell.meeting_day?.trim() || !cell.meeting_time?.trim() || currentStatus !== 'Active';
-    const matchesMobileFilter = mobileFilter === 'all' || (mobileFilter === 'attention' ? needsAttention : !needsAttention);
-
-    return matchesSearch && matchesStatus && matchesMobileFilter;
-  });
-
-  const activeCellCount = cells.filter(cell => !cell.is_archived && (cell.status || (cell.is_active ? 'Active' : 'Suspended')) === 'Active').length;
-  const assignedLeaderCount = cells.filter(cell => !cell.is_archived && Boolean(cell.leader_id || cell.tutorUid || cell.leader_name?.trim())).length;
-  const venueDetailsCount = cells.filter(cell => Boolean(cell.venue_address?.trim() || cell.meeting_location?.trim() || cell.location?.trim())).length;
-  const cellsNeedingAttention = cells.filter(cell => !cell.is_archived).filter(cell => {
-    const status = cell.status || (cell.is_active ? 'Active' : 'Suspended');
-    return !cell.leader_name?.trim() || !cell.meeting_day?.trim() || !cell.meeting_time?.trim() || status !== 'Active';
-  }).length;
   const weekStart = new Date();
   weekStart.setHours(0, 0, 0, 0);
   weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
@@ -276,9 +252,34 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     return !Number.isNaN(meetingDate.getTime()) && meetingDate >= weekStart && meetingDate < weekEnd;
   });
   const reportedCellIds = new Set(thisWeeksReports.map(report => report.cellId));
-  const missingReportCount = cells.filter(cell => !cell.is_archived).filter(cell =>
-    !reportedCellIds.has(cell.id) && !(cell.firebase_id && reportedCellIds.has(cell.firebase_id))
-  ).length;
+  const hasWeeklyReport = (cell: Cell) => reportedCellIds.has(cell.id) || Boolean(cell.firebase_id && reportedCellIds.has(cell.firebase_id));
+  const missingReportCount = cells.filter(cell => !cell.is_archived && !hasWeeklyReport(cell)).length;
+
+  const activeCellCount = cells.filter(cell => !cell.is_archived && (cell.status || (cell.is_active ? 'Active' : 'Suspended')) === 'Active').length;
+  const assignedLeaderCount = cells.filter(cell => !cell.is_archived && Boolean(cell.leader_id || cell.tutorUid || cell.leader_name?.trim())).length;
+  const venueDetailsCount = cells.filter(cell => !cell.is_archived && Boolean(cell.venue_address?.trim() || cell.meeting_location?.trim() || cell.location?.trim())).length;
+  const needsAttentionForCell = (cell: Cell) => {
+    const currentStatus = cell.status || (cell.is_active ? 'Active' : 'Suspended');
+    return !cell.leader_name?.trim() || !cell.meeting_day?.trim() || !cell.meeting_time?.trim() || currentStatus !== 'Active' || !hasWeeklyReport(cell);
+  };
+  const cellsNeedingAttention = cells.filter(cell => !cell.is_archived && needsAttentionForCell(cell)).length;
+
+  // Filter cells from live records only; weekly reporting is part of the attention state.
+  const filteredCells = cells.filter(cell => !cell.is_archived).filter(cell => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      !q ||
+      cell.name.toLowerCase().includes(q) ||
+      (cell.location && cell.location.toLowerCase().includes(q)) ||
+      (cell.leader_name && cell.leader_name.toLowerCase().includes(q));
+
+    const currentStatus = cell.status || (cell.is_active ? 'Active' : 'Suspended');
+    const matchesStatus = statusFilter === 'All' || currentStatus === statusFilter;
+    const needsAttention = needsAttentionForCell(cell);
+    const matchesDirectoryFilter = mobileFilter === 'all' || (mobileFilter === 'attention' ? needsAttention : !needsAttention);
+
+    return matchesSearch && matchesStatus && matchesDirectoryFilter;
+  });
 
   return (
     <div className="fni-cell-groups-stitch space-y-5 sm:space-y-6">
