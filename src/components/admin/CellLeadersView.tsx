@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './cellLeadersView.css';
 import { Profile, Cell, CellMeetingReport, EvangelismReport } from '../../types';
 import { AuthService } from '../../services/authService';
 import { CellService } from '../../services/cellService';
@@ -29,9 +30,10 @@ const MaterialSymbol: React.FC<{ name: string; className?: string }> = ({ name, 
 
 interface CellLeadersViewProps {
   onBack?: () => void;
+  onNavigateToTab?: (tab: string) => void;
 }
 
-export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
+export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack, onNavigateToTab }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [meetingReports, setMeetingReports] = useState<CellMeetingReport[]>([]);
@@ -164,277 +166,105 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
   ).length;
 
   return (
-    <div className="fni-cell-leaders-stitch space-y-4 sm:space-y-6 min-w-0">
-      {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="fni-cell-leaders-stitch fni-cell-leaders-reference min-w-0">
+      <header className="fni-cl-page-heading">
         <div>
-          <div className="fni-leaders-eyebrow">ADMIN WORKSPACE</div>
-          <h1 className="text-xl font-black text-[#142842] tracking-tight">
-            Cell leaders
-          </h1>
-          <p className="text-xs text-[#667085] mt-0.5">
-            Assigned tutors, reporting cadence, and regional coverage.
-          </p>
+          <h1>Cell leaders</h1>
+          <p>Assigned tutors, reporting cadence, and regional coverage.</p>
         </div>
-      </div>
+        {onNavigateToTab && (
+          <button type="button" className="fni-cl-assign-action" onClick={() => onNavigateToTab('cell-management')}>
+            <MaterialSymbol name="person_add" className="text-[18px]" />
+            <span>Assign leader</span>
+          </button>
+        )}
+      </header>
 
       {loadError && (
-        <div role="alert" className="flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 sm:flex-row sm:items-center sm:justify-between">
+        <div role="alert" className="fni-cl-load-error">
           <span>{loadError}</span>
-          <button type="button" onClick={() => void loadData()} disabled={isLoading} className="min-h-9 shrink-0 rounded-lg border border-rose-300 px-3 font-bold hover:bg-rose-100 disabled:opacity-50">{isLoading ? 'Retrying…' : 'Retry'}</button>
+          <button type="button" onClick={() => void loadData()} disabled={isLoading}>{isLoading ? 'Retrying…' : 'Retry'}</button>
         </div>
       )}
 
-      <section aria-label="Cell leader summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
-          <p className="text-[11px] font-semibold text-[#667085]">Active leaders</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : activeLeaderCount}</p>
-          <p className="mt-0.5 text-[10px] text-[#667085]">Currently enabled</p>
-        </div>
-        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
-          <p className="text-[11px] font-semibold text-[#667085]">Unassigned cells</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : unassignedCellCount}</p>
-          <p className="mt-0.5 text-[10px] text-[#667085]">Cells without a leader</p>
-        </div>
-        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
-          <p className="text-[11px] font-semibold text-[#667085]">Suspended</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : suspendedLeaderCount}</p>
-          <p className="mt-0.5 text-[10px] text-[#667085]">Accounts needing review</p>
-        </div>
-        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
-          <p className="text-[11px] font-semibold text-[#667085]">Leaders with reports</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : leadersWithReportsCount}</p>
-          <p className="mt-0.5 text-[10px] text-[#667085]">At least one submission</p>
-        </div>
+      <section className="fni-cl-mobile-summary" aria-label="Leader summary">
+        <article><span>Active leaders</span><strong>{isLoading ? '—' : activeLeaderCount}</strong></article>
+        <article><span>Unassigned cells</span><strong>{isLoading ? '—' : unassignedCellCount}</strong></article>
       </section>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
-        <div className="relative w-full min-w-0 flex-1">
-          <MaterialSymbol name="search" className="absolute left-3.5 top-3 text-[18px] text-[#5A6B7C]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search leaders, email or cell..."
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[#E3E8EF] focus:outline-none focus:ring-2 focus:ring-[#142B4A]/20 focus:border-[#142B4A] text-[#182230]"
-          />
-        </div>
-
-        <div className="flex w-full items-center gap-2 overflow-x-auto sm:w-auto sm:shrink-0">
-          {(['All', 'Active', 'Suspended'] as const).map(st => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`min-h-10 shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                statusFilter === st
-                  ? 'bg-[#142B4A] text-white'
-                  : 'bg-[#F5F7FA] text-[#667085] hover:text-[#182230]'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Reference Image Styled Table */}
-      <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
-        <div className="py-3 px-4 sm:py-4 sm:px-6 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-[#182230]">
-            Cell Leaders ({filteredLeaders.length})
-          </h2>
-          <span className="text-xs text-[#667085]">
-            Select a leader to view details and submissions
-          </span>
-        </div>
-
-        <div className="md:hidden divide-y divide-[#E3E8EF]">
-          {filteredLeaders.length === 0 ? (
-            <div className="p-6 text-center">
-              <MaterialSymbol name="group" className="mx-auto mb-2 text-2xl text-[#8A98A8]" />
-              <p className="text-xs font-semibold text-[#182230]">{searchQuery || statusFilter !== 'All' ? 'No leaders match these filters' : 'No tutors registered yet'}</p>
-              <p className="text-[11px] text-[#667085] mt-1">{searchQuery || statusFilter !== 'All' ? 'Try another name, email, cell or account status.' : 'Registered tutors will appear here.'}</p>
-              {(searchQuery || statusFilter !== 'All') && <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="mt-3 min-h-10 px-3 rounded-xl bg-[#F5F7FA] text-xs font-semibold text-[#142B4A]">Clear filters</button>}
-            </div>
-          ) : filteredLeaders.map(leader => {
-            const leaderM = meetingReports.filter(m => m.tutorUid === leader.id || m.cellName === leader.cell_name);
-            const onTimeCount = leaderM.filter(m => !m.late).length;
-            const consistency = leaderM.length > 0 ? Math.round((onTimeCount / leaderM.length) * 100) : null;
-            return (
+      <section className="fni-cl-directory" aria-label="Cell leader directory">
+        <div className="fni-cl-directory-tools">
+          <label className="fni-cl-search">
+            <MaterialSymbol name="search" className="text-[18px]" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder="Search leaders, email or cell…"
+              aria-label="Search leaders, email or cell"
+            />
+          </label>
+          <div className="fni-cl-status-filters" role="group" aria-label="Filter leaders by account status">
+            {(['All', 'Active', 'Suspended'] as const).map(status => (
               <button
-                key={leader.id}
+                key={status}
                 type="button"
-                onClick={() => openLeaderProfile(leader)}
-                className="w-full text-left p-4 active:bg-[#F5F7FA] hover:bg-[#F5F7FA] transition-colors"
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
-                    {leader.avatar_url ? <img src={leader.avatar_url} alt={leader.full_name || 'Leader'} className="w-full h-full object-cover" /> : (leader.full_name || 'TL').split(' ').map(n => n[0]).slice(0, 2).join('')}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-bold text-sm text-[#182230] break-words">{leader.full_name}</div>
-                    <div className="text-xs text-[#667085] break-all mt-0.5">{leader.email}</div>
-                    <div className="text-xs font-semibold text-[#142B4A] mt-2">{leader.cell_name || 'Assigned Fellowship Cell'}</div>
-                    <div className="text-[11px] text-[#667085] mt-0.5">{leader.phone_number || 'No phone recorded'}</div>
-                  </div>
-                  <MaterialSymbol name="visibility" className="mt-1 shrink-0 text-[18px] text-[#354863]" />
-                </div>
-                <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${leader.is_active ? 'bg-emerald-50 text-[#23845B]' : 'bg-rose-50 text-[#C74646]'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${leader.is_active ? 'bg-[#23845B]' : 'bg-[#C74646]'}`} />
-                    {leader.is_active ? 'Active' : 'Suspended'}
-                  </span>
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${consistency !== null && consistency >= 80 ? 'bg-emerald-50 text-[#23845B]' : 'bg-amber-50 text-[#D99A32]'}`}>
-                    {consistency === null ? 'No reports yet' : `${consistency}% on-time`}
-                  </span>
-                </div>
-                <div className="text-[11px] font-semibold text-sky-700 mt-3">View leader profile and submissions</div>
-              </button>
-            );
-          })}
+                aria-pressed={statusFilter === status}
+                className={statusFilter === status ? 'is-active' : ''}
+                onClick={() => setStatusFilter(status)}
+              >{status}</button>
+            ))}
+          </div>
         </div>
-        <div className="hidden md:block table-scroll-container">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#E3E8EF] text-[11px] font-semibold uppercase tracking-wider text-[#667085] bg-[#F5F7FA]">
-                <th className="py-3 px-5 w-12 text-center">
-                  <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
-                </th>
-                <th className="py-3 px-4">TUTOR NAME & EMAIL</th>
-                <th className="py-3 px-4">ASSIGNED CELL</th>
-                <th className="py-3 px-4">PHONE NUMBER</th>
-                <th className="py-3 px-4">ACCOUNT STATUS</th>
-                <th className="py-3 px-4">CONSISTENCY</th>
-                <th className="py-3 px-5 text-right">ACTION</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E3E8EF]">
-              {filteredLeaders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#667085]">
-                    <MaterialSymbol name="group" className="mx-auto mb-2 text-3xl text-[#8A98A8]" />
-                    <p className="text-xs font-semibold text-[#182230]">{searchQuery || statusFilter !== 'All' ? 'No leaders match these filters.' : 'No tutors registered yet.'}</p>
-                    <p className="text-[11px] text-[#667085] mt-0.5">
-                      {searchQuery || statusFilter !== 'All' ? 'Try a different search or clear the selected filters.' : 'When tutors register via the sign-up page, they will appear in this directory.'}
-                    </p>
-                    {(searchQuery || statusFilter !== 'All') && <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="mt-2 min-h-10 px-3 rounded-xl bg-[#F5F7FA] text-xs font-semibold text-[#142B4A]">Clear filters</button>}
-                  </td>
-                </tr>
-              ) : (
-                filteredLeaders.map(leader => {
-                  const leaderM = meetingReports.filter(m => m.tutorUid === leader.id || m.cellName === leader.cell_name);
-                  const onTimeCount = leaderM.filter(m => !m.late).length;
-                  const consistency = leaderM.length > 0 ? Math.round((onTimeCount / leaderM.length) * 100) : null;
-                  const isSuspended = !leader.is_active;
 
-                  return (
-                    <tr
-                      key={leader.id}
-                      onClick={() => openLeaderProfile(leader)}
-                      className={`cursor-pointer transition-colors ${
-                        isSuspended
-                          ? 'bg-[#FFF5F5] border-l-4 border-[#C74646]'
-                          : 'hover:bg-[#F5F7FA]'
-                      }`}
-                    >
-                      <td className="py-4 px-5 text-center">
-                        <div className="w-4 h-4 rounded-full border border-[#CBD5E1] mx-auto" />
-                      </td>
-
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                            {leader.avatar_url ? (
-                              <img
-                                src={leader.avatar_url}
-                                alt={leader.full_name || 'Leader'}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : leader.full_name ? (
-                              leader.full_name
-                                .split(' ')
-                                .map(n => n[0])
-                                .slice(0, 2)
-                                .join('')
-                            ) : (
-                              'TL'
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-bold text-[#182230] leading-tight">
-                              {leader.full_name}
-                            </div>
-                            <div className="text-[11px] text-[#667085] mt-0.5">
-                              {leader.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="font-bold text-[#182230]">
-                          {leader.cell_name || 'Assigned Fellowship Cell'}
-                        </div>
-                        <div className="text-[11px] text-[#667085]">
-                          {leader.role === 'tutor' || leader.role === 'cell_leader' ? 'Fellowship Cell Tutor' : 'Leadership'}
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4 whitespace-nowrap text-[#182230]">
-                        {leader.phone_number || 'No phone recorded'}
-                      </td>
-
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {leader.is_active ? (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#C74646]">
-                            <span className="w-2 h-2 rounded-full bg-[#C74646]" />
-                            Suspended
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {consistency === null ? (
-                          <span className="font-medium text-[#667085]">No reports yet</span>
-                        ) : consistency >= 80 ? (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#23845B]">
-                            <span className="w-2 h-2 rounded-full bg-[#23845B]" />
-                            {consistency}% On-Time
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-[#D99A32]">
-                            <span className="w-2 h-2 rounded-full bg-[#D99A32]" />
-                            {consistency}% On-Time
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-5 whitespace-nowrap text-right">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            openLeaderProfile(leader);
-                          }}
-                          className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 inline-flex items-center justify-center transition-colors shadow-2xs"
-                          title="View Profile & Submissions"
-                        >
-                          <MaterialSymbol name="visibility" className="text-[18px]" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+        <div className="fni-cl-list-heading">
+          <div><h2>Cell leaders</h2><span>{filteredLeaders.length} {filteredLeaders.length === 1 ? 'leader' : 'leaders'}</span></div>
+          <p>Select a leader to view account details and report history</p>
         </div>
-      </div>
+
+        {isLoading ? (
+          <div className="fni-cl-empty-state" aria-live="polite">
+            <MaterialSymbol name="progress_activity" className="animate-spin text-2xl" />
+            <strong>Loading cell leaders</strong>
+            <span>Retrieving the live directory from Supabase.</span>
+          </div>
+        ) : filteredLeaders.length === 0 ? (
+          <div className="fni-cl-empty-state">
+            <MaterialSymbol name="group" className="text-3xl" />
+            <strong>{searchQuery || statusFilter !== 'All' ? 'No leaders match these filters' : 'No cell leaders registered'}</strong>
+            <span>{searchQuery || statusFilter !== 'All' ? 'Try another search or clear the selected filters.' : 'Registered cell tutors will appear here.'}</span>
+            {(searchQuery || statusFilter !== 'All') && (
+              <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('All'); }}>Clear filters</button>
+            )}
+          </div>
+        ) : (
+          <ul className="fni-cl-leader-list">
+            {filteredLeaders.map(leader => {
+              const leaderReports = meetingReports.filter(report => report.tutorUid === leader.id || report.cellName === leader.cell_name);
+              const onTimeCount = leaderReports.filter(report => !report.late).length;
+              const consistency = leaderReports.length ? Math.round((onTimeCount / leaderReports.length) * 100) : null;
+              const initials = (leader.full_name || 'TL').split(' ').map(part => part[0]).slice(0, 2).join('').toUpperCase();
+              return (
+                <li key={leader.id}>
+                  <button type="button" className="fni-cl-leader-row" onClick={() => openLeaderProfile(leader)} aria-label={'View ' + leader.full_name + ' profile and submissions'}>
+                    <span className="fni-cl-avatar">
+                      {leader.avatar_url ? <img src={leader.avatar_url} alt="" /> : initials}
+                    </span>
+                    <span className="fni-cl-leader-copy">
+                      <strong>{leader.full_name}</strong>
+                      <small>{leader.cell_name || 'Unassigned cell'} · {consistency === null ? 'No reports yet' : consistency + '% on-time reports'}</small>
+                    </span>
+                    <span className={'fni-cl-status ' + (leader.is_active ? 'is-active' : 'is-suspended')}>
+                      <span aria-hidden="true" />{leader.is_active ? 'Active' : 'Suspended'}
+                    </span>
+                    <MaterialSymbol name="chevron_right" className="fni-cl-row-arrow text-[20px]" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {/* TUTOR PROFILE MODAL */}
       {selectedLeader && (
