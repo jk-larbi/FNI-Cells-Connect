@@ -35,6 +35,7 @@ import {
 } from '../../types/learning';
 import { LearningService } from '../../services/learningService';
 import { MessagingService } from '../../services/messagingService';
+import { LearningAdminOverview } from './LearningAdminOverview';
 
 interface LearningOverviewViewProps {
   onNavigateSection: (section: LearningPortalSection) => void;
@@ -248,6 +249,20 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
   const tutorRecentQuizResults = quizAttempts
     .filter(a => a.results_released || a.status === 'graded')
     .slice(0, 3);
+
+  if (isAdmin) {
+    return (
+      <LearningAdminOverview
+        assignments={assignments}
+        quizzes={quizzes}
+        events={events}
+        submissions={submissions}
+        quizAttempts={quizAttempts}
+        activeTutorsCount={activeTutorsCount}
+        onNavigateSection={onNavigateSection}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
