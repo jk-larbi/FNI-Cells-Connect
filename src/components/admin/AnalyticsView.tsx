@@ -94,6 +94,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   const [meetingReports, setMeetingReports] = useState<CellMeetingReport[]>([]);
   const [evangelismReports, setEvangelismReports] = useState<EvangelismReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   // Filters & Interactivity
   const [selectedCell, setSelectedCell] = useState('All');
@@ -129,7 +130,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   // Load primary data
   const loadData = async (showLoader = true) => {
     try {
-      if (showLoader) setIsLoading(true);
+      setLoadError('');
+      if (showLoader && !stats) setIsLoading(true);
       const [dashStats, sysSettings, cellList, trends, cStats, locHistory, meetings, evang] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
@@ -151,6 +153,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
       // Initialize initial live activities from real reports & location records
       buildInitialActivities(locHistory, meetings || [], evang || []);
+    } catch (error) {
+      console.error('Failed to load ministry analytics:', error);
+      setLoadError('Ministry analytics could not be refreshed. Please try again.');
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -392,11 +397,24 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     window.print();
   };
 
-  if (isLoading || !stats) {
+  if (!stats && isLoading) {
     return (
-      <div className="py-24 text-center text-xs text-[#667085] font-medium">
+      <div className="py-24 text-center text-xs text-[#667085] font-medium" role="status" aria-live="polite">
         <div className="inline-block w-8 h-8 border-3 border-[#C6A45A] border-t-transparent rounded-full animate-spin mb-3" />
         <p>Loading ministry analytics...</p>
+      </div>
+    );
+  }
+
+  if (!stats && loadError) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-xs sm:p-8" role="alert" aria-live="polite">
+        <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-rose-600" />
+        <h2 className="text-base font-bold text-[#142B4A]">Analytics are temporarily unavailable</h2>
+        <p className="mt-2 text-sm text-[#667085]">{loadError}</p>
+        <button type="button" onClick={() => void loadData(true)} className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#203D63]">
+          <RefreshCw className="h-4 w-4" /> Try again
+        </button>
       </div>
     );
   }
@@ -406,6 +424,18 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {loadError && (
+        <div className="flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 sm:flex-row sm:items-center sm:justify-between" role="alert" aria-live="polite">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+            <div>
+              <p className="text-sm font-semibold text-rose-800">Analytics refresh failed</p>
+              <p className="mt-1 text-xs text-rose-700">Previously loaded figures remain visible. {loadError}</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => void loadData(true)} className="min-h-10 shrink-0 rounded-lg border border-rose-200 bg-white px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100">Try again</button>
+        </div>
+      )}
       {/* TOP CONTEXT & COMMAND BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
