@@ -4866,3 +4866,78 @@ html.dark .fni-chat-composer textarea:focus-visible {
  .fni-profile-readonly-value strong { text-align:left; }
  .fni-profile-save-action { width:100%; min-height:46px; }
 }
+
+
+/* Learning & Assessment — Stitch desktop administration rail and mobile layout */
+.fni-learning-stitch { width:100%; min-height:calc(100dvh - 7rem); background:#F7F9FC; color:#142842; font-family:"Source Sans 3",sans-serif; }
+.fni-learning-sidebar { position:sticky; top:0; align-self:flex-start; width:256px; height:100dvh; min-height:720px; flex:0 0 256px; flex-direction:column; padding:22px 14px 16px; background:#142842; color:#fff; }
+.fni-learning-sidebar-brand { display:flex; align-items:center; gap:11px; padding:2px 10px 24px; border-bottom:1px solid rgba(255,255,255,.13); }
+.fni-learning-brand-mark { display:grid; place-items:center; width:42px; height:42px; border-radius:10px; background:#E4ECF7; color:#142842; }
+.fni-learning-sidebar-brand > div:last-child { display:flex; flex-direction:column; gap:2px; }
+.fni-learning-sidebar-brand strong { color:#fff; font:700 21px/1 "Libre Franklin",sans-serif; letter-spacing:.02em; }
+.fni-learning-sidebar-brand span { color:#D6DFEA; font:600 9px "Libre Franklin",sans-serif; letter-spacing:.14em; }
+.fni-learning-sidebar-caption { padding:24px 12px 10px; color:#C5D0DF; font:600 9px "Libre Franklin",sans-serif; letter-spacing:.15em; }
+.fni-learning-sidebar-nav { display:flex; flex-direction:column; gap:5px; }
+.fni-learning-sidebar-nav button { display:flex; align-items:center; gap:12px; width:100%; min-height:44px; padding:10px 12px; border:0; border-radius:7px; background:transparent; color:#D6DFEA; text-align:left; font:500 13px "Source Sans 3",sans-serif; cursor:pointer; transition:background 120ms ease,color 120ms ease; }
+.fni-learning-sidebar-nav button:hover { background:rgba(255,255,255,.09); color:#fff; }
+.fni-learning-sidebar-nav button.is-active { background:#354863; color:#fff; font-weight:600; box-shadow:inset 3px 0 #D5B36A; }
+.fni-learning-sidebar-nav button.is-active svg { color:#F1D18B; }
+.fni-learning-nav-count { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; margin-left:auto; padding:0 6px; border-radius:999px; background:rgba(255,255,255,.13); color:#fff; font:600 10px "Source Sans 3",sans-serif; }
+.fni-learning-sidebar-footer { display:flex; align-items:center; gap:10px; margin-top:auto; padding:16px 8px 0; border-top:1px solid rgba(255,255,255,.13); }
+.fni-learning-sidebar-user-avatar,.fni-learning-top-avatar { display:grid; place-items:center; overflow:hidden; border-radius:50%; background:#E4ECF7; color:#142842; font:700 13px "Libre Franklin",sans-serif; }
+.fni-learning-sidebar-user-avatar { width:36px; height:36px; flex:0 0 36px; }
+.fni-learning-sidebar-user-avatar img,.fni-learning-top-avatar img { width:100%; height:100%; object-fit:cover; }
+.fni-learning-sidebar-user-copy { display:flex; flex-direction:column; min-width:0; gap:2px; }
+.fni-learning-sidebar-user-copy strong { overflow:hidden; color:#fff; font:600 11px "Libre Franklin",sans-serif; text-overflow:ellipsis; white-space:nowrap; }
+.fni-learning-sidebar-user-copy span { color:#C5D0DF; font-size:10px; }
+.fni-learning-workspace { min-height:100dvh; }
+.fni-learning-topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:62px; padding:10px clamp(16px,2.4vw,32px); border-bottom:1px solid #DCE3EC; background:rgba(255,255,255,.97); }
+.fni-learning-back,.fni-learning-icon-action { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border:1px solid #DCE3EC; border-radius:50%; background:#fff; color:#354863; cursor:pointer; }
+.fni-learning-back:hover,.fni-learning-icon-action:hover { background:#EEF2F7; }
+.fni-learning-breadcrumb { display:flex; align-items:center; gap:9px; min-width:0; color:#5A6B7C; font:500 12px "Libre Franklin",sans-serif; white-space:nowrap; }
+.fni-learning-breadcrumb strong { overflow:hidden; color:#142842; font-weight:600; text-overflow:ellipsis; }
+.fni-learning-top-actions { display:flex; align-items:center; gap:9px; }
+.fni-learning-sync-state { display:inline-flex; align-items:center; gap:7px; color:#5A6B7C; font-size:11px; white-space:nowrap; }
+.fni-learning-sync-state > span { width:7px; height:7px; border-radius:50%; background:#1F6E43; }
+.fni-learning-create-action { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:38px; padding:8px 15px; border:0; border-radius:999px; background:#142842; color:#fff; font:600 11px "Libre Franklin",sans-serif; cursor:pointer; }
+.fni-learning-create-action:hover { background:#263F62; }
+.fni-learning-top-avatar { width:36px; height:36px; border:1px solid #DCE3EC; cursor:pointer; }
+.fni-learning-main { display:flex; flex-direction:column; gap:22px; width:100%; max-width:1440px; margin:0 auto; padding:26px clamp(16px,2.4vw,32px) 40px; }
+.fni-learning-page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding-bottom:19px; border-bottom:1px solid #DCE3EC; }
+.fni-learning-eyebrow { margin:0 0 5px; color:#8E6C23; font:700 9px "Libre Franklin",sans-serif; letter-spacing:.16em; }
+.fni-learning-page-heading h1 { margin:0; color:#142842; font:700 clamp(24px,2.4vw,32px)/1.2 "Libre Franklin",sans-serif; letter-spacing:-.03em; }
+.fni-learning-page-heading p:not(.fni-learning-eyebrow) { margin:6px 0 0; color:#5A6B7C; font-size:13px; }
+.fni-learning-heading-create { flex:0 0 auto; }
+.fni-learning-mobile-nav { display:none; }
+.fni-learning-section-content { width:100%; min-width:0; }
+.fni-learning-stitch .fni-glass-card,.fni-learning-stitch .fni-glass-panel { border-radius:10px!important; box-shadow:0 1px 2px rgba(20,40,66,.04)!important; }
+.fni-learning-stitch .fni-glass-card { border-color:#DCE3EC!important; background:#fff!important; }
+.fni-learning-stitch .fni-glass-panel { border-color:#DCE3EC!important; background:#F7F9FC!important; }
+@media(max-width:1023px) {
+ .fni-learning-stitch { min-height:0; }
+ .fni-learning-sidebar { display:none!important; }
+ .fni-learning-workspace { min-height:0; }
+ .fni-learning-topbar { min-height:56px; padding:9px 16px; }
+ .fni-learning-sync-state { display:none; }
+ .fni-learning-main { gap:16px; padding:18px 16px 28px; }
+ .fni-learning-page-heading { align-items:flex-start; padding-bottom:14px; }
+ .fni-learning-page-heading h1 { font-size:24px; }
+ .fni-learning-page-heading p:not(.fni-learning-eyebrow) { font-size:12px; }
+ .fni-learning-mobile-nav { display:flex; align-items:center; gap:6px; width:100%; overflow-x:auto; padding:2px 1px 8px; scrollbar-width:thin; }
+ .fni-learning-mobile-nav button { display:inline-flex; align-items:center; gap:7px; flex:0 0 auto; min-height:36px; padding:8px 12px; border:1px solid #DCE3EC; border-radius:999px; background:#fff; color:#5A6B7C; font:600 11px "Libre Franklin",sans-serif; white-space:nowrap; cursor:pointer; }
+ .fni-learning-mobile-nav button.is-active { border-color:#142842; background:#142842; color:#fff; }
+ .fni-learning-mobile-nav button.is-active svg { color:#E4C27B; }
+}
+@media(max-width:640px) {
+ .fni-learning-topbar { padding-inline:12px; }
+ .fni-learning-breadcrumb { gap:6px; font-size:10px; }
+ .fni-learning-breadcrumb > span:first-child { display:none; }
+ .fni-learning-top-actions { gap:6px; }
+ .fni-learning-create-action { min-height:34px; padding:7px 10px; font-size:10px; }
+ .fni-learning-top-avatar { width:32px; height:32px; }
+ .fni-learning-page-heading { flex-direction:column; align-items:stretch; gap:10px; }
+ .fni-learning-page-heading h1 { font-size:22px; }
+ .fni-learning-heading-create { width:100%; }
+ .fni-learning-main { padding-inline:12px; }
+ .fni-learning-stitch .fni-glass-card { padding:15px!important; }
+}
