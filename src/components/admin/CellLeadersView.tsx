@@ -175,7 +175,12 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
 
         <div className="md:hidden divide-y divide-[#E3E8EF]">
           {filteredLeaders.length === 0 ? (
-            <div className="p-6 text-center text-xs text-[#667085]">No tutors registered yet.</div>
+            <div className="p-6 text-center">
+              <Users className="w-7 h-7 text-[#CBD5E1] mx-auto mb-2" />
+              <p className="text-xs font-semibold text-[#182230]">{searchQuery || statusFilter !== 'All' ? 'No leaders match these filters' : 'No tutors registered yet'}</p>
+              <p className="text-[11px] text-[#667085] mt-1">{searchQuery || statusFilter !== 'All' ? 'Try another name, email, cell or account status.' : 'Registered tutors will appear here.'}</p>
+              {(searchQuery || statusFilter !== 'All') && <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="mt-3 min-h-10 px-3 rounded-xl bg-[#F5F7FA] text-xs font-semibold text-[#142B4A]">Clear filters</button>}
+            </div>
           ) : filteredLeaders.map(leader => {
             const leaderM = meetingReports.filter(m => m.tutorUid === leader.id || m.cellName === leader.cell_name);
             const onTimeCount = leaderM.filter(m => !m.late).length;
@@ -233,10 +238,11 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[#667085]">
                     <Users className="w-8 h-8 text-[#CBD5E1] mx-auto mb-2" />
-                    <p className="text-xs font-semibold">No tutors registered yet.</p>
+                    <p className="text-xs font-semibold text-[#182230]">{searchQuery || statusFilter !== 'All' ? 'No leaders match these filters.' : 'No tutors registered yet.'}</p>
                     <p className="text-[11px] text-[#667085] mt-0.5">
-                      When tutors register via the sign-up page, they will immediately appear in this directory.
+                      {searchQuery || statusFilter !== 'All' ? 'Try a different search or clear the selected filters.' : 'When tutors register via the sign-up page, they will appear in this directory.'}
                     </p>
+                    {(searchQuery || statusFilter !== 'All') && <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="mt-2 min-h-10 px-3 rounded-xl bg-[#F5F7FA] text-xs font-semibold text-[#142B4A]">Clear filters</button>}
                   </td>
                 </tr>
               ) : (
