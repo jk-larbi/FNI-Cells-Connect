@@ -43,7 +43,10 @@ export class AnalyticsService {
     }
 
     const totalCells = scopedCells.length;
+    // Count only real, active leader profiles linked to cells in this user's scope.
+    // Never substitute an assumed leader count when no matching account exists.
     const registeredTutors = allProfiles.filter(profile =>
+      profile.is_active &&
       (profile.role === 'tutor' || profile.role === 'cell_leader') &&
       scopedCells.some(cell =>
         cell.id === profile.cell_id ||
@@ -51,7 +54,7 @@ export class AnalyticsService {
         (profile.cell_name && cell.name.toLowerCase() === profile.cell_name.toLowerCase())
       )
     );
-    const activeCellLeaders = isAdmin ? registeredTutors.length : (scopedCells.filter(c => c.is_active && c.tutorUid).length || 1);
+    const activeCellLeaders = registeredTutors.length;
 
     // Meeting and Evangelism counts
     const meetingReportsSubmitted = scopedMeetings.length;
