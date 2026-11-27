@@ -13,6 +13,7 @@ import {
   History,
   TrendingUp,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
 } from 'lucide-react';
 
