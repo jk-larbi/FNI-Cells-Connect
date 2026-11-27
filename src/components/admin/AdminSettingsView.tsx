@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './adminSecurityStitch.css';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { PushNotificationService } from '../../services/pushNotificationService';
@@ -660,6 +661,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {/* TAB 2: ADMINISTRATOR PROFILE & SECURITY */}
       {activeTab === 'security' && (
         <div className="fni-admin-security-view space-y-6 max-w-5xl w-full min-w-0">
+          <div className="fni-admin-security-top-grid">
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
@@ -676,6 +678,17 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               <div><label className="block font-bold text-[#182230] mb-1">Username</label><div className="flex items-center rounded-xl border border-[#E3E8EF] focus-within:ring-2 focus-within:ring-[#142B4A]/20"><span className="pl-3 text-[#667085] font-bold">@</span><input type="text" required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" value={profileUsername} onChange={e => setProfileUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="your_username" className="w-full p-2.5 rounded-xl focus:outline-none" /></div><span className="text-[10px] text-[#667085] mt-1 block">3–20 characters. Letters, numbers, and underscores only.</span></div>
               <button type="submit" disabled={isSavingProfile} className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold disabled:opacity-60">{isSavingProfile ? 'Saving profile...' : 'Save Profile Details'}</button>
             </form>
+            <div className="fni-admin-security-photo">
+              <div><h4>Administrator profile photo</h4><p>Official portrait displayed in the navigation header, leadership oversight cards and communications.</p></div>
+              <ProfilePhotoUploader
+                currentAvatarUrl={currentUser?.avatar_url}
+                userName={currentUser?.full_name}
+                userRole="Administrator"
+                size="md"
+                onPhotoUploaded={async url => { await updateAvatar(url); }}
+                onPhotoRemoved={async () => { await updateAvatar(''); }}
+              />
+            </div>
           </div>
 
           {/* Email Notifications */}
@@ -697,6 +710,8 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
               <button type="submit" disabled={isSavingEmail} className="px-5 py-2.5 rounded-xl bg-[#142B4A] text-white text-xs font-bold disabled:opacity-60">{isSavingEmail ? 'Saving...' : 'Save Notification Email'}</button>
             </form>
+          </div>
+
           </div>
 
           {/* Device Push Notifications Delivery & Testing (All Devices) */}
@@ -990,29 +1005,6 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
 
           {/* Android Application Updates & Version Distribution */}
           <AppUpdateSettingsSection />
-
-          {/* Administrator Profile Photo */}
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-3">
-            <div>
-              <h3 className="text-sm font-bold text-[#182230]">Administrator Profile Photo</h3>
-              <p className="text-xs text-[#667085] mt-0.5">
-                Official portrait displayed in the navigation header, leadership oversight cards, and communications.
-              </p>
-            </div>
-
-            <ProfilePhotoUploader
-              currentAvatarUrl={currentUser?.avatar_url}
-              userName={currentUser?.full_name}
-              userRole="Administrator"
-              size="md"
-              onPhotoUploaded={async (url) => {
-                await updateAvatar(url);
-              }}
-              onPhotoRemoved={async () => {
-                await updateAvatar('');
-              }}
-            />
-          </div>
 
           <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
