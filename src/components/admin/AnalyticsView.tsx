@@ -94,6 +94,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   const [meetingReports, setMeetingReports] = useState<CellMeetingReport[]>([]);
   const [evangelismReports, setEvangelismReports] = useState<EvangelismReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   // Filters & Interactivity
   const [selectedCell, setSelectedCell] = useState('All');
@@ -129,7 +130,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   // Load primary data
   const loadData = async (showLoader = true) => {
     try {
-      if (showLoader) setIsLoading(true);
+      setLoadError('');
+      if (showLoader && !stats) setIsLoading(true);
       const [dashStats, sysSettings, cellList, trends, cStats, locHistory, meetings, evang] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
@@ -151,6 +153,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
       // Initialize initial live activities from real reports & location records
       buildInitialActivities(locHistory, meetings || [], evang || []);
+    } catch (error) {
+      console.error('Failed to load ministry analytics:', error);
+      setLoadError('Ministry analytics could not be refreshed. Please try again.');
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -392,20 +397,61 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     window.print();
   };
 
-  if (isLoading || !stats) {
+  if (!stats && isLoading) {
     return (
-      <div className="py-24 text-center text-xs text-[#667085] font-medium">
+      <div className="py-24 text-center text-xs text-[#667085] font-medium" role="status" aria-live="polite">
         <div className="inline-block w-8 h-8 border-3 border-[#C6A45A] border-t-transparent rounded-full animate-spin mb-3" />
         <p>Loading ministry analytics...</p>
       </div>
     );
   }
 
+  if (!stats && loadError) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-xs sm:p-8" role="alert" aria-live="polite">
+        <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-rose-600" />
+        <h2 className="text-base font-bold text-[#142B4A]">Analytics are temporarily unavailable</h2>
+        <p className="mt-2 text-sm text-[#667085]">{loadError}</p>
+        <button type="button" onClick={() => void loadData(true)} className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#203D63]">
+          <RefreshCw className="h-4 w-4" /> Try again
+        </button>
+      </div>
+    );
+  }
+
+  // Keep the view out of a null-stats state if a request resolves without usable dashboard data.
+  if (!stats) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-[#E3E8EF] bg-white p-6 text-center shadow-xs sm:p-8" role="status" aria-live="polite">
+        <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-[#C6A45A]" />
+        <h2 className="text-base font-bold text-[#142B4A]">Analytics data is unavailable</h2>
+        <p className="mt-2 text-sm text-[#667085]">No dashboard figures were returned. Try loading the data again.</p>
+        <button type="button" onClick={() => void loadData(true)} className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#203D63]">
+          <RefreshCw className="h-4 w-4" /> Try again
+        </button>
+      </div>
+    );
+  }
+
+  // Capture the guarded dashboard state for nested render callbacks.
+  const analyticsStats = stats;
   const soulTarget = settings?.annualSoulWinningTarget || 5000;
   const targetPercent = Math.min(100, Math.round((displaySouls / soulTarget) * 100));
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {loadError && (
+        <div className="flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 sm:flex-row sm:items-center sm:justify-between" role="alert" aria-live="polite">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+            <div>
+              <p className="text-sm font-semibold text-rose-800">Analytics refresh failed</p>
+              <p className="mt-1 text-xs text-rose-700">Previously loaded figures remain visible. {loadError}</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => void loadData(true)} className="min-h-10 shrink-0 rounded-lg border border-rose-200 bg-white px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100">Try again</button>
+        </div>
+      )}
       {/* TOP CONTEXT & COMMAND BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -506,7 +552,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             <Building className="h-4 w-4 text-[#C6A45A]" />
             <span className="text-[11px] font-semibold">Active Cells</span>
           </div>
-          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{stats.totalCells.toLocaleString()}</p>
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{analyticsStats.totalCells.toLocaleString()}</p>
           <p className="mt-0.5 text-[10px] text-[#667085] dark:text-slate-400">In the cell directory</p>
         </div>
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
@@ -716,7 +762,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center">
                   <span className="text-[10px] font-medium text-slate-300 block">Total Sessions</span>
                   <div className="text-sm sm:text-base font-black text-white mt-0.5">
-                    {stats.meetingReportsSubmitted} Held
+                    {analyticsStats.meetingReportsSubmitted} Held
                   </div>
                   <span className="text-[9px] text-[#C6A45A] font-semibold block mt-0.5">
                     {MONTHS[selectedMonthIdx]} Cycle
@@ -781,7 +827,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                    {stats.meetingReportsSubmitted} fellowship meetings recorded across Ghana cells.
+                    {analyticsStats.meetingReportsSubmitted} fellowship meetings recorded across Ghana cells.
                   </p>
                 </div>
               </div>
@@ -834,7 +880,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     +{displaySouls.toLocaleString()} Souls
                   </div>
                   <div className="text-[10px] text-white/90 font-semibold mt-1">
-                    {stats.peopleReached} gospel reached &bull; {targetPercent}% of goal
+                    {analyticsStats.peopleReached} gospel reached &bull; {targetPercent}% of goal
                   </div>
                 </div>
               </div>
@@ -938,7 +984,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 </div>
                 <div className="flex items-center justify-between mt-2.5 text-[10px]">
                   <span className="font-bold text-slate-600 dark:text-slate-400">
-                    {cellStats.filter(c => c.meetingReportsCount > 0).length} of {cellStats.length || stats.totalCells} cells
+                    {cellStats.filter(c => c.meetingReportsCount > 0).length} of {cellStats.length || analyticsStats.totalCells} cells
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                     {deadlineSettings.meeting.dayName.slice(0, 3)} {deadlineSettings.meeting.deadlineTime} GMT
@@ -967,7 +1013,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
               <div className="mt-4">
                 {(() => {
-                  const followPct = stats.contactsCaptured > 0 ? Math.round((stats.followUpsCompleted / stats.contactsCaptured) * 100) : 0;
+                  const followPct = analyticsStats.contactsCaptured > 0 ? Math.round((analyticsStats.followUpsCompleted / analyticsStats.contactsCaptured) * 100) : 0;
                   return (
                     <>
                       <div className="flex items-center justify-between text-xs font-bold text-[#182230] dark:text-slate-200 mb-1.5">
@@ -982,7 +1028,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                       </div>
                       <div className="flex items-center justify-between mt-2.5 text-[10px]">
                         <span className="font-bold text-slate-600 dark:text-slate-400">
-                          {stats.followUpsCompleted} / {stats.contactsCaptured} contacts
+                          {analyticsStats.followUpsCompleted} / {analyticsStats.contactsCaptured} contacts
                         </span>
                         <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold">
                           Active Care
@@ -1367,7 +1413,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
               {timeDimension === 'ytd' && [
                 { label: `${new Date().getFullYear()} Annual Soul Target`, val: selectedMetric === 'souls' ? soulTarget.toLocaleString() : 'Not configured', delta: selectedMetric === 'souls' ? 'Kingdom benchmark' : 'No target configured for this metric' },
                 { label: `${new Date().getFullYear()} YTD Recorded`, val: currentVal, delta: selectedMetric === 'souls' ? (currentSouls > 0 ? 'Approved outreach reports' : 'Awaiting approved returns') : 'Based on submitted records' },
-                { label: 'Registered Cells', val: stats.totalCells.toString(), delta: 'Active Directory' },
+                { label: 'Registered Cells', val: analyticsStats.totalCells.toString(), delta: 'Active Directory' },
                 { label: 'Remaining Soul Target', val: selectedMetric === 'souls' ? Math.max(0, soulTarget - (typeof currentSouls === 'number' ? currentSouls : 0)).toLocaleString() : '—', delta: selectedMetric === 'souls' ? 'Goal remaining' : 'Only available for souls won' },
               ].map((item, idx) => (
                 <div key={idx} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
