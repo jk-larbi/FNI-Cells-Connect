@@ -415,7 +415,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
             </div>
 
             {/* Performance Overview */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
               <div className="p-3 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
                 <div className="text-[10px] font-semibold text-[#667085]">Cell Name</div>
                 <div className="text-xs font-bold text-[#142B4A] mt-0.5 truncate">
