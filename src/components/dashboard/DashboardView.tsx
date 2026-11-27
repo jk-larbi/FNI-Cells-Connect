@@ -130,7 +130,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const loadData = async (showLoader = true) => {
     try {
       if (showLoader) setIsLoading(true);
-      const [dashStats, systemSettings, queue, sMetrics, cPerf, activeCells] = await Promise.all([
+      const [dashStats, systemSettings, queue, sMetrics, cPerf, activeCells, meetingReports] = await Promise.all([
         AnalyticsService.getDashboardStats('admin'),
         SettingsService.getSettings(),
         ReportService.getUnifiedReviewQueue(),
