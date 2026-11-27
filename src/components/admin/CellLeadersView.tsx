@@ -3,6 +3,7 @@ import { Profile, Cell, CellMeetingReport, EvangelismReport } from '../../types'
 import { AuthService } from '../../services/authService';
 import { CellService } from '../../services/cellService';
 import { ReportService } from '../../services/reportService';
+import { SupabaseService } from '../../services/supabaseService';
 import {
   Users,
   Search,
@@ -34,6 +35,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Suspended'>('All');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Tutor Profile Inspection Modal
   const [selectedLeader, setSelectedLeader] = useState<Profile | null>(null);
@@ -44,61 +46,89 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [pList, cList, mList, eList] = await Promise.all([
-        Promise.resolve(AuthService.getAllProfiles()),
+      setLoadError(null);
+      const [remoteProfiles, cList, mList, eList] = await Promise.all([
+        SupabaseService.getProfiles(),
         CellService.getCells(),
         ReportService.getCellMeetingReports(),
         ReportService.getEvangelismReports(),
       ]);
+      if (remoteProfiles === null) {
+        throw new Error('The live leader directory could not be reached. Check administrator access and your connection, then retry.');
+      }
+
       const activeCells = cList.filter(cell => !cell.is_archived);
-      const activeIds = new Set(activeCells.map(cell => cell.id));
-      const activeTutors = pList.filter(profile =>
+      const activeCellIds = new Set(activeCells.flatMap(cell =>
+        [cell.id, cell.firebase_id].filter((id): id is string => Boolean(id))
+      ));
+      const normalizedName = (value?: string) => (value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const activeTutors = remoteProfiles.filter(profile =>
         (profile.role === 'tutor' || profile.role === 'cell_leader') &&
         activeCells.some(cell =>
-          cell.id === profile.cell_id ||
+          (profile.cell_id && [cell.id, cell.firebase_id].includes(profile.cell_id)) ||
           cell.tutorUid === profile.id ||
-          (profile.cell_name && cell.name.toLowerCase() === profile.cell_name.toLowerCase())
+          (!profile.cell_id && Boolean(profile.cell_name) && normalizedName(cell.name) === normalizedName(profile.cell_name))
         )
       );
       setProfiles(activeTutors);
       setCells(activeCells);
-      setMeetingReports(mList.filter(report => activeIds.has(report.cellId)));
-      setEvangReports(eList.filter(report => activeIds.has(report.cellId)));
+      setMeetingReports(mList.filter(report => activeCellIds.has(report.cellId)));
+      setEvangReports(eList.filter(report => activeCellIds.has(report.cellId)));
+      return activeTutors;
+    } catch (error: any) {
+      console.error('Could not load the live cell leader directory:', error);
+      setLoadError(error?.message || 'The cell leader directory could not be loaded. Check your connection and try again.');
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    void loadData();
+    const handleCloudChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table;
+      if (table === '*' || ['profiles', 'cells', 'cell_meeting_reports', 'evangelism_reports'].includes(table)) {
+        void loadData();
+      }
+    };
+    window.addEventListener('fni:cloud-data-changed', handleCloudChange);
+    return () => window.removeEventListener('fni:cloud-data-changed', handleCloudChange);
   }, []);
 
   const openLeaderProfile = (leader: Profile) => {
     setSelectedLeader(leader);
-    const matchedCell = cells.find(c => c.id === leader.cell_id || c.tutorUid === leader.id) || null;
+    const matchedCell = cells.find(c => (leader.cell_id && [c.id, c.firebase_id].includes(leader.cell_id)) || c.tutorUid === leader.id || c.leader_id === leader.id) || null;
     setLeaderCell(matchedCell);
     setLeaderMeetings(meetingReports.filter(m => m.tutorUid === leader.id || (matchedCell && m.cellId === matchedCell.id)));
     setLeaderEvang(evangReports.filter(e => e.tutorUid === leader.id || (matchedCell && e.cellId === matchedCell.id)));
   };
 
   const handleToggleStatus = async (leader: Profile) => {
-    if (leader.is_active) {
+    const isSuspending = leader.is_active;
+    if (isSuspending) {
       const reason = window.prompt(
         `Enter suspension reason for ${leader.full_name}:`,
         'Administrative review pending'
       );
       if (reason === null) return;
-      await AuthService.suspendTutor(leader.id, reason || 'Administrative review', 'FNI Administrator');
+      const success = await AuthService.suspendTutor(leader.id, reason || 'Administrative review', 'FNI Administrator');
+      if (!success) {
+        window.alert('The account could not be suspended. Check administrator permissions and try again.');
+        return;
+      }
     } else {
       const confirmReactivate = window.confirm(`Reactivate tutor account for ${leader.full_name}?`);
       if (!confirmReactivate) return;
-      await AuthService.reactivateTutor(leader.id, 'FNI Administrator');
+      const success = await AuthService.reactivateTutor(leader.id, 'FNI Administrator');
+      if (!success) {
+        window.alert('The account could not be reactivated. Check administrator permissions and try again.');
+        return;
+      }
     }
-    await loadData();
-    if (selectedLeader?.id === leader.id) {
-      const updated = AuthService.getAllProfiles().find(p => p.id === leader.id);
-      if (updated) setSelectedLeader(updated);
-    }
+    const refreshedProfiles = await loadData();
+    const updated = refreshedProfiles?.find(profile => profile.id === leader.id);
+    if (updated) setSelectedLeader(updated);
   };
 
   // Filtered tutors
@@ -138,6 +168,13 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
           </p>
         </div>
       </div>
+
+      {loadError && (
+        <div role="alert" className="flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 sm:flex-row sm:items-center sm:justify-between">
+          <span>{loadError}</span>
+          <button type="button" onClick={() => void loadData()} disabled={isLoading} className="min-h-9 shrink-0 rounded-lg border border-rose-300 px-3 font-bold hover:bg-rose-100 disabled:opacity-50">{isLoading ? 'Retrying…' : 'Retry'}</button>
+        </div>
+      )}
 
       <section aria-label="Cell leader summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
