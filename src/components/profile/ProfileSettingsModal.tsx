@@ -1357,65 +1357,101 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             SECTION 3: NOTIFICATION PREFERENCES (Requirement 3)
         ========================================================================== */}
         {currentSection === 'notifications' && (
-          <div className="space-y-4">
-            <div className="fni-account-page-intro"><div><p className="fni-account-eyebrow">STAY INFORMED</p><h1>Notification Preferences</h1><p>Choose which ministry updates and reminders you receive.</p></div></div>
-
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Configure which ministry alerts you receive across in-app channels and mobile push notifications. Preferences synchronize across all your devices via Supabase.
-            </p>
-
-            {notifSaveNotice && (
-              <div className="p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>{notifSaveNotice}</span>
-              </div>
-            )}
-
-            {/* Sound & Vibration Interactive Test Controls */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#152338] border border-slate-200/80 dark:border-[#26384d] space-y-3">
-              <h4 className="text-xs font-bold text-[#142B4A] dark:text-white flex items-center gap-1.5">
-                <Volume2 className="w-4 h-4 text-[#C6A45A]" />
-                <span>Sound & Vibration Preview</span>
-              </h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => NotificationAudio.playChime('general')}
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Volume2 className="w-3.5 h-3.5 text-[#C6A45A]" />
-                  <span>Play Sample Chime</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => NotificationAudio.triggerVibration([200, 100, 200])}
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Vibrate className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Test Vibration Pulse</span>
-                </button>
+          <div className="fni-notifications-page space-y-5">
+            <div className="fni-account-page-intro">
+              <div>
+                <p className="fni-account-eyebrow">STAY INFORMED</p>
+                <h1>Notification Preferences</h1>
+                <p>Choose the FNI updates and reminders you receive on your devices.</p>
               </div>
             </div>
 
-            {/* Notification Toggles List */}
-            <div className="rounded-2xl border border-slate-200/80 dark:border-[#26384d] bg-white dark:bg-[#152338] divide-y divide-slate-100 dark:divide-[#26384d] overflow-hidden shadow-xs">
-              
-              {/* In-App Notifications */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">In-App Notifications</div>
-                  <div className="text-[11px] text-slate-400">Alert badges, banners and toast notices while app is open</div>
+            {notifSaveNotice && (
+              <div className="fni-notification-saved" role="status" aria-live="polite">
+                <CheckCircle2 /><span>{notifSaveNotice}</span>
+              </div>
+            )}
+
+            <section className="fni-notification-card">
+              <div className="fni-notification-required">
+                <div className="fni-notification-row-copy">
+                  <strong>Account &amp; security alerts</strong>
+                  <span>Password changes, account access and security-related updates</span>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.inAppNotifications !== false}
-                  onChange={() => handleToggleNotif('inAppNotifications')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
+                <span className="fni-notification-locked"><ShieldCheck /> Always on</span>
+              </div>
+              <p className="fni-notification-footnote">These alerts are required to help protect your account and cannot be disabled.</p>
+            </section>
+
+            <section className="fni-notification-card">
+              <div className="fni-notification-card-heading">
+                <div>
+                  <h2>Ministry notifications</h2>
+                  <p>Choose the ministry activities you want to be notified about.</p>
+                </div>
+                <Bell />
               </div>
 
-              {/* Device Push Notifications Interactive Section */}
-              <div className="p-4 space-y-3 bg-slate-50/60 dark:bg-[#0f1a2a]/60">
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Cell meeting reminders</strong><span>Upcoming cell meetings and scheduled reminders</span></span>
+                <input type="checkbox" checked={notifPrefs.meetings !== false} onChange={() => handleToggleNotif('meetings')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Report submissions and deadlines</strong><span>Weekly cell and evangelism report reminders and cut-off notices</span></span>
+                <input type="checkbox" checked={notifPrefs.reports !== false} onChange={() => handleToggleNotif('reports')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Ministry announcements</strong><span>Official pastoral bulletins and leadership notices</span></span>
+                <input type="checkbox" checked={notifPrefs.adminBroadcasts !== false} onChange={() => handleToggleNotif('adminBroadcasts')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Cell announcements</strong><span>Fellowship updates and cell community notices</span></span>
+                <input type="checkbox" checked={notifPrefs.cellAnnouncements !== false} onChange={() => handleToggleNotif('cellAnnouncements')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Learning Hub updates</strong><span>Assignments, quizzes, teaching materials and learning updates</span></span>
+                <input type="checkbox" checked={notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false} onChange={() => {
+                  const next = { ...notifPrefs, learningMaterials: !(notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false), assignments: !(notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false), quizzes: !(notifPrefs.learningMaterials !== false || notifPrefs.assignments !== false || notifPrefs.quizzes !== false) };
+                  setNotifPrefs(next);
+                  if (currentUser?.id) NotificationService.saveUserNotificationPreferences(currentUser.id, next);
+                  setNotifSaveNotice('Notification preferences saved.');
+                  setTimeout(() => setNotifSaveNotice(null), 3000);
+                }} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Calls &amp; meeting notifications</strong><span>Incoming voice and video calls, group meetings and missed calls</span></span>
+                <input type="checkbox" checked={notifPrefs.calls !== false} onChange={() => handleToggleNotif('calls')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Direct messages</strong><span>Private and group messages in the Communication Hub</span></span>
+                <input type="checkbox" checked={notifPrefs.messages !== false} onChange={() => handleToggleNotif('messages')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Evangelism activity reminders</strong><span>Outreach reminders and scheduled activity notices</span></span>
+                <input type="checkbox" checked={notifPrefs.evangelismReminders !== false} onChange={() => handleToggleNotif('evangelismReminders')} />
+              </label>
+            </section>
+
+            <section className="fni-notification-card">
+              <div className="fni-notification-card-heading">
+                <div>
+                  <h2>Delivery channels</h2>
+                  <p>Manage how notifications reach this device.</p>
+                </div>
+                <Smartphone />
+              </div>
+              <div className="fni-notification-channel-grid">
+                <div className="fni-notification-channel">
+                  <div><strong>Push notifications</strong><span>{isPushEnabled ? 'Enabled on this device' : 'Not enabled on this device'}</span></div>
+                  <span className={`fni-notification-state ${isPushEnabled ? 'is-on' : 'is-off'}`}>{isPushEnabled ? 'On' : 'Off'}</span>
+                </div>
+                <div className="fni-notification-channel fni-notification-channel-disabled">
+                  <div><strong>Email notifications</strong><span>Email delivery preferences are not configured in this account yet.</span></div>
+                  <span className="fni-notification-state is-off">Unavailable</span>
+                </div>
+              </div>
+              <div className="fni-notification-push-panel">
+                              <div className="p-4 space-y-3 bg-slate-50/60 dark:bg-[#0f1a2a]/60">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-1.5">
@@ -1620,205 +1656,42 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   )}
                 </div>
               </div>
+              </div>
+              <label className="fni-notification-toggle-row fni-notification-inapp-row">
+                <span className="fni-notification-row-copy"><strong>In-app notifications</strong><span>Alert badges, banners and notices while FNI Cells Connect is open</span></span>
+                <input type="checkbox" checked={notifPrefs.inAppNotifications !== false} onChange={() => handleToggleNotif('inAppNotifications')} />
+              </label>
+            </section>
 
-              {/* Reports */}
-              <div className="p-4 flex items-center justify-between">
+            <section className="fni-notification-card">
+              <div className="fni-notification-card-heading">
                 <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Reports & Deadlines</div>
-                  <div className="text-[11px] text-slate-400">Submissions, reviews, approvals, and Sunday 6:00 PM cutoff reminders</div>
+                  <h2>Sound &amp; vibration</h2>
+                  <p>Control the alert sounds and vibration on your device.</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.reports !== false}
-                  onChange={() => handleToggleNotif('reports')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
+                <Volume2 />
               </div>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Notification sounds</strong><span>Play an audible chime when an alert arrives</span></span>
+                <input type="checkbox" checked={notifPrefs.soundEnabled !== false} onChange={() => handleToggleNotif('soundEnabled')} />
+              </label>
+              <label className="fni-notification-toggle-row">
+                <span className="fni-notification-row-copy"><strong>Device vibration</strong><span>Vibrate your phone when supported by its system settings</span></span>
+                <input type="checkbox" checked={notifPrefs.vibrationEnabled !== false} onChange={() => handleToggleNotif('vibrationEnabled')} />
+              </label>
+              <div className="fni-notification-test-actions">
+                <button type="button" onClick={() => NotificationAudio.playChime('general')}><Volume2 /> Play sample chime</button>
+                <button type="button" onClick={() => NotificationAudio.triggerVibration([200, 100, 200])}><Vibrate /> Test vibration</button>
+              </div>
+            </section>
 
-              {/* Assignments */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Assignments</div>
-                  <div className="text-[11px] text-slate-400">New assignments, upcoming deadlines and grading completions</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.assignments !== false}
-                  onChange={() => handleToggleNotif('assignments')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Quizzes */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Quizzes</div>
-                  <div className="text-[11px] text-slate-400">Quiz publishing, availability windows and score releases</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.quizzes !== false}
-                  onChange={() => handleToggleNotif('quizzes')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Learning Materials */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Learning Materials & Notes</div>
-                  <div className="text-[11px] text-slate-400">Weekly teaching notes and ministerial outlines</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.learningMaterials !== false}
-                  onChange={() => handleToggleNotif('learningMaterials')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Cell Meetings */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Cell Meetings & Reminders</div>
-                  <div className="text-[11px] text-slate-400">Weekly meeting reminders (30m before & start time)</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.meetings !== false}
-                  onChange={() => handleToggleNotif('meetings')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Evangelism Reminders */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Evangelism Activity Reminders</div>
-                  <div className="text-[11px] text-slate-400">Outreach reminders (30m before & start time) with offline alarms</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.evangelismReminders !== false}
-                  onChange={() => handleToggleNotif('evangelismReminders')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Cell Announcements */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Cell Announcements</div>
-                  <div className="text-[11px] text-slate-400">New member notices and fellowship updates</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.cellAnnouncements !== false}
-                  onChange={() => handleToggleNotif('cellAnnouncements')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* 1-on-1 Messages */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Direct 1-on-1 Messages</div>
-                  <div className="text-[11px] text-slate-400">Private messages in the Communication Hub</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.messages !== false}
-                  onChange={() => handleToggleNotif('messages')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Group Messages */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Group Chats & Cell Channels</div>
-                  <div className="text-[11px] text-slate-400">Messages sent in fellowship cells and group spaces</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.groupMessages !== false}
-                  onChange={() => handleToggleNotif('groupMessages')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Voice & Video Calls */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Voice & Video Calls</div>
-                  <div className="text-[11px] text-slate-400">Incoming calls, group meetings, and missed calls (Channel: FNI Calls)</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.calls !== false}
-                  onChange={() => handleToggleNotif('calls')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Sound & Chimes */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Notification Sound & Chimes</div>
-                  <div className="text-[11px] text-slate-400">Audible synthesizer tone when alerts arrive</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.soundEnabled !== false}
-                  onChange={() => handleToggleNotif('soundEnabled')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Haptic Vibration */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Device Vibration</div>
-                  <div className="text-[11px] text-slate-400">Vibrate mobile phone when permitted by system profile</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.vibrationEnabled !== false}
-                  onChange={() => handleToggleNotif('vibrationEnabled')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Administrative Broadcasts */}
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#182230] dark:text-white">Administrative Broadcasts</div>
-                  <div className="text-[11px] text-slate-400">Official pastoral bulletins and high-importance leadership notices</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.adminBroadcasts !== false}
-                  onChange={() => handleToggleNotif('adminBroadcasts')}
-                  className="w-4 h-4 rounded text-[#142B4A] focus:ring-[#C6A45A] cursor-pointer"
-                />
-              </div>
-
-              {/* Critical Security Alerts (Enforced) */}
-              <div className="p-4 flex items-center justify-between bg-amber-500/5 dark:bg-amber-500/10">
-                <div className="flex items-start gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-[#182230] dark:text-white flex items-center gap-1.5">
-                      <span>Security & Authentication Alerts</span>
-                      <span className="px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[9px] font-bold">
-                        Enforced
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-400">Password changes, deactivation updates and unrecognized device logins</div>
-                  </div>
-                </div>
-                <span className="text-[11px] font-bold text-slate-400">Always On</span>
-              </div>
+            <div className="fni-notification-save-area">
+              <p>Changes are saved automatically to your notification preferences.</p>
+              <button type="button" onClick={() => {
+                if (currentUser?.id) NotificationService.saveUserNotificationPreferences(currentUser.id, notifPrefs);
+                setNotifSaveNotice('Notification preferences saved.');
+                setTimeout(() => setNotifSaveNotice(null), 3000);
+              }}><Save /> Save Changes</button>
             </div>
           </div>
         )}
