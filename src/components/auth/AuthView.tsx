@@ -248,7 +248,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
   };
 
   return (
-    <div className="fni-auth-portal min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
+    <div data-auth-view={currentView} className="fni-auth-portal min-h-screen bg-white text-[#182230] flex flex-col justify-between items-center px-4 py-8 sm:py-12 relative overflow-hidden font-sans selection:bg-[#C6A45A]/20 selection:text-[#142B4A]">
       {/* Creative Background Celestial Radial Rings */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden animate-circle-drift">
         {/* 1. Central Breathing Radiant Aura */}
@@ -291,6 +291,12 @@ export const AuthView: React.FC<AuthViewProps> = ({
         </div>
       </div>
 
+      {currentView === 'admin-login' && (
+        <header className="fni-admin-signin-mobile-header">
+          <span>FNI</span><span className="fni-admin-signin-mobile-divider" aria-hidden="true" /><span>CELLS CONNECT</span>
+        </header>
+      )}
+
       {/* Top Header / Back Navigation */}
       <div
         className={`w-full max-w-md mx-auto flex items-center justify-between z-10 mb-2 transition-all duration-700 ${
@@ -322,10 +328,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
       </div>
 
       {/* Main Centered Container */}
-      <main className="w-full max-w-md mx-auto flex flex-col items-center text-center my-auto z-10">
+      <main className="fni-auth-main w-full max-w-md mx-auto flex flex-col items-center text-center my-auto z-10">
         {/* Official FNI Ministry Logo with Floating Animation & Glow */}
         <div
-          className={`relative mb-5 transition-all duration-700 transform ${
+          className={`fni-auth-logo relative mb-5 transition-all duration-700 transform ${
             isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
           }`}
         >
@@ -357,7 +363,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
         )}
 
         {/* Card Frame for Current Auth Mode */}
-        <div className="w-full bg-white/90 backdrop-blur-md border border-[#E3E8EF] shadow-2xl rounded-3xl p-6 sm:p-7 transition-all">
+        <div className="fni-auth-card w-full bg-white/90 backdrop-blur-md border border-[#E3E8EF] shadow-2xl rounded-3xl p-6 sm:p-7 transition-all">
           {/* ============================================================ */}
           {/* 1. TUTOR REGISTRATION FORM (Strict Supabase Auth)            */}
           {/* ============================================================ */}
@@ -717,24 +723,26 @@ export const AuthView: React.FC<AuthViewProps> = ({
           {/* 4. ADMINISTRATOR LOGIN FORM (Strict Supabase Auth)           */}
           {/* ============================================================ */}
           {currentView === 'admin-login' && (
-            <div className="space-y-4">
-              <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#142B4A]/5 border border-[#C6A45A]/30 text-[10px] font-bold text-[#142B4A] uppercase tracking-wider mb-1.5">
-                  <Shield className="w-3 h-3 text-[#C6A45A]" />
-                  <span>Administrative Verification</span>
-                </div>
-                <h2 className="text-lg font-bold text-[#142B4A]">
-                  Administrator Log In
-                </h2>
-                <p className="text-xs text-[#667085] mt-0.5">
-                  Sign in with your verified administrator credentials.
-                </p>
+            <div className="fni-admin-signin-form space-y-4">
+              <div className="fni-admin-signin-brand flex items-center gap-3">
+                <span className="font-bold text-2xl tracking-tight text-[#142842]">FNI</span>
+                <span className="h-5 w-px bg-[#DCE3EC]" aria-hidden="true" />
+                <span className="text-xs font-semibold tracking-wider text-[#8E6C23] uppercase">Cells Connect</span>
+              </div>
+              <div className="border-b border-[#DCE3EC] pb-4 text-left">
+                <span className="fni-admin-signin-eyebrow">FNI ADMIN · SIGN IN</span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#142842]">Welcome back.</h2>
+                <p className="text-sm text-[#5A6B7C] mt-1">Sign in to your FNI administrator workspace.</p>
+              </div>
+              <div className="fni-admin-signin-mission rounded-xl border border-[#DCE3EC] bg-[#F7F9FC] p-4 flex flex-col gap-1 text-left">
+                <span className="font-semibold text-sm text-[#142842]">Forerunners Network International</span>
+                <span className="text-sm text-[#5A6B7C]">A connected network. A shared mission.</span>
               </div>
 
               <form onSubmit={handleAdminLogin} className="space-y-3.5">
                 <div className="text-left">
                   <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                    Administrator Username <span className="text-[#C74646]">*</span>
+                    Username or email <span className="text-[#C74646]">*</span>
                   </label>
                   <div className="relative group">
                     <Mail className="w-4 h-4 text-[#C6A45A] absolute left-3 top-3 group-focus-within:scale-110 transition-transform" />
@@ -744,7 +752,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       autoComplete="username"
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      placeholder="e.g. fni_admin"
+                      placeholder="Enter your administrator username"
                       className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E3E8EF] rounded-xl text-xs text-[#182230] placeholder-[#98A2B3] focus:border-[#142B4A] focus:ring-2 focus:ring-[#C6A45A]/30 outline-none transition-all"
                     />
                   </div>
@@ -781,7 +789,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group active:scale-[0.99] border border-[#142B4A]"
                 >
                   <Shield className="w-4 h-4 text-[#C6A45A]" />
-                  <span>{isLoading ? 'Verifying with Supabase...' : 'Log In as Administrator'}</span>
+                  <span>{isLoading ? 'Signing in...' : 'Sign in'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </form>
@@ -797,8 +805,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
       {/* Subtle Minimal Footer Attribution */}
       <footer className="w-full text-center pb-2 z-10 pt-4">
-        <p className="text-[11px] font-semibold tracking-wider text-[#667085]/70 uppercase">
-          Forerunners Network International &bull; For Internal Ministry Use Only
+        <p className="fni-auth-footer-copy text-[11px] font-semibold tracking-wider text-[#667085]/70 uppercase">
+          {currentView === 'admin-login'
+            ? 'Administrator access is provided by your ministry. Need an account? Contact your FNI leadership.'
+            : 'Forerunners Network International • For Internal Ministry Use Only'}
         </p>
       </footer>
     </div>
