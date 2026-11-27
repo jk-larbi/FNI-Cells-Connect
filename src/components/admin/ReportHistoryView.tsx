@@ -191,8 +191,8 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
       r.submittedAt,
       r.late ? 'Late Submission' : 'On Time',
       r.status,
-      r.reportType === 'meeting' ? ((r as CellMeetingReport).attendance ?? 0) : `${(r as EvangelismReport).conversions ?? 0} souls`,
-      r.reportType === 'meeting' ? ((r as CellMeetingReport).offering ?? 0) : 0,
+      r.reportType === 'meeting' ? ((r as CellMeetingReport).attendance ?? '—') : `${(r as EvangelismReport).conversions ?? '—'} souls`,
+      r.reportType === 'meeting' ? ((r as CellMeetingReport).offering ?? '—') : '',
       `"${(r.reviewedByName || '').replace(/"/g, '""')}"`,
       `"${(r.reviewerComment || '').replace(/"/g, '""')}"`,
     ]);
@@ -813,12 +813,12 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
                   <div className="text-[10px] uppercase font-bold text-[#667085]">Metrics</div>
                   <div className="font-bold text-[#182230] dark:text-white mt-0.5">
                     {inspectingReport.reportType === 'meeting'
-                      ? `${(inspectingReport as CellMeetingReport).attendance ?? 0} attendees`
-                      : `${(inspectingReport as EvangelismReport).conversions ?? 0} souls won`}
+                      ? `${(inspectingReport as CellMeetingReport).attendance ?? '—'} attendees`
+                      : `${(inspectingReport as EvangelismReport).conversions ?? '—'} souls won`}
                   </div>
                 </div>
 
-                {inspectingReport.reportType === 'meeting' && (inspectingReport as CellMeetingReport).offering !== undefined && (
+                {inspectingReport.reportType === 'meeting' && (inspectingReport as CellMeetingReport).offering != null && (
                   <div>
                     <div className="text-[10px] uppercase font-bold text-[#667085]">Offering Remitted</div>
                     <div className="font-bold text-[#182230] dark:text-white mt-0.5">
