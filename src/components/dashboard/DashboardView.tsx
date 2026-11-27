@@ -240,42 +240,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Fast administrator actions: direct routes into existing workflows */}
-      <section aria-label="Quick administrator actions" className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-extrabold text-[#142B4A]">Quick actions</h2>
-            <p className="text-[11px] text-[#667085] mt-0.5">Go straight to the tasks you manage most.</p>
+      {/* Administrator action centre: make outstanding work the first thing visible. */}
+      <section className="overflow-hidden rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-[#E3E8EF] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#A88743]">Your action centre</p>
+            <h2 className="mt-1 text-base font-extrabold tracking-tight text-[#142B4A]">What needs your attention?</h2>
+            <p className="mt-1 text-xs text-[#667085]">Start with pending decisions, then check cell reporting and leadership.</p>
           </div>
-          <span className="hidden sm:inline-flex items-center rounded-full border border-[#E3E8EF] bg-white px-3 py-1 text-[10px] font-semibold text-[#667085]">Administrator tools</span>
+          <button
+            type="button"
+            onClick={() => onNavigateToTab('report-review')}
+            className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#142B4A] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#203D63] focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/50 sm:w-auto"
+          >
+            <FileCheck className="h-4 w-4 text-[#C6A45A]" />
+            Review submissions
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-          <button type="button" onClick={() => onNavigateToTab('report-review')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
-            <span className="flex items-center justify-between gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-[#A66B12]"><FileCheck className="h-4 w-4" /></span>
-              <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-800">{stats.awaitingReviewCount} pending</span>
-            </span>
-            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">Review reports</span>
-            <span className="mt-0.5 block text-[10px] text-[#667085]">Approve or return submissions</span>
+        <div className="grid grid-cols-2 divide-x divide-y divide-[#E3E8EF] sm:grid-cols-4 sm:divide-y-0">
+          <button type="button" onClick={() => onNavigateToTab('report-review')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
+            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Awaiting review</span>
+            <span className="mt-1 block text-2xl font-black tabular-nums text-[#B7791F]">{stats.awaitingReviewCount}</span>
+            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">Reports to decide</span>
           </button>
-          <button type="button" onClick={() => onNavigateToTab('cell-management')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#24527A]"><Building className="h-4 w-4" /></span>
-            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">Manage cells</span>
-            <span className="mt-0.5 block text-[10px] text-[#667085]">{stats.totalCells} registered cells</span>
+          <button type="button" onClick={() => onNavigateToTab('cell-management')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
+            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Missing reports</span>
+            <span className="mt-1 block text-2xl font-black tabular-nums text-[#C74646]">{stats.missingCellsCount}</span>
+            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">Cells to follow up</span>
           </button>
-          <button type="button" onClick={() => onNavigateToTab('cell-leaders')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Users className="h-4 w-4" /></span>
-            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">Cell leaders</span>
-            <span className="mt-0.5 block text-[10px] text-[#667085]">{stats.activeCellLeaders} active leaders</span>
+          <button type="button" onClick={() => onNavigateToTab('cell-management')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
+            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Registered cells</span>
+            <span className="mt-1 block text-2xl font-black tabular-nums text-[#142B4A]">{stats.totalCells}</span>
+            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">Open cell directory</span>
           </button>
-          <button type="button" onClick={() => onNavigateToTab('analytics')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><TrendingUp className="h-4 w-4" /></span>
-            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">View analytics</span>
-            <span className="mt-0.5 block text-[10px] text-[#667085]">Track ministry progress</span>
+          <button type="button" onClick={() => onNavigateToTab('cell-leaders')} className="min-w-0 p-4 text-left transition-colors hover:bg-[#F8FAFC] focus:outline-none focus-visible:bg-[#F8FAFC]">
+            <span className="block text-[10px] font-bold uppercase tracking-wide text-[#667085]">Active leaders</span>
+            <span className="mt-1 block text-2xl font-black tabular-nums text-[#23845B]">{stats.activeCellLeaders}</span>
+            <span className="mt-1 block text-[10px] font-semibold text-[#667085]">View leadership</span>
           </button>
         </div>
       </section>
 
+      <details className="group rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-bold text-[#142B4A] [&::-webkit-details-marker]:hidden">
+          <span className="flex min-w-0 items-center gap-2"><Compass className="h-4 w-4 shrink-0 text-[#A88743]" /> Ministry vision and annual target</span>
+          <span className="text-[11px] font-semibold text-[#667085] group-open:hidden">Show details</span>
+          <span className="hidden text-[11px] font-semibold text-[#667085] group-open:inline">Hide details</span>
+        </summary>
+        <div className="border-t border-[#E3E8EF] p-3 sm:p-4">
       {/* Vision, Mission & Annual Soul-Winning Target Surface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Vision & Mission Card */}
@@ -330,6 +343,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+        </div>
+      </details>
+
+      <details className="group rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-bold text-[#142B4A] [&::-webkit-details-marker]:hidden">
+          <span className="flex min-w-0 items-center gap-2"><TrendingUp className="h-4 w-4 shrink-0 text-[#A88743]" /> Detailed performance metrics</span>
+          <span className="text-[11px] font-semibold text-[#667085] group-open:hidden">Show 12 metrics</span>
+          <span className="hidden text-[11px] font-semibold text-[#667085] group-open:inline">Hide metrics</span>
+        </summary>
+        <div className="border-t border-[#E3E8EF] p-3 sm:p-4">
       {/* 13 REAL METRICS GRID (Specified in Prompt Section 5) */}
       <div>
         <h3 className="text-xs font-bold text-[#667085] uppercase tracking-wider mb-3">
@@ -461,6 +484,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+        </div>
+      </details>
 
       {/* Real-time Leadership Alerts & Device Push Notification Readiness */}
       <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
