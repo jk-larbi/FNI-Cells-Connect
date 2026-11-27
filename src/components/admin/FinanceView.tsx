@@ -31,6 +31,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
   const [periodFilter, setPeriodFilter] = useState<'weekly' | 'monthly' | 'quarterly' | 'annual'>('weekly');
   const [selectedCurrency, setSelectedCurrency] = useState<'ALL' | 'GHS' | 'GBP' | 'USD'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadFinanceData = async (showLoader = true) => {
     try {
@@ -41,8 +42,10 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
       ]);
       setAggregation(agg);
       setRecords(recs);
+      setLoadError(null);
     } catch (err) {
       console.error('Failed to load finance data:', err);
+      setLoadError('Financial records could not be refreshed. Previously loaded records remain visible.');
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -158,6 +161,31 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
         </div>
       </div>
 
+      {(isLoading || loadError) && (
+        <div
+          role={loadError ? 'alert' : 'status'}
+          aria-live="polite"
+          className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${loadError ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}
+        >
+          <div className="flex items-start gap-2">
+            {loadError ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" /> : <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />}
+            <div>
+              <p className={`text-sm font-semibold ${loadError ? 'text-rose-800' : 'text-slate-700'}`}>
+                {loadError ? 'Financial records could not be refreshed' : 'Loading financial records'}
+              </p>
+              <p className={`mt-1 text-xs ${loadError ? 'text-rose-700' : 'text-slate-500'}`}>
+                {loadError || 'The latest offering totals and ledger entries are being retrieved.'}
+              </p>
+            </div>
+          </div>
+          {loadError && (
+            <Button type="button" variant="outline" size="sm" onClick={() => void loadFinanceData()} className="shrink-0">
+              Try again
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
@@ -255,7 +283,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             ))
           ) : (
             <div className="col-span-3 text-center py-8 text-xs text-slate-400">
-              No cell offering contributions recorded yet.
+              {isLoading ? 'Loading cell offering totals...' : loadError ? 'Cell offering totals could not be retrieved.' : 'No cell offering contributions recorded yet.'}
             </div>
           )}
         </div>
@@ -274,7 +302,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
 
         <div className="md:hidden divide-y divide-slate-100">
           {records.length === 0 ? (
-            <p className="p-6 text-center text-sm text-slate-500">No individual offering entries recorded yet.</p>
+            <p className="p-6 text-center text-sm text-slate-500">{isLoading ? 'Loading offering entries...' : loadError ? 'Offering entries could not be retrieved.' : 'No individual offering entries recorded yet.'}</p>
           ) : records.map(rec => (
             <article key={rec.id} className="p-4 space-y-2">
               <div className="flex items-start justify-between gap-3">
@@ -310,7 +338,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
               {records.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400">
-                    No individual offering entries recorded yet.
+                    {isLoading ? 'Loading offering entries...' : loadError ? 'Offering entries could not be retrieved.' : 'No individual offering entries recorded yet.'}
                   </td>
                 </tr>
               ) : (
