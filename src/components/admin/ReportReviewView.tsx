@@ -896,29 +896,29 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <button
               type="button"
               onClick={() => setIsBulkApproveModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-[#23845B] hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="min-h-10 flex-1 justify-center px-3 sm:px-4 py-2 rounded-xl bg-[#23845B] hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer sm:flex-none"
             >
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>Bulk Accept</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsBulkReturnModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-[#C74646] hover:bg-rose-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="min-h-10 flex-1 justify-center px-3 sm:px-4 py-2 rounded-xl bg-[#C74646] hover:bg-rose-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer sm:flex-none"
             >
-              <AlertCircle className="w-4 h-4" />
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span>Bulk Decline</span>
             </button>
 
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
-              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white cursor-pointer"
+              className="min-h-10 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white cursor-pointer"
             >
               Clear Selection
             </button>
