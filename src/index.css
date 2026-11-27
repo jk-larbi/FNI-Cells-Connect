@@ -3038,3 +3038,114 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-admin-stitch-shell .fni-edit-cell-actions { display:grid; grid-template-columns:1fr; }
   .fni-admin-stitch-shell .fni-edit-cell-actions button { min-height:48px; }
 }
+
+
+/* Evangelism & follow-ups — Stitch desktop and mobile */
+.fni-admin-stitch-shell .fni-evangelism-stitch {
+  width:100%; max-width:1280px; margin-inline:auto; color:#142842;
+  font-family:"Source Sans 3",system-ui,sans-serif;
+}
+.fni-admin-stitch-shell .fni-evangelism-stitch h1,
+.fni-admin-stitch-shell .fni-evangelism-stitch h2,
+.fni-admin-stitch-shell .fni-evangelism-stitch h3,
+.fni-admin-stitch-shell .fni-evangelism-stitch button,
+.fni-admin-stitch-shell .fni-evangelism-stitch label {
+  font-family:"Libre Franklin",system-ui,sans-serif;
+}
+.fni-admin-stitch-shell .fni-evangelism-heading h1 {
+  margin:0; color:#142842; font:700 clamp(28px,3vw,36px)/1.2 "Libre Franklin",sans-serif;
+  letter-spacing:-.035em;
+}
+.fni-admin-stitch-shell .fni-evangelism-heading p:last-child { margin:7px 0 0; color:#5A6B7C; font-size:15px; }
+.fni-admin-stitch-shell .fni-evangelism-eyebrow {
+  margin:0 0 7px; color:#8E6C23; font:600 10px/15px "Libre Franklin",sans-serif;
+  letter-spacing:.1em;
+}
+.fni-admin-stitch-shell .fni-evangelism-primary-action,
+.fni-admin-stitch-shell .fni-evangelism-secondary-action {
+  min-height:42px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:9px 16px; border-radius:999px; font:600 12px/18px "Libre Franklin",sans-serif;
+  transition:background-color 120ms ease-out,border-color 120ms ease-out;
+}
+.fni-admin-stitch-shell .fni-evangelism-primary-action { background:#142842; color:#fff; }
+.fni-admin-stitch-shell .fni-evangelism-primary-action:hover { background:#354863; }
+.fni-admin-stitch-shell .fni-evangelism-primary-action svg { color:#EEC068; width:16px; height:16px; }
+.fni-admin-stitch-shell .fni-evangelism-secondary-action { border:1px solid #DCE3EC; background:#fff; color:#142842; }
+.fni-admin-stitch-shell .fni-evangelism-secondary-action:hover { background:#EEF2F7; }
+.fni-admin-stitch-shell .fni-evangelism-secondary-action svg { width:15px; height:15px; color:#8E6C23; }
+.fni-admin-stitch-shell .fni-evangelism-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.fni-admin-stitch-shell .fni-evangelism-metric {
+  min-width:0; padding:17px; border:1px solid #DCE3EC; border-radius:15px; background:#fff;
+  box-shadow:0 1px 2px rgba(20,40,66,.035);
+}
+.fni-admin-stitch-shell .fni-evangelism-metric-highlight { background:#FDF8E8; border-color:rgba(142,108,35,.24); }
+.fni-admin-stitch-shell .fni-evangelism-metric-label {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  color:#5A6B7C; font:600 11px/16px "Libre Franklin",sans-serif;
+}
+.fni-admin-stitch-shell .fni-evangelism-metric-label svg { width:17px; height:17px; color:#8E6C23; }
+.fni-admin-stitch-shell .fni-evangelism-metric strong {
+  display:block; margin-top:12px; color:#142842; font:700 28px/34px "Libre Franklin",sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+.fni-admin-stitch-shell .fni-evangelism-metric:first-child strong { color:#1F6E43; }
+.fni-admin-stitch-shell .fni-evangelism-metric small { display:block; margin-top:4px; color:#7A8999; font-size:12px; }
+.fni-admin-stitch-shell .fni-evangelism-stitch > .bg-white,
+.fni-admin-stitch-shell .fni-evangelism-stitch > .rounded-2xl { border-color:#DCE3EC; }
+.fni-admin-stitch-shell .fni-evangelism-stitch input:focus-visible,
+.fni-admin-stitch-shell .fni-evangelism-stitch select:focus-visible,
+.fni-admin-stitch-shell .fni-evangelism-stitch button:focus-visible {
+  outline:2px solid #8E6C23; outline-offset:2px;
+}
+.fni-admin-stitch-shell .fni-evangelism-desktop-table { overflow-x:auto; }
+.fni-admin-stitch-shell .fni-evangelism-desktop-table table { min-width:900px; }
+.fni-admin-stitch-shell .fni-evangelism-desktop-table thead { background:#EEF2F7; }
+.fni-admin-stitch-shell .fni-evangelism-mobile-list { display:none; }
+.fni-admin-stitch-shell .fni-evangelism-inspection-panel {
+  max-width:760px; border-radius:18px; border-color:#DCE3EC; color:#142842;
+  font-family:"Source Sans 3",system-ui,sans-serif;
+}
+.fni-admin-stitch-shell .fni-evangelism-inspection-panel h3,
+.fni-admin-stitch-shell .fni-evangelism-inspection-panel button { font-family:"Libre Franklin",sans-serif; }
+@media(max-width:767px) {
+  .fni-admin-stitch-shell .fni-evangelism-stitch { padding-bottom:12px; }
+  .fni-admin-stitch-shell .fni-evangelism-stitch > div:first-child { align-items:stretch; gap:14px; }
+  .fni-admin-stitch-shell .fni-evangelism-stitch > div:first-child > div:first-child { min-width:0; }
+  .fni-admin-stitch-shell .fni-evangelism-stitch > div:first-child > div:last-child { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .fni-admin-stitch-shell .fni-evangelism-primary-action { grid-column:1/-1; min-height:46px; }
+  .fni-admin-stitch-shell .fni-evangelism-secondary-action { min-width:0; padding-inline:10px; }
+  .fni-admin-stitch-shell .fni-evangelism-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .fni-admin-stitch-shell .fni-evangelism-metric { padding:13px; }
+  .fni-admin-stitch-shell .fni-evangelism-metric:last-child { grid-column:1/-1; }
+  .fni-admin-stitch-shell .fni-evangelism-metric strong { margin-top:9px; font-size:24px; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-list { display:flex; flex-direction:column; gap:10px; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-list-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:2px 1px 4px; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-list-heading h2 { margin:0; color:#142842; font:600 16px/22px "Libre Franklin",sans-serif; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-list-heading p { margin:3px 0 0; color:#7A8999; font-size:12px; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-card { padding:14px; border:1px solid #DCE3EC; border-radius:15px; background:#fff; box-shadow:0 1px 2px rgba(20,40,66,.025); }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-card-top { display:flex; align-items:center; gap:10px; min-width:0; }
+  .fni-admin-stitch-shell .fni-evangelism-avatar { display:flex; width:40px; height:40px; flex:0 0 40px; align-items:center; justify-content:center; border-radius:12px; background:#142842; color:#EEC068; font:700 12px "Libre Franklin",sans-serif; }
+  .fni-admin-stitch-shell .fni-evangelism-person { display:flex; min-width:0; flex:1; flex-direction:column; gap:3px; }
+  .fni-admin-stitch-shell .fni-evangelism-person strong { overflow:hidden; color:#142842; font:600 13px "Libre Franklin",sans-serif; text-overflow:ellipsis; white-space:nowrap; }
+  .fni-admin-stitch-shell .fni-evangelism-person span { color:#7A8999; font-size:12px; }
+  .fni-admin-stitch-shell .fni-evangelism-status,.fni-admin-stitch-shell .fni-evangelism-type { display:inline-flex; align-items:center; padding:4px 8px; border-radius:999px; font:600 10px/14px "Libre Franklin",sans-serif; white-space:nowrap; }
+  .fni-admin-stitch-shell .fni-evangelism-status.is-approved { background:#DCF2E5; color:#0B3D22; }
+  .fni-admin-stitch-shell .fni-evangelism-status.is-correction { background:#FFDAD6; color:#93000A; }
+  .fni-admin-stitch-shell .fni-evangelism-status.is-pending { background:#FDF8E8; color:#5D4200; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:12px; color:#5A6B7C; font-size:11px; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-meta > span { display:inline-flex; align-items:center; gap:4px; min-width:0; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-meta svg { width:13px; height:13px; flex:0 0 auto; color:#8E6C23; }
+  .fni-admin-stitch-shell .fni-evangelism-type.is-outreach { background:#FDF8E8; color:#5D4200; }
+  .fni-admin-stitch-shell .fni-evangelism-type.is-meeting { background:#E4ECF7; color:#142842; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:13px; padding:12px 0; border-top:1px solid #E8EDF3; border-bottom:1px solid #E8EDF3; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-stats > div { display:flex; flex-direction:column; gap:3px; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-stats strong { color:#1F6E43; font:700 19px "Libre Franklin",sans-serif; font-variant-numeric:tabular-nums; }
+  .fni-admin-stitch-shell .fni-evangelism-mobile-stats small { color:#7A8999; font-size:11px; }
+  .fni-admin-stitch-shell .fni-evangelism-view-report { display:flex; width:100%; min-height:44px; align-items:center; justify-content:space-between; margin-top:8px; padding:8px 2px 0; color:#142842; font:600 11px "Libre Franklin",sans-serif; }
+  .fni-admin-stitch-shell .fni-evangelism-view-report svg { width:15px; height:15px; color:#8E6C23; }
+  .fni-admin-stitch-shell .fni-evangelism-empty { display:flex; min-height:120px; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; border:1px dashed #DCE3EC; border-radius:14px; color:#7A8999; text-align:center; font-size:12px; }
+  .fni-admin-stitch-shell .fni-evangelism-empty strong { color:#142842; font:600 13px "Libre Franklin",sans-serif; }
+  .fni-admin-stitch-shell .fni-evangelism-desktop-table { display:none; }
+  .fni-admin-stitch-shell .fni-evangelism-inspection-overlay { align-items:stretch; padding:0; }
+  .fni-admin-stitch-shell .fni-evangelism-inspection-panel { width:100%; max-width:none; max-height:100dvh; padding:18px; border:0; border-radius:0; }
+}
