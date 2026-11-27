@@ -23,6 +23,10 @@ import {
   UserCheck,
 } from 'lucide-react';
 
+const MaterialSymbol: React.FC<{ name: string; className?: string }> = ({ name, className = '' }) => (
+  <span className={`material-symbols-outlined ${className}`} aria-hidden="true">{name}</span>
+);
+
 interface CellLeadersViewProps {
   onBack?: () => void;
 }
@@ -150,21 +154,26 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
 
   const activeLeaderCount = profiles.filter(leader => leader.is_active).length;
   const suspendedLeaderCount = profiles.length - activeLeaderCount;
+  const unassignedCellCount = cells.filter(cell => !profiles.some(leader =>
+    cell.tutorUid === leader.id || cell.leader_id === leader.id ||
+    (leader.cell_id && [cell.id, cell.firebase_id].includes(leader.cell_id))
+  )).length;
   const leadersWithReportsCount = profiles.filter(leader =>
     meetingReports.some(report => report.tutorUid === leader.id || report.cellName === leader.cell_name) ||
     evangReports.some(report => report.tutorUid === leader.id || report.cellName === leader.cell_name)
   ).length;
 
   return (
-    <div className="space-y-4 sm:space-y-6 min-w-0">
+    <div className="fni-cell-leaders-stitch space-y-4 sm:space-y-6 min-w-0">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-[#142B4A] tracking-tight">
+          <div className="fni-leaders-eyebrow">ADMIN WORKSPACE</div>
+          <h1 className="text-xl font-black text-[#142842] tracking-tight">
             Cell leaders
           </h1>
           <p className="text-xs text-[#667085] mt-0.5">
-            Find a leader, check account status and open their report history.
+            Assigned tutors, reporting cadence, and regional coverage.
           </p>
         </div>
       </div>
@@ -178,14 +187,14 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
 
       <section aria-label="Cell leader summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
-          <p className="text-[11px] font-semibold text-[#667085]">Leaders listed</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : profiles.length}</p>
-          <p className="mt-0.5 text-[10px] text-[#667085]">Linked to active cells</p>
-        </div>
-        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
-          <p className="text-[11px] font-semibold text-[#667085]">Active accounts</p>
+          <p className="text-[11px] font-semibold text-[#667085]">Active leaders</p>
           <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : activeLeaderCount}</p>
           <p className="mt-0.5 text-[10px] text-[#667085]">Currently enabled</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <p className="text-[11px] font-semibold text-[#667085]">Unassigned cells</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : unassignedCellCount}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Cells without a leader</p>
         </div>
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
           <p className="text-[11px] font-semibold text-[#667085]">Suspended</p>
@@ -202,7 +211,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
       {/* Filter and Search Bar */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E3E8EF] shadow-sm flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
         <div className="relative w-full min-w-0 flex-1">
-          <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-3" />
+          <MaterialSymbol name="search" className="absolute left-3.5 top-3 text-[18px] text-[#5A6B7C]" />
           <input
             type="text"
             value={searchQuery}
@@ -243,7 +252,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
         <div className="md:hidden divide-y divide-[#E3E8EF]">
           {filteredLeaders.length === 0 ? (
             <div className="p-6 text-center">
-              <Users className="w-7 h-7 text-[#CBD5E1] mx-auto mb-2" />
+              <MaterialSymbol name="group" className="mx-auto mb-2 text-2xl text-[#8A98A8]" />
               <p className="text-xs font-semibold text-[#182230]">{searchQuery || statusFilter !== 'All' ? 'No leaders match these filters' : 'No tutors registered yet'}</p>
               <p className="text-[11px] text-[#667085] mt-1">{searchQuery || statusFilter !== 'All' ? 'Try another name, email, cell or account status.' : 'Registered tutors will appear here.'}</p>
               {(searchQuery || statusFilter !== 'All') && <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="mt-3 min-h-10 px-3 rounded-xl bg-[#F5F7FA] text-xs font-semibold text-[#142B4A]">Clear filters</button>}
@@ -269,7 +278,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
                     <div className="text-xs font-semibold text-[#142B4A] mt-2">{leader.cell_name || 'Assigned Fellowship Cell'}</div>
                     <div className="text-[11px] text-[#667085] mt-0.5">{leader.phone_number || 'No phone recorded'}</div>
                   </div>
-                  <Eye className="w-4 h-4 text-sky-600 shrink-0 mt-1" />
+                  <MaterialSymbol name="visibility" className="mt-1 shrink-0 text-[18px] text-[#354863]" />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${leader.is_active ? 'bg-emerald-50 text-[#23845B]' : 'bg-rose-50 text-[#C74646]'}`}>
@@ -304,7 +313,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
               {filteredLeaders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[#667085]">
-                    <Users className="w-8 h-8 text-[#CBD5E1] mx-auto mb-2" />
+                    <MaterialSymbol name="group" className="mx-auto mb-2 text-3xl text-[#8A98A8]" />
                     <p className="text-xs font-semibold text-[#182230]">{searchQuery || statusFilter !== 'All' ? 'No leaders match these filters.' : 'No tutors registered yet.'}</p>
                     <p className="text-[11px] text-[#667085] mt-0.5">
                       {searchQuery || statusFilter !== 'All' ? 'Try a different search or clear the selected filters.' : 'When tutors register via the sign-up page, they will appear in this directory.'}
@@ -415,7 +424,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
                           className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 inline-flex items-center justify-center transition-colors shadow-2xs"
                           title="View Profile & Submissions"
                         >
-                          <Eye className="w-3.5 h-3.5" />
+                          <MaterialSymbol name="visibility" className="text-[18px]" />
                         </button>
                       </td>
                     </tr>
@@ -468,7 +477,7 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
                 onClick={() => setSelectedLeader(null)}
                 className="p-1 rounded-lg text-[#667085] hover:text-[#182230] hover:bg-[#F5F7FA]"
               >
-                <X className="w-4 h-4" />
+                <MaterialSymbol name="close" className="text-[20px]" />
               </button>
             </div>
 
