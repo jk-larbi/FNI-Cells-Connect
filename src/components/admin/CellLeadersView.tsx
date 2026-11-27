@@ -188,13 +188,13 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
       <section aria-label="Cell leader summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
           <p className="text-[11px] font-semibold text-[#667085]">Active leaders</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : profiles.length}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : activeLeaderCount}</p>
           <p className="mt-0.5 text-[10px] text-[#667085]">Currently enabled</p>
         </div>
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
           <p className="text-[11px] font-semibold text-[#667085]">Unassigned cells</p>
           <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading ? '—' : unassignedCellCount}</p>
-          <p className="mt-0.5 text-[10px] text-[#667085]">Currently enabled</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Cells without a leader</p>
         </div>
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
           <p className="text-[11px] font-semibold text-[#667085]">Suspended</p>
