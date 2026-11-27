@@ -3150,3 +3150,86 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-admin-stitch-shell .fni-evangelism-inspection-overlay { align-items:stretch; padding:0; }
   .fni-admin-stitch-shell .fni-evangelism-inspection-panel { width:100%; max-width:none; max-height:100dvh; padding:18px; border:0; border-radius:0; }
 }
+
+
+/* FNI Admin Security — Stitch desktop/mobile implementation */
+.fni-admin-stitch-shell .fni-admin-security-view {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;
+  width:100%; max-width:1024px; margin:0 auto; align-items:stretch;
+}
+.fni-admin-stitch-shell .fni-admin-security-view > * { min-width:0; margin:0 !important; }
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(1),
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(2) {
+  display:flex; flex-direction:column; gap:16px; padding:20px;
+  border:1px solid #DCE3EC; border-radius:16px; background:#fff;
+  box-shadow:0 1px 2px rgba(20,40,66,.035);
+}
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(1) > div:first-child,
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(2) > div:first-child {
+  display:flex; align-items:flex-start; gap:12px;
+}
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(1) h3,
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(2) h3,
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(5) h3,
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(6) h3 {
+  color:#142842; font:600 16px/22px "Libre Franklin",sans-serif;
+}
+.fni-admin-stitch-shell .fni-admin-security-view p { color:#5A6B7C; }
+.fni-admin-stitch-shell .fni-admin-security-view label {
+  color:#354863; font:600 12px/17px "Libre Franklin",sans-serif;
+}
+.fni-admin-stitch-shell .fni-admin-security-view input {
+  min-height:44px; border:1px solid #DCE3EC; border-radius:9px;
+  background:#F7F9FC; color:#142842; font:400 14px/20px "Source Sans 3",sans-serif;
+}
+.fni-admin-stitch-shell .fni-admin-security-view input:focus {
+  border-color:#8E6C23; outline:2px solid rgba(142,108,35,.14); outline-offset:1px;
+}
+.fni-admin-stitch-shell .fni-admin-security-view button[type="submit"] {
+  min-height:42px; padding:10px 17px; border-radius:999px;
+  background:#142842; color:#fff; font:600 12px/18px "Libre Franklin",sans-serif;
+  transition:background-color 120ms ease-out;
+}
+.fni-admin-stitch-shell .fni-admin-security-view button[type="submit"]:hover { background:#354863; }
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(3) {
+  grid-column:1/-1; padding:20px; border:1px solid rgba(142,108,35,.22);
+  border-radius:16px; background:#FDF8E8; box-shadow:none;
+}
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(3) h3 {
+  color:#142842; font:600 16px/22px "Libre Franklin",sans-serif;
+}
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(3) .bg-slate-50 {
+  background:#fff; border-color:#DCE3EC;
+}
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(4),
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(5),
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(6) {
+  grid-column:1/-1; min-width:0; padding:20px; border:1px solid #DCE3EC;
+  border-radius:16px; background:#fff; box-shadow:0 1px 2px rgba(20,40,66,.035);
+}
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(5) { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:20px; }
+.fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(6) form { max-width:620px; }
+.fni-admin-stitch-shell .fni-admin-security-view button:focus-visible {
+  outline:2px solid #8E6C23; outline-offset:2px;
+}
+@media(max-width:767px) {
+  .fni-admin-stitch-shell .fni-admin-security-view {
+    display:flex; flex-direction:column; gap:14px; max-width:none;
+  }
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(1),
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(2),
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(3),
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(4),
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(5),
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(6) {
+    width:100%; padding:16px; border-radius:14px;
+  }
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(5) {
+    align-items:flex-start; flex-direction:column;
+  }
+  .fni-admin-stitch-shell .fni-admin-security-view button[type="submit"] { width:100%; min-height:46px; }
+  .fni-admin-stitch-shell .fni-admin-security-view > div:nth-child(3) .grid { grid-template-columns:1fr; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fni-admin-stitch-shell .fni-admin-security-view * { scroll-behavior:auto !important; transition-duration:0.01ms !important; }
+}
