@@ -1277,8 +1277,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
           </div>
         )}
 
-        )}
-        
         {/* =========================================================================
             SECTION 2: PASSWORD & SECURITY (Requirement 2)
         ========================================================================== */}
