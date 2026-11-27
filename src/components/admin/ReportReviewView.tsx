@@ -703,7 +703,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     <div><span>{item.reportType === 'meeting' ? 'New members' : 'People reached'}</span><strong>{item.reportType === 'meeting' ? Number((item as any).newMembers || 0).toLocaleString() : Number((item as any).peopleSpokenTo || 0).toLocaleString()}</strong></div>
                     <div><span>Report type</span><strong>{item.reportType === 'meeting' ? 'Fellowship' : 'Outreach'}</strong></div>
                   </div>
-                  <div className="fni-rr-live-time"><Clock className="w-3.5 h-3.5" /><span>{liveTime}</span><span className="fni-rr-secondary-metric">{secondaryMetric}</span></div>
+                  <div className="fni-rr-live-time"><Clock className="w-3.5 h-3.5" /><span>{liveTime.timeFormatted} GMT · {liveTime.relativeTime}</span><span className="fni-rr-secondary-metric">{secondaryMetric}</span></div>
                   <div className="fni-rr-card-actions">
                     <button type="button" className="fni-rr-review-button" onClick={event => { event.stopPropagation(); setInspectingItem(item); setReviewAction(null); setReviewReasons([]); }}>Review report <ChevronRight className="w-4 h-4" /></button>
                     {statusText === 'Pending review' && (
