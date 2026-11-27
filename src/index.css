@@ -2639,3 +2639,80 @@ html.dark .fni-chat-composer textarea:focus-visible {
   .fni-admin-stitch-shell .fni-analytics-stitch section[aria-label="Ministry figures at a glance"] > div { padding: .85rem !important; }
   .fni-admin-stitch-shell .fni-analytics-stitch > div:first-child { align-items: stretch; }
 }
+
+
+/* =============================================================== */
+/* STITCH REVIEW REPORTS — DESKTOP + MOBILE                        */
+/* =============================================================== */
+.fni-report-review-stitch {
+  --fni-review-navy: #142842;
+  --fni-review-bronze: #8E6C23;
+  --fni-review-ivory: #FDF8E8;
+  color: var(--fni-review-navy);
+  font-family: "Source Sans 3", sans-serif;
+}
+.fni-report-review-stitch h1,
+.fni-report-review-stitch h2,
+.fni-report-review-stitch h3,
+.fni-report-review-stitch label,
+.fni-report-review-stitch summary {
+  font-family: "Libre Franklin", sans-serif;
+}
+.fni-report-review-stitch > .flex:first-child {
+  align-items: center;
+}
+.fni-report-review-stitch > .grid > button,
+.fni-report-review-stitch > .grid > div {
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(20,40,66,.035);
+}
+.fni-report-review-stitch input,
+.fni-report-review-stitch select,
+.fni-report-review-stitch textarea {
+  border-color: #DCE3EC;
+  border-radius: 10px;
+}
+.fni-report-review-stitch input:focus,
+.fni-report-review-stitch select:focus,
+.fni-report-review-stitch textarea:focus {
+  --tw-ring-color: rgba(20,40,66,.18);
+  border-color: #142842;
+}
+.fni-report-review-stitch .table-scroll-container thead {
+  background: #EEF2F7;
+  color: #354863;
+}
+.fni-report-review-stitch .table-scroll-container th {
+  font-family: "Libre Franklin", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.fni-report-review-stitch .table-scroll-container td {
+  border-color: #E8EDF3;
+}
+.fni-report-review-stitch button {
+  transition-duration: 120ms;
+}
+@media (max-width: 767px) {
+  .fni-report-review-stitch { gap: 16px; }
+  .fni-report-review-stitch > .flex:first-child {
+    align-items: flex-start;
+  }
+  .fni-report-review-stitch > .flex:first-child > div:last-child {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .fni-report-review-stitch > .grid {
+    gap: 8px;
+  }
+  .fni-report-review-stitch .table-scroll-container {
+    margin-inline: 0;
+  }
+  .fni-report-review-stitch [role="dialog"] {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
+}
