@@ -1041,35 +1041,32 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             {/* FEED: TUTORS (ONLINE/REGISTERED) TAB */}
             {sidebarTab === 'tutors' && (
               <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[290px] overflow-y-auto pr-1 mt-1">
-                {cells.slice(0, 6).map((cell, idx) => (
+                {cells.filter(cell => cell.leader_name?.trim()).slice(0, 6).map(cell => (
                   <div key={cell.id} className="py-2.5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="relative shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#142B4A] dark:text-[#C6A45A] font-bold text-xs flex items-center justify-center">
-                          {cell.name.split(' ').map(s => s[0]).slice(0, 2).join('')}
-                        </div>
-                        <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white dark:border-slate-900 ${idx % 2 === 0 ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#142B4A] dark:text-[#C6A45A] font-bold text-xs flex items-center justify-center shrink-0">
+                        {cell.leader_name!.split(' ').map(s => s[0]).slice(0, 2).join('')}
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-[#182230] dark:text-white truncate">
-                          {cell.leader_name || 'Cell Leader'}
+                          {cell.leader_name}
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">{cell.name}</div>
                       </div>
                     </div>
-
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                      {idx % 2 === 0 ? 'Active' : 'Offline'}
-                    </span>
+                    <span className="text-[10px] font-medium text-slate-400 shrink-0">Cell leader</span>
                   </div>
                 ))}
+                {cells.filter(cell => cell.leader_name?.trim()).length === 0 && (
+                  <p className="py-6 text-center text-xs text-slate-400">No cell leaders have been assigned yet.</p>
+                )}
               </div>
             )}
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-[11px] text-slate-400">Total Registered Tutors</span>
+              <span className="text-[11px] text-slate-400">Assigned Cell Leaders</span>
               <span className="font-bold text-[#142B4A] dark:text-[#C6A45A]">
-                {cells.length} Leaders
+                {cells.filter(cell => cell.leader_name?.trim()).length} Leaders
               </span>
             </div>
           </div>
