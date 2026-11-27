@@ -693,7 +693,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const assignedCellTitle = isAdmin ? 'National Administration' : currentUser?.cell_name || 'Unassigned Cell';
 
   const content = (
-    <div className={`relative w-full ${inline ? 'max-w-2xl mx-auto' : 'max-w-md my-auto max-h-[92vh] shadow-2xl'} bg-[#f0f2f5] dark:bg-[#17212b] rounded-2xl border border-[#e2e5e9] dark:border-white/10 overflow-hidden flex flex-col transition-all font-sans text-[#1f2328] dark:text-[#f3f4f6]`}>
+    <div className={`fni-profile-settings relative w-full ${inline ? 'fni-profile-settings-inline max-w-5xl mx-auto my-0 shadow-none' : 'max-w-md my-auto max-h-[92vh] shadow-2xl'} bg-[#f0f2f5] dark:bg-[#17212b] rounded-2xl border border-[#e2e5e9] dark:border-white/10 overflow-hidden flex flex-col transition-all font-sans text-[#1f2328] dark:text-[#f3f4f6]`}>
       {/* HEADER BAR */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#e2e5e9] dark:border-white/10 bg-[#f0f2f5] dark:bg-[#17212b] sticky top-0 z-20">
         <div className="flex items-center gap-3">
@@ -1001,7 +1001,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             SECTION 1: MANAGE PROFILE (Requirement 2)
         ========================================================================== */}
         {currentSection === 'manage_profile' && (
-          <div className="space-y-5">
+          <div className="fni-profile-manage space-y-5">
             {/* Profile Photo Uploader */}
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#152338] border border-slate-200/80 dark:border-[#26384d] flex items-center gap-4">
               <ProfilePhotoUploader

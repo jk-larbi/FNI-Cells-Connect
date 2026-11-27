@@ -3865,3 +3865,145 @@ html.dark .fni-chat-composer textarea:focus-visible {
 @media(prefers-reduced-motion:reduce) {
   .fni-finance-view * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
 }
+
+
+/* ===============================================================
+   FNI MY PROFILE — Stitch desktop + mobile refinement
+   Visual-only layer; existing profile, auth and storage handlers remain intact.
+   =============================================================== */
+.fni-profile-settings {
+  --fni-profile-navy: #142842;
+  --fni-profile-bronze: #8E6C23;
+  --fni-profile-canvas: #F7F9FC;
+  --fni-profile-surface: #FFFFFF;
+  --fni-profile-border: #DCE3EC;
+  --fni-profile-muted: #5A6B7C;
+  font-family: "Source Sans 3", sans-serif;
+}
+.fni-profile-settings.fni-profile-settings-inline {
+  width: 100%;
+  max-width: 80rem;
+  min-height: 100%;
+  margin-inline: auto;
+  background: var(--fni-profile-canvas) !important;
+  color: var(--fni-profile-navy) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+.fni-profile-settings .fni-profile-manage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  color: var(--fni-profile-navy);
+}
+.fni-profile-settings.fni-profile-settings-inline > .sticky,
+.fni-profile-settings.fni-profile-settings-inline > div:first-child {
+  background: var(--fni-profile-surface) !important;
+  border-color: var(--fni-profile-border) !important;
+}
+.fni-profile-settings.fni-profile-settings-inline > div:nth-child(2) {
+  padding: 1.5rem clamp(1rem, 3vw, 2rem) 2rem !important;
+  background: var(--fni-profile-canvas) !important;
+}
+.fni-profile-settings .fni-profile-manage > div {
+  background: var(--fni-profile-surface) !important;
+  border: 1px solid var(--fni-profile-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 2px rgba(20,40,66,.035);
+}
+.fni-profile-settings .fni-profile-manage h4,
+.fni-profile-settings .fni-profile-manage label {
+  color: var(--fni-profile-navy);
+  font-family: "Libre Franklin", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+.fni-profile-settings .fni-profile-manage p {
+  color: var(--fni-profile-muted);
+  line-height: 1.5;
+}
+.fni-profile-settings .fni-profile-manage input:not([type="file"]) {
+  min-height: 44px;
+  border-color: var(--fni-profile-border) !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  color: var(--fni-profile-navy) !important;
+  font-size: 14px !important;
+  box-shadow: none;
+}
+.fni-profile-settings .fni-profile-manage input:focus {
+  border-color: var(--fni-profile-navy) !important;
+  outline: 2px solid rgba(20,40,66,.12);
+  outline-offset: 1px;
+}
+.fni-profile-settings .fni-profile-manage button[type="submit"] {
+  min-height: 46px;
+  border-radius: 12px !important;
+  background: var(--fni-profile-navy) !important;
+  font-family: "Libre Franklin", sans-serif;
+  font-size: 13px;
+  letter-spacing: .01em;
+}
+.fni-profile-settings .fni-profile-manage button[type="submit"]:hover {
+  background: #203b5d !important;
+}
+.fni-profile-settings .fni-profile-manage button:focus-visible,
+.fni-profile-settings .fni-profile-manage label:focus-within {
+  outline: 2px solid var(--fni-profile-bronze);
+  outline-offset: 2px;
+}
+.fni-profile-settings .fni-profile-manage .grid button {
+  min-height: 42px;
+  border-radius: 10px !important;
+}
+.fni-profile-settings .fni-profile-manage .relative.h-28 {
+  min-height: 132px;
+  border-radius: 14px !important;
+}
+.fni-profile-settings:not(.fni-profile-settings-inline) {
+  background: var(--fni-profile-surface) !important;
+}
+@media (min-width: 900px) {
+  .fni-profile-settings.fni-profile-settings-inline .fni-profile-manage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.25rem;
+  }
+  .fni-profile-settings.fni-profile-settings-inline .fni-profile-manage > form {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.25rem;
+    align-items: start;
+  }
+  .fni-profile-settings.fni-profile-settings-inline .fni-profile-manage > form > div:nth-last-child(2),
+  .fni-profile-settings.fni-profile-settings-inline .fni-profile-manage > form > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .fni-profile-settings.fni-profile-settings-inline {
+    max-width: 100%;
+  }
+  .fni-profile-settings.fni-profile-settings-inline > div:nth-child(2) {
+    padding: 1rem !important;
+  }
+  .fni-profile-settings .fni-profile-manage {
+    gap: 1rem;
+  }
+  .fni-profile-settings .fni-profile-manage > div {
+    padding: 1rem !important;
+    border-radius: 14px !important;
+  }
+  .fni-profile-settings .fni-profile-manage .flex.items-center.gap-4 {
+    align-items: flex-start;
+  }
+  .fni-profile-settings .fni-profile-manage button[type="submit"] {
+    position: sticky;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 5;
+    box-shadow: 0 4px 14px rgba(20,40,66,.16);
+  }
+}
