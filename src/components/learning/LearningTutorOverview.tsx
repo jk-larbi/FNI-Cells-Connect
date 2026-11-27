@@ -65,7 +65,7 @@ export const LearningTutorOverview: React.FC<Props> = props => {
           {upcomingDeadlines.length ? <div className="fni-lt-list">{upcomingDeadlines.slice(0, 5).map(item => (
             <button type="button" key={item.type + ':' + item.id} onClick={() => onNavigateSection(item.type === 'assignment' ? 'assignments' : 'quizzes')}>
               <span className="fni-lt-list-icon">{item.type === 'assignment' ? <BookOpen className="h-4 w-4" /> : <FileCheck2 className="h-4 w-4" />}</span>
-              <span className="fni-lt-list-copy"><strong>{item.title}</strong><small>{item.type === 'assignment' ? 'Assignment' : 'Quiz'} · {item.totalMarks} marks</small></span>
+              <span className="fni-lt-list-copy"><strong>{item.title}</strong><small>{item.type === 'assignment' ? 'Assignment' : 'Quiz'} · {item.totalMarks ?? '—'} marks</small></span>
               <span className="fni-lt-list-date">{formatDate(item.dueDate)}</span>
             </button>
           ))}</div> : <div className="fni-lt-empty"><Clock3 className="h-5 w-5" /><strong>No upcoming deadlines</strong><p>New published assessment deadlines will appear here.</p></div>}
