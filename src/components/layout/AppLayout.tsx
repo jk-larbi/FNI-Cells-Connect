@@ -622,11 +622,11 @@ export const AppLayout: React.FC = () => {
       >
         {(isAdmin
           ? [
-              { id: 'dashboard' as AppNavTab, label: 'Overview', icon: (props: any) => <span className="material-symbols-outlined" {...props}>grid_view</span>, colorKey: 'gold' as IconColorKey },
-              { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: (props: any) => <span className="material-symbols-outlined" {...props}>group</span>, colorKey: 'teal' as IconColorKey },
-              { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: (props: any) => <span className="material-symbols-outlined" {...props}>description</span>, colorKey: 'emerald' as IconColorKey },
-              { id: 'messages' as AppNavTab, label: 'Comms', icon: (props: any) => <span className="material-symbols-outlined" {...props}>chat_bubble_outline</span>, colorKey: 'azure' as IconColorKey },
-              { id: 'more-hub' as AppNavTab, label: 'More', icon: (props: any) => <span className="material-symbols-outlined" {...props}>more_horiz</span>, colorKey: 'slate' as IconColorKey },
+              { id: 'dashboard' as AppNavTab, label: 'Overview', icon: (props: any) => <span className="material-symbols-outlined h-5 w-5 shrink-0">grid_view</span>, colorKey: 'gold' as IconColorKey },
+              { id: 'cells-hub' as AppNavTab, label: 'Cells', icon: (props: any) => <span className="material-symbols-outlined h-5 w-5 shrink-0">group</span>, colorKey: 'teal' as IconColorKey },
+              { id: 'reports-hub' as AppNavTab, label: 'Reports', icon: (props: any) => <span className="material-symbols-outlined h-5 w-5 shrink-0">description</span>, colorKey: 'emerald' as IconColorKey },
+              { id: 'messages' as AppNavTab, label: 'Comms', icon: (props: any) => <span className="material-symbols-outlined h-5 w-5 shrink-0">chat_bubble_outline</span>, colorKey: 'azure' as IconColorKey },
+              { id: 'more-hub' as AppNavTab, label: 'More', icon: (props: any) => <span className="material-symbols-outlined h-5 w-5 shrink-0">more_horiz</span>, colorKey: 'slate' as IconColorKey },
             ]
           : [
               { id: 'my-dashboard' as AppNavTab, label: 'Home', icon: TelegramDashboardIcon, colorKey: 'gold' as IconColorKey },
