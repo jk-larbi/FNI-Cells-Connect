@@ -97,7 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: TelegramDashboardIcon, colorKey: 'gold' },
     { id: 'cells-dropdown', label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' },
     { id: 'reports-hub', label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' },
-    { id: 'ministry-hub', label: 'Ministry', icon: TelegramEvangelismIcon, colorKey: 'flame' },
+    { id: 'evangelism', label: 'Evangelism', icon: TelegramEvangelismIcon, colorKey: 'flame' },
+    { id: 'ministry-hub', label: 'Ministry', icon: TelegramMoreIcon, colorKey: 'slate' },
     { id: 'more-hub', label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' },
   ];
 
@@ -265,7 +266,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : item.id === 'reports-hub'
                     ? ['reports-hub', 'report-review', 'report-history', 'received-reports', 'report-deadlines'].includes(currentTab)
                     : item.id === 'ministry-hub'
-                      ? ['ministry-hub', 'evangelism', 'follow-ups', 'finance', 'materials', 'messages', 'call-history'].includes(currentTab)
+                      ? ['ministry-hub', 'follow-ups', 'finance', 'materials', 'messages', 'call-history'].includes(currentTab)
                       : item.id === 'more-hub'
                         ? currentTab === 'more-hub' || currentTab === 'analytics' || currentTab === 'settings' || currentTab === 'notifications' || currentTab.startsWith('learning-')
                         : currentTab === item.id
