@@ -164,67 +164,91 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     evang: EvangelismReport[]
   ) => {
     const items: TutorActivityItem[] = [];
+    const relativeTime = (value?: string) => {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      const seconds = Math.round((date.getTime() - Date.now()) / 1000);
+      const absSeconds = Math.abs(seconds);
+      const units: Array<[number, Intl.RelativeTimeFormatUnit, number]> = [
+        [60, 'second', 1],
+        [3600, 'minute', 60],
+        [86400, 'hour', 3600],
+        [604800, 'day', 86400],
+        [2629800, 'week', 604800],
+        [31557600, 'month', 2629800],
+        [Number.POSITIVE_INFINITY, 'year', 31557600],
+      ];
+      const [, unit, divisor] = units.find(([limit]) => absSeconds < limit) || units[units.length - 1];
+      return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(Math.round(seconds / divisor), unit);
+    };
 
-    // From real location records
-    locHistory.slice(0, 4).forEach((loc, idx) => {
+    locHistory.forEach((loc, idx) => {
+      const timestamp = loc.meeting_date;
+      const timeLabel = relativeTime(timestamp);
+      if (!timeLabel) return;
+      const leader = loc.leader_name || 'Leader not recorded';
       items.push({
         id: `loc-${loc.id || idx}`,
         type: 'location',
-        tutorName: loc.leader_name || 'Cell Leader',
+        tutorName: leader,
         cellName: loc.cell_name,
-        avatarInitials: (loc.leader_name || 'CL').split(' ').map(s => s[0]).slice(0, 2).join(''),
+        avatarInitials: (loc.leader_name || 'L').split(' ').map(s => s[0]).slice(0, 2).join(''),
         actionText: 'Convened fellowship meeting',
-        details: `Venue: ${loc.venue}`,
-        timestamp: loc.meeting_date || new Date().toISOString(),
-        relativeTime: idx === 0 ? 'Recently' : `${idx * 2 + 1}h ago`,
+        details: `Venue: ${loc.venue || 'Not recorded'}`,
+        timestamp,
+        relativeTime: timeLabel,
         valueBadge: 'Venue Logged',
         badgeColor: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
       });
     });
 
-    // From real evangelism reports
-    evang.slice(0, 4).forEach((report, idx) => {
-      const souls = Number(report.verifiedSoulsWon ?? report.conversions) || 0;
-      const leader = report.tutorName || 'Tutor';
+    evang.forEach((report, idx) => {
+      const timestamp = report.submittedAt || report.date;
+      const timeLabel = relativeTime(timestamp);
+      if (!timeLabel) return;
+      const soulsValue = report.verifiedSoulsWon ?? report.conversions;
+      const souls = soulsValue == null ? null : Number(soulsValue);
+      const reached = report.peopleSpokenTo == null ? '—' : report.peopleSpokenTo;
+      const leader = report.tutorName || 'Tutor not recorded';
       items.push({
         id: `evang-${report.id || idx}`,
         type: 'evangelism',
         tutorName: leader,
-        cellName: report.cellName || 'Fellowship Cell',
+        cellName: report.cellName || 'Cell not recorded',
         avatarInitials: leader.split(' ').map((s: string) => s[0]).slice(0, 2).join(''),
         actionText: 'Logged Evangelism Outreach',
-        details: `${report.location || 'Community outreach'} · ${report.peopleSpokenTo || 0} reached`,
-        timestamp: report.submittedAt || report.date || new Date().toISOString(),
-        relativeTime: idx === 0 ? 'Recently' : `${idx + 1}d ago`,
-        valueBadge: `+${souls} Souls`,
+        details: `${report.location || 'Location not recorded'} · ${reached} reached`,
+        timestamp,
+        relativeTime: timeLabel,
+        valueBadge: souls == null || !Number.isFinite(souls) ? 'Souls not recorded' : `+${souls} Souls`,
         badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
       });
     });
 
-    // From real meeting reports
-    meetings.slice(0, 4).forEach((report, idx) => {
-      const att = Number(report.attendance) || 0;
-      const leader = report.tutorName || 'Tutor';
+    meetings.forEach((report, idx) => {
+      const timestamp = report.submittedAt || report.meetingDate;
+      const timeLabel = relativeTime(timestamp);
+      if (!timeLabel) return;
+      const attendance = report.attendance == null ? null : Number(report.attendance);
+      const leader = report.tutorName || 'Tutor not recorded';
       items.push({
         id: `meet-${report.id || idx}`,
         type: 'meeting',
         tutorName: leader,
-        cellName: report.cellName || 'Fellowship Cell',
+        cellName: report.cellName || 'Cell not recorded',
         avatarInitials: leader.split(' ').map((s: string) => s[0]).slice(0, 2).join(''),
         actionText: 'Filed Weekly Cell Return',
-        details: `${att} attendees · ${report.meetingLocation || 'Cell Venue'}`,
-        timestamp: report.submittedAt || report.meetingDate || new Date().toISOString(),
-        relativeTime: idx === 0 ? 'Recently' : `${idx + 1}d ago`,
-        valueBadge: `${att} Present`,
+        details: `${attendance == null || !Number.isFinite(attendance) ? '—' : attendance} attendees · ${report.meetingLocation || 'Venue not recorded'}`,
+        timestamp,
+        relativeTime: timeLabel,
+        valueBadge: attendance == null || !Number.isFinite(attendance) ? 'Attendance not recorded' : `${attendance} Present`,
         badgeColor: 'bg-[#142B4A]/10 text-[#142B4A] dark:bg-amber-400/10 dark:text-amber-300',
       });
     });
 
-    // Sort by timestamp descending
     items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-    // Never use fake mockups — only show genuine submitted records
-    setLiveActivities(items);
+    setLiveActivities(items.slice(0, 12));
   };
 
   // Smooth numeric counter animation
