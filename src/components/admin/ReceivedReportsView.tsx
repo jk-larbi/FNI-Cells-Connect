@@ -145,18 +145,18 @@ export const ReceivedReportsView: React.FC = () => {
                     <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Reviewed</p><p className="mt-1 text-xs font-semibold text-[#182230]">{report.reviewedAt ? new Date(report.reviewedAt).toLocaleString() : '—'}</p></div>
                     {meeting ? (
                       <>
-                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Attendance</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.attendance ?? 0}</p></div>
-                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">New members</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.newMembers ?? 0}</p></div>
-                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Offering</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.currency || 'GHS'} {detail.offering ?? 0}</p></div>
+                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Attendance</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.attendance ?? '—'}</p></div>
+                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">New members</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.newMembers ?? '—'}</p></div>
+                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Offering</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.offering == null ? '—' : `${detail.currency || 'GHS'} ${detail.offering}`}</p></div>
                         {detail.meetingLocation && <div className="sm:col-span-3"><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Meeting location</p><p className="mt-1 text-xs text-[#182230]">{detail.meetingLocation}</p></div>}
                         {detail.scripturalTheme && <div className="sm:col-span-3"><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Scriptural theme</p><p className="mt-1 text-xs text-[#182230]">{detail.scripturalTheme}</p></div>}
                         {detail.tutorNotes && <div className="sm:col-span-3"><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Notes</p><p className="mt-1 whitespace-pre-wrap text-xs text-[#182230]">{detail.tutorNotes}</p></div>}
                       </>
                     ) : (
                       <>
-                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">People reached</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.peopleSpokenTo ?? 0}</p></div>
-                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Conversions</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.conversions ?? 0}</p></div>
-                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Contacts captured</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.contactsCaptured ?? 0}</p></div>
+                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">People reached</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.peopleSpokenTo ?? '—'}</p></div>
+                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Conversions</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.conversions ?? '—'}</p></div>
+                        <div><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Contacts captured</p><p className="mt-1 text-xs font-semibold text-[#182230]">{detail.contactsCaptured ?? '—'}</p></div>
                         {detail.location && <div className="sm:col-span-3"><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Outreach location</p><p className="mt-1 text-xs text-[#182230]">{detail.location}</p></div>}
                         {detail.messageUsed && <div className="sm:col-span-3"><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Message shared</p><p className="mt-1 whitespace-pre-wrap text-xs text-[#182230]">{detail.messageUsed}</p></div>}
                         {detail.notes && <div className="sm:col-span-3"><p className="text-[10px] font-semibold uppercase text-[#98A2B3]">Notes</p><p className="mt-1 whitespace-pre-wrap text-xs text-[#182230]">{detail.notes}</p></div>}
