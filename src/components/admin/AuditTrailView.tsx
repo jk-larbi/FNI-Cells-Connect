@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuditLog } from '../../types';
 import { ReportService } from '../../services/reportService';
-import { History, Search, RefreshCw, Shield, X } from 'lucide-react';
+import { History, Search, RefreshCw, Shield, X, Download, FileText } from 'lucide-react';
 
 export const AuditTrailView: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -22,201 +22,149 @@ export const AuditTrailView: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadLogs();
-  }, []);
+  useEffect(() => { loadLogs(); }, []);
 
   const query = searchTerm.trim().toLowerCase();
   const filtered = logs.filter(log =>
     log.action.toLowerCase().includes(query) ||
     (log.user_name && log.user_name.toLowerCase().includes(query)) ||
-    log.entity_type.toLowerCase().includes(query)
+    log.entity_type.toLowerCase().includes(query) ||
+    (log.ip_address || '').toLowerCase().includes(query) ||
+    JSON.stringify(log.details ?? {}).toLowerCase().includes(query) ||
+    (query && new Date(log.created_at).toLocaleString('en-GB', { timeZone: 'Africa/Accra' }).toLowerCase().includes(query))
   );
-
-  const clearSearch = () => setSearchTerm('');
 
   const formatTimestamp = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return 'Date unavailable';
-    return `${date.toLocaleString('en-GB', { timeZone: 'Africa/Accra' })} Ghana time`;
+    return date.toLocaleString('en-GB', {
+      timeZone: 'Africa/Accra', day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }) + ' GMT';
+  };
+
+  const actionTone = (action: string) => {
+    const value = action.toUpperCase();
+    if (value.includes('APPROV')) return 'is-success';
+    if (value.includes('REVISION') || value.includes('REJECT') || value.includes('DELETE')) return 'is-danger';
+    if (value.includes('SECURITY') || value.includes('PASSWORD') || value.includes('LOGIN')) return 'is-warning';
+    return 'is-neutral';
+  };
+
+  const exportLogs = () => {
+    const columns = ['Timestamp (Ghana time)', 'Administrator', 'Action', 'Category', 'Details', 'Client IP'];
+    const rows = filtered.map(log => [
+      formatTimestamp(log.created_at), log.user_name || 'System', log.action,
+      log.entity_type, JSON.stringify(log.details ?? {}), log.ip_address || 'Not recorded'
+    ]);
+    const csv = [columns, ...rows].map(row =>
+      row.map(value => '"' + String(value ?? '').replace(/"/g, '""') + '"').join(',')
+    ).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'fni-audit-trail.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/90 shadow-subtle p-4 sm:p-5 space-y-4 min-w-0">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="fni-audit-trail-stitch space-y-5 min-w-0">
+      <section className="fni-audit-heading flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div className="min-w-0">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200 uppercase tracking-wide">
-            <History className="w-3.5 h-3.5 text-navy-800" /> System Integrity & Audit Log
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold text-navy-950 mt-2">Audit Trail & Action History</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Review report submissions, status changes, approvals and administrative actions.
-          </p>
+          <p className="fni-audit-eyebrow">FNI ADMIN · ACTIVITY LOG</p>
+          <h1>Audit trail</h1>
+          <p className="fni-audit-subtitle">Know what changed, when and by whom.</p>
         </div>
-
-        <button
-          type="button"
-          onClick={loadLogs}
-          disabled={isLoading}
-          className="inline-flex items-center justify-center gap-2 min-h-11 w-full sm:w-auto px-4 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-navy-900 hover:bg-slate-50 disabled:opacity-60"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          {isLoading ? 'Refreshing...' : 'Refresh records'}
-        </button>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-          <input
-            type="search"
-            aria-label="Search audit records"
-            placeholder="Search action, person or target..."
-            value={searchTerm}
-            onChange={event => setSearchTerm(event.target.value)}
-            className="w-full min-h-11 text-xs rounded-xl border border-slate-300 pl-10 pr-10 py-2.5 bg-white focus:border-navy-600 focus:ring-1 focus:ring-navy-600"
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              aria-label="Clear search"
-              className="absolute right-2 top-1.5 min-h-8 min-w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        <div className="fni-audit-actions flex flex-col sm:flex-row gap-2.5">
+          <label className="fni-audit-search relative flex-1">
+            <Search className="w-4 h-4" aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Search audit trail"
+              placeholder="Search administrator, action or date"
+              value={searchTerm}
+              onChange={event => setSearchTerm(event.target.value)}
+            />
+            {searchTerm && <button type="button" aria-label="Clear search" onClick={() => setSearchTerm('')}><X className="w-4 h-4" /></button>}
+          </label>
+          <button type="button" onClick={exportLogs} disabled={filtered.length === 0} className="fni-audit-export">
+            <Download className="w-4 h-4" /> Export log
+          </button>
+          <button type="button" onClick={loadLogs} disabled={isLoading} className="fni-audit-refresh" aria-label="Refresh audit records">
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>{isLoading ? 'Refreshing' : 'Refresh'}</span>
+          </button>
         </div>
-        <p className="text-[11px] text-slate-500 sm:ml-auto" aria-live="polite">
-          {isLoading ? 'Loading audit records...' : `${filtered.length} of ${logs.length} records`}
-        </p>
-      </div>
+      </section>
+
+      <section className="fni-audit-meta flex items-center justify-between gap-3" aria-live="polite">
+        <div className="flex items-center gap-2"><History className="w-4 h-4" /><span>Activity history</span></div>
+        <span>{isLoading ? 'Loading records…' : `${filtered.length} of ${logs.length} records`}</span>
+      </section>
 
       {loadError && (
-        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
-          <p className="font-semibold">Audit records could not be loaded</p>
-          <p className="mt-1 break-words">{loadError}</p>
-          <button type="button" onClick={loadLogs} className="mt-3 min-h-10 px-3 rounded-lg bg-white border border-rose-200 font-semibold">
-            Try again
-          </button>
+        <div role="alert" className="fni-audit-error">
+          <strong>Audit records could not be loaded</strong>
+          <p>{loadError}</p>
+          <button type="button" onClick={loadLogs}>Try again</button>
         </div>
       )}
 
-      <div className="md:hidden space-y-3">
+      <section className="fni-audit-table-wrap hidden md:block" aria-label="Audit records">
+        <div className="overflow-x-auto">
+          <table className="fni-audit-table w-full text-left">
+            <thead><tr>
+              <th>Action</th><th>Details</th><th>Administrator</th><th>Category</th><th>Timestamp</th><th>Client IP</th>
+            </tr></thead>
+            <tbody>
+              {isLoading && logs.length === 0 ? (
+                <tr><td colSpan={6} className="fni-audit-empty"><RefreshCw className="w-5 h-5 animate-spin" />Loading audit records…</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={6} className="fni-audit-empty"><Shield className="w-6 h-6" /><strong>{logs.length ? 'No matching activity' : 'No audit activity recorded yet'}</strong><span>{logs.length ? 'Try a different search term.' : 'Administrative actions will appear here when recorded.'}</span></td></tr>
+              ) : filtered.map(log => (
+                <tr key={log.id}>
+                  <td><span className={`fni-audit-action ${actionTone(log.action)}`}>{log.action}</span></td>
+                  <td className="fni-audit-details">
+                    <details>
+                      <summary>{JSON.stringify(log.details ?? {})}</summary>
+                      <pre>{JSON.stringify(log.details ?? {}, null, 2)}</pre>
+                    </details>
+                  </td>
+                  <td className="fni-audit-admin">{log.user_name || 'System'}</td>
+                  <td><span className="fni-audit-category">{log.entity_type}</span></td>
+                  <td className="fni-audit-time">{formatTimestamp(log.created_at)}</td>
+                  <td className="fni-audit-ip">{log.ip_address || 'Not recorded'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="md:hidden fni-audit-mobile space-y-3" aria-label="Audit activity cards">
         {isLoading && logs.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 p-6 text-center text-sm text-slate-500">
-            <RefreshCw className="w-5 h-5 mx-auto mb-2 animate-spin" />
-            Loading audit records...
-          </div>
-        ) : loadError && logs.length === 0 ? (
-          <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
-            <p className="text-sm font-semibold text-rose-800">Audit records are unavailable</p>
-            <p className="mt-1 text-xs text-rose-700">The records could not be retrieved. Retry to check again.</p>
-            <button type="button" onClick={loadLogs} className="mt-3 min-h-10 px-4 rounded-lg bg-white border border-rose-200 text-xs font-semibold text-rose-800">Try again</button>
-          </div>
-        ) : !loadError && filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center">
-            <Shield className="w-7 h-7 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-800">
-              {logs.length === 0 ? 'No audit activity recorded yet' : 'No records match this search'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              {logs.length === 0 ? 'Administrative actions and report activity will appear here.' : 'Try another action, person or target name.'}
-            </p>
-            {searchTerm && (
-              <button type="button" onClick={clearSearch} className="mt-3 min-h-10 px-3 rounded-lg bg-slate-100 text-xs font-semibold text-navy-900">
-                Clear search
-              </button>
-            )}
-          </div>
+          <div className="fni-audit-empty"><RefreshCw className="w-5 h-5 animate-spin" />Loading audit records…</div>
+        ) : filtered.length === 0 ? (
+          <div className="fni-audit-empty"><Shield className="w-6 h-6" /><strong>{logs.length ? 'No matching activity' : 'No audit activity recorded yet'}</strong><span>{logs.length ? 'Try a different search term.' : 'Administrative actions will appear here when recorded.'}</span></div>
         ) : filtered.map(log => (
-          <article key={log.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+          <article key={log.id} className="fni-audit-card">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-navy-900 break-words">{log.user_name || 'System'}</p>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  {formatTimestamp(log.created_at)}
-                </p>
-              </div>
-              <span className={`shrink-0 max-w-[52%] rounded-full px-2.5 py-1 text-[10px] font-bold break-words ${
-                log.action.includes('APPROVE')
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : log.action.includes('REVISION')
-                  ? 'bg-rose-50 text-rose-700'
-                  : 'bg-navy-50 text-navy-800'
-              }`}>
-                {log.action}
-              </span>
+              <div className="min-w-0"><h2>{log.action}</h2><p>{log.user_name || 'System'}</p></div>
+              <span className={`fni-audit-action ${actionTone(log.action)}`}>{log.entity_type}</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Target</p>
-                <p className="mt-1 font-semibold text-slate-700 break-words">{log.entity_type}</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Client IP</p>
-                <p className="mt-1 font-mono text-slate-600 break-all">{log.ip_address || 'Not recorded'}</p>
-              </div>
-            </div>
-            <details className="rounded-lg bg-slate-50 p-3">
-              <summary className="cursor-pointer min-h-8 flex items-center text-xs font-semibold text-navy-800">View action details</summary>
-              <pre className="mt-2 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-600">{JSON.stringify(log.details, null, 2)}</pre>
+            <div className="fni-audit-card-time">{formatTimestamp(log.created_at)}</div>
+            <details>
+              <summary><FileText className="w-4 h-4" /> View action details</summary>
+              <pre>{JSON.stringify(log.details ?? {}, null, 2)}</pre>
             </details>
+            <div className="fni-audit-card-ip">Client IP <span>{log.ip_address || 'Not recorded'}</span></div>
           </article>
         ))}
-      </div>
-
-      <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
-          <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
-            <tr>
-              <th className="px-4 py-3">Timestamp (UTC)</th>
-              <th className="px-4 py-3">Initiator / User</th>
-              <th className="px-4 py-3">Action Type</th>
-              <th className="px-4 py-3">Target Entity</th>
-              <th className="px-4 py-3">Payload Details</th>
-              <th className="px-4 py-3">Client IP</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
-            {isLoading && logs.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">Loading audit records...</td></tr>
-            ) : loadError && logs.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center">
-                <p className="font-semibold text-rose-700">Audit records are unavailable</p>
-                <p className="mt-1 text-slate-500">The records could not be retrieved. Retry to check again.</p>
-                <button type="button" onClick={loadLogs} className="mt-3 min-h-10 px-4 rounded-lg border border-rose-200 text-rose-700 font-semibold">Try again</button>
-              </td></tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                  {logs.length === 0 ? 'No audit activity recorded yet.' : 'No records match this search.'}
-                  {searchTerm && <button type="button" onClick={clearSearch} className="ml-2 font-semibold text-navy-800 underline">Clear search</button>}
-                </td>
-              </tr>
-            ) : filtered.map(log => (
-              <tr key={log.id} className="hover:bg-slate-50 font-mono text-[11px]">
-                <td className="px-4 py-3 whitespace-nowrap text-slate-500">
-                  {new Date(log.created_at).toLocaleString(undefined, { timeZone: 'UTC' })} UTC
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap font-sans font-semibold text-navy-900">{log.user_name || 'System Daemon'}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    log.action.includes('APPROVE')
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : log.action.includes('REVISION')
-                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                      : 'bg-navy-50 text-navy-800 border border-navy-200'
-                  }`}>{log.action}</span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-slate-700">{log.entity_type}</td>
-                <td className="px-4 py-3 font-sans text-xs text-slate-600 max-w-md truncate">{JSON.stringify(log.details)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-slate-400">{log.ip_address || 'Not recorded'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      </section>
     </div>
   );
 };
