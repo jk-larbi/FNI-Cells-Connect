@@ -71,7 +71,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [liveTicker, setLiveTicker] = useState(Date.now());
 
   // Live real-time ticker updating elapsed submission times every 15s
@@ -194,9 +193,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
           setInspectingItem(found);
         }
       }
-    } catch (error) {
-      console.error('Could not load the report review queue:', error);
-      setLoadError('The report queue could not be loaded. Check your connection and try again.');
     } catch (error) {
       console.error('Could not load the report review queue:', error);
       setLoadError('The report queue could not be loaded. Check your connection and try again.');
@@ -1021,7 +1017,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                     <p className="text-xs font-semibold">Loading report queue...</p>
                   </td>
                 </tr>
-              ) : loadError ? (
+              ) : loadError && reports.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 px-4 text-center">
                     <div className="mx-auto max-w-md rounded-2xl border border-rose-200 bg-rose-50 p-5">
@@ -1038,15 +1034,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                         {isRefreshing ? 'Retrying...' : 'Try again'}
                       </button>
                     </div>
-                  </td>
-                </tr>
-              ) : loadError && reports.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 px-4 text-center">
-                    <AlertCircle className="w-7 h-7 text-[#C74646] mx-auto mb-2" />
-                    <p className="text-sm font-bold text-[#142B4A]">Unable to load reports</p>
-                    <p className="text-xs text-[#667085] mt-1">{loadError}</p>
-                    <button type="button" onClick={() => void loadData()} className="mt-3 min-h-10 px-4 py-2 rounded-xl bg-[#142B4A] text-white text-xs font-bold hover:bg-[#203D63] cursor-pointer">Try again</button>
                   </td>
                 </tr>
               ) : filteredReports.length === 0 ? (
