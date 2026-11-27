@@ -142,7 +142,12 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
         </button>
       )}
 
-      {error && <p role="alert" className="text-xs text-rose-700">{error}</p>}
+      {error && (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <span>{error}{history.length > 0 ? ' Previously loaded history remains visible.' : ''}</span>
+          <button type="button" onClick={() => void load()} disabled={loading || saving} className="min-h-9 shrink-0 rounded-lg border border-rose-300 px-3 font-bold hover:bg-rose-100 disabled:opacity-50">Retry</button>
+        </div>
+      )}
 
       <div className="pt-2 border-t border-[#DCE4EF]">
         <h5 className="text-xs font-bold text-[#142B4A] flex items-center gap-2 mb-2"><History className="w-3.5 h-3.5 text-[#C6A45A]" /> Leadership History</h5>
@@ -156,7 +161,7 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
                   <span className="font-bold text-[#182230]">
                     {item.previous_leader_name || 'No previous leader'} → {item.new_leader_name || 'Unassigned'}
                   </span>
-                  <span className="text-[10px] text-[#667085]">{new Date(item.changed_at).toLocaleString()}</span>
+                  <span className="text-[10px] text-[#667085]">{item.changed_at && Number.isFinite(Date.parse(item.changed_at)) ? new Date(item.changed_at).toLocaleString() : 'Date unavailable'}</span>
                 </div>
                 <div className="text-[10px] text-[#667085] mt-1">
                   {item.action.replace('_', ' ')} · Updated by {item.changed_by_name}
