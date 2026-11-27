@@ -1,0 +1,569 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — FNI Cells Connect (Desktop)</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#1F6E43',
+        'on-success': '#FFFFFF',
+        'success-container': '#DCF2E5',
+        'on-success-container': '#0B3D22',
+        'warning': '#8E6C23',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FDF8E8',
+        'on-warning-container': '#5D4200',
+        'light-primary': '#142842',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#E4ECF7',
+        'light-on-primary-container': '#142842',
+        'light-secondary': '#8E6C23',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FDF8E8',
+        'light-on-secondary-container': '#5D4200',
+        'light-tertiary': '#354863',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#EBF1FF',
+        'light-on-tertiary-container': '#1E314C',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F7F9FC',
+        'light-on-background': '#142842',
+        'light-surface': '#F7F9FC',
+        'light-surface-dim': '#E2E8F0',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FFFFFF',
+        'light-surface-container': '#EEF2F7',
+        'light-surface-container-high': '#E4ECF7',
+        'light-surface-container-highest': '#DCE3EC',
+        'light-on-surface': '#142842',
+        'light-surface-variant': '#E4ECF7',
+        'light-on-surface-variant': '#5A6B7C',
+        'light-outline': '#6B7C8F',
+        'light-outline-variant': '#DCE3EC',
+        'light-inverse-surface': '#1E314C',
+        'light-inverse-on-surface': '#F7F9FC',
+        'light-inverse-primary': '#B4C8E9',
+        'dark-primary': '#B4C8E9',
+        'dark-on-primary': '#142842',
+        'dark-primary-container': '#1E314C',
+        'dark-on-primary-container': '#D4E3FF',
+        'dark-secondary': '#EEC068',
+        'dark-on-secondary': '#412D00',
+        'dark-secondary-container': '#5D4200',
+        'dark-on-secondary-container': '#FFEFD7',
+        'dark-tertiary': '#99ACCC',
+        'dark-on-tertiary': '#061C35',
+        'dark-tertiary-container': '#354863',
+        'dark-on-tertiary-container': '#EBF1FF',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#101620',
+        'dark-on-background': '#E8EDF5',
+        'dark-surface': '#101620',
+        'dark-surface-dim': '#0C1119',
+        'dark-surface-bright': '#232D3D',
+        'dark-surface-container-lowest': '#0C1119',
+        'dark-surface-container-low': '#161E2B',
+        'dark-surface-container': '#1C2636',
+        'dark-surface-container-high': '#253145',
+        'dark-surface-container-highest': '#303E54',
+        'dark-on-surface': '#E8EDF5',
+        'dark-surface-variant': '#253145',
+        'dark-on-surface-variant': '#A8B6C8',
+        'dark-outline': '#7E8FA4',
+        'dark-outline-variant': '#2E3B4E',
+        'dark-inverse-surface': '#E8EDF5',
+        'dark-inverse-on-surface': '#142842',
+        'dark-inverse-primary': '#142842',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '16px',
+      },
+      fontFamily: {
+        'display': ['"Libre Franklin"', 'sans-serif'],
+        'headline': ['"Libre Franklin"', 'sans-serif'],
+        'title': ['"Libre Franklin"', 'sans-serif'],
+        'body': ['"Source Sans 3"', 'sans-serif'],
+        'label': ['"Libre Franklin"', 'sans-serif'],
+        'mono': ['"Source Code Pro"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.15px', fontWeight: '700' }],
+        'title-lg': ['18px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '220ms',
+        'surface-exit': '150ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'surface-exit': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'surface-exit': 'cubic-bezier(0.3, 0, 1, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700&amp;family=Source+Code+Pro:wght@500&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body class="bg-light-surface text-light-on-surface antialiased font-body">
+  <div class="min-h-[1024px] flex bg-light-surface" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Dark Navy Sidebar Rail (Preserved Admin Shell) -->
+    <aside class="hidden lg:flex w-64 shrink-0 min-h-[1024px] bg-light-primary text-light-on-primary flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col px-2 pt-1">
+          <span class="font-headline text-headline-md text-light-on-primary tracking-tight">FNI</span>
+          <span class="font-label text-label-sm text-dark-secondary uppercase">CELLS CONNECT</span>
+        </div>
+        <nav aria-label="Workspace menu">
+          <ul data-component-id="list-interactive" data-component-type="list" data-component-variant="interactive" class="flex flex-col gap-1">
+            <li><a href="../overview-desktop/OverviewDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">grid_view</span><span class="font-label text-label-lg">Overview</span></a></li>
+            <li><a href="../ministry-settings-desktop/MinistrySettingsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">tune</span><span class="font-label text-label-lg">Ministry Settings</span></a></li>
+            <li><a href="../admin-security-desktop/AdminSecurityDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">shield</span><span class="font-label text-label-lg">Admin Security</span></a></li>
+            <li><a href="../account-settings-desktop/AccountSettingsDesktop.html" aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded-md bg-light-tertiary text-light-on-primary"><span class="material-symbols-outlined text-title-md" style="font-variation-settings: &#39;FILL&#39; 1;" aria-hidden="true">manage_accounts</span><span class="font-label text-label-lg">Account Settings</span></a></li>
+            <li><a href="../audit-trail-desktop/AuditTrailDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">history</span><span class="font-label text-label-lg">Audit Trail</span></a></li>
+          </ul>
+        </nav>
+      </div>
+      <span class="px-2 font-label text-label-sm text-light-inverse-primary">Forerunners Network Int&#39;l</span>
+    </aside>
+
+    <!-- Main Column -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="sticky top-0 z-20 bg-light-surface-container-low border-b border-light-outline-variant px-4 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-2 font-label text-label-md text-light-on-surface-variant">
+          <a href="../account-settings-desktop/AccountSettingsDesktop.html" class="hover:text-light-on-surface transition-colors">Account Settings</a>
+          <span aria-hidden="true">/</span>
+          <span class="text-light-on-surface">My Profile</span>
+        </nav>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">person</span>
+          </div>
+          <div class="hidden sm:flex flex-col text-right">
+            <span class="font-label text-label-lg text-light-on-surface">Signed-in Account</span>
+            <span class="font-label text-label-sm text-light-on-surface-variant">Supabase Auth</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 lg:px-8 py-7 max-w-5xl w-full mx-auto flex flex-col gap-6">
+
+        <!-- Page Title & Save CTA -->
+        <section class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-col gap-0.5">
+            <h1 data-design-text-token="headline-lg" class="font-headline text-headline-lg text-light-on-surface">My Profile</h1>
+            <p class="font-body text-body-md text-light-on-surface-variant">Manage your profile photograph, cover banner, and personal contact details.</p>
+          </div>
+          <button id="mp-save-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-light-primary text-light-on-primary hover:bg-light-tertiary transition-colors font-label text-label-lg shadow-sm">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">save</span>
+            <span>Save Profile Changes</span>
+          </button>
+        </section>
+
+        <!-- Save State Feedback Banners -->
+        <section id="mp-saving" hidden aria-live="polite" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant px-4 py-3 flex items-center gap-3 shadow-sm">
+          <span class="material-symbols-outlined text-title-md text-light-primary animate-spin" aria-hidden="true">progress_activity</span>
+          <span class="font-body text-body-md text-light-on-surface">Saving profile changes to Supabase…</span>
+        </section>
+
+        <section id="mp-saved" hidden aria-live="polite" class="rounded-lg bg-success-container border border-success/20 px-4 py-3 flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-title-md text-on-success-container" aria-hidden="true">check_circle</span>
+          <span id="mp-saved-msg" class="font-label text-label-md text-on-success-container">Profile changes saved successfully.</span>
+        </section>
+
+        <section id="mp-error" hidden role="alert" class="rounded-lg bg-light-error-container border border-light-error/20 px-4 py-3 flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-title-md text-light-on-error-container" aria-hidden="true">error_outline</span>
+          <span id="mp-error-msg" class="font-label text-label-md text-light-on-error-container">Full Name is required before saving.</span>
+        </section>
+
+        <!-- Profile Identity & Cover Banner Live Preview Card -->
+        <section aria-label="Profile Identity and Cover Banner" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant overflow-hidden shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+          <!-- Cover Banner Preview Area -->
+          <div id="mp-banner-preview" class="relative h-40 w-full bg-light-primary overflow-hidden transition-colors">
+            <img id="mp-banner-img" src alt="Custom profile cover banner" hidden class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-light-primary/60 via-transparent to-transparent pointer-events-none"></div>
+            <div class="absolute top-3 right-3 flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-full bg-light-surface-container-low/95 text-light-on-surface font-label text-label-sm shadow-sm">Cover Preview</span>
+            </div>
+          </div>
+
+          <!-- Overlapping Avatar & Identity Row -->
+          <div class="px-6 pb-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 pt-3 pb-5 border-b border-light-outline-variant">
+              <div class="flex items-center gap-4">
+                <div class="-mt-12 relative z-10 w-20 h-20 rounded-full bg-light-primary-container text-light-on-primary-container border-4 border-light-surface-container-low inline-flex items-center justify-center overflow-hidden shadow-sm shrink-0">
+                  <span id="mp-avatar-icon" class="material-symbols-outlined text-display-lg" aria-hidden="true">account_circle</span>
+                  <img id="mp-avatar-img" src alt="Member profile photograph" hidden class="w-full h-full object-cover">
+                </div>
+                <div class="flex flex-col gap-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h2 id="mp-identity-name" class="font-headline text-headline-md text-light-on-surface">Signed-in Member</h2>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-success-container text-on-success-container font-label text-label-sm">
+                      <span class="w-1.5 h-1.5 rounded-full bg-success" aria-hidden="true"></span>
+                      <span>Active</span>
+                    </span>
+                  </div>
+                  <span class="font-label text-label-md text-light-on-surface-variant">Account designation: Read-only (Admin managed)</span>
+                </div>
+              </div>
+
+              <!-- Profile Photo Upload / Change / Remove Controls -->
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-on-surface hover:bg-light-surface-container transition-colors">
+                  <span class="material-symbols-outlined text-body-lg" aria-hidden="true">photo_camera</span>
+                  <span id="mp-photo-btn-label">Upload photo</span>
+                  <input id="mp-photo-input" type="file" accept="image/*" class="sr-only">
+                </label>
+                <button id="mp-photo-remove" type="button" hidden class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-error hover:bg-light-error-container/40 transition-colors">
+                  <span class="material-symbols-outlined text-body-lg" aria-hidden="true">delete</span>
+                  <span>Remove</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Photo Storage Upload Status -->
+            <div id="mp-photo-status" hidden class="mt-3 rounded-md bg-light-surface-container px-3.5 py-2 flex items-center gap-2 font-label text-label-sm text-light-on-surface">
+              <span id="mp-photo-status-icon" class="material-symbols-outlined text-body-lg text-light-primary" aria-hidden="true">cloud_done</span>
+              <span id="mp-photo-status-text">Profile photograph updated in Supabase Storage.</span>
+            </div>
+
+            <!-- Cover Banner Controls (Presets, Custom Upload, Reset/Remove) -->
+            <div class="pt-5 flex flex-col gap-3.5">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-col">
+                  <span class="font-title text-title-md text-light-on-surface">Profile Header Cover Banner</span>
+                  <span class="font-body text-body-md text-light-on-surface-variant">Select a preset fellowship theme or upload a custom cover banner.</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-on-surface hover:bg-light-surface-container transition-colors">
+                    <span class="material-symbols-outlined text-body-lg" aria-hidden="true">upload_file</span>
+                    <span>Upload Custom Cover Banner</span>
+                    <input id="mp-banner-input" type="file" accept="image/*" class="sr-only">
+                  </label>
+                  <button id="mp-banner-reset" type="button" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-on-surface-variant hover:text-light-on-surface hover:bg-light-surface-container transition-colors">
+                    <span class="material-symbols-outlined text-body-lg" aria-hidden="true">restart_alt</span>
+                    <span>Reset banner</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Preset Fellowship Themes -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" role="group" aria-label="Preset fellowship themes">
+                <button type="button" data-banner-bg="bg-light-primary" class="mp-preset flex items-center gap-2.5 p-2.5 rounded-md border-2 border-light-primary bg-light-surface text-left transition-colors">
+                  <span class="w-7 h-7 rounded-sm bg-light-primary shrink-0 border border-light-outline-variant"></span>
+                  <span class="font-label text-label-sm text-light-on-surface">Deep Navy</span>
+                </button>
+                <button type="button" data-banner-bg="bg-light-secondary" class="mp-preset flex items-center gap-2.5 p-2.5 rounded-md border border-light-outline-variant bg-light-surface text-left hover:bg-light-surface-container transition-colors">
+                  <span class="w-7 h-7 rounded-sm bg-light-secondary shrink-0 border border-light-outline-variant"></span>
+                  <span class="font-label text-label-sm text-light-on-surface">Warm Bronze</span>
+                </button>
+                <button type="button" data-banner-bg="bg-light-tertiary" class="mp-preset flex items-center gap-2.5 p-2.5 rounded-md border border-light-outline-variant bg-light-surface text-left hover:bg-light-surface-container transition-colors">
+                  <span class="w-7 h-7 rounded-sm bg-light-tertiary shrink-0 border border-light-outline-variant"></span>
+                  <span class="font-label text-label-sm text-light-on-surface">Royal Slate</span>
+                </button>
+                <button type="button" data-banner-bg="bg-light-secondary-container" class="mp-preset flex items-center gap-2.5 p-2.5 rounded-md border border-light-outline-variant bg-light-surface text-left hover:bg-light-surface-container transition-colors">
+                  <span class="w-7 h-7 rounded-sm bg-light-secondary-container shrink-0 border border-light-outline-variant"></span>
+                  <span class="font-label text-label-sm text-light-on-surface">Warm Ivory</span>
+                </button>
+              </div>
+
+              <!-- Banner Upload Progress / Feedback -->
+              <div id="mp-banner-uploading" hidden class="rounded-md bg-light-surface-container px-3.5 py-2 flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-body-lg text-light-primary animate-spin" aria-hidden="true">progress_activity</span>
+                <span class="font-label text-label-sm text-light-on-surface">Uploading custom cover banner to Supabase Storage…</span>
+              </div>
+              <div id="mp-banner-success" hidden class="rounded-md bg-success-container px-3.5 py-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-body-lg text-on-success-container" aria-hidden="true">check_circle</span>
+                <span class="font-label text-label-sm text-on-success-container">Cover banner updated.</span>
+              </div>
+              <div id="mp-banner-error" hidden class="rounded-md bg-light-error-container px-3.5 py-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-body-lg text-light-on-error-container" aria-hidden="true">error_outline</span>
+                <span class="font-label text-label-sm text-light-on-error-container">Unable to upload banner. Please select a valid image file.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Two-Column Content: Personal Information + Read-Only Fellowship Information -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+          <!-- Personal Information -->
+          <section aria-label="Personal Information" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-6 flex flex-col gap-5 shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+            <div class="flex items-center gap-3 border-b border-light-outline-variant pb-4">
+              <span class="w-9 h-9 rounded-md bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-title-md" aria-hidden="true">badge</span>
+              </span>
+              <div>
+                <h2 class="font-title text-title-lg text-light-on-surface">Personal Information</h2>
+                <p class="font-body text-body-md text-light-on-surface-variant">Editable contact and identity fields</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label for="mp-fullname" class="font-label text-label-md text-light-on-surface">Full Name <span class="text-light-error" aria-hidden="true">*</span></label>
+                <input id="mp-fullname" type="text" required placeholder="Enter your full name" class="rounded-md border-light-outline-variant bg-light-surface text-body-md px-3 py-2.5 focus:border-light-primary focus:ring-2 focus:ring-light-primary/15">
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="mp-phone" class="font-label text-label-md text-light-on-surface">Phone Number</label>
+                <input id="mp-phone" type="tel" placeholder="Enter your phone number" class="rounded-md border-light-outline-variant bg-light-surface text-body-md tabular-nums px-3 py-2.5 focus:border-light-primary focus:ring-2 focus:ring-light-primary/15">
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="mp-email" class="font-label text-label-md text-light-on-surface">Email Address</label>
+                <input id="mp-email" type="email" placeholder="Enter your email address" class="rounded-md border-light-outline-variant bg-light-surface text-body-md px-3 py-2.5 focus:border-light-primary focus:ring-2 focus:ring-light-primary/15">
+                <div class="flex items-start gap-2 rounded-md bg-light-secondary-container border border-light-secondary/25 px-3 py-2.5 mt-1">
+                  <span class="material-symbols-outlined text-body-lg text-light-secondary shrink-0 mt-0.5" aria-hidden="true">mark_email_read</span>
+                  <p class="font-body text-body-md text-light-on-secondary-container">Changing your email address triggers a verification link through Supabase Auth.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Read-Only Fellowship Information -->
+          <div class="flex flex-col gap-6">
+
+            <!-- Assigned Fellowship Cell (Locked Read-Only) -->
+            <section aria-label="Assigned Fellowship Cell" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-6 flex flex-col gap-4 shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+              <div class="flex items-center justify-between gap-2 border-b border-light-outline-variant pb-4">
+                <div class="flex items-center gap-3">
+                  <span class="w-9 h-9 rounded-md bg-light-secondary-container text-light-secondary inline-flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-title-md" aria-hidden="true">groups</span>
+                  </span>
+                  <h2 class="font-title text-title-lg text-light-on-surface">Assigned Fellowship Cell</h2>
+                </div>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-light-surface-container text-light-on-surface-variant font-label text-label-sm">
+                  <span class="material-symbols-outlined text-body-md" aria-hidden="true">lock</span>
+                  <span>Locked</span>
+                </span>
+              </div>
+
+              <div class="rounded-md bg-light-surface-container/70 border border-light-outline-variant/80 px-4 py-3 flex items-center justify-between gap-3">
+                <div class="flex flex-col">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Fellowship cell</span>
+                  <span class="font-title text-title-md text-light-on-surface">--</span>
+                </div>
+                <span class="material-symbols-outlined text-title-md text-light-on-surface-variant" aria-hidden="true">lock</span>
+              </div>
+
+              <p class="font-body text-body-md text-light-on-surface-variant">Cell assignments are locked to your account. Contact FNI Administration for changes.</p>
+            </section>
+
+            <!-- Account Designation & Status (Read-Only) -->
+            <section aria-label="Account Designation and Status" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-6 flex flex-col gap-4 shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+              <div class="flex items-center gap-3 border-b border-light-outline-variant pb-4">
+                <span class="w-9 h-9 rounded-md bg-light-surface-container text-light-on-surface inline-flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-title-md" aria-hidden="true">verified_user</span>
+                </span>
+                <div>
+                  <h2 class="font-title text-title-lg text-light-on-surface">Account Designation &amp; Status</h2>
+                  <p class="font-body text-body-md text-light-on-surface-variant">Managed by FNI Administration</p>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <div class="rounded-md bg-light-surface-container/70 border border-light-outline-variant/80 px-4 py-3 flex items-center justify-between gap-3">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Role / Designation</span>
+                  <span class="font-label text-label-md text-light-on-surface">Read-only (Admin managed)</span>
+                </div>
+                <div class="rounded-md bg-light-surface-container/70 border border-light-outline-variant/80 px-4 py-3 flex items-center justify-between gap-3">
+                  <span class="font-label text-label-sm text-light-on-surface-variant">Account Status</span>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-success-container text-on-success-container font-label text-label-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-success" aria-hidden="true"></span>
+                    <span>Active</span>
+                  </span>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const fullnameInput = document.getElementById('mp-fullname');
+      const emailInput = document.getElementById('mp-email');
+      const identityName = document.getElementById('mp-identity-name');
+
+      const savingBanner = document.getElementById('mp-saving');
+      const savedBanner = document.getElementById('mp-saved');
+      const savedMsg = document.getElementById('mp-saved-msg');
+      const errorBanner = document.getElementById('mp-error');
+      const errorMsg = document.getElementById('mp-error-msg');
+
+      const avatarImg = document.getElementById('mp-avatar-img');
+      const avatarIcon = document.getElementById('mp-avatar-icon');
+      const photoInput = document.getElementById('mp-photo-input');
+      const photoBtnLabel = document.getElementById('mp-photo-btn-label');
+      const photoRemove = document.getElementById('mp-photo-remove');
+      const photoStatus = document.getElementById('mp-photo-status');
+      const photoStatusText = document.getElementById('mp-photo-status-text');
+
+      const bannerPreview = document.getElementById('mp-banner-preview');
+      const bannerImg = document.getElementById('mp-banner-img');
+      const bannerInput = document.getElementById('mp-banner-input');
+      const bannerReset = document.getElementById('mp-banner-reset');
+      const bannerUploading = document.getElementById('mp-banner-uploading');
+      const bannerSuccess = document.getElementById('mp-banner-success');
+      const bannerError = document.getElementById('mp-banner-error');
+
+      fullnameInput.addEventListener('input', () => {
+        const val = fullnameInput.value.trim();
+        identityName.textContent = val || 'Signed-in Member';
+      });
+
+      photoInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        avatarImg.src = URL.createObjectURL(file);
+        avatarImg.hidden = false;
+        avatarIcon.hidden = true;
+        photoBtnLabel.textContent = 'Change photo';
+        photoRemove.hidden = false;
+        photoStatus.hidden = false;
+        photoStatusText.textContent = `Uploaded "${file.name}" to Supabase Storage.`;
+      });
+
+      photoRemove.addEventListener('click', () => {
+        avatarImg.src = '';
+        avatarImg.hidden = true;
+        avatarIcon.hidden = false;
+        photoInput.value = '';
+        photoBtnLabel.textContent = 'Upload photo';
+        photoRemove.hidden = true;
+        photoStatus.hidden = false;
+        photoStatusText.textContent = 'Profile photograph removed.';
+      });
+
+      document.querySelectorAll('.mp-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          bannerImg.hidden = true;
+          bannerImg.src = '';
+          bannerPreview.className = `relative h-40 w-full ${btn.dataset.bannerBg} overflow-hidden transition-colors`;
+          document.querySelectorAll('.mp-preset').forEach(p => {
+            p.classList.remove('border-2', 'border-light-primary');
+            p.classList.add('border', 'border-light-outline-variant');
+          });
+          btn.classList.remove('border', 'border-light-outline-variant');
+          btn.classList.add('border-2', 'border-light-primary');
+          bannerError.hidden = true;
+          bannerSuccess.hidden = false;
+        });
+      });
+
+      bannerInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        bannerSuccess.hidden = true;
+        bannerError.hidden = true;
+        if (!file.type.startsWith('image/')) {
+          bannerError.hidden = false;
+          return;
+        }
+        bannerUploading.hidden = false;
+        setTimeout(() => {
+          bannerUploading.hidden = true;
+          bannerImg.src = URL.createObjectURL(file);
+          bannerImg.hidden = false;
+          bannerSuccess.hidden = false;
+        }, 450);
+      });
+
+      bannerReset.addEventListener('click', () => {
+        bannerImg.src = '';
+        bannerImg.hidden = true;
+        bannerInput.value = '';
+        bannerPreview.className = 'relative h-40 w-full bg-light-primary overflow-hidden transition-colors';
+        bannerUploading.hidden = true;
+        bannerError.hidden = true;
+        bannerSuccess.hidden = true;
+      });
+
+      document.getElementById('mp-save-btn').addEventListener('click', () => {
+        const fullName = fullnameInput.value.trim();
+        const email = emailInput.value.trim();
+
+        savedBanner.hidden = true;
+        errorBanner.hidden = true;
+
+        if (!fullName) {
+          errorMsg.textContent = 'Full Name is required before saving.';
+          errorBanner.hidden = false;
+          fullnameInput.focus();
+          return;
+        }
+        if (email && !email.includes('@')) {
+          errorMsg.textContent = 'Please enter a valid email address before saving.';
+          errorBanner.hidden = false;
+          emailInput.focus();
+          return;
+        }
+
+        savingBanner.hidden = false;
+        setTimeout(() => {
+          savingBanner.hidden = true;
+          savedMsg.textContent = email
+            ? 'Profile changes saved. If your email changed, a verification link was sent via Supabase Auth.'
+            : 'Profile changes saved successfully.';
+          savedBanner.hidden = false;
+        }, 500);
+      });
+    })();
+  </script>
+
+
+</body></html>

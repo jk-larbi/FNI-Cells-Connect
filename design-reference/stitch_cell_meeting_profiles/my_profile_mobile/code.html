@@ -1,0 +1,488 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — FNI Cells Connect</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#1F6E43',
+        'on-success': '#FFFFFF',
+        'success-container': '#DCF2E5',
+        'on-success-container': '#0B3D22',
+        'warning': '#8E6C23',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FDF8E8',
+        'on-warning-container': '#5D4200',
+        'light-primary': '#142842',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#E4ECF7',
+        'light-on-primary-container': '#142842',
+        'light-secondary': '#8E6C23',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FDF8E8',
+        'light-on-secondary-container': '#5D4200',
+        'light-tertiary': '#354863',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#EBF1FF',
+        'light-on-tertiary-container': '#1E314C',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F7F9FC',
+        'light-on-background': '#142842',
+        'light-surface': '#F7F9FC',
+        'light-surface-dim': '#E2E8F0',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FFFFFF',
+        'light-surface-container': '#EEF2F7',
+        'light-surface-container-high': '#E4ECF7',
+        'light-surface-container-highest': '#DCE3EC',
+        'light-on-surface': '#142842',
+        'light-surface-variant': '#E4ECF7',
+        'light-on-surface-variant': '#5A6B7C',
+        'light-outline': '#6B7C8F',
+        'light-outline-variant': '#DCE3EC',
+        'light-inverse-surface': '#1E314C',
+        'light-inverse-on-surface': '#F7F9FC',
+        'light-inverse-primary': '#B4C8E9',
+        'dark-primary': '#B4C8E9',
+        'dark-on-primary': '#142842',
+        'dark-primary-container': '#1E314C',
+        'dark-on-primary-container': '#D4E3FF',
+        'dark-secondary': '#EEC068',
+        'dark-on-secondary': '#412D00',
+        'dark-secondary-container': '#5D4200',
+        'dark-on-secondary-container': '#FFEFD7',
+        'dark-tertiary': '#99ACCC',
+        'dark-on-tertiary': '#061C35',
+        'dark-tertiary-container': '#354863',
+        'dark-on-tertiary-container': '#EBF1FF',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#101620',
+        'dark-on-background': '#E8EDF5',
+        'dark-surface': '#101620',
+        'dark-surface-dim': '#0C1119',
+        'dark-surface-bright': '#232D3D',
+        'dark-surface-container-lowest': '#0C1119',
+        'dark-surface-container-low': '#161E2B',
+        'dark-surface-container': '#1C2636',
+        'dark-surface-container-high': '#253145',
+        'dark-surface-container-highest': '#303E54',
+        'dark-on-surface': '#E8EDF5',
+        'dark-surface-variant': '#253145',
+        'dark-on-surface-variant': '#A8B6C8',
+        'dark-outline': '#7E8FA4',
+        'dark-outline-variant': '#2E3B4E',
+        'dark-inverse-surface': '#E8EDF5',
+        'dark-inverse-on-surface': '#142842',
+        'dark-inverse-primary': '#142842',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '16px',
+      },
+      fontFamily: {
+        'display': ['"Libre Franklin"', 'sans-serif'],
+        'headline': ['"Libre Franklin"', 'sans-serif'],
+        'title': ['"Libre Franklin"', 'sans-serif'],
+        'body': ['"Source Sans 3"', 'sans-serif'],
+        'label': ['"Libre Franklin"', 'sans-serif'],
+        'mono': ['"Source Code Pro"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.15px', fontWeight: '700' }],
+        'title-lg': ['18px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '220ms',
+        'surface-exit': '150ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'surface-exit': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'surface-exit': 'cubic-bezier(0.3, 0, 1, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700&amp;family=Source+Code+Pro:wght@500&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body class="bg-light-surface text-light-on-surface antialiased font-body">
+  <div class="min-h-[884px] flex flex-col bg-light-surface" data-stitch-vh="min-h-[884px]===min-h-screen">
+
+    <!-- Top App Bar (Preserved Mobile Header) -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-low border-b border-light-outline-variant px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <a href="../account-settings-mobile/AccountSettingsMobile.html" aria-label="Back to Account Settings" class="w-8 h-8 rounded-full bg-light-surface-container inline-flex items-center justify-center text-light-on-surface">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+        </a>
+        <div class="flex items-center gap-2.5">
+          <span data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface tracking-tight">FNI</span>
+          <span class="h-4 w-px bg-light-outline-variant" aria-hidden="true"></span>
+          <span data-design-text-token="label-md" class="font-label text-label-md text-light-secondary uppercase">CELLS CONNECT</span>
+        </div>
+      </div>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-success-container text-on-success-container font-label text-label-sm">
+        <span class="w-1.5 h-1.5 rounded-full bg-success" aria-hidden="true"></span>
+        <span>Active</span>
+      </span>
+    </header>
+
+    <!-- Main Content (Single-Column Responsive) -->
+    <main class="flex-1 px-4 py-5 flex flex-col gap-4">
+
+      <section class="flex flex-col gap-0.5">
+        <h1 data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">My Profile</h1>
+        <p class="font-body text-body-md text-light-on-surface-variant">Profile photograph, cover banner and personal details.</p>
+      </section>
+
+      <!-- Profile Identity & Cover Banner Live Preview Card -->
+      <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant overflow-hidden shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+        <div id="m-mp-banner-preview" class="relative h-28 w-full bg-light-primary overflow-hidden transition-colors">
+          <img id="m-mp-banner-img" src alt="Custom profile cover banner" hidden class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-light-primary/60 via-transparent to-transparent pointer-events-none"></div>
+          <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-light-surface-container-low/95 text-light-on-surface font-label text-label-sm">Preview</span>
+        </div>
+
+        <div class="px-4 pb-4">
+          <div class="flex items-center gap-3 pt-2.5 pb-3.5 border-b border-light-outline-variant">
+            <div class="-mt-10 relative z-10 w-16 h-16 rounded-full bg-light-primary-container text-light-on-primary-container border-4 border-light-surface-container-low inline-flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+              <span id="m-mp-avatar-icon" class="material-symbols-outlined text-headline-lg" aria-hidden="true">account_circle</span>
+              <img id="m-mp-avatar-img" src alt="Member profile photograph" hidden class="w-full h-full object-cover">
+            </div>
+            <div class="flex flex-col min-w-0">
+              <h2 id="m-mp-identity-name" class="font-title text-title-lg text-light-on-surface">Signed-in Member</h2>
+              <span class="font-label text-label-sm text-light-on-surface-variant">Read-only (Admin managed)</span>
+            </div>
+          </div>
+
+          <!-- Photo Upload / Change / Remove Controls -->
+          <div class="pt-3.5 flex flex-wrap items-center gap-2">
+            <label class="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-on-surface">
+              <span class="material-symbols-outlined text-body-lg" aria-hidden="true">photo_camera</span>
+              <span id="m-mp-photo-btn-label">Upload photo</span>
+              <input id="m-mp-photo-input" type="file" accept="image/*" class="sr-only">
+            </label>
+            <button id="m-mp-photo-remove" type="button" hidden class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-error">
+              <span class="material-symbols-outlined text-body-lg" aria-hidden="true">delete</span>
+              <span>Remove</span>
+            </button>
+          </div>
+
+          <div id="m-mp-photo-status" hidden class="mt-2.5 rounded-md bg-light-surface-container px-3 py-2 font-label text-label-sm text-light-on-surface">
+            <span id="m-mp-photo-status-text">Profile photograph updated.</span>
+          </div>
+
+          <!-- Cover Banner Controls -->
+          <div class="pt-4 mt-4 border-t border-light-outline-variant flex flex-col gap-3">
+            <div class="flex flex-col">
+              <span class="font-title text-title-md text-light-on-surface">Header Cover Banner</span>
+              <span class="font-body text-body-md text-light-on-surface-variant">Preset fellowship themes or custom banner</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2" role="group" aria-label="Preset fellowship themes">
+              <button type="button" data-m-banner-bg="bg-light-primary" class="m-mp-preset flex items-center gap-2 p-2 rounded-md border-2 border-light-primary bg-light-surface text-left">
+                <span class="w-5 h-5 rounded-sm bg-light-primary shrink-0 border border-light-outline-variant"></span>
+                <span class="font-label text-label-sm text-light-on-surface">Deep Navy</span>
+              </button>
+              <button type="button" data-m-banner-bg="bg-light-secondary" class="m-mp-preset flex items-center gap-2 p-2 rounded-md border border-light-outline-variant bg-light-surface text-left">
+                <span class="w-5 h-5 rounded-sm bg-light-secondary shrink-0 border border-light-outline-variant"></span>
+                <span class="font-label text-label-sm text-light-on-surface">Warm Bronze</span>
+              </button>
+              <button type="button" data-m-banner-bg="bg-light-tertiary" class="m-mp-preset flex items-center gap-2 p-2 rounded-md border border-light-outline-variant bg-light-surface text-left">
+                <span class="w-5 h-5 rounded-sm bg-light-tertiary shrink-0 border border-light-outline-variant"></span>
+                <span class="font-label text-label-sm text-light-on-surface">Royal Slate</span>
+              </button>
+              <button type="button" data-m-banner-bg="bg-light-secondary-container" class="m-mp-preset flex items-center gap-2 p-2 rounded-md border border-light-outline-variant bg-light-surface text-left">
+                <span class="w-5 h-5 rounded-sm bg-light-secondary-container shrink-0 border border-light-outline-variant"></span>
+                <span class="font-label text-label-sm text-light-on-surface">Warm Ivory</span>
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="w-full cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-on-surface">
+                <span class="material-symbols-outlined text-body-lg" aria-hidden="true">upload_file</span>
+                <span>Upload Custom Cover Banner</span>
+                <input id="m-mp-banner-input" type="file" accept="image/*" class="sr-only">
+              </label>
+              <button id="m-mp-banner-reset" type="button" class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-sm text-light-on-surface-variant">
+                <span class="material-symbols-outlined text-body-lg" aria-hidden="true">restart_alt</span>
+                <span>Reset banner</span>
+              </button>
+            </div>
+
+            <div id="m-mp-banner-uploading" hidden class="rounded-md bg-light-surface-container px-3 py-2 flex items-center gap-2 font-label text-label-sm text-light-on-surface">
+              <span class="material-symbols-outlined text-body-lg text-light-primary animate-spin" aria-hidden="true">progress_activity</span>
+              <span>Uploading banner to Supabase Storage…</span>
+            </div>
+            <div id="m-mp-banner-success" hidden class="rounded-md bg-success-container px-3 py-2 font-label text-label-sm text-on-success-container">Cover banner updated.</div>
+            <div id="m-mp-banner-error" hidden class="rounded-md bg-light-error-container px-3 py-2 font-label text-label-sm text-light-on-error-container">Please select a valid image file.</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Save State Banners -->
+      <div id="m-mp-saving" hidden aria-live="polite" class="rounded-lg bg-light-surface-container-low border border-light-outline-variant px-3.5 py-2.5 flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-title-md text-light-primary animate-spin" aria-hidden="true">progress_activity</span>
+        <span class="font-body text-body-md text-light-on-surface">Saving profile changes to Supabase…</span>
+      </div>
+      <div id="m-mp-saved" hidden aria-live="polite" class="rounded-lg bg-success-container border border-success/20 px-3.5 py-2.5 font-label text-label-sm text-on-success-container">
+        <span id="m-mp-saved-msg">Profile changes saved successfully.</span>
+      </div>
+      <div id="m-mp-error" hidden role="alert" class="rounded-lg bg-light-error-container border border-light-error/20 px-3.5 py-2.5 font-label text-label-sm text-light-on-error-container">
+        <span id="m-mp-error-msg">Full Name is required before saving.</span>
+      </div>
+
+      <!-- Personal Information -->
+      <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col gap-3.5 shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+        <div class="flex items-center gap-2.5 border-b border-light-outline-variant pb-3">
+          <span class="w-8 h-8 rounded-md bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">badge</span>
+          </span>
+          <h2 class="font-title text-title-md text-light-on-surface">Personal Information</h2>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label for="m-mp-fullname" class="font-label text-label-md text-light-on-surface">Full Name <span class="text-light-error" aria-hidden="true">*</span></label>
+          <input id="m-mp-fullname" type="text" required placeholder="Enter your full name" class="rounded-md border-light-outline-variant bg-light-surface text-body-md px-3 py-2">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="m-mp-phone" class="font-label text-label-md text-light-on-surface">Phone Number</label>
+          <input id="m-mp-phone" type="tel" placeholder="Enter your phone number" class="rounded-md border-light-outline-variant bg-light-surface text-body-md tabular-nums px-3 py-2">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="m-mp-email" class="font-label text-label-md text-light-on-surface">Email Address</label>
+          <input id="m-mp-email" type="email" placeholder="Enter your email address" class="rounded-md border-light-outline-variant bg-light-surface text-body-md px-3 py-2">
+          <div class="flex items-start gap-2 rounded-md bg-light-secondary-container border border-light-secondary/25 px-3 py-2 mt-1">
+            <span class="material-symbols-outlined text-body-lg text-light-secondary shrink-0 mt-0.5" aria-hidden="true">mark_email_read</span>
+            <p class="font-body text-body-md text-light-on-secondary-container">Changing your email address triggers a verification link through Supabase Auth.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Assigned Fellowship Cell (Locked Read-Only) -->
+      <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col gap-3 shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+        <div class="flex items-center justify-between gap-2 border-b border-light-outline-variant pb-3">
+          <h2 class="font-title text-title-md text-light-on-surface">Assigned Fellowship Cell</h2>
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-light-surface-container text-light-on-surface-variant font-label text-label-sm">
+            <span class="material-symbols-outlined text-body-md" aria-hidden="true">lock</span>
+            <span>Locked</span>
+          </span>
+        </div>
+        <div class="rounded-md bg-light-surface-container/70 border border-light-outline-variant/80 px-3.5 py-2.5 flex items-center justify-between">
+          <span class="font-label text-label-sm text-light-on-surface-variant">Fellowship cell</span>
+          <span class="font-title text-title-md text-light-on-surface">--</span>
+        </div>
+        <p class="font-body text-body-md text-light-on-surface-variant">Cell assignments are locked to your account. Contact FNI Administration for changes.</p>
+      </article>
+
+      <!-- Account Designation & Status (Read-Only) -->
+      <article class="rounded-lg bg-light-surface-container-low border border-light-outline-variant p-4 flex flex-col gap-3 shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+        <h2 class="font-title text-title-md text-light-on-surface border-b border-light-outline-variant pb-3">Account Designation &amp; Status</h2>
+        <div class="rounded-md bg-light-surface-container/70 border border-light-outline-variant/80 px-3.5 py-2.5 flex items-center justify-between">
+          <span class="font-label text-label-sm text-light-on-surface-variant">Role / Designation</span>
+          <span class="font-label text-label-sm text-light-on-surface">Read-only (Admin managed)</span>
+        </div>
+        <div class="rounded-md bg-light-surface-container/70 border border-light-outline-variant/80 px-3.5 py-2.5 flex items-center justify-between">
+          <span class="font-label text-label-sm text-light-on-surface-variant">Account Status</span>
+          <span class="px-2.5 py-0.5 rounded-full bg-success-container text-on-success-container font-label text-label-sm">Active</span>
+        </div>
+      </article>
+
+      <!-- Primary Save Action -->
+      <button id="m-mp-save-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="w-full py-3 rounded-full bg-light-primary text-light-on-primary font-label text-label-lg inline-flex items-center justify-center gap-2 shadow-sm">
+        <span class="material-symbols-outlined text-title-md" aria-hidden="true">save</span>
+        <span>Save Profile Changes</span>
+      </button>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Preserved Mobile Navigation) -->
+    <nav aria-label="Primary navigation" class="sticky bottom-0 z-30 bg-light-surface-container-low border-t border-light-outline-variant px-2 py-2 grid grid-cols-5 items-center">
+      <a href="../overview-mobile/OverviewMobile.html" class="flex flex-col items-center gap-1 py-1 text-light-on-surface-variant"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">grid_view</span><span class="font-label text-label-sm">Home</span></a>
+      <a href="../cell-groups-mobile/CellGroupsMobile.html" class="flex flex-col items-center gap-1 py-1 text-light-on-surface-variant"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">group</span><span class="font-label text-label-sm">Cells</span></a>
+      <a href="../reports-mobile/ReportsMobile.html" class="flex flex-col items-center gap-1 py-1 text-light-on-surface-variant"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">description</span><span class="font-label text-label-sm">Reports</span></a>
+      <a href="../comms-mobile/CommsMobile.html" class="flex flex-col items-center gap-1 py-1 text-light-on-surface-variant"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">chat_bubble_outline</span><span class="font-label text-label-sm">Comms</span></a>
+      <a href="../more-mobile/MoreMobile.html" aria-current="page" class="flex flex-col items-center gap-1 py-1 text-light-on-primary-container"><span class="px-4 py-1 rounded-full bg-light-primary-container inline-flex items-center justify-center"><span class="material-symbols-outlined text-title-lg" aria-hidden="true">more_horiz</span></span><span class="font-label text-label-sm">More</span></a>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const fullnameInput = document.getElementById('m-mp-fullname');
+      const emailInput = document.getElementById('m-mp-email');
+      const identityName = document.getElementById('m-mp-identity-name');
+
+      const savingBanner = document.getElementById('m-mp-saving');
+      const savedBanner = document.getElementById('m-mp-saved');
+      const savedMsg = document.getElementById('m-mp-saved-msg');
+      const errorBanner = document.getElementById('m-mp-error');
+      const errorMsg = document.getElementById('m-mp-error-msg');
+
+      const avatarImg = document.getElementById('m-mp-avatar-img');
+      const avatarIcon = document.getElementById('m-mp-avatar-icon');
+      const photoInput = document.getElementById('m-mp-photo-input');
+      const photoBtnLabel = document.getElementById('m-mp-photo-btn-label');
+      const photoRemove = document.getElementById('m-mp-photo-remove');
+      const photoStatus = document.getElementById('m-mp-photo-status');
+      const photoStatusText = document.getElementById('m-mp-photo-status-text');
+
+      const bannerPreview = document.getElementById('m-mp-banner-preview');
+      const bannerImg = document.getElementById('m-mp-banner-img');
+      const bannerInput = document.getElementById('m-mp-banner-input');
+      const bannerReset = document.getElementById('m-mp-banner-reset');
+      const bannerUploading = document.getElementById('m-mp-banner-uploading');
+      const bannerSuccess = document.getElementById('m-mp-banner-success');
+      const bannerError = document.getElementById('m-mp-banner-error');
+
+      fullnameInput.addEventListener('input', () => {
+        identityName.textContent = fullnameInput.value.trim() || 'Signed-in Member';
+      });
+
+      photoInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        avatarImg.src = URL.createObjectURL(file);
+        avatarImg.hidden = false;
+        avatarIcon.hidden = true;
+        photoBtnLabel.textContent = 'Change photo';
+        photoRemove.hidden = false;
+        photoStatus.hidden = false;
+        photoStatusText.textContent = `Uploaded "${file.name}" to Supabase Storage.`;
+      });
+
+      photoRemove.addEventListener('click', () => {
+        avatarImg.src = '';
+        avatarImg.hidden = true;
+        avatarIcon.hidden = false;
+        photoInput.value = '';
+        photoBtnLabel.textContent = 'Upload photo';
+        photoRemove.hidden = true;
+        photoStatus.hidden = false;
+        photoStatusText.textContent = 'Profile photograph removed.';
+      });
+
+      document.querySelectorAll('.m-mp-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          bannerImg.hidden = true;
+          bannerImg.src = '';
+          bannerPreview.className = `relative h-28 w-full ${btn.dataset.mBannerBg} overflow-hidden transition-colors`;
+          document.querySelectorAll('.m-mp-preset').forEach(p => {
+            p.classList.remove('border-2', 'border-light-primary');
+            p.classList.add('border', 'border-light-outline-variant');
+          });
+          btn.classList.remove('border', 'border-light-outline-variant');
+          btn.classList.add('border-2', 'border-light-primary');
+          bannerError.hidden = true;
+          bannerSuccess.hidden = false;
+        });
+      });
+
+      bannerInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        bannerSuccess.hidden = true;
+        bannerError.hidden = true;
+        if (!file.type.startsWith('image/')) {
+          bannerError.hidden = false;
+          return;
+        }
+        bannerUploading.hidden = false;
+        setTimeout(() => {
+          bannerUploading.hidden = true;
+          bannerImg.src = URL.createObjectURL(file);
+          bannerImg.hidden = false;
+          bannerSuccess.hidden = false;
+        }, 450);
+      });
+
+      bannerReset.addEventListener('click', () => {
+        bannerImg.src = '';
+        bannerImg.hidden = true;
+        bannerInput.value = '';
+        bannerPreview.className = 'relative h-28 w-full bg-light-primary overflow-hidden transition-colors';
+        bannerUploading.hidden = true;
+        bannerError.hidden = true;
+        bannerSuccess.hidden = true;
+      });
+
+      document.getElementById('m-mp-save-btn').addEventListener('click', () => {
+        const fullName = fullnameInput.value.trim();
+        const email = emailInput.value.trim();
+
+        savedBanner.hidden = true;
+        errorBanner.hidden = true;
+
+        if (!fullName) {
+          errorMsg.textContent = 'Full Name is required before saving.';
+          errorBanner.hidden = false;
+          fullnameInput.focus();
+          return;
+        }
+        if (email && !email.includes('@')) {
+          errorMsg.textContent = 'Please enter a valid email address before saving.';
+          errorBanner.hidden = false;
+          emailInput.focus();
+          return;
+        }
+
+        savingBanner.hidden = false;
+        setTimeout(() => {
+          savingBanner.hidden = true;
+          savedMsg.textContent = email
+            ? 'Profile changes saved. If your email changed, a verification link was sent via Supabase Auth.'
+            : 'Profile changes saved successfully.';
+          savedBanner.hidden = false;
+        }, 500);
+      });
+    })();
+  </script>
+
+
+</body></html>
