@@ -240,6 +240,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* Fast administrator actions: direct routes into existing workflows */}
+      <section aria-label="Quick administrator actions" className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-extrabold text-[#142B4A]">Quick actions</h2>
+            <p className="text-[11px] text-[#667085] mt-0.5">Go straight to the tasks you manage most.</p>
+          </div>
+          <span className="hidden sm:inline-flex items-center rounded-full border border-[#E3E8EF] bg-white px-3 py-1 text-[10px] font-semibold text-[#667085]">Administrator tools</span>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <button type="button" onClick={() => onNavigateToTab('report-review')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
+            <span className="flex items-center justify-between gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-[#A66B12]"><FileCheck className="h-4 w-4" /></span>
+              <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-800">{stats.awaitingReviewCount} pending</span>
+            </span>
+            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">Review reports</span>
+            <span className="mt-0.5 block text-[10px] text-[#667085]">Approve or return submissions</span>
+          </button>
+          <button type="button" onClick={() => onNavigateToTab('cell-management')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#24527A]"><Building className="h-4 w-4" /></span>
+            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">Manage cells</span>
+            <span className="mt-0.5 block text-[10px] text-[#667085]">{stats.totalCells} registered cells</span>
+          </button>
+          <button type="button" onClick={() => onNavigateToTab('cell-leaders')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Users className="h-4 w-4" /></span>
+            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">Cell leaders</span>
+            <span className="mt-0.5 block text-[10px] text-[#667085]">{stats.activeCellLeaders} active leaders</span>
+          </button>
+          <button type="button" onClick={() => onNavigateToTab('analytics')} className="group min-h-[88px] rounded-2xl border border-[#E3E8EF] bg-white p-3 text-left shadow-sm transition-all hover:border-[#C6A45A] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C6A45A]/40">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><TrendingUp className="h-4 w-4" /></span>
+            <span className="mt-2 block text-xs font-extrabold text-[#142B4A]">View analytics</span>
+            <span className="mt-0.5 block text-[10px] text-[#667085]">Track ministry progress</span>
+          </button>
+        </div>
+      </section>
+
       {/* Vision, Mission & Annual Soul-Winning Target Surface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Vision & Mission Card */}
