@@ -82,7 +82,7 @@ export const ReceivedReportsView: React.FC = () => {
           className={`rounded-2xl border p-4 text-left transition-all ${group === 'evangelism' ? 'border-[#142B4A] bg-[#142B4A] text-white shadow-sm' : 'border-[#E3E8EF] bg-white text-[#142B4A] hover:bg-[#F5F7FA]'}`}>
           <div className="flex items-center justify-between">
             <Flame className={`h-5 w-5 ${group === 'evangelism' ? 'text-[#C6A45A]' : 'text-[#667085]'}`} />
-            <span className="text-xl font-black tabular-nums">{evangelismCount}</span>
+            <span className="text-xl font-black tabular-nums">{loading ? "—" : evangelismCount}</span>
           </div>
           <p className="mt-3 text-sm font-bold">Evangelism</p>
           <p className={`mt-0.5 text-[11px] ${group === 'evangelism' ? 'text-white/70' : 'text-[#667085]'}`}>Accepted outreach reports</p>
@@ -91,7 +91,7 @@ export const ReceivedReportsView: React.FC = () => {
           className={`rounded-2xl border p-4 text-left transition-all ${group === 'meeting' ? 'border-[#142B4A] bg-[#142B4A] text-white shadow-sm' : 'border-[#E3E8EF] bg-white text-[#142B4A] hover:bg-[#F5F7FA]'}`}>
           <div className="flex items-center justify-between">
             <Users className={`h-5 w-5 ${group === 'meeting' ? 'text-[#C6A45A]' : 'text-[#667085]'}`} />
-            <span className="text-xl font-black tabular-nums">{meetingCount}</span>
+            <span className="text-xl font-black tabular-nums">{loading ? "—" : meetingCount}</span>
           </div>
           <p className="mt-3 text-sm font-bold">Cell Meeting</p>
           <p className={`mt-0.5 text-[11px] ${group === 'meeting' ? 'text-white/70' : 'text-[#667085]'}`}>Accepted cell meeting reports</p>
@@ -115,7 +115,7 @@ export const ReceivedReportsView: React.FC = () => {
 
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-[#142B4A]">{group === 'evangelism' ? 'Evangelism Reports' : 'Cell Meeting Reports'}</h2>
-        <span className="rounded-full bg-[#ECFDF3] px-2.5 py-1 text-[10px] font-bold text-[#027A48]">{visibleReports.length} accepted</span>
+        <span className="rounded-full bg-[#ECFDF3] px-2.5 py-1 text-[10px] font-bold text-[#027A48]">{loading ? "Loading…" : `${visibleReports.length} accepted`}</span>
       </div>
 
       {loading ? (
