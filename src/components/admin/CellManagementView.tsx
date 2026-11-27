@@ -248,8 +248,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     return matchesSearch && matchesStatus;
   });
 
+  const activeCellCount = cells.filter(cell => (cell.status || (cell.is_active ? 'Active' : 'Suspended')) === 'Active').length;
+  const assignedLeaderCount = cells.filter(cell => Boolean(cell.leader_id || cell.tutorUid || cell.leader_name?.trim())).length;
+  const venueDetailsCount = cells.filter(cell => Boolean(cell.venue_address?.trim() || cell.meeting_location?.trim() || cell.location?.trim())).length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -300,6 +304,41 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
           </button>
         </div>
       </div>
+
+      <section aria-label="Cell directory summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold text-[#667085]">Registered cells</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#142B4A]/[0.06] text-[#142B4A]"><Building className="h-4 w-4" /></span>
+          </div>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : cells.length}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">In the active directory</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold text-[#667085]">Active cells</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-4 w-4" /></span>
+          </div>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : activeCellCount}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Currently operating</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold text-[#667085]">Leaders assigned</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#C6A45A]/15 text-[#8A6A2F]"><UserCheck className="h-4 w-4" /></span>
+          </div>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : assignedLeaderCount}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Cells with a recorded leader</p>
+        </div>
+        <div className="min-w-0 rounded-2xl border border-[#E3E8EF] bg-white p-3.5 shadow-sm sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold text-[#667085]">Venue details</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700"><MapPin className="h-4 w-4" /></span>
+          </div>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#142B4A] tabular-nums">{isLoading && cells.length === 0 ? '—' : venueDetailsCount}</p>
+          <p className="mt-0.5 text-[10px] text-[#667085]">Cells with a saved venue</p>
+        </div>
+      </section>
 
       {loadError && (
         <div role="alert" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
