@@ -35,6 +35,12 @@ export const AuditTrailView: React.FC = () => {
 
   const clearSearch = () => setSearchTerm('');
 
+  const formatTimestamp = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Date unavailable';
+    return `${date.toLocaleString('en-GB', { timeZone: 'Africa/Accra' })} Ghana time`;
+  };
+
   return (
     <div className="bg-white rounded-xl border border-slate-200/90 shadow-subtle p-4 sm:p-5 space-y-4 min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -102,6 +108,12 @@ export const AuditTrailView: React.FC = () => {
             <RefreshCw className="w-5 h-5 mx-auto mb-2 animate-spin" />
             Loading audit records...
           </div>
+        ) : loadError && logs.length === 0 ? (
+          <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+            <p className="text-sm font-semibold text-rose-800">Audit records are unavailable</p>
+            <p className="mt-1 text-xs text-rose-700">The records could not be retrieved. Retry to check again.</p>
+            <button type="button" onClick={loadLogs} className="mt-3 min-h-10 px-4 rounded-lg bg-white border border-rose-200 text-xs font-semibold text-rose-800">Try again</button>
+          </div>
         ) : !loadError && filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center">
             <Shield className="w-7 h-7 text-slate-300 mx-auto mb-2" />
@@ -123,7 +135,7 @@ export const AuditTrailView: React.FC = () => {
               <div className="min-w-0">
                 <p className="text-sm font-bold text-navy-900 break-words">{log.user_name || 'System'}</p>
                 <p className="mt-1 text-[11px] text-slate-500">
-                  {new Date(log.created_at).toLocaleString(undefined, { timeZone: 'UTC' })} UTC
+                  {formatTimestamp(log.created_at)}
                 </p>
               </div>
               <span className={`shrink-0 max-w-[52%] rounded-full px-2.5 py-1 text-[10px] font-bold break-words ${
@@ -169,6 +181,12 @@ export const AuditTrailView: React.FC = () => {
           <tbody className="divide-y divide-slate-100 bg-white">
             {isLoading && logs.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">Loading audit records...</td></tr>
+            ) : loadError && logs.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-10 text-center">
+                <p className="font-semibold text-rose-700">Audit records are unavailable</p>
+                <p className="mt-1 text-slate-500">The records could not be retrieved. Retry to check again.</p>
+                <button type="button" onClick={loadLogs} className="mt-3 min-h-10 px-4 rounded-lg border border-rose-200 text-rose-700 font-semibold">Try again</button>
+              </td></tr>
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
