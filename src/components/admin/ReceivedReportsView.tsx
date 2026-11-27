@@ -14,17 +14,22 @@ export const ReceivedReportsView: React.FC = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   const loadReports = async (refresh = false) => {
     if (refresh) setRefreshing(true);
     else setLoading(true);
     try {
+      setLoadError('');
       const [queue, activeCells] = await Promise.all([
         ReportService.getUnifiedReviewQueue({ reportType: 'all' }),
         CellService.getActiveCells(),
       ]);
       const activeIds = new Set(activeCells.map(cell => cell.id));
       setReports(queue.filter(report => activeIds.has(report.cellId) && isApproved(report.status)));
+    } catch (error) {
+      console.error('Could not load the received reports archive:', error);
+      setLoadError('The archive could not be loaded. Check your connection and try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -94,10 +99,18 @@ export const ReceivedReportsView: React.FC = () => {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98A2B3]" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98A2B3]" />
         <input value={search} onChange={event => setSearch(event.target.value)}
-          placeholder="Search by cell or tutor name..."
-          className="w-full rounded-xl border border-[#E3E8EF] bg-white py-3 pl-9 pr-3 text-sm text-[#182230] outline-none focus:border-[#142B4A]" />
+          placeholder="Search by cell, tutor, or outreach location..."
+          aria-label="Search accepted reports by cell, tutor, or outreach location"
+          className="w-full rounded-xl border border-[#E3E8EF] bg-white py-3 pl-9 pr-11 text-sm text-[#182230] outline-none focus:border-[#142B4A]" />
+        {search.trim() && (
+          <button type="button" onClick={() => setSearch('')}
+            aria-label="Clear archive search" title="Clear search"
+            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#667085] hover:bg-[#F2F4F7] focus:outline-none focus:ring-2 focus:ring-[#142B4A]">
+            <span aria-hidden="true">×</span>
+          </button>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
@@ -107,6 +120,14 @@ export const ReceivedReportsView: React.FC = () => {
 
       {loading ? (
         <div className="rounded-2xl border border-[#E3E8EF] bg-white p-10 text-center text-sm text-[#667085]">Loading accepted reports...</div>
+      ) : loadError ? (
+        <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-8 text-center">
+          <p className="text-sm font-bold text-rose-900">Unable to load the archive</p>
+          <p className="mt-1 text-xs text-rose-800">{loadError}</p>
+          <button type="button" onClick={() => void loadReports()} className="mt-4 min-h-10 rounded-xl bg-[#142B4A] px-4 py-2 text-xs font-bold text-white hover:bg-[#203D63]">
+            Try again
+          </button>
+        </div>
       ) : visibleReports.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#D0D5DD] bg-white px-5 py-10 text-center">
           <FileText className="mx-auto h-8 w-8 text-[#98A2B3]" />
