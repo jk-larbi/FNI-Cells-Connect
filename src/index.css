@@ -2716,3 +2716,126 @@ html.dark .fni-chat-composer textarea:focus-visible {
     overflow-y: auto;
   }
 }
+
+
+/* Audit Trail — Stitch desktop and mobile activity log */
+.fni-admin-stitch-shell .fni-audit-trail-stitch {
+  width: 100%; max-width: 1280px; margin-inline: auto;
+  color: #142842; font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-audit-trail-stitch h1,
+.fni-admin-stitch-shell .fni-audit-trail-stitch h2,
+.fni-admin-stitch-shell .fni-audit-trail-stitch button,
+.fni-admin-stitch-shell .fni-audit-trail-stitch summary {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+.fni-admin-stitch-shell .fni-audit-heading h1 {
+  margin: 0; font-size: clamp(28px, 3vw, 36px); line-height: 1.2;
+  letter-spacing: -.035em; font-weight: 700; color: #142842;
+}
+.fni-admin-stitch-shell .fni-audit-eyebrow {
+  margin: 0 0 8px; color: #5A6B7C; font: 600 11px/16px 'Libre Franklin', sans-serif;
+  letter-spacing: .09em;
+}
+.fni-admin-stitch-shell .fni-audit-subtitle { margin: 8px 0 0; color: #5A6B7C; font-size: 15px; }
+.fni-admin-stitch-shell .fni-audit-actions { width: min(100%, 680px); }
+.fni-admin-stitch-shell .fni-audit-search {
+  min-width: 220px; min-height: 44px; display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; border: 1px solid #DCE3EC; border-radius: 999px; background: #FFFFFF; color: #6B7C8F;
+}
+.fni-admin-stitch-shell .fni-audit-search input {
+  width: 100%; min-width: 0; border: 0; outline: 0; box-shadow: none; background: transparent;
+  color: #142842; font: 400 13px/20px 'Source Sans 3', sans-serif; padding: 0;
+}
+.fni-admin-stitch-shell .fni-audit-search input:focus { outline: 0; box-shadow: none; }
+.fni-admin-stitch-shell .fni-audit-search button { display: inline-flex; align-items: center; justify-content: center; color: #5A6B7C; }
+.fni-admin-stitch-shell .fni-audit-export,
+.fni-admin-stitch-shell .fni-audit-refresh {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px;
+  padding: 0 18px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out;
+}
+.fni-admin-stitch-shell .fni-audit-export { color: #FFFFFF; background: #142842; border: 1px solid #142842; }
+.fni-admin-stitch-shell .fni-audit-export:hover { background: #354863; }
+.fni-admin-stitch-shell .fni-audit-refresh { color: #142842; background: #FFFFFF; border: 1px solid #DCE3EC; }
+.fni-admin-stitch-shell .fni-audit-refresh:hover { background: #EEF2F7; }
+.fni-admin-stitch-shell .fni-audit-trail-stitch button:disabled { opacity: .5; cursor: not-allowed; }
+.fni-admin-stitch-shell .fni-audit-meta {
+  color: #5A6B7C; font: 600 12px/18px 'Libre Franklin', sans-serif;
+}
+.fni-admin-stitch-shell .fni-audit-meta > div { display: flex; align-items: center; gap: 8px; color: #142842; }
+.fni-admin-stitch-shell .fni-audit-table-wrap {
+  overflow: visible; border: 1px solid #DCE3EC; border-radius: 16px; background: #FFFFFF;
+}
+.fni-admin-stitch-shell .fni-audit-table { border-collapse: separate; border-spacing: 0; min-width: 980px; }
+.fni-admin-stitch-shell .fni-audit-table th {
+  padding: 14px 16px; background: #EEF2F7; color: #5A6B7C; text-align: left;
+  font: 600 10px/16px 'Libre Franklin', sans-serif; letter-spacing: .07em; text-transform: uppercase;
+}
+.fni-admin-stitch-shell .fni-audit-table th:first-child { border-top-left-radius: 15px; }
+.fni-admin-stitch-shell .fni-audit-table th:last-child { border-top-right-radius: 15px; }
+.fni-admin-stitch-shell .fni-audit-table td {
+  padding: 16px; border-top: 1px solid #E8EDF3; color: #354863; vertical-align: top;
+  font-size: 13px; line-height: 19px;
+}
+.fni-admin-stitch-shell .fni-audit-table tbody tr { transition: background-color 120ms ease-out; }
+.fni-admin-stitch-shell .fni-audit-table tbody tr:hover { background: #F7F9FC; }
+.fni-admin-stitch-shell .fni-audit-action {
+  display: inline-flex; max-width: 220px; padding: 4px 10px; border-radius: 999px;
+  font: 600 11px/16px 'Libre Franklin', sans-serif; overflow-wrap: anywhere;
+}
+.fni-admin-stitch-shell .fni-audit-action.is-success { color: #0B3D22; background: #DCF2E5; }
+.fni-admin-stitch-shell .fni-audit-action.is-danger { color: #93000A; background: #FFDAD6; }
+.fni-admin-stitch-shell .fni-audit-action.is-warning { color: #5D4200; background: #FDF8E8; }
+.fni-admin-stitch-shell .fni-audit-action.is-neutral { color: #142842; background: #E4ECF7; }
+.fni-admin-stitch-shell .fni-audit-details { max-width: 260px; }
+.fni-admin-stitch-shell .fni-audit-details summary {
+  max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: #5A6B7C; cursor: pointer; font-size: 12px;
+}
+.fni-admin-stitch-shell .fni-audit-details pre,
+.fni-admin-stitch-shell .fni-audit-card pre {
+  margin-top: 10px; padding: 12px; border-radius: 9px; background: #F7F9FC;
+  color: #354863; white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/17px 'Source Code Pro', monospace;
+}
+.fni-admin-stitch-shell .fni-audit-admin { color: #142842 !important; font-weight: 600; }
+.fni-admin-stitch-shell .fni-audit-category { color: #5A6B7C; }
+.fni-admin-stitch-shell .fni-audit-time,
+.fni-admin-stitch-shell .fni-audit-ip { color: #5A6B7C !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fni-admin-stitch-shell .fni-audit-empty {
+  min-height: 170px; padding: 28px !important; display: table-cell; text-align: center;
+  color: #5A6B7C !important; vertical-align: middle !important;
+}
+.fni-admin-stitch-shell .fni-audit-empty svg { display: block; margin: 0 auto 10px; }
+.fni-admin-stitch-shell .fni-audit-empty strong,
+.fni-admin-stitch-shell .fni-audit-empty span { display: block; }
+.fni-admin-stitch-shell .fni-audit-empty strong { color: #142842; margin-bottom: 4px; }
+.fni-admin-stitch-shell .fni-audit-error {
+  padding: 16px; border: 1px solid #FFDAD6; border-radius: 12px; background: #FFF5F4; color: #93000A;
+}
+.fni-admin-stitch-shell .fni-audit-error p { margin: 5px 0 12px; overflow-wrap: anywhere; }
+.fni-admin-stitch-shell .fni-audit-error button { padding: 9px 14px; border: 1px solid #E8B8B3; border-radius: 9px; background: #FFFFFF; font-size: 12px; font-weight: 600; }
+.fni-admin-stitch-shell .fni-audit-card {
+  padding: 16px; border: 1px solid #DCE3EC; border-radius: 14px; background: #FFFFFF;
+}
+.fni-admin-stitch-shell .fni-audit-card h2 { margin: 0; color: #142842; font-size: 14px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }
+.fni-admin-stitch-shell .fni-audit-card p { margin: 4px 0 0; color: #5A6B7C; font-size: 12px; }
+.fni-admin-stitch-shell .fni-audit-card-time { margin-top: 12px; color: #5A6B7C; font: 500 12px/18px 'Source Code Pro', monospace; font-variant-numeric: tabular-nums; }
+.fni-admin-stitch-shell .fni-audit-card details { margin-top: 12px; padding-top: 11px; border-top: 1px solid #E8EDF3; }
+.fni-admin-stitch-shell .fni-audit-card details summary { display: flex; align-items: center; gap: 7px; color: #142842; font-size: 12px; font-weight: 600; cursor: pointer; }
+.fni-admin-stitch-shell .fni-audit-card-ip { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #E8EDF3; color: #7A8999; font-size: 11px; }
+.fni-admin-stitch-shell .fni-audit-card-ip span { color: #5A6B7C; overflow-wrap: anywhere; text-align: right; }
+.fni-admin-stitch-shell .fni-audit-trail-stitch button:focus-visible,
+.fni-admin-stitch-shell .fni-audit-trail-stitch input:focus-visible,
+.fni-admin-stitch-shell .fni-audit-trail-stitch summary:focus-visible {
+  outline: 2px solid #8E6C23; outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-audit-trail-stitch { padding-bottom: 12px; }
+  .fni-admin-stitch-shell .fni-audit-heading { align-items: stretch; }
+  .fni-admin-stitch-shell .fni-audit-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .fni-admin-stitch-shell .fni-audit-search { grid-column: 1 / -1; min-height: 48px; }
+  .fni-admin-stitch-shell .fni-audit-export,
+  .fni-admin-stitch-shell .fni-audit-refresh { min-height: 44px; padding-inline: 12px; }
+  .fni-admin-stitch-shell .fni-audit-meta { font-size: 11px; }
+}
