@@ -240,7 +240,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <p className="mt-1 text-sm text-[#5A6B7C]">Every cell. Every report. One shared mission.</p>
         </div>
         <div className="flex items-center gap-2 text-xs font-medium text-[#5A6B7C]">
-          <Calendar className="h-4 w-4 text-[#5A6B7C]" />
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">calendar_today</span>
           <span>{today.toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
       </header>
@@ -254,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {stats.missingCellsCount.toLocaleString()} {stats.missingCellsCount === 1 ? 'cell has' : 'cells have'} not submitted a meeting report in the current reporting data.
         </p>
         <button type="button" onClick={() => onNavigateToTab('report-review')} className="mt-4 flex min-h-12 w-full items-center justify-between rounded-xl bg-[#142842] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#354863] focus:outline-none focus:ring-2 focus:ring-[#8E6C23]/40 lg:mt-0 lg:w-auto lg:min-w-[190px]">
-          Review reports <ArrowRight className="h-4 w-4" />
+          Review reports <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
         </button>
       </section>
 
@@ -298,7 +298,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div key={week.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
                     <div className="flex h-full w-full items-end justify-center gap-1">
-                      <div title={`Attendance: ${week.attendance}`} className="w-5 max-w-[48%] rounded-t bg-[#142B4A] transition-all duration-500" style={{ height: `${height}%` }} />
+                      <div title={`Attendance: ${week.attendance}`} className="w-5 max-w-[48%] rounded-t bg-[#142842] transition-all duration-500" style={{ height: `${height}%` }} />
                       <div title={`New members: ${week.newMembers}`} className="w-2 max-w-[20%] rounded-t bg-[#8E6C23] transition-all duration-500" style={{ height: `${week.newMembers > 0 ? Math.max(4, (week.newMembers / Math.max(1, ...attendanceTrend.map(item => item.newMembers))) * 35) : 0}%` }} />
                     </div>
                     <span className="whitespace-nowrap text-[9px] text-[#5A6B7C]">{week.label}</span>
@@ -307,7 +307,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               })}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-4 text-[10px] text-[#5A6B7C]">
-              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#142B4A]" /> Attendance</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#142842]" /> Attendance</span>
               <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[#8E6C23]" /> New members</span>
             </div>
           </div>
@@ -327,7 +327,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="block text-3xl font-bold tabular-nums text-[#142842]">{currentSoulsWon.toLocaleString()}</span>
             <span className="mt-1 block text-xs text-[#5A6B7C]">of {soulTarget.toLocaleString()} approved souls</span>
           </span>
-          <span className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border-[5px] border-[#E8EDF2] text-sm font-bold tabular-nums text-[#142842]" style={{ background: `conic-gradient(#C6A45A ${targetPercent * 3.6}deg, transparent 0deg)` }}>
+          <span className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border-[5px] border-[#E8EDF2] text-sm font-bold tabular-nums text-[#142842]" style={{ background: `conic-gradient(#8E6C23 ${targetPercent * 3.6}deg, transparent 0deg)` }}>
             <span className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-white">{targetPercent}%</span>
           </span>
         </span>
