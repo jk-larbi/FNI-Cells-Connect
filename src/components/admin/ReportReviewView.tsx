@@ -607,38 +607,6 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
     );
   }
 
-  if (reviewOutcome === 'approved' && lastReviewedReport) {
-    const approvedAttendance = lastReviewedReport.reportType === 'meeting' ? Number((lastReviewedReport as any).attendance) || 0 : null;
-    const approvedOffering = lastReviewedReport.reportType === 'meeting' ? (lastReviewedReport as any).offering : null;
-    const approvedSouls = lastReviewedReport.reportType === 'evangelism'
-      ? Number((lastReviewedReport as any).conversions) || 0
-      : Number((lastReviewedReport as any).newMembers) || 0;
-    return (
-      <div className="fni-report-approved-page">
-        <article className="fni-report-approved-card">
-          <span className="fni-report-approved-icon"><CheckCircle2 className="w-8 h-8" /></span>
-          <p className="fni-report-approved-eyebrow">REPORT REVIEW COMPLETE</p>
-          <h1>Report approved</h1>
-          <p className="fni-report-approved-description">
-            <strong>{lastReviewedReport.cellName}</strong>'s {lastReviewedReport.reportType === 'meeting' ? 'weekly fellowship report' : 'evangelism report'} has been approved and recorded.
-            {pendingCount > 0 ? ` ${pendingCount} reports remain in your queue.` : ' There are no pending reports in your queue.'}
-          </p>
-          <div className="fni-report-approved-summary">
-            {approvedAttendance !== null && <div><span>Attendance</span><strong>{approvedAttendance.toLocaleString()}</strong></div>}
-            {approvedOffering !== null && approvedOffering !== undefined && <div><span>Offering</span><strong>{(lastReviewedReport as any).currency || 'GHS'} {Number(approvedOffering).toLocaleString()}</strong></div>}
-            <div><span>Souls / new members</span><strong>{approvedSouls.toLocaleString()}</strong></div>
-          </div>
-          <div className="fni-report-approved-actions">
-            <button type="button" className="fni-report-secondary-action" onClick={() => { setReviewOutcome(null); setLastReviewedReport(null); onBack?.(); }}>Back to overview</button>
-            <button type="button" className="fni-report-primary-action" onClick={() => { setReviewOutcome(null); setLastReviewedReport(null); setInspectingItem(null); setStatusFilter('Newly Submitted'); setSelectedIds(new Set()); }}>
-              Review next report <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </article>
-      </div>
-    );
-  }
-
   return (
     <div className="fni-report-review-stitch">
       <header className="fni-rr-header">
