@@ -40,6 +40,7 @@ interface CellManagementViewProps {
 export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }) => {
   const { startCellMeeting } = useCall();
   const [cells, setCells] = useState<Cell[]>([]);
+  const [meetingReports, setMeetingReports] = useState<CellMeetingReport[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Suspended' | 'Deactivated'>('All');
   const [mobileFilter, setMobileFilter] = useState<'all' | 'attention'>('all');
@@ -87,8 +88,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     try {
       setIsLoading(true);
       setLoadError(null);
-      const list = await CellService.getCells();
+      const [list, reports] = await Promise.all([
+        CellService.getCells(),
+        ReportService.getCellMeetingReports(),
+      ]);
       setCells(list.filter(cell => !cell.is_archived));
+      setMeetingReports(reports);
     } catch (error) {
       console.error('Could not load the cell directory:', error);
       setLoadError('The cell directory could not be loaded. Check your connection and try again.');
@@ -259,6 +264,19 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     const status = cell.status || (cell.is_active ? 'Active' : 'Suspended');
     return !cell.leader_name?.trim() || !cell.meeting_day?.trim() || !cell.meeting_time?.trim() || status !== 'Active';
   }).length;
+  const weekStart = new Date();
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  const thisWeeksReports = meetingReports.filter(report => {
+    const meetingDate = new Date(`${report.meetingDate}T00:00:00`);
+    return !Number.isNaN(meetingDate.getTime()) && meetingDate >= weekStart && meetingDate < weekEnd;
+  });
+  const reportedCellIds = new Set(thisWeeksReports.map(report => report.cellId));
+  const missingReportCount = cells.filter(cell =>
+    !reportedCellIds.has(cell.id) && !(cell.firebase_id && reportedCellIds.has(cell.firebase_id))
+  ).length;
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -416,8 +434,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             <strong className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{isLoading && cells.length === 0 ? '—' : cells.length}</strong>
           </div>
           <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4">
-            <span className="block text-xs text-[#697586]">Needs attention</span>
-            <strong className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{isLoading && cells.length === 0 ? '—' : cellsNeedingAttention}</strong>
+            <span className="block text-xs text-[#697586]">Missing reports</span>
+            <strong className="mt-1 block text-3xl font-bold tabular-nums text-[#142B4A]">{isLoading && cells.length === 0 ? '—' : missingReportCount}</strong>
           </div>
         </div>
 
@@ -450,6 +468,11 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             const missingLeader = !cell.leader_name?.trim();
             const missingSchedule = !cell.meeting_day?.trim() || !cell.meeting_time?.trim();
             const needsAttention = missingLeader || missingSchedule || status !== 'Active';
+            const cellReports = meetingReports
+              .filter(report => report.cellId === cell.id || (cell.firebase_id && report.cellId === cell.firebase_id))
+              .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime());
+            const latestReport = cellReports[0];
+            const submittedThisWeek = reportedCellIds.has(cell.id) || Boolean(cell.firebase_id && reportedCellIds.has(cell.firebase_id));
             return (
               <button key={cell.id} type="button" onClick={() => openCellProfile(cell)} className={`block w-full rounded-2xl border p-4 text-left transition-all active:scale-[0.99] ${needsAttention ? 'border-[#E9E2D2] bg-[#FCFAF5]' : 'border-[#E1E7EF] bg-white'}`}>
                 <span className="flex items-start justify-between gap-3">
@@ -460,11 +483,18 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{status}</span>
                 </span>
                 <span className="mt-3 block text-xs font-medium text-[#142B4A]">
-                  {missingSchedule ? 'Meeting schedule: Not set' : `Meeting: ${cell.meeting_day} · ${cell.meeting_time}`}
+                  {latestReport
+                    ? `${latestReport.attendance} attended · ${latestReport.meetingDate}`
+                    : missingSchedule ? 'Meeting schedule: Not set' : `Meeting: ${cell.meeting_day} · ${cell.meeting_time}`}
                 </span>
-                <span className={`mt-1 block text-[11px] font-medium ${needsAttention ? 'text-[#946200]' : 'text-emerald-700'}`}>
-                  {missingLeader ? 'Assign a cell leader' : missingSchedule ? 'Confirm schedule with the leader' : status !== 'Active' ? 'Review cell status' : 'Cell details recorded'}
+                <span className={`mt-1 block text-[11px] font-medium ${submittedThisWeek ? 'text-emerald-700' : 'text-[#946200]'}`}>
+                  {submittedThisWeek ? 'Weekly report submitted' : 'Weekly report not submitted'}
                 </span>
+                {needsAttention && (
+                  <span className="mt-1 block text-[11px] font-medium text-[#946200]">
+                    {missingLeader ? 'Assign a cell leader' : missingSchedule ? 'Confirm schedule with the leader' : 'Review cell status'}
+                  </span>
+                )}
                 <span className="mt-3 flex items-center justify-between border-t border-[#E8EBF0] pt-3 text-xs font-semibold text-[#142B4A]">
                   View cell details <ArrowRight className="h-4 w-4 text-[#84672D]" />
                 </span>
