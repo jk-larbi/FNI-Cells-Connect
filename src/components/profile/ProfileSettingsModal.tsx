@@ -2419,89 +2419,128 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             SECTION 6: GENERAL PREFERENCES & GHANA TIME (Requirement 5)
         ========================================================================== */}
         {currentSection === 'general' && (
-          <div className="space-y-4">
-            <div className="fni-account-page-intro"><div><p className="fni-account-eyebrow">YOUR EXPERIENCE</p><h1>Personal Preferences</h1><p>Set the language, time and display preferences used across your portal.</p></div></div>
+          <div className="fni-preferences-page space-y-5">
+            <div className="fni-account-page-intro">
+              <div>
+                <p className="fni-account-eyebrow">YOUR EXPERIENCE</p>
+                <h1>Personal Preferences</h1>
+                <p>Set the language, date and time display used across FNI Cells Connect.</p>
+              </div>
+            </div>
 
-            {/* Live Ghana Time Clock Card */}
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-950 dark:text-amber-200 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-xs">
-                  <Clock className="w-4 h-4 text-[#C6A45A]" />
-                  <span>Standard Ministry Timezone</span>
+            <section className="fni-preferences-card">
+              <div className="fni-preferences-card-heading">
+                <span className="fni-preferences-icon"><User /></span>
+                <div>
+                  <h2>Profile display</h2>
+                  <p>Your display name is managed with your profile information.</p>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-amber-200/60 dark:bg-amber-900/60 text-[10px] font-bold">
-                  Africa/Accra (UTC+0)
-                </span>
               </div>
-              <div className="text-xl font-black text-[#142B4A] dark:text-amber-300">
-                {ghanaTimeStr || 'Loading Ghana Time...'}
+              <div className="fni-preferences-field">
+                <label>Preferred display name</label>
+                <div className="fni-preferences-readonly">
+                  <span>{currentUser?.full_name || 'Name not set'}</span>
+                  <button type="button" onClick={() => setCurrentSection('manage_profile')}>Edit profile <ChevronRight /></button>
+                </div>
               </div>
-              <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                All weekly reporting deadlines (Sunday 6:00 PM), fellowship meetings, and quiz availability windows operate strictly on Ghana Time across all global assemblies.
-              </p>
-            </div>
+            </section>
 
-            <div>
-              <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200 mb-1">
-                Official Language
-              </label>
-              <select
-                value={generalPrefs.language}
-                onChange={e => handleUpdateGeneralPrefs({ language: e.target.value as any })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#26384d] bg-white dark:bg-slate-800 text-xs text-[#182230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-              >
-                <option value="en-GH">English (Ghana / International)</option>
-                <option value="en-UK">English (United Kingdom)</option>
-              </select>
-              <p className="text-[10px] text-slate-400 mt-1">
-                English is the official working language of Forerunners Network International.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200 mb-1">
-                Time Display Format
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleUpdateGeneralPrefs({ timeFormat: '12h' })}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                    generalPrefs.timeFormat === '12h'
-                      ? 'border-[#C6A45A] bg-[#C6A45A]/15 text-[#142B4A] dark:text-[#C6A45A]'
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
-                  }`}
+            <section className="fni-preferences-card">
+              <div className="fni-preferences-card-heading">
+                <span className="fni-preferences-icon"><Globe /></span>
+                <div>
+                  <h2>Language and regional settings</h2>
+                  <p>Choose the language and date format used in the portal.</p>
+                </div>
+              </div>
+              <div className="fni-preferences-field">
+                <label htmlFor="fni-pref-language">Language</label>
+                <select
+                  id="fni-pref-language"
+                  value={generalPrefs.language}
+                  onChange={e => handleUpdateGeneralPrefs({ language: e.target.value as any })}
                 >
-                  12-Hour (e.g. 6:00 PM)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdateGeneralPrefs({ timeFormat: '24h' })}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                    generalPrefs.timeFormat === '24h'
-                      ? 'border-[#C6A45A] bg-[#C6A45A]/15 text-[#142B4A] dark:text-[#C6A45A]'
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
-                  }`}
+                  <option value="en-GH">English (Ghana / International)</option>
+                  <option value="en-UK">English (United Kingdom)</option>
+                </select>
+                <small>English is the current official working language of FNI.</small>
+              </div>
+              <div className="fni-preferences-field">
+                <label htmlFor="fni-pref-date">Date format</label>
+                <select
+                  id="fni-pref-date"
+                  value={generalPrefs.dateFormat}
+                  onChange={e => handleUpdateGeneralPrefs({ dateFormat: e.target.value as any })}
                 >
-                  24-Hour (e.g. 18:00)
+                  <option value="DD/MM/YYYY">DD/MM/YYYY (19/11/2026)</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD (2026-11-19)</option>
+                  <option value="MM/DD/YYYY">MM/DD/YYYY (11/19/2026)</option>
+                </select>
+              </div>
+            </section>
+
+            <section className="fni-preferences-card">
+              <div className="fni-preferences-card-heading">
+                <span className="fni-preferences-icon"><Clock /></span>
+                <div>
+                  <h2>Time settings</h2>
+                  <p>Ministry reporting and meeting schedules use Ghana time.</p>
+                </div>
+              </div>
+              <div className="fni-preferences-timezone">
+                <div>
+                  <span className="fni-preferences-overline">MINISTRY TIME ZONE</span>
+                  <strong>Africa/Accra</strong>
+                  <small>UTC+0 · Standard ministry time</small>
+                </div>
+                <div className="fni-preferences-live-clock">
+                  <span>Current Ghana time</span>
+                  <strong>{ghanaTimeStr || 'Loading...'}</strong>
+                </div>
+              </div>
+              <div className="fni-preferences-field">
+                <label>Time format</label>
+                <div className="fni-preferences-segments" role="group" aria-label="Time format">
+                  <button
+                    type="button"
+                    aria-pressed={generalPrefs.timeFormat === '12h'}
+                    className={generalPrefs.timeFormat === '12h' ? 'is-selected' : ''}
+                    onClick={() => handleUpdateGeneralPrefs({ timeFormat: '12h' })}
+                  >12-hour <small>6:00 PM</small></button>
+                  <button
+                    type="button"
+                    aria-pressed={generalPrefs.timeFormat === '24h'}
+                    className={generalPrefs.timeFormat === '24h' ? 'is-selected' : ''}
+                    onClick={() => handleUpdateGeneralPrefs({ timeFormat: '24h' })}
+                  >24-hour <small>18:00</small></button>
+                </div>
+              </div>
+              <p className="fni-preferences-policy">
+                Cell meeting schedules, weekly report deadlines and ministry availability windows remain aligned to Africa/Accra, regardless of the device's local time zone.
+              </p>
+            </section>
+
+            <section className="fni-preferences-card">
+              <div className="fni-preferences-card-heading">
+                <span className="fni-preferences-icon"><Sun /></span>
+                <div>
+                  <h2>Theme preference</h2>
+                  <p>Choose how FNI Cells Connect appears on this device.</p>
+                </div>
+              </div>
+              <div className="fni-preferences-theme-options">
+                <button type="button" aria-pressed={themePreference === 'light'} className={themePreference === 'light' ? 'is-selected' : ''} onClick={() => handleThemeChange('light')}>
+                  <Sun /><span>Light</span>
+                </button>
+                <button type="button" aria-pressed={themePreference === 'dark'} className={themePreference === 'dark' ? 'is-selected' : ''} onClick={() => handleThemeChange('dark')}>
+                  <Moon /><span>Dark</span>
+                </button>
+                <button type="button" aria-pressed={themePreference === 'system'} className={themePreference === 'system' ? 'is-selected' : ''} onClick={() => handleThemeChange('system')}>
+                  <Laptop /><span>System</span>
                 </button>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#142B4A] dark:text-slate-200 mb-1">
-                Date Format
-              </label>
-              <select
-                value={generalPrefs.dateFormat}
-                onChange={e => handleUpdateGeneralPrefs({ dateFormat: e.target.value as any })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#26384d] bg-white dark:bg-slate-800 text-xs text-[#182230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-              >
-                <option value="DD/MM/YYYY">DD/MM/YYYY (e.g. 19/11/2026)</option>
-                <option value="YYYY-MM-DD">YYYY-MM-DD (e.g. 2026-11-19)</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY (e.g. 11/19/2026)</option>
-              </select>
-            </div>
+              <p className="fni-preferences-autosave"><CheckCircle2 /> Changes are saved automatically to your account preferences.</p>
+            </section>
           </div>
         )}
 
