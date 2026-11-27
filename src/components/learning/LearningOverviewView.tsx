@@ -33,13 +33,6 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
   assignments,
   quizzes,
   events,
-  mySubmissionsCount,
-  myQuizzesCompletedCount,
-  onNavigateAppTab,
-  onOpenNotifications,
-  onOpenAccountSettings,
-  onToggleSidebar,
-  onBack,
 }) => {
   const { currentUser, isAdmin } = useAuth();
 
@@ -48,14 +41,12 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [resources, setResources] = useState<LearningResource[]>([]);
   const [activeTutorsCount, setActiveTutorsCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const firstName = currentUser?.full_name ? currentUser.full_name.split(' ')[0] : 'Leader';
 
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
-      setIsLoading(true);
       try {
         const [subs, atts, res, members] = await Promise.all([
           LearningService.getSubmissions(undefined, isAdmin ? undefined : currentUser?.id),
@@ -73,8 +64,6 @@ export const LearningOverviewView: React.FC<LearningOverviewViewProps> = ({
         }
       } catch (e) {
         console.warn('Overview load notice:', e);
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
     }
     loadData();
