@@ -4007,3 +4007,197 @@ html.dark .fni-chat-composer textarea:focus-visible {
     box-shadow: 0 4px 14px rgba(20,40,66,.16);
   }
 }
+
+
+/* ===============================================================
+   FNI ACCOUNT SETTINGS — Stitch desktop + mobile visual refresh
+   Existing profile/auth/preferences/notification/security handlers
+   and persisted settings remain the source of truth.
+   =============================================================== */
+.fni-account-settings {
+  --fni-account-navy:#142842;
+  --fni-account-bronze:#8E6C23;
+  --fni-account-canvas:#F7F9FC;
+  --fni-account-surface:#FFFFFF;
+  --fni-account-border:#DCE3EC;
+  --fni-account-muted:#5A6B7C;
+  color:var(--fni-account-navy);
+  font-family:"Source Sans 3",sans-serif;
+}
+.fni-account-settings.fni-account-settings-dialog {
+  width:min(100%,64rem);
+  background:var(--fni-account-canvas)!important;
+  color:var(--fni-account-navy)!important;
+  border:1px solid var(--fni-account-border)!important;
+  border-radius:18px!important;
+  overflow:hidden;
+}
+.fni-account-settings > div:first-child {
+  background:var(--fni-account-surface)!important;
+  border-color:var(--fni-account-border)!important;
+  padding:16px 22px!important;
+}
+.fni-account-settings > div:first-child h2 {
+  color:var(--fni-account-navy)!important;
+  font-family:"Libre Franklin",sans-serif;
+  font-size:16px;
+  font-weight:700;
+}
+.fni-account-settings > div:first-child button {
+  border-radius:10px;
+  min-width:36px;
+  min-height:36px;
+}
+.fni-account-settings > div:nth-child(2) {
+  background:var(--fni-account-canvas)!important;
+  color:var(--fni-account-navy);
+  padding:24px!important;
+}
+.fni-account-settings > div:nth-child(2) > div {
+  min-width:0;
+}
+.fni-account-settings button,
+.fni-account-settings input,
+.fni-account-settings select,
+.fni-account-settings textarea {
+  transition:background-color 120ms ease-out,border-color 120ms ease-out,color 120ms ease-out,box-shadow 120ms ease-out;
+}
+.fni-account-settings button:focus-visible,
+.fni-account-settings input:focus-visible,
+.fni-account-settings select:focus-visible,
+.fni-account-settings textarea:focus-visible {
+  outline:2px solid var(--fni-account-bronze);
+  outline-offset:2px;
+}
+.fni-account-settings input:not([type=checkbox]):not([type=radio]):not([type=file]),
+.fni-account-settings select,
+.fni-account-settings textarea {
+  min-height:42px;
+  border-color:var(--fni-account-border)!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:var(--fni-account-navy)!important;
+  box-shadow:none!important;
+  font-family:"Source Sans 3",sans-serif;
+  font-size:14px!important;
+}
+.fni-account-settings input::placeholder,
+.fni-account-settings textarea::placeholder {color:#8290A0;}
+.fni-account-settings label {
+  color:var(--fni-account-navy);
+  font-family:"Libre Franklin",sans-serif;
+  font-weight:600;
+}
+.fni-account-settings h3,
+.fni-account-settings h4 {
+  color:var(--fni-account-navy);
+  font-family:"Libre Franklin",sans-serif;
+}
+.fni-account-settings p {line-height:1.55;}
+/* Account settings landing menu */
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > div:first-child {
+  grid-column:1/-1;
+  min-height:82px;
+  padding:16px 18px;
+  border:1px solid var(--fni-account-border);
+  border-radius:14px;
+  background:#fff;
+}
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > div:first-child > div:first-child {
+  width:48px;height:48px;
+  background:#E4ECF7!important;
+  color:var(--fni-account-navy)!important;
+  font-size:14px;
+}
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > button {
+  min-height:74px;
+  padding:14px 16px;
+  gap:12px;
+  border:1px solid var(--fni-account-border);
+  border-radius:13px;
+  background:#fff;
+}
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > button:hover {
+  background:#EEF2F7!important;
+  border-color:#B9C7D8;
+}
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > button > span {
+  color:var(--fni-account-navy)!important;
+  font-family:"Libre Franklin",sans-serif;
+  font-size:13px;
+  font-weight:600;
+}
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > button > div {
+  width:36px;height:36px;
+  border-radius:10px;
+  background:#E4ECF7;
+}
+.fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > div.h-px {
+  display:none;
+}
+.fni-account-settings > div:nth-child(2) form {
+  gap:16px;
+}
+.fni-account-settings > div:nth-child(2) form button[type=submit] {
+  min-height:44px;
+  border-radius:11px!important;
+  background:var(--fni-account-navy)!important;
+  font-family:"Libre Franklin",sans-serif;
+  font-size:13px;
+  box-shadow:none;
+}
+.fni-account-settings > div:nth-child(2) form button[type=submit]:hover {
+  background:#203B5D!important;
+}
+.fni-account-settings > div:nth-child(2) .rounded-2xl,
+.fni-account-settings > div:nth-child(2) .rounded-xl {
+  box-shadow:none;
+}
+@media(max-width:767px) {
+  .fni-account-settings.fni-account-settings-dialog {
+    width:100%;
+    max-width:100%;
+    min-height:100dvh;
+    max-height:100dvh;
+    border:0!important;
+    border-radius:0!important;
+    margin:0;
+  }
+  .fni-account-settings > div:first-child {
+    padding:14px 16px!important;
+    min-height:58px;
+  }
+  .fni-account-settings > div:nth-child(2) {
+    padding:16px!important;
+  }
+  .fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none {
+    grid-template-columns:minmax(0,1fr);
+    gap:9px;
+  }
+  .fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > div:first-child {
+    grid-column:auto;
+    min-height:72px;
+    padding:12px;
+  }
+  .fni-account-settings > div:nth-child(2) > .flex.flex-col.select-none > button {
+    min-height:68px;
+    padding:12px;
+  }
+  .fni-account-settings .fni-profile-manage {
+    gap:14px;
+  }
+  .fni-account-settings .fni-profile-manage > div {
+    border-radius:14px!important;
+  }
+  .fni-account-settings button[type=submit] {
+    min-height:46px;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fni-account-settings * {transition-duration:.01ms!important;animation-duration:.01ms!important;}
+}
