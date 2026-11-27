@@ -1227,8 +1227,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               </div>
 
               {deviceNotice && (
-                <div className="fni-account-security-feedback is-success" role="status" aria-live="polite">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" /><span>{deviceNotice}</span>
+                <div className="fni-account-security-device-feedback" role="status" aria-live="polite">
+                  <span>{deviceNotice}</span>
                 </div>
               )}
 
