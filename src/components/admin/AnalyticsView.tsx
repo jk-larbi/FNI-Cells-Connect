@@ -405,21 +405,24 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
   const targetPercent = Math.min(100, Math.round((displaySouls / soulTarget) * 100));
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="fni-analytics-stitch space-y-4 sm:space-y-6">
       {/* TOP CONTEXT & COMMAND BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-lg sm:text-2xl font-black text-[#142B4A] dark:text-white tracking-tight">
-              Ministry Overview
-            </h1>
+            <div className="fni-analytics-heading">
+              <p className="fni-analytics-eyebrow">ADMIN WORKSPACE / PERFORMANCE</p>
+              <h1 className="text-lg sm:text-2xl font-black text-[#142842] dark:text-white tracking-tight">
+                Ministry Analytics
+              </h1>
+            </div>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
               Database-backed
             </span>
           </div>
-          <p className="text-xs text-[#667085] dark:text-slate-400 mt-1">
-            A simple view of cell activity, attendance, outreach and reports. Refresh to load the latest records.
+          <p className="text-xs text-[#5A6B7C] dark:text-slate-400 mt-1">
+            Insights into ministry growth, engagement, attendance, outreach and reporting performance.
           </p>
         </div>
 
