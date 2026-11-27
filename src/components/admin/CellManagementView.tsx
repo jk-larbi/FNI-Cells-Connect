@@ -429,7 +429,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 <div className="flex flex-wrap gap-2 mt-3 ml-7">
                   <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${status === 'Active' ? 'bg-emerald-50 text-emerald-700' : status === 'Deactivated' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{status}</span>
                   <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">Target: {cell.target_attendance ?? '—'}</span>
-                  <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">{cell.meeting_day || 'Wednesday'} · {cell.meeting_time || '18:30'} GMT</span>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">{cell.meeting_day || cell.meeting_time ? [cell.meeting_day, cell.meeting_time].filter(Boolean).join(' · ') + ' GMT' : 'Meeting time not set'}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3 ml-7">
                   <button type="button" onClick={() => startCellMeeting({ cellId: cell.id, cellName: cell.name, callType: 'video' })} className="flex-1 min-w-[100px] px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5"><Video className="w-3.5 h-3.5" /> Meet</button>
@@ -563,9 +563,9 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
                       <td className="py-4 px-4 whitespace-nowrap text-[#667085]">
                         <div className="font-medium text-[#182230]">
-                          {cell.meeting_day || 'Wednesday'}
+                          {cell.meeting_day || cell.meeting_time ? [cell.meeting_day, cell.meeting_time].filter(Boolean).join(' · ') : 'Not set'}
                         </div>
-                        <div className="text-[11px]">{cell.meeting_time || '18:30'} GMT</div>
+                        <div className="text-[11px]">{cell.meeting_day || cell.meeting_time ? 'Scheduled meeting' : 'No schedule recorded'}</div>
                       </td>
 
                       <td className="py-4 px-5 whitespace-nowrap text-right">
