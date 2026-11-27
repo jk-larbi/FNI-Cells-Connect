@@ -433,6 +433,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     );
   }
 
+  // Capture the guarded dashboard state for nested render callbacks.
+  const analyticsStats = stats;
   const soulTarget = settings?.annualSoulWinningTarget || 5000;
   const targetPercent = Math.min(100, Math.round((displaySouls / soulTarget) * 100));
 
@@ -550,7 +552,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             <Building className="h-4 w-4 text-[#C6A45A]" />
             <span className="text-[11px] font-semibold">Active Cells</span>
           </div>
-          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{stats.totalCells.toLocaleString()}</p>
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#142B4A] dark:text-white">{analyticsStats.totalCells.toLocaleString()}</p>
           <p className="mt-0.5 text-[10px] text-[#667085] dark:text-slate-400">In the cell directory</p>
         </div>
         <div className="min-w-0 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
@@ -760,7 +762,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center">
                   <span className="text-[10px] font-medium text-slate-300 block">Total Sessions</span>
                   <div className="text-sm sm:text-base font-black text-white mt-0.5">
-                    {stats.meetingReportsSubmitted} Held
+                    {analyticsStats.meetingReportsSubmitted} Held
                   </div>
                   <span className="text-[9px] text-[#C6A45A] font-semibold block mt-0.5">
                     {MONTHS[selectedMonthIdx]} Cycle
@@ -825,7 +827,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                    {stats.meetingReportsSubmitted} fellowship meetings recorded across Ghana cells.
+                    {analyticsStats.meetingReportsSubmitted} fellowship meetings recorded across Ghana cells.
                   </p>
                 </div>
               </div>
@@ -878,7 +880,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                     +{displaySouls.toLocaleString()} Souls
                   </div>
                   <div className="text-[10px] text-white/90 font-semibold mt-1">
-                    {stats.peopleReached} gospel reached &bull; {targetPercent}% of goal
+                    {analyticsStats.peopleReached} gospel reached &bull; {targetPercent}% of goal
                   </div>
                 </div>
               </div>
@@ -982,7 +984,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                 </div>
                 <div className="flex items-center justify-between mt-2.5 text-[10px]">
                   <span className="font-bold text-slate-600 dark:text-slate-400">
-                    {cellStats.filter(c => c.meetingReportsCount > 0).length} of {cellStats.length || stats.totalCells} cells
+                    {cellStats.filter(c => c.meetingReportsCount > 0).length} of {cellStats.length || analyticsStats.totalCells} cells
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                     {deadlineSettings.meeting.dayName.slice(0, 3)} {deadlineSettings.meeting.deadlineTime} GMT
@@ -1011,7 +1013,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
               <div className="mt-4">
                 {(() => {
-                  const followPct = stats.contactsCaptured > 0 ? Math.round((stats.followUpsCompleted / stats.contactsCaptured) * 100) : 0;
+                  const followPct = analyticsStats.contactsCaptured > 0 ? Math.round((analyticsStats.followUpsCompleted / analyticsStats.contactsCaptured) * 100) : 0;
                   return (
                     <>
                       <div className="flex items-center justify-between text-xs font-bold text-[#182230] dark:text-slate-200 mb-1.5">
@@ -1026,7 +1028,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
                       </div>
                       <div className="flex items-center justify-between mt-2.5 text-[10px]">
                         <span className="font-bold text-slate-600 dark:text-slate-400">
-                          {stats.followUpsCompleted} / {stats.contactsCaptured} contacts
+                          {analyticsStats.followUpsCompleted} / {analyticsStats.contactsCaptured} contacts
                         </span>
                         <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold">
                           Active Care
@@ -1411,7 +1413,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
               {timeDimension === 'ytd' && [
                 { label: `${new Date().getFullYear()} Annual Soul Target`, val: selectedMetric === 'souls' ? soulTarget.toLocaleString() : 'Not configured', delta: selectedMetric === 'souls' ? 'Kingdom benchmark' : 'No target configured for this metric' },
                 { label: `${new Date().getFullYear()} YTD Recorded`, val: currentVal, delta: selectedMetric === 'souls' ? (currentSouls > 0 ? 'Approved outreach reports' : 'Awaiting approved returns') : 'Based on submitted records' },
-                { label: 'Registered Cells', val: stats.totalCells.toString(), delta: 'Active Directory' },
+                { label: 'Registered Cells', val: analyticsStats.totalCells.toString(), delta: 'Active Directory' },
                 { label: 'Remaining Soul Target', val: selectedMetric === 'souls' ? Math.max(0, soulTarget - (typeof currentSouls === 'number' ? currentSouls : 0)).toLocaleString() : '—', delta: selectedMetric === 'souls' ? 'Goal remaining' : 'Only available for souls won' },
               ].map((item, idx) => (
                 <div key={idx} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
