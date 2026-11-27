@@ -749,8 +749,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       {/* CELL PROFILE MODAL (Showing Meeting History, Evangelism History, Follow-ups, etc.) */}
       {selectedCell && (
         <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-[#142B4A]/50 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:items-center sm:justify-center sm:p-4 sm:pt-4 sm:pb-4">
-          <div className="bg-white h-full w-full max-w-2xl p-4 shadow-xl border border-[#E3E8EF] overflow-y-auto overscroll-contain custom-scrollbar space-y-5 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:p-6">
-            <div className="flex items-start justify-between pb-3 border-b border-[#E3E8EF]">
+          <div className="bg-white h-full w-full max-w-6xl p-4 shadow-xl border border-[#E3E8EF] overflow-y-auto overscroll-contain custom-scrollbar space-y-6 sm:h-auto sm:max-h-[92vh] sm:rounded-3xl sm:p-7 lg:p-8">
+            <div className="flex items-start justify-between gap-4 pb-4 border-b border-[#E3E8EF]">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-[#142B4A]">{selectedCell.name}</h3>
@@ -760,9 +760,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                     {selectedCell.status || (selectedCell.is_active ? 'Active' : 'Suspended')}
                   </span>
                 </div>
-                <p className="text-xs text-[#667085] mt-0.5">
-                  Location: {selectedCell.location} &bull; Leader: {selectedCell.leader_name} ({selectedCell.leader_phone || 'No phone'})
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-[#667085]">
+                  <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#C6A45A]" />{selectedCell.venue_address || selectedCell.meeting_location || selectedCell.location || 'Venue not recorded'}</span>
+                  <span className="inline-flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-[#C6A45A]" />{selectedCell.leader_name || 'Leader not assigned'}</span>
+                  <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-[#C6A45A]" />{[selectedCell.meeting_day, selectedCell.meeting_time].filter(Boolean).join(' · ') || 'Schedule not set'}</span>
+                  {selectedCell.leader_phone && <a href={`tel:${selectedCell.leader_phone}`} className="inline-flex items-center gap-1.5 font-semibold text-[#142B4A] hover:text-[#84672D]"><Phone className="h-3.5 w-3.5" />{selectedCell.leader_phone}</a>}
+                </div>
               </div>
               <button
                 onClick={() => setSelectedCell(null)}
@@ -804,7 +807,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             {isLoadingDetails && <p className="text-xs text-[#667085]">Loading cell history…</p>}
 
             {/* Performance Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
               <div className="p-3 bg-[#F5F7FA] rounded-xl border border-[#E3E8EF]">
                 <div className="text-[10px] font-semibold text-[#667085]">Meeting Returns</div>
                 <div className="text-lg font-bold text-[#142B4A] mt-0.5">{cellMeetings.length}</div>
@@ -820,7 +823,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             </div>
 
             {/* Cell Membership Roster & Pastoral Breakdown */}
-            <div className="p-3.5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-2">
+            <div className="p-4 lg:p-5 bg-[#F5F7FA] rounded-2xl border border-[#E3E8EF] space-y-3">
               <span className="font-bold text-[#142B4A] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-[#C6A45A]" />
                 Cell Roster & Membership Details
@@ -847,17 +850,19 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
               </div>
             </div>
 
-            <CellMembersPanel cellId={selectedCell.id} canEdit={false} />
-
-            <CellLeadershipPanel
-              cell={selectedCell}
-              onUpdated={async () => {
-                await loadCells();
-                const refreshed = await CellService.getCellById(selectedCell.id);
-                if (refreshed) setSelectedCell(refreshed);
-              }}
-            />
-
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 lg:gap-6 items-start">
+              <div className="min-w-0 space-y-5">
+                <CellMembersPanel cellId={selectedCell.id} canEdit={false} />
+                <CellLeadershipPanel
+                  cell={selectedCell}
+                  onUpdated={async () => {
+                    await loadCells();
+                    const refreshed = await CellService.getCellById(selectedCell.id);
+                    if (refreshed) setSelectedCell(refreshed);
+                  }}
+                />
+              </div>
+              <div className="min-w-0 space-y-5">
             {/* Meeting Reports History */}
             <div>
               <h4 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -869,7 +874,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   No meeting reports filed yet by this cell.
                 </p>
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
                   {cellMeetings.map(m => (
                     <div
                       key={m.id}
@@ -920,6 +925,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   ))}
                 </div>
               )}
+              </div>
+              </div>
             </div>
           </div>
         </div>
