@@ -354,8 +354,8 @@ export const CellLeadersView: React.FC<CellLeadersViewProps> = ({ onBack }) => {
 
       {/* TUTOR PROFILE MODAL */}
       {selectedLeader && (
-        <div className="fixed inset-0 z-50 bg-[#142B4A]/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-xl border border-[#E3E8EF] max-h-[90vh] overflow-y-auto custom-scrollbar space-y-5">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-[#142B4A]/50 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:items-center sm:justify-center sm:p-4 sm:pt-4 sm:pb-4">
+          <div className="flex h-full w-full max-w-2xl flex-col space-y-5 overflow-y-auto overscroll-contain border border-[#E3E8EF] bg-white p-5 shadow-xl sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl sm:p-6">
             <div className="flex items-start justify-between pb-3 border-b border-[#E3E8EF]">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-sm flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
