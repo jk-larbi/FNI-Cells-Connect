@@ -984,7 +984,7 @@ export const AdminManagementView: React.FC = () => {
           </div>
         )}
 
-        {/* Numbered Pagination footer matching screenshot (shown on standard listin        {activeTab !== 'deactivations' && (
+        {activeTab !== 'deactivations' && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-4 border-t border-slate-100 text-[11px] text-slate-500">
             <span>
               {activeTab === 'users'
@@ -997,7 +997,12 @@ export const AdminManagementView: React.FC = () => {
             </span>
             <span>All records are displayed.</span>
           </div>
-        )}}
+        )}
+      </div>
+
+      {/* Creation Modal */}
+      <Modal
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={modalType === 'user' ? 'Add New Field Leader' : modalType === 'cell' ? 'Register Cell Fellowship' : modalType === 'region' ? 'Register Territory' : 'Open Reporting Cycle'}
       >
