@@ -279,10 +279,10 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div data-active-tab={activeTab} className="fni-admin-ministry-settings-view space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-lg sm:text-xl font-bold text-[#142842] tracking-tight">
+        <h1 className="fni-ministry-settings-title text-lg sm:text-xl font-bold text-[#142842] tracking-tight">
           {activeTab === 'security' ? 'Admin security' : activeTab === 'audit' ? 'Audit trail' : 'Ministry settings'}
         </h1>
         <p className="text-sm text-[#5A6B7C] mt-1">
@@ -302,7 +302,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       )}
 
       {/* Tabs */}
-      <div className="bg-[#E3E8EF] dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold text-[#667085] dark:text-slate-400 w-full max-w-md overflow-x-auto">
+      <div role="tablist" aria-label="Administrator settings sections" className="fni-ministry-settings-tabs bg-[#E3E8EF] dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold text-[#667085] dark:text-slate-400 w-full max-w-md overflow-x-auto">
         <button
           onClick={() => setActiveTab('system')}
           className={`flex-1 min-w-[132px] py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
@@ -341,7 +341,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
       {/* TAB 1: MINISTRY SETTINGS */}
       {activeTab === 'system' && (
         <div className="space-y-5 w-full min-w-0">
-          <div className="bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-4">
+          <div className="fni-ministry-profile-card bg-white rounded-2xl border border-[#E3E8EF] p-4 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center shrink-0">
                 <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
@@ -357,9 +357,9 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
             </form>
           </div>
-          <div className="bg-[#0c1626] rounded-2xl border border-slate-800 shadow-sm overflow-hidden">
+          <div className="fni-ministry-foundation-card bg-[#0c1626] rounded-2xl border border-slate-800 shadow-sm overflow-hidden">
             {/* Header Banner - Clean dark FNI Core Foundation styling */}
-            <div className="p-6 bg-[#0f1d32] border-b border-slate-800">
+            <div className="fni-ministry-foundation-header p-6 bg-[#0f1d32] border-b border-slate-800">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3.5">
                   <div className="w-12 h-12 rounded-xl bg-[#0b1424] border border-[#1e3455] text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -385,7 +385,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
               </div>
             </div>
 
-            <form onSubmit={handleSaveSystemSettings} className="p-4 sm:p-6 space-y-4 sm:space-y-6 text-xs bg-[#0c1626]">
+            <form onSubmit={handleSaveSystemSettings} className="fni-ministry-foundation-form p-4 sm:p-6 space-y-4 sm:space-y-6 text-xs bg-[#0c1626]">
               {systemSaveNotice && (
                 <div className="p-3.5 bg-emerald-950/40 border-l-4 border-[#23845B] text-emerald-300 rounded-xl font-semibold flex items-center gap-2.5 animate-fadeIn">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />

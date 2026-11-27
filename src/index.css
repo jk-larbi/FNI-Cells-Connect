@@ -3336,3 +3336,128 @@ html.dark .fni-chat-composer textarea:focus-visible {
 @media(prefers-reduced-motion:reduce) {
   .fni-auth-portal[data-auth-view="admin-login"] * { animation:none !important; transition-duration:0.01ms !important; }
 }
+
+
+/* FNI Ministry Settings — Stitch desktop and mobile system */
+.fni-admin-ministry-settings-view {
+  width:100%; min-width:0; color:#142842; font-family:"Source Sans 3",system-ui,sans-serif;
+}
+.fni-admin-ministry-settings-view .fni-ministry-settings-title {
+  color:#142842; font:700 clamp(23px,2.2vw,30px)/1.2 "Libre Franklin",sans-serif;
+  letter-spacing:-.025em;
+}
+.fni-admin-ministry-settings-view > div:first-child > p { color:#5A6B7C; font-size:14px; line-height:21px; }
+.fni-admin-ministry-settings-view .fni-ministry-settings-tabs {
+  display:flex; width:100%; max-width:560px; gap:4px; padding:5px;
+  border:1px solid #DCE3EC; border-radius:12px; background:#EEF2F7;
+}
+.fni-admin-ministry-settings-view .fni-ministry-settings-tabs button {
+  min-height:42px; min-width:0; flex:1; border-radius:9px;
+  color:#5A6B7C; font:600 12px/17px "Libre Franklin",sans-serif;
+  white-space:nowrap; transition:background-color 120ms ease-out,color 120ms ease-out;
+}
+.fni-admin-ministry-settings-view .fni-ministry-settings-tabs button[class*="bg-white"],
+.fni-admin-ministry-settings-view .fni-ministry-settings-tabs button[class*="bg-[#142B4A]"] {
+  background:#fff; color:#142842; box-shadow:0 1px 3px rgba(20,40,66,.08);
+}
+.fni-admin-ministry-settings-view .fni-ministry-settings-tabs button > span:first-child {
+  width:25px; height:25px; border-radius:7px; background:#E4ECF7;
+  color:#142842;
+}
+.fni-admin-ministry-settings-view .fni-ministry-profile-card,
+.fni-admin-ministry-settings-view .fni-ministry-foundation-card {
+  border:1px solid #DCE3EC; border-radius:16px; background:#fff;
+  box-shadow:0 1px 3px rgba(20,40,66,.04);
+}
+.fni-admin-ministry-settings-view .fni-ministry-profile-card h2 {
+  color:#142842; font:600 15px/21px "Libre Franklin",sans-serif;
+}
+.fni-admin-ministry-settings-view .fni-ministry-profile-card p { color:#5A6B7C; font-size:13px; line-height:19px; }
+.fni-admin-ministry-settings-view label {
+  color:#354863; font:600 12px/17px "Libre Franklin",sans-serif;
+}
+.fni-admin-ministry-settings-view input:not([type="checkbox"]),
+.fni-admin-ministry-settings-view select,
+.fni-admin-ministry-settings-view textarea {
+  min-height:44px; border:1px solid #DCE3EC; border-radius:9px;
+  background:#F7F9FC; color:#142842; font:400 14px/20px "Source Sans 3",sans-serif;
+}
+.fni-admin-ministry-settings-view textarea { min-height:100px; resize:vertical; }
+.fni-admin-ministry-settings-view input:focus,
+.fni-admin-ministry-settings-view select:focus,
+.fni-admin-ministry-settings-view textarea:focus {
+  border-color:#8E6C23; outline:2px solid rgba(142,108,35,.14); outline-offset:1px;
+}
+.fni-admin-ministry-settings-view button:focus-visible {
+  outline:2px solid #8E6C23; outline-offset:2px;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-card { overflow:hidden; }
+.fni-admin-ministry-settings-view .fni-ministry-foundation-header {
+  padding:22px 24px; border:0; border-bottom:1px solid #263B55;
+  background:#142842;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-header h2 {
+  color:#fff; font:600 19px/26px "Libre Franklin",sans-serif;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-header p { color:#D5DEE9; }
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form {
+  padding:22px 24px; background:#fff; color:#142842;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form > div[class*="rounded-xl"] {
+  border:1px solid #DCE3EC; border-radius:13px; background:#F7F9FC;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="bg-[#0f1d32]"],
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="bg-[#16233a]"],
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="bg-[#0c1626]"] {
+  background:#F7F9FC !important;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="border-slate-800"],
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="border-slate-700"] {
+  border-color:#DCE3EC !important;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="text-white"] { color:#142842 !important; }
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="text-slate-300"],
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="text-slate-400"] { color:#5A6B7C !important; }
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form input,
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form select,
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form textarea {
+  background:#fff !important; border-color:#DCE3EC !important; color:#142842 !important;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form button[type="submit"] {
+  min-height:44px; padding:11px 20px; border:1px solid #142842; border-radius:999px;
+  background:#142842; color:#fff; box-shadow:none; font:600 12px/18px "Libre Franklin",sans-serif;
+}
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form button[type="submit"]:hover { background:#354863; }
+.fni-admin-ministry-settings-view .fni-ministry-foundation-form [class*="rounded-full"][class*="border"] {
+  border-color:rgba(142,108,35,.28);
+}
+.fni-admin-ministry-settings-view [role="alert"],
+.fni-admin-ministry-settings-view [role="status"] {
+  border-radius:12px; font:500 13px/19px "Source Sans 3",sans-serif;
+}
+.fni-admin-ministry-settings-view .fni-admin-security-view {
+  max-width:1024px; margin:0 auto;
+}
+@media(max-width:767px) {
+  .fni-admin-ministry-settings-view { gap:16px; }
+  .fni-admin-ministry-settings-view .fni-ministry-settings-title { font-size:24px; }
+  .fni-admin-ministry-settings-view .fni-ministry-settings-tabs {
+    max-width:none; overflow-x:auto; justify-content:flex-start;
+  }
+  .fni-admin-ministry-settings-view .fni-ministry-settings-tabs button {
+    flex:0 0 auto; min-width:112px; padding:9px 10px;
+  }
+  .fni-admin-ministry-settings-view .fni-ministry-profile-card,
+  .fni-admin-ministry-settings-view .fni-ministry-foundation-card { border-radius:14px; }
+  .fni-admin-ministry-settings-view .fni-ministry-profile-card { padding:16px; }
+  .fni-admin-ministry-settings-view .fni-ministry-foundation-header { padding:18px 16px; }
+  .fni-admin-ministry-settings-view .fni-ministry-foundation-form { padding:16px; }
+  .fni-admin-ministry-settings-view .fni-ministry-foundation-form button[type="submit"] { width:100%; min-height:46px; }
+  .fni-admin-ministry-settings-view .fni-ministry-foundation-form .grid { grid-template-columns:1fr; }
+  .fni-admin-ministry-settings-view .fni-ministry-profile-card form { grid-template-columns:1fr; }
+  .fni-admin-ministry-settings-view input:not([type="checkbox"]),
+  .fni-admin-ministry-settings-view select { min-height:46px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fni-admin-ministry-settings-view * { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; }
+}
