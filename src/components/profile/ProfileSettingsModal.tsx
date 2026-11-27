@@ -694,7 +694,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
   const assignedCellTitle = isAdmin ? 'National Administration' : currentUser?.cell_name || 'Unassigned Cell';
 
   const content = (
-    <div className={`fni-profile-settings fni-account-settings relative w-full ${inline ? 'fni-profile-settings-inline max-w-5xl mx-auto my-0 shadow-none' : 'fni-account-settings-dialog max-w-4xl my-auto max-h-[94vh] shadow-xl'} bg-[#f0f2f5] dark:bg-[#17212b] rounded-2xl border border-[#e2e5e9] dark:border-white/10 overflow-hidden flex flex-col transition-all font-sans text-[#1f2328] dark:text-[#f3f4f6]`}>
+    <div className={`fni-profile-settings fni-account-settings relative w-full ${inline ? 'fni-profile-settings-inline max-w-5xl mx-auto my-0 shadow-none' : 'fni-account-settings-dialog max-w-6xl my-auto max-h-[94vh] shadow-xl'} bg-[#f0f2f5] dark:bg-[#17212b] rounded-2xl border border-[#e2e5e9] dark:border-white/10 overflow-hidden flex flex-col transition-all font-sans text-[#1f2328] dark:text-[#f3f4f6]`}>
       {/* HEADER BAR */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#e2e5e9] dark:border-white/10 bg-[#f0f2f5] dark:bg-[#17212b] sticky top-0 z-20">
         <div className="flex items-center gap-3">
@@ -751,7 +751,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
       </div>
 
       {/* MODAL BODY (Scrollable) */}
-      <div className={`flex-1 overflow-y-auto ${currentSection === 'menu' ? 'p-0 py-1' : 'p-5 sm:p-6 space-y-6'}`}>
+      <div className={`fni-account-section-body fni-account-section-${currentSection} flex-1 overflow-y-auto ${currentSection === 'menu' ? 'p-0 py-1' : 'p-5 sm:p-6 space-y-6'}`}>
 
         {/* =========================================================================
             MENU VIEW: EXACT TELEGRAM SETTINGS VISUAL REPLICATION
@@ -1177,6 +1177,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         ========================================================================== */}
         {currentSection === 'password_security' && (
           <div className="space-y-6">
+            <div className="fni-account-page-intro"><div><p className="fni-account-eyebrow">PROTECT YOUR ACCOUNT</p><h1>Account Security</h1><p>Update your password and review account session information.</p></div></div>
+
             {passNotice && (
               <div
                 className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
@@ -1356,6 +1358,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         ========================================================================== */}
         {currentSection === 'notifications' && (
           <div className="space-y-4">
+            <div className="fni-account-page-intro"><div><p className="fni-account-eyebrow">STAY INFORMED</p><h1>Notification Preferences</h1><p>Choose which ministry updates and reminders you receive.</p></div></div>
+
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Configure which ministry alerts you receive across in-app channels and mobile push notifications. Preferences synchronize across all your devices via Supabase.
             </p>
@@ -2349,6 +2353,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         ========================================================================== */}
         {currentSection === 'devices' && (
           <div className="space-y-5">
+            <div className="fni-account-page-intro"><div><p className="fni-account-eyebrow">SIGNED-IN DEVICES</p><h1>Devices and Sessions</h1><p>Review this device and manage other active sessions.</p></div></div>
+
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Manage your active login sessions across devices. You can end sessions on other browsers or phones at any time.
             </p>
@@ -2414,6 +2420,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         ========================================================================== */}
         {currentSection === 'general' && (
           <div className="space-y-4">
+            <div className="fni-account-page-intro"><div><p className="fni-account-eyebrow">YOUR EXPERIENCE</p><h1>Personal Preferences</h1><p>Set the language, time and display preferences used across your portal.</p></div></div>
+
             {/* Live Ghana Time Clock Card */}
             <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-950 dark:text-amber-200 space-y-1.5">
               <div className="flex items-center justify-between">
