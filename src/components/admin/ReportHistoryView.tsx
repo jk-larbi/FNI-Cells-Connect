@@ -227,14 +227,26 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleExportCSV}
-          className="px-4 py-2.5 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] bg-white dark:bg-[#111c2d] hover:bg-[#F5F7FA] text-[#142B4A] dark:text-white text-xs font-bold transition-all shadow-2xs flex items-center gap-2 cursor-pointer self-start sm:self-auto"
-        >
-          <Download className="w-4 h-4 text-[#C6A45A]" />
-          <span>Export Archive (CSV)</span>
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto sm:min-w-[280px]">
+          <button
+            type="button"
+            onClick={() => void loadHistoricalData()}
+            disabled={isLoading}
+            className="min-h-11 w-full rounded-xl border border-[#E3E8EF] dark:border-[#26384d] bg-white dark:bg-[#111c2d] hover:bg-[#F5F7FA] text-[#142B4A] dark:text-white text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <Clock className={`w-4 h-4 text-[#C6A45A] ${isLoading ? 'animate-spin' : ''}`} />
+            <span>{isLoading ? 'Refreshing...' : 'Refresh archive'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            disabled={filteredReports.length === 0}
+            className="min-h-11 w-full rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4 text-[#C6A45A]" />
+            <span>Export CSV ({filteredReports.length})</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Key Metrics Bar */}
@@ -298,6 +310,30 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
 
       {/* 3. Filter Controls */}
       <div className="bg-white dark:bg-[#111c2d] p-4 rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] shadow-2xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#142B4A] dark:text-white">
+            <Filter className="w-4 h-4 text-[#C6A45A]" />
+            <span>Find and filter reports</span>
+            <span className="text-[10px] font-semibold text-[#667085] dark:text-slate-400">({filteredReports.length} of {reports.length})</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedCellId('all');
+              setSelectedTutorId('all');
+              setSelectedType('all');
+              setSelectedStatus('all');
+              setSelectedPeriodId('all');
+              setStartDate('');
+              setEndDate('');
+            }}
+            disabled={!searchQuery && selectedCellId === 'all' && selectedTutorId === 'all' && selectedType === 'all' && selectedStatus === 'all' && selectedPeriodId === 'all' && !startDate && !endDate}
+            className="min-h-10 w-full sm:w-auto px-3 rounded-xl border border-[#E3E8EF] dark:border-[#26384d] text-xs font-bold text-[#142B4A] dark:text-white hover:bg-[#F5F7FA] dark:hover:bg-[#172437] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Clear all filters
+          </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           {/* Search */}
           <div className="relative">
@@ -412,8 +448,26 @@ export const ReportHistoryView: React.FC<ReportHistoryViewProps> = ({ onBack, on
             <p className="mt-1">
               {reports.length === 0
                 ? 'No reports have been submitted yet.'
-                : 'No historical reports match your active filter settings. Reset filters to view all entries.'}
+                : 'No historical reports match your active filters. Clear the filters to see the full archive.'}
             </p>
+            {reports.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCellId('all');
+                  setSelectedTutorId('all');
+                  setSelectedType('all');
+                  setSelectedStatus('all');
+                  setSelectedPeriodId('all');
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className="mt-4 min-h-10 rounded-xl bg-[#142B4A] px-4 py-2 text-xs font-bold text-white hover:bg-[#203D63]"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : (
           <>
