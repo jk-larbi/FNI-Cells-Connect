@@ -97,6 +97,7 @@ export interface ProfileSettingsProps {
 
 export type ProfileSection =
   | 'menu'
+  | 'account_management'
   | 'manage_profile'
   | 'appearance'
   | 'password_security'
@@ -717,17 +718,18 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             </button>
           ) : null}
           <h2 className="text-[15px] font-semibold text-[#1f2328] dark:text-[#f3f4f6] tracking-tight">
-            {currentSection === 'menu' && 'Settings'}
+            {currentSection === 'menu' && 'Account Settings'}
+            {currentSection === 'account_management' && 'Account Management'}
             {currentSection === 'manage_profile' && 'My Profile'}
             {currentSection === 'appearance' && 'Appearance'}
-            {currentSection === 'password_security' && 'Privacy and Security'}
-            {currentSection === 'notifications' && 'Notifications and Sounds'}
+            {currentSection === 'password_security' && 'Account Security'}
+            {currentSection === 'notifications' && 'Notification Preferences'}
             {currentSection === 'data_storage' && 'Data and Storage'}
             {currentSection === 'chat_wallpaper' && 'Chat Wallpaper'}
             {currentSection === 'power_saving' && 'Power Saving'}
             {currentSection === 'chat_folders' && 'Chat Folders'}
             {currentSection === 'devices' && 'Devices'}
-            {currentSection === 'general' && 'Language'}
+            {currentSection === 'general' && 'Personal Preferences'}
             {currentSection === 'app_updates' && 'Advanced'}
             {currentSection === 'help_support' && 'Help & Support'}
             {currentSection === 'privacy_policy' && 'Privacy Policy'}
@@ -755,251 +757,144 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             MENU VIEW: EXACT TELEGRAM SETTINGS VISUAL REPLICATION
         ========================================================================== */}
         {currentSection === 'menu' && (
-          <div className="flex flex-col select-none">
-            {/* Top User Profile Header Row (Exact match to screenshot top row) */}
-            <div
-              onClick={() => setCurrentSection('manage_profile')}
-              className="w-full px-4 py-2.5 flex items-center gap-3.5 hover:bg-[#e8edf2] dark:hover:bg-white/5 cursor-pointer transition-colors"
-            >
-              <div className="w-8 h-8 rounded-full bg-[#2bb39c] text-white font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+          <div className="fni-account-overview space-y-6">
+            <div className="fni-account-page-intro">
+              <div>
+                <p className="fni-account-eyebrow">FORERUNNERS NETWORK INTERNATIONAL</p>
+                <h1>Account Settings</h1>
+                <p>Manage your personal information, preferences and account security.</p>
+              </div>
+            </div>
+
+            <section className="fni-account-identity">
+              <div className="fni-account-avatar">
                 {currentUser?.avatar_url ? (
-                  <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                  <img src={currentUser.avatar_url} alt="" />
                 ) : (
                   currentUser?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'FN'
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6] truncate block">
-                  {currentUser?.full_name || 'My Account'}
-                </span>
+              <div className="fni-account-identity-copy">
+                <h2>{currentUser?.full_name || 'My Account'}</h2>
+                <p>{currentUser?.email || 'Email address not available'}</p>
+                <div className="fni-account-identity-meta">
+                  <span>{currentUser?.role || 'FNI Member'}</span>
+                  <span className="fni-account-status"><i />{accountStatus}</span>
+                </div>
+              </div>
+              <button type="button" onClick={() => setCurrentSection('manage_profile')} className="fni-account-outline-action">
+                <User className="w-4 h-4" /> Edit profile
+              </button>
+            </section>
+
+            <div className="fni-account-section-heading">
+              <div>
+                <h2>Personalise your account</h2>
+                <p>Choose a section to review or update.</p>
               </div>
             </div>
 
-            {/* Understated Separator */}
-            <div className="h-px bg-[#e2e5e9] dark:bg-white/10 my-1" />
+            <div className="fni-account-category-grid">
+              <button type="button" onClick={() => setCurrentSection('manage_profile')} className="fni-account-category-card">
+                <span className="fni-account-category-icon"><User /></span>
+                <span className="fni-account-category-copy"><strong>Profile Information</strong><small>Full name, email, phone number and profile photo</small></span>
+                <ChevronRight />
+              </button>
+              <button type="button" onClick={() => setCurrentSection('general')} className="fni-account-category-card">
+                <span className="fni-account-category-icon"><Globe /></span>
+                <span className="fni-account-category-copy"><strong>Personal Preferences</strong><small>Language, time zone, date and time format</small></span>
+                <ChevronRight />
+              </button>
+              <button type="button" onClick={() => setCurrentSection('notifications')} className="fni-account-category-card">
+                <span className="fni-account-category-icon"><Bell /></span>
+                <span className="fni-account-category-copy"><strong>Notification Preferences</strong><small>Meeting reminders, report alerts and notification channels</small></span>
+                <ChevronRight />
+              </button>
+              <button type="button" onClick={() => setCurrentSection('password_security')} className="fni-account-category-card">
+                <span className="fni-account-category-icon"><ShieldCheck /></span>
+                <span className="fni-account-category-copy"><strong>Account Security</strong><small>Password management and active account sessions</small></span>
+                <ChevronRight />
+              </button>
+              <button type="button" onClick={() => setCurrentSection('account_management')} className="fni-account-category-card">
+                <span className="fni-account-category-icon"><Settings /></span>
+                <span className="fni-account-category-copy"><strong>Account Management</strong><small>Devices, support, account requests and sign-out</small></span>
+                <ChevronRight />
+              </button>
+            </div>
 
-            {/* 1. My Profile / Manage Profile (teal/mint green) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('manage_profile')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramProfileIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                My Profile
-              </span>
-            </button>
-
-            {/* 2. Theme & Appearance (grey and orange paintbrush) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('appearance')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramAppearanceIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Appearance
-              </span>
-            </button>
-
-            {/* 3. Password & Security (light blue and grey padlock) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('password_security')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramPrivacyIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Privacy and Security
-              </span>
-            </button>
-
-            {/* 4. Notifications (royal blue bell) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('notifications')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramNotificationsIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Notifications and Sounds
-              </span>
-            </button>
-
-            {/* 5. Data and Storage (blue shades stacked cylinders) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('data_storage')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramDataStorageIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Data and Storage
-              </span>
-            </button>
-
-            {/* 6. Power Saving (green and yellow) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('power_saving')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramPowerSavingIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Power Saving
-              </span>
-            </button>
-
-            {/* 7. Chat Folders (warm yellow/gold) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('chat_folders')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramFoldersIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Chat Folders
-              </span>
-            </button>
-
-            {/* 8. Devices (light blue and grey) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('devices')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramDevicesIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Devices
-              </span>
-            </button>
-
-            {/* 9. Language & Time (sky blue wireframe globe) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('general')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramLanguageIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Language
-              </span>
-            </button>
-
-            {/* 10. Advanced (medium grey gear) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('app_updates')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramAdvancedIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6] flex-1">
-                Advanced
-              </span>
-              <span className="text-[11px] text-slate-400 font-mono pr-2">v1.1.0</span>
-            </button>
-
-            {/* Understated Separator */}
-            <div className="h-px bg-[#e2e5e9] dark:bg-white/10 my-1" />
-
-            {/* 8. Help & Support (violet/purple help circle) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('help_support')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramHelpIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Help &amp; Support
-              </span>
-            </button>
-
-            {/* 9. Privacy Policy (teal shield) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('privacy_policy')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramShieldPolicyIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Privacy Policy
-              </span>
-            </button>
-
-            {/* 10. Terms of Service (warm amber document) */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('terms_of_service')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-[#e8edf2] dark:hover:bg-white/5"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramTermsIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-[#1c1e21] dark:text-[#f3f4f6]">
-                Terms of Service
-              </span>
-            </button>
-
-            {/* Understated Separator */}
-            <div className="h-px bg-[#e2e5e9] dark:bg-white/10 my-1" />
-
-            {/* 11. Request Account Deactivation */}
-            <button
-              type="button"
-              onClick={() => setCurrentSection('deactivate_account')}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-rose-50/60 dark:hover:bg-rose-950/20"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramDeactivationIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal text-rose-600 dark:text-rose-400">
-                Request Account Deactivation
-              </span>
-            </button>
-
-            {/* 12. Log Out */}
-            <button
-              type="button"
-              onClick={() => setShowLogoutConfirm(true)}
-              className="w-full px-4 h-[42px] flex items-center gap-4 text-left transition-colors cursor-pointer hover:bg-rose-50/60 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400"
-            >
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <TelegramLogoutIcon className="w-5 h-5" />
-              </div>
-              <span className="text-[14px] font-normal">
-                Log Out
-              </span>
-            </button>
+            <div className="fni-account-footnote">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Your account information is managed securely within FNI Cells Connect.</span>
+            </div>
           </div>
         )}
 
         {/* =========================================================================
             SECTION 1: MANAGE PROFILE (Requirement 2)
         ========================================================================== */}
+        {/* ACCOUNT MANAGEMENT — existing account actions only */}
+        {currentSection === 'account_management' && (
+          <div className="fni-account-management space-y-5">
+            <div className="fni-account-page-intro">
+              <div>
+                <p className="fni-account-eyebrow">ACCOUNT CONTROL</p>
+                <h1>Account Management</h1>
+                <p>Manage your signed-in devices, get assistance and review account-level requests.</p>
+              </div>
+            </div>
+
+            <section className="fni-account-management-group">
+              <div className="fni-account-management-heading">
+                <h2>Access &amp; sessions</h2>
+                <p>Review where your account is signed in.</p>
+              </div>
+              <button type="button" onClick={() => setCurrentSection('devices')} className="fni-account-management-row">
+                <span className="fni-account-category-icon"><Smartphone /></span>
+                <span><strong>Devices and active sessions</strong><small>View this device and sign out other sessions</small></span>
+                <ChevronRight />
+              </button>
+            </section>
+
+            <section className="fni-account-management-group">
+              <div className="fni-account-management-heading">
+                <h2>Help &amp; account requests</h2>
+                <p>Get help with your account or submit a request for administrator review.</p>
+              </div>
+              <button type="button" onClick={() => setCurrentSection('help_support')} className="fni-account-management-row">
+                <span className="fni-account-category-icon"><HelpCircle /></span>
+                <span><strong>Contact support</strong><small>Find help and guidance for using the portal</small></span>
+                <ChevronRight />
+              </button>
+              <button type="button" onClick={() => setCurrentSection('deactivate_account')} className="fni-account-management-row">
+                <span className="fni-account-category-icon fni-account-category-icon-warning"><AlertTriangle /></span>
+                <span><strong>Request account deactivation</strong><small>Submit a request for FNI Administration to review</small></span>
+                <ChevronRight />
+              </button>
+            </section>
+
+            <section className="fni-account-management-group fni-account-management-more">
+              <div className="fni-account-management-heading">
+                <h2>More app settings</h2>
+                <p>Additional settings already available in your account.</p>
+              </div>
+              <div className="fni-account-more-grid">
+                <button type="button" onClick={() => setCurrentSection('appearance')}><Palette /><span>Appearance</span><ChevronRight /></button>
+                <button type="button" onClick={() => setCurrentSection('data_storage')}><Layers /><span>Data and Storage</span><ChevronRight /></button>
+                <button type="button" onClick={() => setCurrentSection('chat_wallpaper')}><ImageIcon /><span>Chat Wallpaper</span><ChevronRight /></button>
+                <button type="button" onClick={() => setCurrentSection('chat_folders')}><Settings /><span>Chat Folders</span><ChevronRight /></button>
+                <button type="button" onClick={() => setCurrentSection('power_saving')}><Sun /><span>Power Saving</span><ChevronRight /></button>
+                <button type="button" onClick={() => setCurrentSection('app_updates')}><RefreshCw /><span>Advanced</span><ChevronRight /></button>
+                <button type="button" onClick={() => setCurrentSection('privacy_policy')}><Shield /><span>Privacy Policy</span><ChevronRight /></button>
+                <button type="button" onClick={() => setCurrentSection('terms_of_service')}><FileText /><span>Terms of Service</span><ChevronRight /></button>
+              </div>
+            </section>
+
+            <button type="button" onClick={() => setShowLogoutConfirm(true)} className="fni-account-signout">
+              <LogOut className="w-4 h-4" /> Sign out of FNI Cells Connect
+            </button>
+          </div>
+        )}
+
         {currentSection === 'manage_profile' && (
           <div className="fni-profile-manage space-y-5">
             <div className="fni-profile-page-heading flex flex-wrap items-end justify-between gap-3">
