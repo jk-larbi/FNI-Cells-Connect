@@ -34,6 +34,10 @@ import {
   TelegramLogoutIcon,
 } from '../common/TelegramSettingsIcons';
 
+const AdminMaterialIcon: React.FC<{ name: string; className?: string }> = ({ name, className = '' }) => (
+  <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>{name}</span>
+);
+
 interface SidebarProps {
   currentTab: AppNavTab;
   onSelectTab: (tab: AppNavTab) => void;
@@ -94,11 +98,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Administrator Navigation
   // Keep the administrator drawer concise with dedicated section pages.
   const adminNavItems: { id: AppNavTab | 'cells-dropdown' | 'reports-dropdown'; label: string; icon: any; colorKey: IconColorKey; badge?: number }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: TelegramDashboardIcon, colorKey: 'gold' },
-    { id: 'cells-dropdown', label: 'Cells', icon: TelegramCellsIcon, colorKey: 'teal' },
-    { id: 'reports-hub', label: 'Reports', icon: TelegramReportsIcon, colorKey: 'emerald' },
-    { id: 'evangelism', label: 'Evangelism', icon: TelegramEvangelismIcon, colorKey: 'flame' },
-    { id: 'ministry-hub', label: 'Ministry', icon: TelegramMoreIcon, colorKey: 'slate' },
+    { id: 'dashboard', label: 'Dashboard', icon: (props: any) => <AdminMaterialIcon name="grid_view" {...props} />, colorKey: 'gold' },
+    { id: 'cells-dropdown', label: 'Cells', icon: (props: any) => <AdminMaterialIcon name="group" {...props} />, colorKey: 'teal' },
+    { id: 'reports-hub', label: 'Reports', icon: (props: any) => <AdminMaterialIcon name="description" {...props} />, colorKey: 'emerald' },
+    { id: 'evangelism', label: 'Evangelism', icon: (props: any) => <AdminMaterialIcon name="favorite_border" {...props} />, colorKey: 'flame' },
+    { id: 'ministry-hub', label: 'Ministry', icon: (props: any) => <AdminMaterialIcon name="more_horiz" {...props} />, colorKey: 'slate' },
     { id: 'more-hub', label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' },
   ];
 
@@ -121,25 +125,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Submodules
   const cellsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
-    { id: 'cell-management' as AppNavTab, label: 'Cell Groups', icon: TelegramCellsIcon, colorKey: 'teal' },
-    { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: TelegramUsersIcon, colorKey: 'teal' },
-    { id: 'cell-location-history' as AppNavTab, label: 'Location History', icon: TelegramLocationIcon, colorKey: 'cyan' },
+    { id: 'cell-management' as AppNavTab, label: 'Cell Groups', icon: (props: any) => <AdminMaterialIcon name="group" {...props} />, colorKey: 'teal' },
+    { id: 'cell-leaders' as AppNavTab, label: 'Cell Leaders', icon: (props: any) => <AdminMaterialIcon name="supervisor_account" {...props} />, colorKey: 'teal' },
+    { id: 'cell-location-history' as AppNavTab, label: 'Location History', icon: (props: any) => <AdminMaterialIcon name="location_on" {...props} />, colorKey: 'cyan' },
   ];
 
   const reportsSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
-    { id: 'report-review' as AppNavTab, label: 'Review', icon: TelegramReportsIcon, colorKey: 'emerald' },
-    { id: 'report-history' as AppNavTab, label: 'Report History', icon: TelegramHistoryIcon, colorKey: 'blue' },
-    { id: 'report-deadlines' as AppNavTab, label: 'Deadline Settings', icon: TelegramDeadlinesIcon, colorKey: 'flame' },
+    { id: 'report-review' as AppNavTab, label: 'Review', icon: (props: any) => <AdminMaterialIcon name="description" {...props} />, colorKey: 'emerald' },
+    { id: 'report-history' as AppNavTab, label: 'Report History', icon: (props: any) => <AdminMaterialIcon name="history" {...props} />, colorKey: 'blue' },
+    { id: 'report-deadlines' as AppNavTab, label: 'Deadline Settings', icon: (props: any) => <AdminMaterialIcon name="event" {...props} />, colorKey: 'flame' },
   ];
 
   const learningSubItems: { id: AppNavTab; label: string; icon: any; colorKey: IconColorKey }[] = [
-    { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: TelegramLearningIcon, colorKey: 'purple' },
-    { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: TelegramAssignmentsIcon, colorKey: 'amber' },
-    { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: TelegramQuizzesIcon, colorKey: 'orange' },
-    { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: TelegramUsersIcon, colorKey: 'teal' },
-    { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: TelegramAnalyticsIcon, colorKey: 'blue' },
-    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: TelegramEventsIcon, colorKey: 'cyan' },
-    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: TelegramMaterialsIcon, colorKey: 'amber' },
+    { id: 'learning-portal' as AppNavTab, label: 'Overview', icon: (props: any) => <AdminMaterialIcon name="school" {...props} />, colorKey: 'purple' },
+    { id: 'learning-assignments' as AppNavTab, label: 'Assignments', icon: (props: any) => <AdminMaterialIcon name="assignment" {...props} />, colorKey: 'amber' },
+    { id: 'learning-quizzes' as AppNavTab, label: 'Quizzes', icon: (props: any) => <AdminMaterialIcon name="quiz" {...props} />, colorKey: 'orange' },
+    { id: 'learning-participation' as AppNavTab, label: 'Participation', icon: (props: any) => <AdminMaterialIcon name="groups" {...props} />, colorKey: 'teal' },
+    { id: 'learning-grades' as AppNavTab, label: 'Grades & Scores', icon: (props: any) => <AdminMaterialIcon name="analytics" {...props} />, colorKey: 'blue' },
+    { id: 'learning-events' as AppNavTab, label: 'Upcoming Events', icon: (props: any) => <AdminMaterialIcon name="event" {...props} />, colorKey: 'cyan' },
+    { id: 'learning-materials' as AppNavTab, label: 'Learning Materials', icon: (props: any) => <AdminMaterialIcon name="menu_book" {...props} />, colorKey: 'amber' },
   ];
 
   const navItems = isAdmin ? adminNavItems : tutorNavItems;
@@ -338,7 +342,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             ? 'bg-white/15 text-[#C6A45A]'
                             : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
                         } transition-colors`}>
-                          <TelegramCellsIcon className="w-4 h-4 shrink-0" />
+                          {isAdmin ? <AdminMaterialIcon name="group" className="w-4 h-4 shrink-0" /> : <TelegramCellsIcon className="w-4 h-4 shrink-0" />}
                         </span>
                         <span className="truncate">Cells</span>
                       </button>
@@ -421,7 +425,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             ? 'bg-white/15 text-[#C6A45A]'
                             : `${ICON_STYLES[item.colorKey].bg} ${ICON_STYLES[item.colorKey].text}`
                         } transition-colors`}>
-                          <TelegramReportsIcon className="w-4 h-4 shrink-0" />
+                          {isAdmin ? <AdminMaterialIcon name="description" className="w-4 h-4 shrink-0" /> : <TelegramReportsIcon className="w-4 h-4 shrink-0" />}
                         </span>
                         <span className="truncate">Reports</span>
                       </button>
