@@ -13,6 +13,7 @@ import {
   History,
   TrendingUp,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
 } from 'lucide-react';
 
@@ -35,32 +36,51 @@ export const SoulTargetSettingsModal: React.FC<SoulTargetSettingsModalProps> = (
   const [reason, setReason] = useState<string>('Territorial kingdom expansion across 16 cells');
   const [auditHistory, setAuditHistory] = useState<SoulTargetConfig['auditHistory']>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [saveError, setSaveError] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
+    let isActive = true;
 
-    Promise.all([
-      SoulTargetService.getConfig(),
-      CellService.getActiveCells(),
-    ]).then(([config, activeCells]) => {
-      setCells(activeCells);
-      setMinistryTarget(config.ministryTarget || config.annualTarget || 5000);
-      setTargetPeriod(config.targetPeriod || 'yearly');
-      setAuditHistory(config.auditHistory || []);
+    const loadConfig = async () => {
+      setIsLoading(true);
+      setLoadError('');
+      try {
+        const [config, activeCells] = await Promise.all([
+          SoulTargetService.getConfig(),
+          CellService.getActiveCells(),
+        ]);
+        if (!isActive) return;
 
-      // If cellTargets exist, load them; else distribute evenly
-      const initialTargets: Record<string, number> = {};
-      const count = Math.max(1, activeCells.length);
-      const defaultPerCell = Math.round((config.ministryTarget || config.annualTarget || 5000) / count);
+        setCells(activeCells);
+        setMinistryTarget(config.ministryTarget || config.annualTarget || 5000);
+        setTargetPeriod(config.targetPeriod || 'yearly');
+        setAuditHistory(config.auditHistory || []);
 
-      activeCells.forEach(cell => {
-        const custom = config.cellTargets?.[cell.id] ?? config.cellTargets?.[cell.name];
-        initialTargets[cell.id] = typeof custom === 'number' && custom > 0 ? custom : defaultPerCell;
-      });
-      setCellTargets(initialTargets);
-    });
-  }, [isOpen]);
+        const initialTargets: Record<string, number> = {};
+        const count = Math.max(1, activeCells.length);
+        const defaultPerCell = Math.round((config.ministryTarget || config.annualTarget || 5000) / count);
+
+        activeCells.forEach(cell => {
+          const custom = config.cellTargets?.[cell.id] ?? config.cellTargets?.[cell.name];
+          initialTargets[cell.id] = typeof custom === 'number' && custom > 0 ? custom : defaultPerCell;
+        });
+        setCellTargets(initialTargets);
+      } catch (error) {
+        console.error('Failed to load soul target settings:', error);
+        if (isActive) setLoadError('Soul target settings could not be loaded. Please try again.');
+      } finally {
+        if (isActive) setIsLoading(false);
+      }
+    };
+
+    void loadConfig();
+    return () => { isActive = false; };
+  }, [isOpen, loadAttempt]);
 
   if (!isOpen) return null;
 
@@ -91,6 +111,7 @@ export const SoulTargetSettingsModal: React.FC<SoulTargetSettingsModalProps> = (
     e.preventDefault();
     try {
       setIsSaving(true);
+      setSaveError('');
       await SoulTargetService.updateTargetSettings({
         ministryTarget: Number(ministryTarget),
         targetPeriod,
@@ -98,12 +119,15 @@ export const SoulTargetSettingsModal: React.FC<SoulTargetSettingsModalProps> = (
         changedBy: currentUser?.full_name || 'System Administrator',
         reason: reason.trim() || 'Annual target calibration',
       });
-      setSuccessMessage('Soul targets updated and synced live across all 16 cells.');
+      setSuccessMessage('Soul targets updated and synced live across all active cells.');
       setTimeout(() => {
         setSuccessMessage(null);
         if (onUpdated) onUpdated();
         onClose();
       }, 1200);
+    } catch (error) {
+      console.error('Failed to save soul target settings:', error);
+      setSaveError(error instanceof Error ? error.message : 'Could not save soul target settings. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -135,6 +159,7 @@ export const SoulTargetSettingsModal: React.FC<SoulTargetSettingsModalProps> = (
           </button>
         </div>
 
+        {saveError && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800" role="alert">{saveError}</div>}
         {successMessage && (
           <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -142,6 +167,16 @@ export const SoulTargetSettingsModal: React.FC<SoulTargetSettingsModalProps> = (
           </div>
         )}
 
+        {isLoading ? (
+          <div className="py-12 text-center text-sm text-slate-500" role="status" aria-live="polite">Loading live soul target settings...</div>
+        ) : loadError ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-center" role="alert">
+            <AlertTriangle className="mx-auto mb-2 h-7 w-7 text-rose-600" />
+            <p className="text-sm font-semibold text-rose-800">Soul target settings are unavailable</p>
+            <p className="mt-1 text-xs text-rose-700">{loadError}</p>
+            <button type="button" onClick={() => setLoadAttempt(value => value + 1)} className="mt-3 min-h-9 rounded-lg bg-[#142B4A] px-4 py-2 text-xs font-semibold text-white">Try again</button>
+          </div>
+        ) : (
         <form onSubmit={handleSave} className="space-y-4 text-xs">
           {/* Target & Period Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-navy-800">
@@ -297,6 +332,7 @@ export const SoulTargetSettingsModal: React.FC<SoulTargetSettingsModalProps> = (
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
