@@ -102,8 +102,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'cells-dropdown', label: 'Cells', icon: (props: any) => <AdminMaterialIcon name="group" {...props} />, colorKey: 'teal' },
     { id: 'reports-hub', label: 'Reports', icon: (props: any) => <AdminMaterialIcon name="description" {...props} />, colorKey: 'emerald' },
     { id: 'evangelism', label: 'Evangelism', icon: (props: any) => <AdminMaterialIcon name="favorite_border" {...props} />, colorKey: 'flame' },
-    { id: 'ministry-hub', label: 'Ministry', icon: (props: any) => <AdminMaterialIcon name="more_horiz" {...props} />, colorKey: 'slate' },
-    { id: 'more-hub', label: 'More', icon: TelegramMoreIcon, colorKey: 'slate' },
+    { id: 'ministry-hub', label: 'Ministry', icon: (props: any) => <AdminMaterialIcon name="account_balance_wallet" {...props} />, colorKey: 'slate' },
+    { id: 'more-hub', label: 'More', icon: (props: any) => <AdminMaterialIcon name="more_horiz" {...props} />, colorKey: 'slate' },
   ];
 
   // Tutor Navigation
