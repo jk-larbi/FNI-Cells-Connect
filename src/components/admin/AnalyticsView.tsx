@@ -370,6 +370,19 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     );
   }, [cellStats, searchQuery]);
 
+  // Highlight only objective follow-up gaps visible in the current cell records.
+  const followUpCells = useMemo(() => filteredCellStats
+    .filter(cell => selectedCell === 'All' || cell.name === selectedCell)
+    .map(cell => ({
+      ...cell,
+      followUpReasons: [
+        !cell.leaderName?.trim() ? 'Leader not assigned' : null,
+        cell.meetingReportsCount === 0 ? 'No meeting reports recorded' : null,
+      ].filter((reason): reason is string => Boolean(reason)),
+    }))
+    .filter(cell => cell.followUpReasons.length > 0),
+  [filteredCellStats, selectedCell]);
+
   const handleExportCsv = async () => {
     const csvData = await AnalyticsService.exportAnalyticsCsv();
     await exportCsvFile(`FNI_Ministry_Analytics_${Date.now()}.csv`, csvData);
@@ -1385,6 +1398,38 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
           <span className="rounded-full border border-[#142B4A]/15 dark:border-white/10 bg-[#142B4A]/5 dark:bg-white/5 px-3 py-1 text-[11px] font-semibold text-[#142B4A] dark:text-[#C6A45A]">
             {selectedCell === 'All' ? `${cellStats.length} cells` : 'Selected cell'} &bull; Database Records
           </span>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-[#E3E8EF] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-800/40 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h3 className="text-sm font-bold text-[#182230] dark:text-white flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-[#C6A45A]" />
+                Follow-up checks
+              </h3>
+              <p className="mt-0.5 text-[11px] text-[#667085] dark:text-slate-400">Cells with an unassigned leader or no meeting reports on record.</p>
+            </div>
+            <span className="rounded-full bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-700 px-2.5 py-1 text-[10px] font-bold text-[#142B4A] dark:text-[#C6A45A]">
+              {followUpCells.length} to review
+            </span>
+          </div>
+          {followUpCells.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {followUpCells.map(cell => (
+                <div key={cell.id} className="flex items-start justify-between gap-3 rounded-xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-700 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#182230] dark:text-white truncate">{cell.name}</p>
+                    <p className="mt-0.5 text-[10px] text-[#667085] dark:text-slate-400">{cell.followUpReasons.join(' · ')}</p>
+                  </div>
+                  <span className="shrink-0 text-[10px] font-semibold text-[#A56B16] dark:text-amber-300">Review</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-700 px-3 py-3 text-xs text-[#667085] dark:text-slate-400">
+              No follow-up checks were triggered by the available cell records.
+            </p>
+          )}
         </div>
 
         {(() => {
