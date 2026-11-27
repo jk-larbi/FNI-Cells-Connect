@@ -1240,6 +1240,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   onClick={() => {
                     setReviewAction('Approved');
                     setReviewComment('');
+                    setReviewReasons([]);
                   }}
                   className={`flex-1 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     reviewAction === 'Approved'
@@ -1248,7 +1249,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   }`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Accept Report</span>
+                  <span>Approve report</span>
                 </button>
 
                 <button
@@ -1256,6 +1257,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   onClick={() => {
                     setReviewAction('Needs Correction');
                     setReviewComment('');
+                    setReviewReasons([]);
                   }}
                   className={`flex-1 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     reviewAction === 'Needs Correction'
@@ -1264,92 +1266,63 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
                   }`}
                 >
                   <AlertCircle className="w-4 h-4" />
-                  <span>Decline Report</span>
+                  <span>Return for correction</span>
                 </button>
               </div>
 
-              {/* Review Comment Box & Preset Feedback Chips */}
+              {/* Stitch: Return for correction / approval action panel */}
               {reviewAction && (
-                <div className="space-y-3 pt-2 animate-fade-in bg-[#F8FAFC] p-4 rounded-2xl border border-[#E3E8EF]">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-extrabold text-[#182230]">
-                      Reviewer Feedback / Directive{' '}
-                      {reviewAction === 'Needs Correction' && <span className="text-[#C74646]">*</span>}
-                    </label>
-                    <span className="text-[10px] text-[#667085]">
-                      {reviewAction === 'Needs Correction'
-                        ? 'Mandatory feedback required'
-                        : 'Optional commendation note'}
-                    </span>
-                  </div>
-
-                  {/* Quick Preset Feedback Chips */}
-                  {reviewAction === 'Needs Correction' && (
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-[#667085] uppercase tracking-wider">
-                        Quick Preset Notes (Click to insert):
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {PRESET_FEEDBACK_COMMENTS.map((preset, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              setReviewComment(prev => (prev ? `${prev} ${preset}` : preset));
-                            }}
-                            className="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-[#E3E8EF] hover:border-[#142B4A] text-[#142B4A] hover:bg-[#FAF6EE] text-left transition-colors shadow-2xs cursor-pointer"
-                          >
-                            + {preset}
-                          </button>
+                <section className="fni-rr-action-panel">
+                  {reviewAction === 'Needs Correction' ? (
+                    <div className="fni-rr-return-form">
+                      <div className="fni-rr-return-heading">
+                        <div><p className="fni-rr-eyebrow">REPORT REVIEW</p><h3>Return for correction</h3><p>{inspectingItem.cellName} · Submitted by {inspectingItem.tutorName} · {new Date(inspectingItem.submittedAt).toLocaleDateString('en-GB')}</p></div>
+                        <span className="fni-rr-return-tag">Action required</span>
+                      </div>
+                      <fieldset className="fni-rr-reason-list">
+                        <legend>Select items requiring update</legend>
+                        {(inspectingItem.reportType === 'meeting'
+                          ? ['Attendance count does not match roster', 'Offering breakdown missing', 'New member / first-timer contact details incomplete', 'Meeting date or venue needs clarification']
+                          : ['Outreach location or team details missing', 'People reached / conversions need verification', 'First-timer contact details incomplete', 'Follow-up information missing']
+                        ).map(reason => (
+                          <label key={reason}>
+                            <input type="checkbox" checked={reviewReasons.includes(reason)} onChange={() => setReviewReasons(current => current.includes(reason) ? current.filter(value => value !== reason) : [...current, reason])} />
+                            <span>{reason}</span>
+                          </label>
                         ))}
+                      </fieldset>
+                      <div className="fni-rr-message-field">
+                        <label htmlFor="fni-rr-return-message">Message to {inspectingItem.tutorName}</label>
+                        <textarea id="fni-rr-return-message" rows={4} value={reviewComment} onChange={event => setReviewComment(event.target.value)} placeholder="Explain clearly what the cell leader should correct before resubmitting…" />
+                      </div>
+                      <div className="fni-rr-preset-notes">
+                        <span>Quick feedback</span>
+                        {PRESET_FEEDBACK_COMMENTS.map((preset, index) => (
+                          <button key={index} type="button" onClick={() => setReviewComment(current => current ? `${current} ${preset}` : preset)}>{preset}</button>
+                        ))}
+                      </div>
+                      <div className="fni-rr-return-actions">
+                        <button type="button" className="fni-rr-cancel-action" onClick={() => { setReviewAction(null); setReviewReasons([]); }}>Cancel</button>
+                        <button type="button" className="fni-rr-send-return" disabled={isSubmittingReview || (!reviewComment.trim() && reviewReasons.length === 0)} onClick={() => void handleSubmitReview()}>
+                          {isSubmittingReview ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send back to leader
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="fni-rr-approve-confirm">
+                      <div><span className="fni-rr-approve-icon"><CheckCircle2 className="w-5 h-5" /></span><div><h3>Approve this report?</h3><p>The report will be recorded as approved and the cell leader will receive an in-app notification.</p></div></div>
+                      <label htmlFor="fni-rr-approval-note">Optional note to the cell leader</label>
+                      <textarea id="fni-rr-approval-note" rows={3} value={reviewComment} onChange={event => setReviewComment(event.target.value)} placeholder="Add a commendation or administrative note (optional)…" />
+                      <div className="fni-rr-return-actions">
+                        <button type="button" className="fni-rr-cancel-action" onClick={() => setReviewAction(null)}>Cancel</button>
+                        <button type="button" className="fni-rr-send-approve" disabled={isSubmittingReview} onClick={() => void handleSubmitReview()}>
+                          {isSubmittingReview ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Confirm approval
+                        </button>
                       </div>
                     </div>
                   )}
-
-                  <textarea
-                    rows={3}
-                    value={reviewComment}
-                    onChange={e => setReviewComment(e.target.value)}
-                    placeholder={
-                      reviewAction === 'Approved'
-                        ? 'Optional administrative commendation or note for leadership archives...'
-                        : 'Specify clearly what numbers, receipts, or information the tutor must correct before approval...'
-                    }
-                    className="w-full p-3 text-xs rounded-xl border border-[#E3E8EF] bg-white focus:ring-2 focus:ring-[#142B4A]/20 focus:outline-none text-[#182230] leading-relaxed"
-                  />
-
-                  <div className="flex items-center justify-end gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setReviewAction(null)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-[#667085] hover:bg-[#E3E8EF] transition-colors cursor-pointer"
-                    >
-                      Cancel Action
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isSubmittingReview}
-                      onClick={handleSubmitReview}
-                      className={`px-5 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                        reviewAction === 'Approved'
-                          ? 'bg-[#23845B] hover:bg-emerald-700'
-                          : 'bg-[#C74646] hover:bg-rose-700'
-                      }`}
-                    >
-                      {isSubmittingReview ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Saving Decision...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Confirm {reviewAction === 'Approved' ? 'Acceptance' : 'Decline (Return with Directives)'}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                </section>
+              )}
               )}
             </div>
           </div>
