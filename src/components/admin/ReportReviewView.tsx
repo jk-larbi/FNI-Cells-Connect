@@ -1506,7 +1506,7 @@ export const ReportReviewView: React.FC<ReportReviewViewProps> = ({
       {/* FULL REPORT INSPECTION & REVIEW DOSSIER MODAL */}
       {inspectingItem && (
         <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-stretch justify-center p-0 sm:items-center sm:p-4">
-          <div className="h-[100dvh] w-full max-w-none rounded-none bg-white px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl border-0 max-h-[100dvh] overflow-y-auto custom-scrollbar space-y-5 animate-fade-in sm:h-auto sm:max-w-3xl sm:rounded-3xl sm:border sm:border-[#E3E8EF] sm:p-6 sm:max-h-[92vh]">
+          <div className={`fni-report-dossier ${inspectingItem.reportType === "meeting" ? "fni-cell-meeting-dossier" : "fni-evangelism-dossier"} h-[100dvh] w-full max-w-none rounded-none bg-white px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl border-0 max-h-[100dvh] overflow-y-auto custom-scrollbar space-y-5 animate-fade-in sm:h-auto sm:max-w-3xl sm:rounded-3xl sm:border sm:border-[#E3E8EF] sm:p-6 sm:max-h-[92vh]` }>
             {/* Modal Navigation Bar & Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#E3E8EF]">
               <div className="flex items-center gap-2">
