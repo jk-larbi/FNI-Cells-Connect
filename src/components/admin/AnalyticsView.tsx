@@ -301,31 +301,25 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
     setTimeout(() => setRecentPulseCard(null), 2400);
   };
 
-  // Dynamic map beacons derived from real registered cells and location history
+  // Show only venues that are actually recorded for a cell; never invent map coordinates or live presence.
   const mapBeacons = useMemo<CellMapBeacon[]>(() => {
-    if (!cells || cells.length === 0) return [];
-    return cells.map((cell, idx) => {
+    return cells.flatMap(cell => {
       const stat = cellStats.find(cs => cs.id === cell.id || cs.name === cell.name);
-      const loc = locationHistory.find(lh => lh.cell_id === cell.id || lh.cell_name === cell.name);
-      const venue = loc?.venue || cell.meeting_location || cell.location || 'Venue pending';
+      const latestLocation = locationHistory
+        .filter(record => record.cell_id === cell.id || record.cell_name === cell.name)
+        .filter(record => record.venue?.trim())
+        .sort((a, b) => new Date(b.meeting_date || 0).getTime() - new Date(a.meeting_date || 0).getTime())[0];
+      const venue = latestLocation?.venue?.trim() || cell.meeting_location?.trim() || cell.location?.trim();
+      if (!venue) return [];
 
-      // Distribute points harmoniously within radar perimeter (20% to 80%)
-      const angle = (idx / Math.max(cells.length, 1)) * 2 * Math.PI - Math.PI / 2;
-      const radius = 22 + (idx % 3) * 14;
-      const xPct = Math.round(50 + radius * Math.cos(angle));
-      const yPct = Math.round(50 + radius * Math.sin(angle));
-
-      return {
+      return [{
         id: cell.id,
         cellName: cell.name,
-        tutorName: cell.leader_name || stat?.leaderName || 'Cell Leader',
+        tutorName: cell.leader_name || stat?.leaderName || 'Leader not assigned',
         venue,
-        xPct,
-        yPct,
-        attendance: stat?.totalAttendance || 0,
-        soulsWon: stat?.soulsWon || 0,
-        isActiveNow: (stat?.meetingReportsCount ?? 0) > 0,
-      };
+        attendance: stat?.totalAttendance,
+        soulsWon: stat?.soulsWon,
+      }];
     });
   }, [cells, cellStats, locationHistory]);
 
@@ -1071,107 +1065,71 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
             </div>
           </div>
 
-          {/* SECTION 2: LIVE MAP / CELL LOCATION RADAR (Matching "Live map" in reference) */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-800 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-3">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[#C6A45A]" />
-                <h3 className="text-sm font-black text-[#182230] dark:text-white">Live Cell Radar</h3>
+          {/* SECTION 2: RECORDED CELL VENUES */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-[#E3E8EF] dark:border-slate-800 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between gap-3 pb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <MapPin className="w-4 h-4 text-[#C6A45A] shrink-0" />
+                <h3 className="text-sm font-black text-[#182230] dark:text-white">Recorded Cell Venues</h3>
               </div>
               {onNavigateToTab && (
                 <button
                   type="button"
                   onClick={() => onNavigateToTab('cell-location-history')}
-                  className="text-[11px] font-bold text-[#C6A45A] hover:underline cursor-pointer"
+                  className="text-[11px] font-bold text-[#C6A45A] hover:underline cursor-pointer shrink-0"
                 >
-                  View All History
+                  View History
                 </button>
               )}
             </div>
 
-            {/* STYLIZED RADAR / GEOGRAPHIC CANVASS */}
-            <div className="relative w-full h-44 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-950 dark:to-[#142B4A]/50 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-inner">
-              {/* Map grid lines */}
-              <div
-                className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none"
-                style={{
-                  backgroundImage: 'radial-gradient(circle, #667085 1px, transparent 1px)',
-                  backgroundSize: '16px 16px',
-                }}
-              />
-
-              {/* Radar sweep ring effect */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-36 h-36 rounded-full border border-[#C6A45A]/25 animate-ping duration-3000" />
-                <div className="w-24 h-24 rounded-full border border-royal-blue/30" />
-                <div className="w-12 h-12 rounded-full border border-slate-400/20" />
-              </div>
-
-              {/* Cell Beacons (Pulsing Pins) */}
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {mapBeacons.length === 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-10">
-                  <Compass className="w-6 h-6 text-slate-400 mb-1" />
-                  <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Cell Venues Active</p>
-                  <p className="text-[10px] text-slate-400 max-w-xs mt-0.5">Cell meeting locations will appear on radar as venues are confirmed.</p>
+                <div className="flex flex-col items-center justify-center py-8 px-4 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <MapPin className="w-6 h-6 text-slate-400 mb-2" />
+                  <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No venues recorded yet</p>
+                  <p className="text-[10px] text-slate-400 max-w-xs mt-1">Cell venues will appear here after a location is saved.</p>
                 </div>
               ) : (
-                mapBeacons.map(beacon => {
-                  const isSelected = activeBeacon?.id === beacon.id;
-                  return (
-                    <div
-                      key={beacon.id}
-                      className="absolute cursor-pointer transition-transform hover:scale-125 z-20"
-                      style={{ left: `${beacon.xPct}%`, top: `${beacon.yPct}%`, transform: 'translate(-50%, -50%)' }}
-                      onClick={() => setActiveBeacon(beacon)}
-                    >
-                      <div className="relative group">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md font-bold text-[9px] text-white ${
-                          beacon.isActiveNow ? 'bg-[#142B4A] border-2 border-[#C6A45A]' : 'bg-slate-600'
-                        }`}>
-                          {beacon.tutorName.split(' ').map(s => s[0]).slice(0, 2).join('')}
-                        </div>
-
-                        {beacon.isActiveNow && (
-                          <span className="absolute -inset-1 rounded-full bg-[#C6A45A]/50 animate-ping pointer-events-none" />
-                        )}
-
-                        {/* Tooltip on hover/click */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-30 pointer-events-none">
-                          <div className="px-2 py-1 bg-[#142B4A] text-white text-[9px] font-bold rounded-lg shadow-xl whitespace-nowrap border border-[#C6A45A]/40">
-                            <p>{beacon.cellName}</p>
-                            <p className="text-[#C6A45A] font-normal">{beacon.venue}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
+                mapBeacons.map(beacon => (
+                  <button
+                    key={beacon.id}
+                    type="button"
+                    onClick={() => setActiveBeacon(beacon)}
+                    className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
+                      activeBeacon?.id === beacon.id
+                        ? 'border-[#C6A45A]/60 bg-[#C6A45A]/10'
+                        : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <span className="w-9 h-9 rounded-full bg-[#142B4A]/5 dark:bg-[#C6A45A]/10 text-[#142B4A] dark:text-[#C6A45A] flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-bold text-[#182230] dark:text-white truncate">{beacon.cellName}</span>
+                      <span className="block text-[10px] text-slate-500 dark:text-slate-400 truncate">{beacon.venue}</span>
+                      <span className="block text-[10px] text-slate-400 truncate">{beacon.tutorName}</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                  </button>
+                ))
               )}
             </div>
 
-            {/* Active Beacon Info Footer */}
-            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-              {activeBeacon ? (
-                <div className="flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-bold text-[#142B4A] dark:text-white block truncate">
-                      {activeBeacon.cellName}
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                      {activeBeacon.venue} &bull; Tutor: {activeBeacon.tutorName}
-                    </span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 shrink-0">
-                    {activeBeacon.attendance} Attendees
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>{mapBeacons.length} Active Venues Monitored in Ghana</span>
-                  <span className="font-bold text-[#142B4A] dark:text-[#C6A45A]">Click pin to inspect</span>
-                </div>
-              )}
+            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span>{mapBeacons.length} recorded venue{mapBeacons.length === 1 ? '' : 's'}</span>
+              <span className="font-medium text-[#142B4A] dark:text-[#C6A45A]">From saved cell records</span>
             </div>
+
+            {activeBeacon && (
+              <div className="mt-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
+                <p className="text-xs font-bold text-[#142B4A] dark:text-white">{activeBeacon.cellName}</p>
+                <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">{activeBeacon.venue} · {activeBeacon.tutorName}</p>
+                {activeBeacon.attendance != null && (
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">Recorded attendance total: {activeBeacon.attendance}</p>
+                )}
+              </div>
+            )}
           </div>
 
         </div>
