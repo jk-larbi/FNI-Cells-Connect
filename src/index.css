@@ -7269,6 +7269,132 @@ html.dark .fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-thumb:hover {
 }
 
 
+
+/* Learning Hub navigation — explicit contrast for light and dark themes.
+   The navigation remains visually distinct from the page canvas and each
+   section has a clear active, hover and keyboard-focus state. */
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar {
+  background:#F0F5FB !important;
+  color:#25384A !important;
+  border-right:1px solid #D5E0EC;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-brand {
+  border-bottom-color:#D5E0EC;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-brand-mark {
+  background:#DCEAF7;
+  color:#315F87;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-brand strong,
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-user-copy strong {
+  color:#25384A;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-brand span,
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-caption,
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-user-copy span {
+  color:#60758A;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-nav button {
+  color:#40566B;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-nav button:hover {
+  background:#E2ECF6;
+  color:#1E4265;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-nav button.is-active {
+  background:#DCEAF7;
+  color:#1E4265;
+  box-shadow:inset 3px 0 #D5B36A;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-nav button.is-active svg {
+  color:#315F87;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-nav-count {
+  background:#D4E2F0;
+  color:#294B6C;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-footer {
+  border-top-color:#D5E0EC;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-sidebar-user-avatar {
+  background:#DCEAF7;
+  color:#1E4265;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-mobile-nav {
+  position:relative;
+  z-index:2;
+  padding:8px;
+  border:1px solid #C9D8E8;
+  border-radius:12px;
+  background:#EAF1F8;
+  box-shadow:0 2px 5px rgba(37,56,74,.06);
+  scrollbar-color:#91A9C1 #EAF1F8;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-mobile-nav button {
+  border-color:#C3D2E2;
+  background:#FFFFFF;
+  color:#354D65;
+  box-shadow:0 1px 2px rgba(37,56,74,.05);
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-mobile-nav button:hover {
+  border-color:#83A6C8;
+  background:#F4F8FC;
+  color:#1E4265;
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-mobile-nav button.is-active {
+  border-color:#315F87;
+  background:#315F87;
+  color:#FFFFFF;
+  box-shadow:0 2px 5px rgba(49,95,135,.2);
+}
+html:not(.dark) .fni-learning-stitch .fni-learning-mobile-nav button.is-active svg {
+  color:#F1D18B;
+}
+.fni-learning-stitch .fni-learning-sidebar-nav button:focus-visible,
+.fni-learning-stitch .fni-learning-mobile-nav button:focus-visible {
+  outline:2px solid #D5B36A;
+  outline-offset:2px;
+}
+html.dark .fni-learning-stitch .fni-learning-sidebar {
+  background:#142842 !important;
+  color:#FFFFFF !important;
+  border-right-color:#2B405A;
+}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav {
+  position:relative;
+  z-index:2;
+  padding:8px;
+  border:1px solid #344A63;
+  border-radius:12px;
+  background:#17283D;
+  box-shadow:0 2px 5px rgba(0,0,0,.18);
+  scrollbar-color:#607A96 #17283D;
+}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav button {
+  border-color:#3B526D;
+  background:#1D3048;
+  color:#D6E0EC;
+}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav button:hover {
+  border-color:#6F91B3;
+  background:#263E5B;
+  color:#FFFFFF;
+}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav button.is-active {
+  border-color:#8BB5DC;
+  background:#376F9F;
+  color:#FFFFFF;
+  box-shadow:0 2px 6px rgba(0,0,0,.22);
+}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav button.is-active svg {
+  color:#F1D18B;
+}
+html.dark .fni-learning-stitch .fni-learning-sidebar-nav button:focus-visible,
+html.dark .fni-learning-stitch .fni-learning-mobile-nav button:focus-visible {
+  outline:2px solid #E9C77C;
+  outline-offset:2px;
+}
+
 /* Cell profile meeting and evangelism report cards: readable in both themes. */
 .fni-cell-groups-stitch .fni-cell-report-card {
   background: #FFFFFF;
