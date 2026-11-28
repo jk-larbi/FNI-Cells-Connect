@@ -7762,3 +7762,165 @@ html.dark .fni-tutor-dashboard .fni-tutor-sanctuary-header {
     min-height: 64px;
   }
 }
+
+
+/* ===============================================================
+   FNI MESSAGES — STITCH CHAT LIST
+   Applies the supplied mobile/desktop reference to live conversations.
+   Data, filters, navigation and messaging actions remain unchanged.
+   =============================================================== */
+.fni-messages-stitch {
+  --fni-chat-primary: #142842;
+  --fni-chat-secondary: #785A1B;
+  --fni-chat-canvas: #FAFAF8;
+  --fni-chat-surface: #FFFFFF;
+  --fni-chat-surface-low: #F5F7F8;
+  --fni-chat-outline: #DCE3EC;
+  --fni-chat-text: #142842;
+  --fni-chat-muted: #536273;
+}
+.fni-messages-stitch .fni-messages-list-pane {
+  background: var(--fni-chat-surface-low) !important;
+  border-color: var(--fni-chat-outline) !important;
+}
+.fni-messages-stitch .fni-messages-list-header {
+  background: var(--fni-chat-surface-low) !important;
+  border-color: var(--fni-chat-outline) !important;
+  padding: 14px 16px 12px !important;
+}
+.fni-messages-stitch .fni-messages-list-header .font-bold.text-sm.leading-tight {
+  color: var(--fni-chat-text);
+  font-size: 15px;
+  letter-spacing: -.01em;
+}
+.fni-messages-stitch .fni-messages-list-header .uppercase {
+  color: var(--fni-chat-secondary) !important;
+  letter-spacing: .1em;
+}
+.fni-messages-stitch .fni-messages-search-input {
+  min-height: 42px;
+  border: 1px solid var(--fni-chat-outline);
+  background: var(--fni-chat-surface) !important;
+  color: var(--fni-chat-text) !important;
+  font-size: 13px;
+}
+.fni-messages-stitch .fni-messages-search-input:focus {
+  border-color: #8E6C23;
+  box-shadow: 0 0 0 3px rgba(142,108,35,.12);
+}
+.fni-messages-stitch .fni-messages-category-tabs {
+  gap: 7px !important;
+  padding-top: 3px !important;
+  padding-bottom: 5px !important;
+  scrollbar-width: none;
+}
+.fni-messages-stitch .fni-messages-category-tabs::-webkit-scrollbar { display:none; }
+.fni-messages-stitch .fni-messages-folder-tab {
+  min-height: 34px;
+  padding: 7px 12px !important;
+  border: 1px solid var(--fni-chat-outline);
+  border-radius: 999px;
+  background: #EEF2F7;
+  color: #354454 !important;
+  font-size: 12px !important;
+  line-height: 1.2;
+}
+.fni-messages-stitch .fni-messages-folder-tab[class*="border-b-2"] {
+  border: 1px solid var(--fni-chat-primary) !important;
+  background: var(--fni-chat-primary) !important;
+  color: #FFFFFF !important;
+}
+.fni-messages-stitch .fni-messages-conversation-list {
+  background: var(--fni-chat-surface-low) !important;
+  border-color: var(--fni-chat-outline) !important;
+}
+.fni-messages-stitch .fni-message-row {
+  min-height: 76px;
+  padding: 12px 16px !important;
+  gap: 12px !important;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid rgba(220,227,236,.65);
+}
+.fni-messages-stitch .fni-message-row:hover {
+  background: #EEF2F7 !important;
+}
+.fni-messages-stitch .fni-message-row[class*="border-l-[#2AABEE]"] {
+  background: #EAF0F6 !important;
+  border-left-color: var(--fni-chat-secondary) !important;
+}
+.fni-messages-stitch .fni-message-row .w-12.h-12 {
+  width: 48px;
+  height: 48px;
+  border-color: #DCE3EC !important;
+}
+.fni-messages-stitch .fni-message-row .font-bold.text-xs,
+.fni-messages-stitch .fni-message-row .font-bold.text-sm {
+  color: var(--fni-chat-text);
+}
+.fni-messages-stitch .fni-message-row .text-slate-500,
+.fni-messages-stitch .fni-message-row .text-slate-400 {
+  color: var(--fni-chat-muted) !important;
+}
+.fni-messages-stitch button:focus-visible,
+.fni-messages-stitch a:focus-visible {
+  outline: 2px solid #8E6C23;
+  outline-offset: 2px;
+}
+html.dark .fni-messages-stitch {
+  --fni-chat-canvas: #101620;
+  --fni-chat-surface: #1C2636;
+  --fni-chat-surface-low: #111C2D;
+  --fni-chat-outline: #2E3B4E;
+  --fni-chat-text: #E8EDF5;
+  --fni-chat-muted: #A8B6C8;
+}
+html.dark .fni-messages-stitch .fni-messages-list-pane,
+html.dark .fni-messages-stitch .fni-messages-list-header,
+html.dark .fni-messages-stitch .fni-messages-conversation-list {
+  background: var(--fni-chat-surface-low) !important;
+  border-color: var(--fni-chat-outline) !important;
+}
+html.dark .fni-messages-stitch .fni-messages-list-header .font-bold.text-sm.leading-tight,
+html.dark .fni-messages-stitch .fni-message-row .font-bold.text-xs,
+html.dark .fni-messages-stitch .fni-message-row .font-bold.text-sm {
+  color: var(--fni-chat-text) !important;
+}
+html.dark .fni-messages-stitch .fni-messages-search-input {
+  background: #1C2636 !important;
+  border-color: #354861;
+  color: #E8EDF5 !important;
+}
+html.dark .fni-messages-stitch .fni-messages-folder-tab {
+  background: #1C2636;
+  border-color: #354861;
+  color: #C4CFDD !important;
+}
+html.dark .fni-messages-stitch .fni-messages-folder-tab[class*="border-b-2"] {
+  background: #253145 !important;
+  border-color: #EEC068 !important;
+  color: #FFFFFF !important;
+}
+html.dark .fni-messages-stitch .fni-message-row {
+  background: #111C2D;
+  border-bottom-color: #2E3B4E;
+}
+html.dark .fni-messages-stitch .fni-message-row:hover {
+  background: #1C2636 !important;
+}
+html.dark .fni-messages-stitch .fni-message-row[class*="border-l-[#2AABEE]"] {
+  background: #253145 !important;
+  border-left-color: #EEC068 !important;
+}
+html.dark .fni-messages-stitch .fni-message-row .text-slate-500,
+html.dark .fni-messages-stitch .fni-message-row .text-slate-400 {
+  color: #A8B6C8 !important;
+}
+@media (max-width: 767px) {
+  .fni-messages-stitch .fni-messages-list-pane { border-right: 0 !important; }
+  .fni-messages-stitch .fni-messages-list-header { padding-top: 12px !important; }
+  .fni-messages-stitch .fni-message-row { min-height: 74px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fni-messages-stitch .fni-message-row,
+  .fni-messages-stitch .fni-messages-folder-tab { transition: none !important; }
+}
