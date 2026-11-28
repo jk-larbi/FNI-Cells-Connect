@@ -290,6 +290,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   group, currentUserId, onBack, onVoiceMeeting, onVideoMeeting,
 }) => {
   const [messages, setMessages] = useState<GroupChatMessage[]>([]);
+  const [senderNames, setSenderNames] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -325,6 +326,21 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
       if (channel && supabase) void supabase.removeChannel(channel);
     };
   }, [group.id]);
+
+  const senderIdsKey = useMemo(
+    () => Array.from(new Set(messages.map(message => message.sender_uid).filter(uid => uid && uid !== currentUserId))).sort().join(','),
+    [messages, currentUserId]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const senderIds = senderIdsKey ? senderIdsKey.split(',') : [];
+    if (senderIds.length === 0) return;
+    void MessagingService.getGroupChatSenderNames(senderIds)
+      .then(names => { if (!cancelled) setSenderNames(previous => ({ ...previous, ...names })); })
+      .catch(reason => console.warn('Could not resolve group message sender names:', reason));
+    return () => { cancelled = true; };
+  }, [senderIdsKey]);
 
   useEffect(() => {
     const node = streamRef.current;
@@ -373,7 +389,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
           const mine = message.sender_uid === currentUserId;
           return <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
             <article className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm ${mine ? 'bg-[#DCEAF6] dark:bg-[#253145] rounded-br-md' : 'bg-white dark:bg-[#1C2636] border border-[#E9EDF1] dark:border-[#2E3B4E] rounded-bl-md'}`}>
-              {!mine && <p className="text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B] mb-1">{`Member · ${message.sender_uid.slice(0, 8)}`}</p>}
+              {!mine && <p className="text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B] mb-1">{senderNames[message.sender_uid] || 'FNI Member'}</p>}
               {message.deleted_at ? <p className="text-sm italic opacity-60">This message was deleted</p> : <p className="text-sm whitespace-pre-wrap break-words">{message.content || (message.message_type === 'image' ? 'Photo' : 'Attachment')}</p>}
               <div className="flex justify-end gap-1.5 mt-1"><span className="text-[10px] opacity-60">{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>{message.edited_at && <span className="text-[10px] opacity-60">edited</span>}</div>
             </article>
