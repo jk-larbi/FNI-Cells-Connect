@@ -33,6 +33,9 @@ assert.match(view, /cancelVoiceRecording/, 'voice notes must support discarding 
 assert.match(view, /documentSize = att\.size \? formatAttachmentSize\(att\.size\)/, 'document previews must show the stored file size');
 assert.match(view, /fileExtension\.slice\(0, 5\)/, 'document previews must identify the file format');
 assert.match(view, /Save or share/, 'document previews must expose a save or share action');
+assert.match(view, /cycleAudioPlaybackRate/, 'voice notes must expose playback speed controls');
+assert.match(view, /audio\.playbackRate = audioPlaybackRate/, 'selected voice playback speed must be applied to audio playback');
+assert.match(view, /\{audioPlaybackRate\}x/, 'voice note player must display the active playback speed');
 assert.match(view, /voiceRecordingCancelledRef\.current/, 'discarding a voice note must prevent its upload');
 assert.match(view, /onClick=\{e => e\.stopPropagation\(\)\}/, 'native media controls must not trigger message context menus');
 assert.match(view, /accept="image\/\*,video\/\*,audio\/\*/, 'the attachment picker must accept audio and video');
