@@ -323,6 +323,19 @@ export class MessagingService {
       .map(profile => [profile.supabase_user_id, profile.full_name.trim()]));
   }
 
+  static async manageGroupChatPin(input: {
+    messageId: string;
+    action: 'pin' | 'unpin';
+  }): Promise<{ group_id: string; message_id: string; is_pinned: boolean; pinned_at: string | null; pinned_by: string | null }> {
+    if (!supabase || !isSupabaseConfigured || !input.messageId) throw new Error('A valid group message and FNI connection are required.');
+    const { data, error } = await supabase.rpc('manage_fni_group_chat_pin', {
+      p_message_id: input.messageId,
+      p_action: input.action,
+    });
+    if (error) throw error;
+    return data as { group_id: string; message_id: string; is_pinned: boolean; pinned_at: string | null; pinned_by: string | null };
+  }
+
   static async getGroupChatMessages(groupId: string, limit = 100): Promise<GroupChatMessage[]> {
     if (!supabase || !isSupabaseConfigured || !groupId) throw new Error('A valid group and FNI connection are required.');
     const { data, error } = await supabase
