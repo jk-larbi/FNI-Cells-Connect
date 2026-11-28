@@ -213,3 +213,14 @@ assert.match(view, /Confirm transfer/, 'ownership transfer must require an expli
 assert.match(view, /member\.member_role !== 'owner'/, 'ownership can only be transferred to another current group member');
 assert.match(types, /group_chat_ownership_transferred/, 'ownership transfer notifications must be represented in the notification type');
 console.log('Group ownership transfer service, owner-only UI, confirmation and notification regression checks passed.');
+
+
+// Private group media gallery regression checks.
+assert.match(view, /Group media/, 'group information must expose the shared media gallery');
+assert.match(view, /groupMediaItems = useMemo/, 'gallery contents must be derived from persisted group message attachments');
+assert.match(view, /getChatAttachmentUrl\(path\)/, 'private group media must resolve fresh signed URLs');
+assert.match(view, /uploadGroupMedia = async/, 'group members must be able to upload shared media');
+assert.match(view, /MessagingService\.uploadChatAttachment\(authUid, file\)/, 'group media uploads must use authenticated private chat storage');
+assert.match(view, /MessagingService\.sendGroupChatMessage\([\s\S]*?attachments: \[attachment\]/, 'uploaded media must be attached to a persisted group message');
+assert.match(view, /groupMediaFilter/, 'gallery must provide all, photos, videos and files filters');
+assert.match(view, /image\/\* ,video\/\*/, 'gallery picker should support media'); 
