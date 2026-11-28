@@ -6072,3 +6072,68 @@ html:not(.dark) button:disabled {
 html:not(.dark) button[class*="text-white"]:not([class*="bg-"]):not([style*="background"]) {
   color: #344B60 !important;
 }
+
+/* Calls & Meetings — complete dark-mode and mobile contrast pass */
+html.dark .fni-admin-stitch-shell .fni-calls-meetings-stitch { color: #E8EDF5; }
+html.dark .fni-admin-stitch-shell .fni-calls-eyebrow { color: #EEC068; }
+html.dark .fni-admin-stitch-shell .fni-calls-title,
+html.dark .fni-admin-stitch-shell .fni-calls-upcoming h3,
+html.dark .fni-admin-stitch-shell .fni-calls-blocked h2 { color: #E8EDF5; }
+html.dark .fni-admin-stitch-shell .fni-calls-count {
+  border-color: #354863; background: #253145; color: #D4E3FF;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-subtitle,
+html.dark .fni-admin-stitch-shell .fni-calls-metric-top { color: #A8B6C8; }
+html.dark .fni-admin-stitch-shell .fni-calls-metric,
+html.dark .fni-admin-stitch-shell .fni-calls-upcoming,
+html.dark .fni-admin-stitch-shell .fni-calls-toolbar,
+html.dark .fni-admin-stitch-shell .fni-calls-blocked,
+html.dark .fni-admin-stitch-shell .fni-calls-history {
+  border-color: #2E3B4E; background: #161E2B; color: #E8EDF5;
+  box-shadow: none;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-metric strong { color: #E8EDF5; }
+html.dark .fni-admin-stitch-shell .fni-calls-metric small { color: #A8B6C8; }
+html.dark .fni-admin-stitch-shell .fni-calls-toolbar input {
+  border-color: #354863 !important; background: #0C1119 !important; color: #E8EDF5 !important;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-toolbar input::placeholder { color: #91A0B4 !important; opacity: 1; }
+html.dark .fni-admin-stitch-shell .fni-calls-toolbar > div:first-child {
+  background: #0C1119; color: #A8B6C8;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-toolbar > div:first-child button {
+  color: #C5D0DE;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-toolbar > div:first-child button[aria-pressed="true"] {
+  background: #354863; color: #FFFFFF;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-upcoming h4,
+html.dark .fni-admin-stitch-shell .fni-calls-history .text-slate-900,
+html.dark .fni-admin-stitch-shell .fni-calls-history .text-slate-800 { color: #E8EDF5 !important; }
+html.dark .fni-admin-stitch-shell .fni-calls-upcoming .bg-slate-50,
+html.dark .fni-admin-stitch-shell .fni-calls-history .hover\\:bg-slate-50:hover {
+  background: #1C2636 !important;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-upcoming .border-slate-200,
+html.dark .fni-admin-stitch-shell .fni-calls-history .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #2E3B4E !important;
+}
+html.dark .fni-admin-stitch-shell .fni-calls-blocked p,
+html.dark .fni-admin-stitch-shell .fni-calls-history .text-slate-500,
+html.dark .fni-admin-stitch-shell .fni-calls-history .text-slate-400 { color: #A8B6C8 !important; }
+html.dark .fni-admin-stitch-shell .fni-calls-meetings-stitch button:focus-visible,
+html.dark .fni-admin-stitch-shell .fni-calls-meetings-stitch input:focus-visible {
+  outline-color: #EEC068;
+}
+@media (max-width: 767px) {
+  .fni-admin-stitch-shell .fni-calls-meetings-stitch { min-width: 0; }
+  .fni-admin-stitch-shell .fni-calls-meetings-stitch > div:first-child > div:last-child { gap: 8px; }
+  .fni-admin-stitch-shell .fni-calls-meetings-stitch > div:first-child > div:last-child button {
+    min-height: 44px; white-space: normal; line-height: 1.25;
+  }
+  .fni-admin-stitch-shell .fni-calls-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .fni-admin-stitch-shell .fni-calls-toolbar { min-width: 0; }
+  .fni-admin-stitch-shell .fni-calls-toolbar > div:first-child { scrollbar-width: thin; }
+  .fni-admin-stitch-shell .fni-calls-history > div > div { min-width: 0; }
+}
+
