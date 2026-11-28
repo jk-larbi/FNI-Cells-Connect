@@ -110,3 +110,9 @@ console.log('FNI real-time online presence, last-seen and Stitch list regression
 
 assert.match(view, /bg-\[#EDF5FC\] dark:bg-\[#1C2636\]/, 'group conversation header must use the Stitch light and dark surface tokens');
 assert.match(view, /allMembers\.filter\(member => onlineMemberIds\.has\(member\.id\)\)\.length/, 'official group header must show live online members from the actual presence set');
+
+assert.match(messaging, /createGroupChat\(input: CreateGroupChatInput\)/, 'group creation must call the authenticated group creation RPC');
+assert.match(messaging, /from\('group_chat_messages'\)[\s\S]*?\.eq\('group_id', groupId\)/, 'group history must load from the persistent group message table');
+assert.match(messaging, /sender_uid: senderUid/, 'group messages must be attributed to the authenticated sender');
+assert.match(messaging, /subscribeToGroupChatMessages/, 'group messages must subscribe to Supabase Realtime updates');
+assert.match(messaging, /fni-group-chat-\$\{groupId\}/, 'each group conversation must use its own realtime channel');
