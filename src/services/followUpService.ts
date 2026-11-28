@@ -108,17 +108,14 @@ export class FollowUpService {
       updatedAt: nowIso,
     };
 
-    // Primary write to Supabase
-    try {
-      await SupabaseService.upsertEvangelismContact(newContact);
-    } catch (err) {
-      console.warn('Supabase addContact notice:', err);
+    // Do not report success or cache a new record unless the database confirms the write.
+    const saved = await SupabaseService.upsertEvangelismContact(newContact);
+    if (!saved) {
+      throw new Error('The contact could not be saved to the FNI database. Check your connection and permissions, then try again.');
     }
 
-    const all = getStoredContacts();
-    const updated = [newContact, ...all];
-    saveStoredContacts(updated);
-
+    const all = getStoredContacts().filter(contact => contact.id !== newContact.id);
+    saveStoredContacts([newContact, ...all]);
     return newContact;
   }
 
@@ -128,45 +125,43 @@ export class FollowUpService {
     changedBy?: string
   ): Promise<EvangelismContact> {
     const nowIso = new Date().toISOString();
-    const all = getStoredContacts();
+    // Load the canonical record first; never overwrite a database row from a partial browser-cache object.
+    const all = await this.getContacts();
     const index = all.findIndex(c => c.id === contactId);
     const existing = index >= 0 ? all[index] : null;
+    if (!existing) {
+      throw new Error('This contact is no longer available. Refresh the list and try again.');
+    }
 
-    let history = existing?.history || [];
-    if (updates.followUpStatus && updates.followUpStatus !== existing?.followUpStatus) {
+    let history = existing.history || [];
+    if (updates.followUpStatus && updates.followUpStatus !== existing.followUpStatus) {
       history = [
         {
           status: updates.followUpStatus,
           note: updates.followUpNotes || updates.notes || `Status transitioned to ${updates.followUpStatus}`,
           changedAt: nowIso,
-          changedBy: changedBy || existing?.tutorName || 'Tutor',
+          changedBy: changedBy || existing.tutorName || 'Tutor',
         },
         ...history,
       ];
     }
 
     const merged: EvangelismContact = {
-      ...(existing || (updates as EvangelismContact)),
+      ...existing,
       ...updates,
       history,
       id: contactId,
       updatedAt: nowIso,
     };
 
-    // Primary write to Supabase
-    try {
-      await SupabaseService.upsertEvangelismContact(merged);
-    } catch (err) {
-      console.warn('Supabase updateContact notice:', err);
+    // Only update the local read cache after Supabase confirms persistence.
+    const saved = await SupabaseService.upsertEvangelismContact(merged);
+    if (!saved) {
+      throw new Error('The contact update was not saved to the FNI database. Check your connection and permissions, then try again.');
     }
 
-    if (index >= 0) {
-      all[index] = merged;
-      saveStoredContacts(all);
-    } else {
-      saveStoredContacts([merged, ...all]);
-    }
-
+    all[index] = merged;
+    saveStoredContacts(all);
     return merged;
   }
 
