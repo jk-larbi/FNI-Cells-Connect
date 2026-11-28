@@ -129,6 +129,8 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
   });
 
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadData = async () => {
     try {
@@ -269,7 +271,8 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.phone.trim()) return;
+    if (isSaving || !formData.name.trim() || !formData.phone.trim()) return;
+    setSaveError(null);
 
     if (!editingContact) {
       const dup = await FollowUpService.findDuplicateContact(
@@ -294,54 +297,64 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
         ? new Date().toISOString().split('T')[0]
         : formData.establishedDate;
 
-    if (editingContact) {
-      await FollowUpService.updateContact(editingContact.id, {
-        name: formData.name.trim(),
-        contactName: formData.name.trim(),
-        phone: formData.phone.trim(),
-        contactDetails: formData.phone.trim(),
-        whatsappNumber: effectiveWhatsApp,
-        email: formData.email.trim(),
-        location: formData.location.trim(),
-        leadSource: formData.leadSource,
-        followUpStatus: formData.followUpStatus,
-        contactAttempts: formData.contactAttempts,
-        discipleshipProgress: formData.discipleshipProgress,
-        establishedDate: effectiveEstablishedDate || undefined,
-        completionDate: effectiveCompletionDate || undefined,
-        notes: formData.notes.trim(),
-        nextFollowUpDate: formData.nextFollowUpDate || undefined,
-        lastFollowUpDate: new Date().toISOString().split('T')[0],
-      }, currentUser.full_name);
-    } else {
-      const targetCell = cells.find(c => c.id === formData.cellId);
-      await FollowUpService.addContact({
-        cellId: formData.cellId || currentUser.cell_id || 'unassigned',
-        cellName: targetCell ? targetCell.name : (formData.cellName || currentUser.cell_name || 'Central Cell'),
-        tutorName: currentUser.full_name || 'Tutor',
-        tutorUid: currentUser.id,
-        name: formData.name.trim(),
-        contactName: formData.name.trim(),
-        phone: formData.phone.trim(),
-        contactDetails: formData.phone.trim(),
-        whatsappNumber: effectiveWhatsApp,
-        email: formData.email.trim(),
-        location: formData.location.trim(),
-        leadSource: formData.leadSource,
-        followUpStatus: formData.followUpStatus,
-        contactAttempts: formData.contactAttempts,
-        discipleshipProgress: formData.discipleshipProgress,
-        establishedDate: effectiveEstablishedDate || undefined,
-        completionDate: effectiveCompletionDate || undefined,
-        dateCaptured: new Date().toISOString().split('T')[0],
-        notes: formData.notes.trim(),
-        nextFollowUpDate: formData.nextFollowUpDate || undefined,
-      });
-    }
+    setIsSaving(true);
+    try {
+      if (editingContact) {
+        await FollowUpService.updateContact(editingContact.id, {
+          name: formData.name.trim(),
+          contactName: formData.name.trim(),
+          phone: formData.phone.trim(),
+          contactDetails: formData.phone.trim(),
+          whatsappNumber: effectiveWhatsApp,
+          email: formData.email.trim(),
+          location: formData.location.trim(),
+          leadSource: formData.leadSource,
+          followUpStatus: formData.followUpStatus,
+          contactAttempts: formData.contactAttempts,
+          discipleshipProgress: formData.discipleshipProgress,
+          establishedDate: effectiveEstablishedDate || undefined,
+          completionDate: effectiveCompletionDate || undefined,
+          notes: formData.notes.trim(),
+          followUpNotes: formData.notes.trim(),
+          nextFollowUpDate: formData.nextFollowUpDate || undefined,
+          lastFollowUpDate: new Date().toISOString().split('T')[0],
+        }, currentUser.full_name);
+      } else {
+        const targetCell = cells.find(c => c.id === formData.cellId);
+        await FollowUpService.addContact({
+          cellId: formData.cellId || currentUser.cell_id || 'unassigned',
+          cellName: targetCell ? targetCell.name : (formData.cellName || currentUser.cell_name || 'Central Cell'),
+          tutorName: currentUser.full_name || 'Tutor',
+          tutorUid: currentUser.id,
+          name: formData.name.trim(),
+          contactName: formData.name.trim(),
+          phone: formData.phone.trim(),
+          contactDetails: formData.phone.trim(),
+          whatsappNumber: effectiveWhatsApp,
+          email: formData.email.trim(),
+          location: formData.location.trim(),
+          evangelismLocation: formData.location.trim(),
+          leadSource: formData.leadSource,
+          followUpStatus: formData.followUpStatus,
+          contactAttempts: formData.contactAttempts,
+          discipleshipProgress: formData.discipleshipProgress,
+          establishedDate: effectiveEstablishedDate || undefined,
+          completionDate: effectiveCompletionDate || undefined,
+          dateCaptured: new Date().toISOString().split('T')[0],
+          notes: formData.notes.trim(),
+          followUpNotes: formData.notes.trim(),
+          nextFollowUpDate: formData.nextFollowUpDate || undefined,
+        });
+      }
 
-    setIsModalOpen(false);
-    setDuplicateWarning(null);
-    loadData();
+      setIsModalOpen(false);
+      setDuplicateWarning(null);
+      await loadData();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'The contact could not be saved. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const filteredContacts = useMemo(() => {
@@ -1033,19 +1046,26 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
                 </div>
               )}
 
+              {saveError && (
+                <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+                  {saveError}
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-navy-700">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => { setIsModalOpen(false); setSaveError(null); }}
+                  disabled={isSaving}
                   className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-navy-900 text-white font-bold hover:bg-navy-800 cursor-pointer shadow-sm"
+                  disabled={isSaving}
+                  className="px-5 py-2 rounded-xl bg-navy-900 text-white font-bold hover:bg-navy-800 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm"
                 >
-                  Save Record
+                  {isSaving ? 'Saving…' : 'Save Record'}
                 </button>
               </div>
             </form>
