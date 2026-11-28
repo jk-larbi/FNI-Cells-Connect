@@ -5644,3 +5644,223 @@ html.dark .fni-chat-composer textarea:focus-visible {
   }
   .fni-profile-settings .fni-profile-stitch .fni-profile-information-card { padding:15px; }
 }
+
+/* ================================================================
+   FNI BRAND THEME TOKENS — accessible light and dark appearances
+   White, soft blue and champagne gold; semantic colours adapt by mode.
+   ================================================================ */
+:root {
+  color-scheme: light;
+  --fni-canvas: #FFFFFF;
+  --fni-surface: #FFFFFF;
+  --fni-surface-muted: #F6F9FC;
+  --fni-surface-raised: #FFFFFF;
+  --fni-text: #25384A;
+  --fni-text-muted: #536273;
+  --fni-text-subtle: #657789;
+  --fni-border: #E4EBF2;
+  --fni-border-strong: #CFDAE5;
+  --fni-blue: #8BB5DC;
+  --fni-blue-soft: #EDF5FC;
+  --fni-blue-mid: #6596C5;
+  --fni-blue-strong: #376F9F;
+  --fni-blue-hover: #2D5F8B;
+  --fni-blue-on: #FFFFFF;
+  --fni-gold: #D9BD7B;
+  --fni-gold-soft: #F7F0E1;
+  --fni-gold-text: #806226;
+  --fni-gold-border: #E8D8B4;
+  --fni-focus: #6596C5;
+  --fni-shadow: 0 2px 12px rgb(37 56 74 / .055);
+}
+
+html.dark {
+  color-scheme: dark;
+  --fni-canvas: #101923;
+  --fni-surface: #172433;
+  --fni-surface-muted: #1C2B3A;
+  --fni-surface-raised: #223448;
+  --fni-text: #F1F5F9;
+  --fni-text-muted: #B5C2D0;
+  --fni-text-subtle: #9AABBC;
+  --fni-border: #33465A;
+  --fni-border-strong: #455B71;
+  --fni-blue: #8BB5DC;
+  --fni-blue-soft: #20364B;
+  --fni-blue-mid: #A8C9E8;
+  --fni-blue-strong: #376F9F;
+  --fni-blue-hover: #477FAE;
+  --fni-blue-on: #FFFFFF;
+  --fni-gold: #D9BD7B;
+  --fni-gold-soft: #3A3020;
+  --fni-gold-text: #E9D9B2;
+  --fni-gold-border: #665638;
+  --fni-focus: #A8C9E8;
+  --fni-shadow: 0 3px 16px rgb(0 0 0 / .20);
+}
+
+html, body, #root {
+  background-color: var(--fni-canvas);
+  color: var(--fni-text);
+}
+body { transition: background-color 180ms ease, color 180ms ease; }
+.fni-app-shell { background-color: var(--fni-canvas) !important; color: var(--fni-text); }
+
+/* Legacy light surfaces resolve to the same coordinated dark surfaces. */
+html.dark .bg-white,
+html.dark [class~="bg-white"],
+html.dark [class*="bg-white/"],
+html.dark .bg-canvas,
+html.dark .bg-slate-50,
+html.dark .bg-slate-100,
+html.dark .bg-gray-50,
+html.dark .bg-gray-100,
+html.dark header,
+html.dark aside,
+html.dark footer {
+  background-color: var(--fni-surface) !important;
+  border-color: var(--fni-border);
+}
+html.dark .bg-canvas,
+html.dark .bg-slate-50,
+html.dark .bg-gray-50 { background-color: var(--fni-surface-muted) !important; }
+html.dark [class*="bg-[#F5F7FA]"],
+html.dark [class*="bg-[#F8FAFC]"],
+html.dark [class*="bg-[#FAFAF8]"],
+html.dark [class*="bg-[#EDF5FC]"],
+html.dark [class*="bg-[#DCEAF6]"] {
+  background-color: var(--fni-surface-muted) !important;
+}
+html.dark [class*="border-[#E3E8EF]"],
+html.dark [class*="border-[#E4EBF2]"],
+html.dark [class*="border-[#DCE3EC]"],
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-gray-100,
+html.dark .border-gray-200 {
+  border-color: var(--fni-border) !important;
+}
+
+/* Consistent text contrast, including older hard-coded brand classes. */
+html:not(.dark) [class*="text-[#142B4A]"],
+html:not(.dark) [class*="text-[#173B8F]"],
+html:not(.dark) [class*="text-[#182230]"],
+html:not(.dark) .text-brand-navy,
+html:not(.dark) .text-navy-800,
+html:not(.dark) .text-navy-900 { color: var(--fni-blue-strong) !important; }
+
+html.dark [class*="text-[#142B4A]"],
+html.dark [class*="text-[#173B8F]"],
+html.dark [class*="text-[#182230]"],
+html.dark [class*="text-[#101828]"],
+html.dark .text-brand-navy,
+html.dark .text-navy-800,
+html.dark .text-navy-900,
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-800 { color: var(--fni-text) !important; }
+
+html:not(.dark) [class*="text-[#667085]"],
+html:not(.dark) [class*="text-[#778092]"],
+html:not(.dark) [class*="text-[#98A2B3]"] { color: var(--fni-text-muted) !important; }
+
+html.dark [class*="text-[#667085]"],
+html.dark [class*="text-[#778092]"],
+html.dark [class*="text-[#98A2B3]"],
+html.dark [class*="text-[#475467]"],
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-gray-500 { color: var(--fni-text-muted) !important; }
+
+html.dark h1, html.dark h2, html.dark h3, html.dark h4,
+html.dark h5, html.dark h6 { color: var(--fni-text); }
+
+/* Brand buttons stay blue with white text; gold remains a restrained accent. */
+html:not(.dark) [class*="bg-[#142B4A]"],
+html:not(.dark) [class*="bg-[#173B8F]"],
+html:not(.dark) .bg-brand-navy,
+html:not(.dark) .bg-navy-800 { background-color: var(--fni-blue-strong) !important; color: var(--fni-blue-on) !important; }
+html.dark [class*="bg-[#142B4A]"],
+html.dark [class*="bg-[#173B8F]"],
+html.dark .bg-brand-navy,
+html.dark .bg-navy-800 { background-color: var(--fni-blue-strong) !important; color: var(--fni-blue-on) !important; }
+html:not(.dark) [class*="text-[#D9A72E]"],
+html:not(.dark) [class*="text-[#C6A45A]"],
+html:not(.dark) .text-gold-500,
+html:not(.dark) .text-brand-gold { color: var(--fni-gold-text) !important; }
+html.dark [class*="text-[#D9A72E]"],
+html.dark [class*="text-[#C6A45A]"],
+html.dark .text-gold-500,
+html.dark .text-brand-gold { color: var(--fni-gold-text) !important; }
+html:not(.dark) [class*="bg-[#D9A72E]"],
+html:not(.dark) [class*="bg-[#C6A45A]"],
+html:not(.dark) .bg-gold-500 { background-color: var(--fni-gold) !important; color: var(--fni-text) !important; }
+html.dark [class*="bg-[#D9A72E]"],
+html.dark [class*="bg-[#C6A45A]"],
+html.dark .bg-gold-500 { background-color: var(--fni-gold-soft) !important; color: var(--fni-gold-text) !important; }
+html.dark .bg-blue-50,
+html.dark .bg-indigo-50,
+html.dark [class*="bg-[#EDF5FC]"] { background-color: var(--fni-blue-soft) !important; }
+html.dark .bg-gold-50,
+html.dark .bg-amber-50,
+html.dark .bg-yellow-50 { background-color: var(--fni-gold-soft) !important; }
+
+/* Inputs, selects, tables and controls use mode-aware surfaces and readable text. */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea, select {
+  color: var(--fni-text);
+}
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea, html.dark select {
+  background-color: var(--fni-surface-muted) !important;
+  color: var(--fni-text) !important;
+  border-color: var(--fni-border-strong) !important;
+}
+html.dark select option { background: var(--fni-surface) !important; color: var(--fni-text) !important; }
+html.dark input::placeholder, html.dark textarea::placeholder { color: var(--fni-text-subtle) !important; opacity: 1; }
+html:not(.dark) input::placeholder, html:not(.dark) textarea::placeholder { color: #657789; opacity: 1; }
+html.dark table thead tr { background: var(--fni-surface-muted) !important; }
+html.dark table th, html.dark table td { color: var(--fni-text-muted) !important; border-color: var(--fni-border) !important; }
+html.dark table tbody tr:hover { background: var(--fni-surface-raised) !important; }
+html.dark .fni-an-date-select,
+html.dark .fni-an-filter-toggle,
+html.dark .fni-an-custom-range,
+html.dark .fni-an-reset-filters,
+html.dark .fni-an-apply-filters {
+  background: var(--fni-surface-muted) !important;
+  color: var(--fni-text) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark .fni-an-date-select select { background: transparent !important; color: var(--fni-text) !important; }
+html.dark .fni-an-custom-range label { color: var(--fni-text-muted) !important; }
+html.dark .fni-an-apply-filters { background: var(--fni-blue-strong) !important; color: #FFFFFF !important; }
+
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--fni-focus) 55%, transparent);
+  outline-offset: 2px;
+}
+html.dark .fni-theme-toggle {
+  background: var(--fni-surface-raised) !important;
+  color: var(--fni-gold) !important;
+  border-color: var(--fni-border-strong) !important;
+}
+html:not(.dark) .fni-theme-toggle {
+  background: var(--fni-surface) !important;
+  color: var(--fni-blue-strong) !important;
+  border-color: var(--fni-gold-border) !important;
+}
+::selection { background: var(--fni-blue-soft); color: var(--fni-text); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fni-app-shell, .fni-app-shell * {
+    transition-property: background-color, border-color, color, box-shadow;
+    transition-duration: 160ms;
+    transition-timing-function: ease-out;
+  }
+}
+
