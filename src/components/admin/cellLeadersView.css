@@ -46,3 +46,152 @@
 .fni-cell-leaders-reference button:focus-visible,.fni-cell-leaders-reference input:focus-visible{outline:2px solid #8E6C23;outline-offset:2px}
 @media(max-width:767px){.fni-cell-leaders-reference{gap:14px}.fni-cl-page-heading{align-items:flex-start}.fni-cl-page-heading h1{font-size:24px}.fni-cl-page-heading p{font-size:12px}.fni-cl-assign-action{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;font-size:0}.fni-cl-assign-action .material-symbols-outlined{font-size:19px}.fni-cl-mobile-summary{display:grid}.fni-cl-directory{padding:0;border-radius:8px}.fni-cl-directory-tools{align-items:stretch;flex-direction:column;padding:12px 12px 0}.fni-cl-search{width:100%}.fni-cl-status-filters{width:max-content;max-width:100%;overflow-x:auto}.fni-cl-status-filters button{padding-inline:11px}.fni-cl-list-heading{align-items:flex-start;flex-direction:column;gap:4px;padding:12px}.fni-cl-list-heading p{font-size:10px}.fni-cl-leader-row{gap:10px;padding:13px 12px}.fni-cl-avatar{width:36px;height:36px;flex-basis:36px}.fni-cl-leader-copy strong{font-size:11px}.fni-cl-leader-copy small{font-size:10px}.fni-cl-status{padding:5px 7px;font-size:9px}.fni-cl-row-arrow{display:none}.fni-cl-empty-state{padding:28px 14px}}
 @media(prefers-reduced-motion:reduce){.fni-cl-leader-row,.fni-cl-assign-action{transition:none}}
+
+
+/* Stitch alignment: responsive leader directory and accessible theme surfaces */
+.fni-cell-leaders-reference .fni-cl-directory{
+  background:#F7F9FC;
+  border-color:#DCE3EC;
+  box-shadow:0 1px 2px rgba(20,40,66,.025);
+}
+.fni-cell-leaders-reference .fni-cl-list-heading{
+  padding-bottom:14px;
+}
+.fni-cell-leaders-reference .fni-cl-leader-row{
+  min-height:68px;
+  border-radius:6px;
+}
+.fni-cell-leaders-reference .fni-cl-leader-row:focus-visible{
+  outline:2px solid #8E6C23;
+  outline-offset:-2px;
+}
+.fni-cell-leaders-reference .fni-cl-avatar{
+  border:1px solid #DCE3EC;
+}
+.fni-cell-leaders-reference .fni-cl-status{
+  white-space:nowrap;
+}
+@media(min-width:768px){
+  .fni-cell-leaders-reference .fni-cl-directory{
+    padding:20px;
+    gap:16px;
+  }
+  .fni-cell-leaders-reference .fni-cl-directory-tools{
+    margin-bottom:18px;
+  }
+  .fni-cell-leaders-reference .fni-cl-leader-row{
+    padding-inline:12px;
+  }
+}
+@media(max-width:767px){
+  .fni-cell-leaders-reference .fni-cl-mobile-summary article{
+    min-height:88px;
+    justify-content:center;
+    padding:14px 15px;
+  }
+  .fni-cell-leaders-reference .fni-cl-mobile-summary strong{
+    font-size:25px;
+    line-height:1.1;
+  }
+  .fni-cell-leaders-reference .fni-cl-directory-tools{
+    padding:12px 12px 10px;
+    margin-bottom:0;
+  }
+  .fni-cell-leaders-reference .fni-cl-status-filters{
+    align-self:flex-start;
+  }
+  .fni-cell-leaders-reference .fni-cl-list-heading{
+    border-top:1px solid #DCE3EC;
+  }
+}
+html.dark .fni-cell-leaders-reference{
+  color:#E8EDF5;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-page-heading h1,
+html.dark .fni-cell-leaders-reference .fni-cl-mobile-summary strong,
+html.dark .fni-cell-leaders-reference .fni-cl-list-heading h2,
+html.dark .fni-cell-leaders-reference .fni-cl-leader-copy strong{
+  color:#E8EDF5;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-page-heading p,
+html.dark .fni-cell-leaders-reference .fni-cl-mobile-summary span,
+html.dark .fni-cell-leaders-reference .fni-cl-list-heading>div span,
+html.dark .fni-cell-leaders-reference .fni-cl-list-heading p,
+html.dark .fni-cell-leaders-reference .fni-cl-leader-copy small{
+  color:#A8B6C8;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-mobile-summary article,
+html.dark .fni-cell-leaders-reference .fni-cl-directory{
+  background:#161E2B;
+  border-color:#2E3B4E;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-search{
+  background:#0C1119;
+  border-color:#2E3B4E;
+  color:#A8B6C8;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-search input{
+  color:#E8EDF5;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-search input::placeholder{
+  color:#A8B6C8;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-status-filters{
+  background:#0C1119;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-status-filters button{
+  color:#A8B6C8;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-status-filters button.is-active{
+  background:#303E54;
+  color:#E8EDF5;
+  box-shadow:none;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-list-heading,
+html.dark .fni-cell-leaders-reference .fni-cl-leader-list li{
+  border-color:#2E3B4E;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-leader-row{
+  background:#161E2B;
+  color:#E8EDF5;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-leader-row:hover{
+  background:#1C2636;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-avatar{
+  background:#253145;
+  border-color:#354863;
+  color:#D4E3FF;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-status.is-active{
+  background:#173D2B;
+  color:#8FD3AA;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-status.is-suspended{
+  background:#4A2024;
+  color:#FFB4AB;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-empty-state strong{
+  color:#E8EDF5;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-empty-state span{
+  color:#A8B6C8;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-empty-state button{
+  background:#1C2636;
+  border-color:#354863;
+  color:#E8EDF5;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-load-error{
+  background:#3A2024;
+  border-color:#74343A;
+  color:#FFDAD6;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-load-error button{
+  background:#1C2636;
+  border-color:#FFB4AB;
+  color:#FFDAD6;
+}
+html.dark .fni-cell-leaders-reference .fni-cl-row-arrow{
+  color:#A8B6C8;
+}
