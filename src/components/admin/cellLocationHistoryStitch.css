@@ -1,0 +1,41 @@
+
+/* Cell Location History — Stitch-aligned, responsive light/dark surfaces */
+.fni-cell-location-history{width:100%;min-width:0;color:#25384A}
+.fni-cell-location-history h1,.fni-cell-location-history h2{letter-spacing:-.02em}
+.fni-cell-location-history input,.fni-cell-location-history select,.fni-cell-location-history textarea{max-width:100%;min-width:0}
+.fni-cell-location-history input:focus-visible,.fni-cell-location-history select:focus-visible,.fni-cell-location-history textarea:focus-visible,.fni-cell-location-history button:focus-visible{outline:2px solid #8E6C23;outline-offset:2px}
+.fni-cell-location-history button:disabled{cursor:not-allowed}
+.fni-cell-location-history table{width:100%;border-collapse:separate;border-spacing:0}
+.fni-cell-location-history .overflow-x-auto{max-width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.fni-cell-location-history [role="dialog"]{max-width:calc(100vw - 24px)}
+.fni-cell-location-history [role="dialog"] input,.fni-cell-location-history [role="dialog"] select,.fni-cell-location-history [role="dialog"] textarea{font-size:14px}
+.fni-cell-location-map{min-width:0;overflow:hidden}
+.fni-cell-location-map-canvas{min-height:260px;isolation:isolate}
+.fni-cell-location-map .leaflet-container{z-index:0;font:12px/1.45 inherit}
+.fni-cell-location-map .leaflet-popup-content-wrapper,.fni-cell-location-map .leaflet-popup-tip{background:#fff;color:#25384A}
+.fni-cell-location-map .leaflet-popup-content a{color:#245B91;font-weight:700}
+html.dark .fni-cell-location-history{color:#F1F5F9}
+html.dark .fni-cell-location-history .bg-white{background-color:#172433}
+html.dark .fni-cell-location-history .text-\[\#142B4A\],html.dark .fni-cell-location-history .text-\[\#182230\]{color:#F1F5F9}
+html.dark .fni-cell-location-history .text-\[\#667085\],html.dark .fni-cell-location-history .text-slate-400{color:#B5C2D0}
+html.dark .fni-cell-location-history .border-\[\#E3E8EF\]{border-color:#35465B}
+html.dark .fni-cell-location-history input,html.dark .fni-cell-location-history select,html.dark .fni-cell-location-history textarea{background-color:#101923;color:#F1F5F9;border-color:#35465B}
+html.dark .fni-cell-location-history input::placeholder,html.dark .fni-cell-location-history textarea::placeholder{color:#91A2B7}
+html.dark .fni-cell-location-history select option{background:#101923;color:#F1F5F9}
+html.dark .fni-cell-location-history .bg-slate-50,html.dark .fni-cell-location-history .hover\:bg-slate-50:hover{background-color:#1C2B3A}
+html.dark .fni-cell-location-history .text-slate-600,html.dark .fni-cell-location-history .text-\[\#475467\]{color:#C4D0DE}
+html.dark .fni-cell-location-history .fni-location-history-row{background:#172433;border-color:#35465B}
+html.dark .fni-cell-location-map{background:#172433;border-color:#35465B}
+html.dark .fni-cell-location-map h2{color:#F1F5F9}
+html.dark .fni-cell-location-map p{color:#B5C2D0}
+html.dark .fni-cell-location-map-canvas{background:#101923}
+html.dark .fni-cell-location-map .leaflet-popup-content-wrapper,html.dark .fni-cell-location-map .leaflet-popup-tip{background:#172433;color:#F1F5F9}
+html.dark .fni-cell-location-map .leaflet-popup-content a{color:#8BB5DC}
+@media(max-width:640px){
+ .fni-cell-location-history{gap:14px}
+ .fni-cell-location-history>div:first-child{padding:15px}
+ .fni-cell-location-history .overflow-x-auto table{min-width:680px}
+ .fni-cell-location-history [role="dialog"]{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);overflow:auto}
+ .fni-cell-location-map-canvas{height:260px;min-height:260px}
+}
+@media(prefers-reduced-motion:reduce){.fni-cell-location-history *{scroll-behavior:auto!important;transition-duration:0.01ms!important}}
