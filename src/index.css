@@ -7924,3 +7924,146 @@ html.dark .fni-messages-stitch .fni-message-row .text-slate-400 {
   .fni-messages-stitch .fni-message-row,
   .fni-messages-stitch .fni-messages-folder-tab { transition: none !important; }
 }
+
+
+/* FNI AUTH — tutor sign-up, tutor sign-in and role selection, aligned with the admin Stitch login. */
+.fni-auth-portal[data-auth-view="login-select"],
+.fni-auth-portal[data-auth-view="tutor-signup"],
+.fni-auth-portal[data-auth-view="tutor-login"]{
+  min-height:100dvh;justify-content:center;align-items:stretch;gap:16px;padding:22px 16px 18px;
+  overflow-x:hidden;overflow-y:auto;background:#F7F9FC;color:#142842;
+  font-family:"Source Sans 3",system-ui,sans-serif;
+}
+.fni-auth-portal[data-auth-view="login-select"]>div:first-child,
+.fni-auth-portal[data-auth-view="tutor-signup"]>div:first-child,
+.fni-auth-portal[data-auth-view="tutor-login"]>div:first-child{display:none}
+.fni-auth-portal[data-auth-view="login-select"]>div:nth-of-type(2),
+.fni-auth-portal[data-auth-view="tutor-signup"]>div:nth-of-type(2),
+.fni-auth-portal[data-auth-view="tutor-login"]>div:nth-of-type(2){
+  width:100%;max-width:448px;margin:0 auto;justify-content:flex-start;min-height:28px
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-main,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-main,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-main{
+  display:flex;flex:1;justify-content:center;align-items:stretch;width:100%;max-width:448px;margin:0 auto;text-align:left
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-logo,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-logo,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-logo{margin:0 auto 16px}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-logo>div:first-child,
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-logo>div:nth-child(2),
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-logo>div:first-child,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-logo>div:nth-child(2),
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-logo>div:first-child,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-logo>div:nth-child(2){display:none}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-logo>div:last-child,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-logo>div:last-child,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-logo>div:last-child{
+  width:64px;height:64px;border:1px solid #DCE3EC;border-radius:16px;box-shadow:0 5px 16px rgba(20,40,66,.10)
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card{
+  width:100%;padding:26px;border:1px solid #DCE3EC;border-radius:20px;background:#FFFFFF;
+  box-shadow:0 8px 28px rgba(20,40,66,.055);backdrop-filter:none
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card h2,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card h2,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card h2{
+  color:#142842;font:700 clamp(23px,4vw,28px)/1.2 "Libre Franklin",sans-serif;letter-spacing:-.03em
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card p,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card p,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card p{color:#5A6B7C;font-size:13px;line-height:1.55}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card label,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card label,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card label{
+  color:#34465A;font:600 12px/18px "Libre Franklin",sans-serif
+}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card input,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card select,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card input,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card select{
+  min-height:48px;border:1px solid #DCE3EC;border-radius:10px;background:#F7F9FC;color:#142842;
+  font:400 14px/20px "Source Sans 3",sans-serif;transition:border-color .12s ease,box-shadow .12s ease
+}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card input::placeholder,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card input::placeholder{color:#7A8999;opacity:1}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card input:focus,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card select:focus,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card input:focus,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card select:focus{
+  border-color:#8E6C23;outline:2px solid rgba(142,108,35,.13);outline-offset:1px
+}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form>button[type="submit"],
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card form>button[type="submit"]{
+  min-height:48px;border:0;border-radius:999px;background:#142842;color:#FFFFFF;
+  font:600 14px/20px "Libre Franklin",sans-serif;letter-spacing:0;text-transform:none;box-shadow:none
+}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form>button[type="submit"]:hover,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card form>button[type="submit"]:hover{background:#354863}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button{
+  min-height:76px;border-width:1px;border-radius:14px;border-color:#DCE3EC;background:#FFFFFF
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button:hover{border-color:#8E6C23;background:#F7F9FC}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button>div>div:last-child>div:first-child{
+  color:#142842;font:650 13px/19px "Libre Franklin",sans-serif
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button>div>div:last-child>div:last-child{color:#647487;font-size:12px}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button>div>div:first-child{border-radius:12px}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button:focus-visible,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card button:focus-visible,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card button:focus-visible{outline:2px solid #8E6C23;outline-offset:2px}
+.fni-auth-portal[data-auth-view="login-select"] footer,
+.fni-auth-portal[data-auth-view="tutor-signup"] footer,
+.fni-auth-portal[data-auth-view="tutor-login"] footer{max-width:448px;margin:0 auto;padding-top:8px}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-footer-copy,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-footer-copy,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-footer-copy{color:#718096;font-size:10px;line-height:1.5;letter-spacing:.08em}
+html.dark .fni-auth-portal[data-auth-view="login-select"],
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"],
+html.dark .fni-auth-portal[data-auth-view="tutor-login"]{background:#0F1B2B;color:#E8EDF5}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card{background:#172437;border-color:#354861;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card h2,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card h2,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card h2{color:#F1F5F9}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card p,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card p,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card p{color:#B8C6D7}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card label,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card label,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card label{color:#D6E0EC}
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card input,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card select,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card input,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card select{background:#101A29;border-color:#3A4D64;color:#F1F5F9}
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card input::placeholder,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card input::placeholder{color:#A8B6C8}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button{background:#1C2B40;border-color:#3A4D64}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button:hover{background:#223650;border-color:#D9BD7B}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button>div>div:last-child>div:first-child{color:#F1F5F9}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button>div>div:last-child>div:last-child{color:#B8C6D7}
+html.dark .fni-auth-portal[data-auth-view="login-select"] footer,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] footer,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] footer{color:#B8C6D7}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-footer-copy,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-footer-copy,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-footer-copy{color:#A8B6C8}
+@media(max-width:520px){
+  .fni-auth-portal[data-auth-view="login-select"],
+  .fni-auth-portal[data-auth-view="tutor-signup"],
+  .fni-auth-portal[data-auth-view="tutor-login"]{padding:16px 12px 14px;gap:10px}
+  .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card,
+  .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card,
+  .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card{padding:20px 17px;border-radius:17px}
+  .fni-auth-portal[data-auth-view="login-select"] .fni-auth-logo>div:last-child,
+  .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-logo>div:last-child,
+  .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-logo>div:last-child{width:56px;height:56px}
+}
+@media(prefers-reduced-motion:reduce){
+  .fni-auth-portal[data-auth-view="login-select"] *,
+  .fni-auth-portal[data-auth-view="tutor-signup"] *,
+  .fni-auth-portal[data-auth-view="tutor-login"] *{animation:none!important;transition:none!important}
+}
