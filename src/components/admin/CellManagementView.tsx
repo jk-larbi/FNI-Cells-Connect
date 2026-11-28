@@ -61,6 +61,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [expandedMeetingReportId, setExpandedMeetingReportId] = useState<string | null>(null);
+  const [expandedEvangelismReportId, setExpandedEvangelismReportId] = useState<string | null>(null);
 
   // Edit / Add Cell modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -1009,20 +1010,70 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 </p>
               ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                  {cellEvang.map(e => (
-                    <div
-                      key={e.id}
-                      className="p-3 rounded-xl border border-[#DCE3EC] flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <div className="font-bold text-[#182230]">Outreach on {e.date}</div>
-                        <div className="text-[11px] text-[#5A6B7C]">
-                          Souls Won: <span className="font-bold text-[#23845B]">+{e.conversions}</span> &bull; People Reached: {e.peopleSpokenTo}
-                        </div>
+                  {cellEvang.map(e => {
+                    const expanded = expandedEvangelismReportId === e.id;
+                    const detailFields = [
+                      { label: 'Outreach theme', value: e.scripturalTheme },
+                      { label: 'Scriptures used', value: e.scripturesUsed },
+                      { label: 'Message shared', value: e.messageUsed },
+                      { label: 'Testimonies', value: e.testimonies },
+                      { label: 'Outreach notes', value: e.notes },
+                    ].filter(field => Boolean(field.value?.trim()));
+                    return (
+                      <div key={e.id} className="rounded-xl border border-[#DCE3EC] overflow-hidden">
+                        <button
+                          type="button"
+                          aria-expanded={expanded}
+                          onClick={() => setExpandedEvangelismReportId(expanded ? null : e.id)}
+                          className="w-full p-3 flex items-center justify-between gap-3 text-left text-xs hover:bg-[#F8FAFC] transition-colors"
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-bold text-[#182230]">Outreach on {e.date}</span>
+                            <span className="block text-[11px] text-[#5A6B7C] mt-0.5">
+                              Souls Won: <strong className="text-[#23845B]">+{e.verifiedSoulsWon ?? e.conversions}</strong> &bull; People Reached: {e.peopleSpokenTo} &bull; Contacts: {e.contactsCaptured}
+                            </span>
+                            <span className="block text-[10px] text-[#5A6B7C] mt-1">{e.location} · Led by {e.tutorName}</span>
+                          </span>
+                          <span className="shrink-0 flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              e.status === 'Approved' || e.status === 'approved' ? 'bg-emerald-50 text-[#23845B]' : 'bg-amber-50 text-[#D99A32]'
+                            }`}>{e.status}</span>
+                            <span className="text-[#5A6B7C]">{expanded ? '−' : '+'}</span>
+                          </span>
+                        </button>
+                        {expanded && (
+                          <div className="border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 space-y-3 text-xs">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              <div><span className="block text-[10px] text-[#5A6B7C]">Contacts captured</span><strong className="text-[#182230]">{e.contactsCaptured}</strong></div>
+                              <div><span className="block text-[10px] text-[#5A6B7C]">Interested in ministry</span><strong className="text-[#182230]">{e.interestedInMinistry}</strong></div>
+                              <div><span className="block text-[10px] text-[#5A6B7C]">Potential follow-ups</span><strong className="text-[#182230]">{e.potentialFollowUps}</strong></div>
+                              {e.preSetTarget !== undefined && <div><span className="block text-[10px] text-[#5A6B7C]">Outreach target</span><strong className="text-[#182230]">{e.preSetTarget}</strong></div>}
+                              <div><span className="block text-[10px] text-[#5A6B7C]">Verified souls won</span><strong className="text-[#23845B]">{e.verifiedSoulsWon ?? 'Not separately verified'}</strong></div>
+                            </div>
+                            {e.teamMembers?.length > 0 && (
+                              <div>
+                                <div className="text-[10px] font-bold uppercase tracking-wide text-[#5A6B7C] mb-1">Outreach team</div>
+                                <p className="text-[#25384A] break-words">{e.teamMembers.join(', ')}</p>
+                              </div>
+                            )}
+                            {detailFields.length ? detailFields.map(field => (
+                              <div key={field.label}>
+                                <div className="text-[10px] font-bold uppercase tracking-wide text-[#5A6B7C] mb-1">{field.label}</div>
+                                <p className="whitespace-pre-wrap break-words text-[#25384A] leading-relaxed">{field.value}</p>
+                              </div>
+                            )) : <p className="text-[#5A6B7C] italic">No additional outreach narrative was included in this report.</p>}
+                            {e.reviewerComment && (
+                              <div className="rounded-lg border border-[#E7D9B5] bg-[#FDF8E8] p-2">
+                                <div className="text-[10px] font-bold uppercase tracking-wide text-[#8E6C23] mb-1">Reviewer comment</div>
+                                <p className="whitespace-pre-wrap break-words text-[#5D4200]">{e.reviewerComment}</p>
+                              </div>
+                            )}
+                            <div className="text-[10px] text-[#5A6B7C]">Submitted {e.submittedAt ? new Date(e.submittedAt).toLocaleString() : 'date not recorded'}{e.reviewedAt ? ` · Reviewed ${new Date(e.reviewedAt).toLocaleString()}` : ''}</div>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-[10px] text-[#5A6B7C]">{e.location}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               </div>
