@@ -513,6 +513,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     error?: string | null;
   } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioPlaybackRate, setAudioPlaybackRate] = useState(1);
 
   // Polls Creation Modal
   const [pollQuestion, setPollQuestion] = useState('');
@@ -1767,6 +1768,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
     const audio = new Audio();
     audio.crossOrigin = 'anonymous';
+    audio.playbackRate = audioPlaybackRate;
     audioRef.current = audio;
 
     setActiveAudioPlayer({
@@ -1832,6 +1834,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
     if (audioRef.current.duration && !isNaN(audioRef.current.duration) && isFinite(audioRef.current.duration)) {
       audioRef.current.currentTime = ratio * audioRef.current.duration;
       setActiveAudioPlayer(prev => prev ? { ...prev, playbackProgress: ratio * 100 } : null);
+    }
+  };
+
+  const cycleAudioPlaybackRate = (fileUrl: string) => {
+    const nextRate = audioPlaybackRate >= 2 ? 1 : audioPlaybackRate === 1 ? 1.5 : 2;
+    setAudioPlaybackRate(nextRate);
+    if (audioRef.current && activeAudioPlayer?.url === fileUrl) {
+      audioRef.current.playbackRate = nextRate;
     }
   };
 
@@ -1906,7 +1916,18 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           <div className="flex items-center justify-between text-[11px] text-white/70 font-medium px-0.5">
             <span className={isPlayingThis ? 'text-[#3ca3eb] font-bold' : ''}>{timeLabel}</span>
-            <span>{formattedTime}</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); cycleAudioPlaybackRate(fileUrl); }}
+                className="px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 text-[10px] font-bold text-white/90 hover:bg-black/20 dark:hover:bg-white/20"
+                aria-label={`Playback speed ${audioPlaybackRate} times`}
+                title="Change playback speed"
+              >
+                {audioPlaybackRate}x
+              </button>
+              <span>{formattedTime}</span>
+            </div>
           </div>
 
           {isThisAudio && activeAudioPlayer.error && (
