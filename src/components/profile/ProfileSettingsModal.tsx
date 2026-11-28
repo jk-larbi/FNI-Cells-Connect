@@ -1010,17 +1010,19 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                   </div>
 
                   <div className="fni-profile-presets" role="group" aria-label="Preset fellowship themes">
-                    {PRESET_PROFILE_BANNERS.map((banner, index) => (
+                    {PRESET_PROFILE_BANNERS.map((banner) => (
                       <button
                         key={banner.id}
                         type="button"
                         onClick={() => handleSelectPresetBanner(banner.url)}
-                        className={profileBanner === banner.url ? 'is-selected' : ''}
-                        style={{ background: banner.url }}
+                        className={`fni-profile-preset-option ${profileBanner === banner.url ? 'is-selected' : ''}`}
+                        aria-pressed={profileBanner === banner.url}
                         aria-label={`Select ${banner.name} cover theme`}
-                        title={banner.name}
                       >
-                        {profileBanner === banner.url && <Check className="w-4 h-4" />}
+                        <span className="fni-profile-preset-swatch" style={{ background: banner.url }} aria-hidden="true">
+                          {profileBanner === banner.url && <Check className="w-4 h-4" />}
+                        </span>
+                        <span className="fni-profile-preset-name">{banner.name}</span>
                       </button>
                     ))}
                   </div>
