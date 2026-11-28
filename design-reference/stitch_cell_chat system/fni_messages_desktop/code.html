@@ -1,0 +1,303 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FNI Messages — FNI Cells Connect (Desktop)</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#1F6E43',
+        'on-success': '#FFFFFF',
+        'success-container': '#DCF2E5',
+        'on-success-container': '#0B3D22',
+        'warning': '#785A1B',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#F5EDD9',
+        'on-warning-container': '#354454',
+        'light-primary': '#8BB5DC',
+        'light-on-primary': '#2B3947',
+        'light-primary-container': '#DCEAF6',
+        'light-on-primary-container': '#354454',
+        'light-secondary': '#785A1B',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#F5EDD9',
+        'light-on-secondary-container': '#354454',
+        'light-tertiary': '#EDF5FC',
+        'light-on-tertiary': '#354454',
+        'light-tertiary-container': '#DCEAF6',
+        'light-on-tertiary-container': '#354454',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#FAFAF8',
+        'light-on-background': '#354454',
+        'light-surface': '#FAFAF8',
+        'light-surface-dim': '#E9EDF1',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FFFFFF',
+        'light-surface-container': '#EDF5FC',
+        'light-surface-container-high': '#DCEAF6',
+        'light-surface-container-highest': '#E9EDF1',
+        'light-on-surface': '#354454',
+        'light-surface-variant': '#DCEAF6',
+        'light-on-surface-variant': '#536273',
+        'light-outline': '#788695',
+        'light-outline-variant': '#E9EDF1',
+        'light-inverse-surface': '#354454',
+        'light-inverse-on-surface': '#FFFFFF',
+        'light-inverse-primary': '#354454',
+        'dark-primary': '#8BB5DC',
+        'dark-on-primary': '#142842',
+        'dark-primary-container': '#1E314C',
+        'dark-on-primary-container': '#DCEAF6',
+        'dark-secondary': '#D9BD7B',
+        'dark-on-secondary': '#354454',
+        'dark-secondary-container': '#5D4200',
+        'dark-on-secondary-container': '#F5EDD9',
+        'dark-tertiary': '#6596C5',
+        'dark-on-tertiary': '#FFFFFF',
+        'dark-tertiary-container': '#354454',
+        'dark-on-tertiary-container': '#EDF5FC',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#101620',
+        'dark-on-background': '#E8EDF5',
+        'dark-surface': '#101620',
+        'dark-surface-dim': '#0C1119',
+        'dark-surface-bright': '#232D3D',
+        'dark-surface-container-lowest': '#0C1119',
+        'dark-surface-container-low': '#161E2B',
+        'dark-surface-container': '#1C2636',
+        'dark-surface-container-high': '#253145',
+        'dark-surface-container-highest': '#303E54',
+        'dark-on-surface': '#E8EDF5',
+        'dark-surface-variant': '#253145',
+        'dark-on-surface-variant': '#A8B6C8',
+        'dark-outline': '#788695',
+        'dark-outline-variant': '#2E3B4E',
+        'dark-inverse-surface': '#E8EDF5',
+        'dark-inverse-on-surface': '#354454',
+        'dark-inverse-primary': '#354454',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '16px',
+      },
+      fontFamily: {
+        'display': ['"Libre Franklin"', 'sans-serif'],
+        'headline': ['"Libre Franklin"', 'sans-serif'],
+        'title': ['"Libre Franklin"', 'sans-serif'],
+        'body': ['"Source Sans 3"', 'sans-serif'],
+        'label': ['"Libre Franklin"', 'sans-serif'],
+        'mono': ['"Source Code Pro"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.15px', fontWeight: '700' }],
+        'title-lg': ['18px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '220ms',
+        'surface-exit': '150ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'surface-exit': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'surface-exit': 'cubic-bezier(0.3, 0, 1, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700&amp;family=Source+Code+Pro:wght@500&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; } [hidden] { display: none !important; }</style>
+</head>
+<body class="bg-light-surface text-light-on-surface antialiased font-body">
+  <div class="min-h-[1024px] flex bg-light-surface" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Dark Navy Sidebar Rail -->
+    <aside class="hidden lg:flex w-60 shrink-0 min-h-[1024px] bg-light-primary text-light-on-primary flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col px-2 pt-1">
+          <span class="font-headline text-headline-md text-light-on-primary tracking-tight">FNI</span>
+          <span class="font-label text-label-sm text-light-on-primary uppercase">CELLS CONNECT</span>
+        </div>
+        <nav aria-label="Workspace menu">
+          <ul class="flex flex-col gap-1">
+            <li><a href="../overview-desktop/OverviewDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">grid_view</span><span class="font-label text-label-lg">Overview</span></a></li>
+            <li><a href="../cell-groups-desktop/CellGroupsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">groups</span><span class="font-label text-label-lg">Cell Groups</span></a></li>
+            <li><a href="../reports-desktop/ReportsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">description</span><span class="font-label text-label-lg">Reports</span></a></li>
+            <li><a href="MessagesDesktop.html" aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded-md bg-light-tertiary text-light-on-primary"><span class="material-symbols-outlined text-title-md" style="font-variation-settings: &#39;FILL&#39; 1;" aria-hidden="true">chat_bubble</span><span class="font-label text-label-lg">FNI Messages</span></a></li>
+            <li><a href="../comms-desktop/CommsDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">videocam</span><span class="font-label text-label-lg">Calls &amp; Meetings</span></a></li>
+            <li><a href="../more-desktop/MoreDesktop.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-light-inverse-primary hover:bg-light-tertiary hover:text-light-on-primary transition-colors"><span class="material-symbols-outlined text-title-md" aria-hidden="true">settings</span><span class="font-label text-label-lg">Settings</span></a></li>
+          </ul>
+        </nav>
+      </div>
+      <span class="px-2 font-label text-label-sm text-light-inverse-primary">Forerunners Network Int&#39;l</span>
+    </aside>
+
+    <!-- Desktop Messaging Split Workspace -->
+    <div class="flex-1 flex min-w-0 min-h-[1024px]" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+      <!-- Conversation List Sidebar (380px) -->
+      <section aria-label="Conversations" class="w-full lg:w-96 shrink-0 bg-light-surface-container-low border-r border-light-outline-variant flex flex-col">
+        <!-- Header -->
+        <header class="px-4 py-3.5 border-b border-light-outline-variant flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="relative">
+              <div class="w-9 h-9 rounded-full bg-light-primary text-light-on-primary inline-flex items-center justify-center font-label text-label-sm">FNI</div>
+              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-success border-2 border-light-surface-container-low"></span>
+            </div>
+            <div>
+              <h1 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">FNI Messages</h1>
+              <span class="font-label text-label-sm text-light-secondary">DESIGN PREVIEW</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <a href="../create-group-desktop/CreateGroupDesktop.html" title="Create Group" class="w-8 h-8 rounded-full bg-light-surface-container inline-flex items-center justify-center text-light-on-surface hover:bg-light-surface-container-high"><span class="material-symbols-outlined text-title-md" aria-hidden="true">group_add</span></a>
+            <a href="../private-chat-desktop/PrivateChatDesktop.html" title="New Message" class="w-8 h-8 rounded-full bg-light-primary text-light-on-primary inline-flex items-center justify-center hover:bg-light-tertiary"><span class="material-symbols-outlined text-title-md" aria-hidden="true">edit_square</span></a>
+          </div>
+        </header>
+
+        <!-- Search -->
+        <div class="p-3 border-b border-light-outline-variant flex flex-col gap-2.5">
+          <div class="relative">
+            <span class="material-symbols-outlined text-title-md text-light-on-surface-variant absolute left-3 top-2.5" aria-hidden="true">search</span>
+            <input id="md-search" type="search" placeholder="Search names, @usernames, messages…" class="w-full pl-9 pr-3 py-1.5 rounded-full border-light-outline-variant bg-light-surface text-body-md">
+          </div>
+          <div class="flex items-center gap-1.5 overflow-x-auto">
+            <button type="button" data-dcat="all" class="md-tab px-3 py-1 rounded-full bg-light-primary text-light-on-primary font-label text-label-sm shrink-0">All Chats</button>
+            <button type="button" data-dcat="personal" class="md-tab px-3 py-1 rounded-full bg-light-surface-container text-light-on-surface font-label text-label-sm shrink-0">Personal</button>
+            <button type="button" data-dcat="groups" class="md-tab px-3 py-1 rounded-full bg-light-surface-container text-light-on-surface font-label text-label-sm shrink-0">Groups</button>
+            <button type="button" data-dcat="cells" class="md-tab px-3 py-1 rounded-full bg-light-surface-container text-light-on-surface font-label text-label-sm shrink-0">Cell Groups</button>
+            <button type="button" data-dcat="unread" class="md-tab px-3 py-1 rounded-full bg-light-surface-container text-light-on-surface font-label text-label-sm shrink-0">Unread</button>
+            <button type="button" data-dcat="archived" class="md-tab px-3 py-1 rounded-full bg-light-surface-container text-light-on-surface font-label text-label-sm shrink-0">Archived</button>
+          </div>
+        </div>
+
+        <!-- Chat List -->
+        <div class="flex-1 overflow-y-auto divide-y divide-light-outline-variant/60">
+          <a href="../group-chat-desktop/GroupChatDesktop.html" data-dcats="all groups cells unread" class="md-chat px-4 py-3 flex items-center gap-3 bg-light-primary-container/40 hover:bg-light-surface-container transition-colors">
+            <div class="relative shrink-0">
+              <div class="w-11 h-11 rounded-full bg-light-secondary-container text-light-secondary inline-flex items-center justify-center font-title text-title-md border border-light-secondary/30">GC</div>
+              <span class="material-symbols-outlined text-label-sm text-light-secondary absolute -bottom-0.5 -right-0.5 bg-light-surface-container-low rounded-full" aria-hidden="true">push_pin</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2"><span class="font-title text-title-md text-light-on-surface truncate">Grace Cell — Accra Central</span><span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">10:42</span></div>
+              <div class="flex items-center justify-between gap-2"><span class="font-body text-body-md text-light-on-surface-variant truncate">Kofi Mensah: Fellowship outline uploaded</span><span class="px-2 py-0.5 rounded-full bg-light-primary text-light-on-primary font-label text-label-sm tabular-nums">4</span></div>
+            </div>
+          </a>
+
+          <a href="../private-chat-desktop/PrivateChatDesktop.html" data-dcats="all personal unread" class="md-chat px-4 py-3 flex items-center gap-3 hover:bg-light-surface-container transition-colors">
+            <div class="relative shrink-0">
+              <div class="w-11 h-11 rounded-full bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center font-title text-title-md">AB</div>
+              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-success border-2 border-light-surface-container-low"></span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2"><span class="font-title text-title-md text-light-on-surface truncate">Abena Boateng</span><span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">10:38</span></div>
+              <div class="flex items-center justify-between gap-2"><span class="font-label text-label-sm text-success truncate">typing…</span><span class="px-2 py-0.5 rounded-full bg-light-primary text-light-on-primary font-label text-label-sm tabular-nums">2</span></div>
+            </div>
+          </a>
+
+          <a href="../private-chat-desktop/PrivateChatDesktop.html" data-dcats="all personal" class="md-chat px-4 py-3 flex items-center gap-3 hover:bg-light-surface-container transition-colors">
+            <div class="w-11 h-11 rounded-full bg-light-surface-container text-light-on-surface inline-flex items-center justify-center font-title text-title-md shrink-0">DO</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2"><span class="font-title text-title-md text-light-on-surface truncate">Daniel Osei</span><span class="font-label text-label-sm text-light-on-surface-variant tabular-nums">09:15</span></div>
+              <div class="flex items-center gap-1"><span class="material-symbols-outlined text-body-md text-light-primary" aria-hidden="true">done_all</span><span class="font-body text-body-md text-light-on-surface-variant truncate">Voice message (0:42)</span></div>
+            </div>
+          </a>
+
+          <a href="../group-chat-desktop/GroupChatDesktop.html" data-dcats="all groups" class="md-chat px-4 py-3 flex items-center gap-3 hover:bg-light-surface-container transition-colors">
+            <div class="w-11 h-11 rounded-full bg-light-primary text-light-on-primary inline-flex items-center justify-center font-title text-title-md shrink-0">FL</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2"><span class="font-title text-title-md text-light-on-surface truncate">FNI Cell Leaders Forum</span><span class="material-symbols-outlined text-body-md text-light-on-surface-variant" aria-hidden="true">notifications_off</span></div>
+              <span class="font-body text-body-md text-light-on-surface-variant truncate block">Poll: Monthly prayer vigil schedule</span>
+            </div>
+          </a>
+
+          <a href="../private-chat-desktop/PrivateChatDesktop.html" data-dcats="all personal" class="md-chat px-4 py-3 flex items-center gap-3 hover:bg-light-surface-container transition-colors">
+            <div class="w-11 h-11 rounded-full bg-light-secondary-container text-light-secondary inline-flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-title-md" aria-hidden="true">bookmark</span></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2"><span class="font-title text-title-md text-light-on-surface truncate">Saved Messages</span><span class="font-label text-label-sm text-light-on-surface-variant">Tue</span></div>
+              <span class="font-body text-body-md text-light-on-surface-variant truncate block">Personal notes, study PDFs &amp; links</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Main Workspace Hub / Quick Actions Panel -->
+      <main class="flex-1 flex flex-col items-center justify-center p-8 bg-light-surface">
+        <div class="max-w-md w-full rounded-lg bg-light-surface-container-low border border-light-outline-variant p-7 flex flex-col items-center text-center gap-4 shadow-[0_1px_2px_rgba(20,40,66,0.04)]">
+          <div class="w-14 h-14 rounded-full bg-light-primary-container text-light-on-primary-container inline-flex items-center justify-center">
+            <span class="material-symbols-outlined text-headline-md" aria-hidden="true">forum</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <h2 class="font-headline text-headline-md text-light-on-surface">FNI Communication Hub</h2>
+            <p class="font-body text-body-md text-light-on-surface-variant">Select a conversation on the left, start a private chat, or launch a fellowship group with topics and live meetings.</p>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+            <a href="../private-chat-desktop/PrivateChatDesktop.html" class="px-4 py-2 rounded-full bg-light-primary text-light-on-primary font-label text-label-md inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-title-md" aria-hidden="true">person</span><span>Open Private Chat</span></a>
+            <a href="../group-chat-desktop/GroupChatDesktop.html" class="px-4 py-2 rounded-full border border-light-outline-variant bg-light-surface font-label text-label-md text-light-on-surface inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-title-md" aria-hidden="true">groups</span><span>Open Group Chat</span></a>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      document.querySelectorAll('.md-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const cat = tab.dataset.dcat;
+          document.querySelectorAll('.md-tab').forEach(t => { t.classList.remove('bg-light-primary', 'text-light-on-primary'); t.classList.add('bg-light-surface-container', 'text-light-on-surface'); });
+          tab.classList.add('bg-light-primary', 'text-light-on-primary'); tab.classList.remove('bg-light-surface-container', 'text-light-on-surface');
+          document.querySelectorAll('.md-chat').forEach(row => { row.hidden = !row.dataset.dcats.split(' ').includes(cat); });
+        });
+      });
+      document.getElementById('md-search').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        document.querySelectorAll('.md-chat').forEach(row => { row.hidden = q && !row.textContent.toLowerCase().includes(q); });
+      });
+    })();
+  </script>
+
+
+</body></html>
