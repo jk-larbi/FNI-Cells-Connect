@@ -5,46 +5,46 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: '#F5F7FC', // FNI app canvas
+        canvas: 'var(--fni-canvas)', // Mode-aware FNI canvas
         white: '#FFFFFF',
         brand: {
-          navy: '#173B8F',     // FNI Telegram-inspired blue
-          navyLight: '#39216B',// Deeper FNI blue
-          gold: '#D9A72E',     // FNI gold accent
-          goldLight: '#F3D987',// Light gold
-          grey: '#F5F7FC',     // Light grey
-          border: '#E2E7F0',   // Border grey
-          text: '#202634',     // Primary text
-          muted: '#778092',    // Secondary text
+          navy: '#376F9F',     // Accessible FNI blue
+          navyLight: '#4C7FAE',// Soft secondary blue
+          gold: '#D9BD7B',     // Champagne gold accent
+          goldLight: '#F7F0E1',// Pale gold surface
+          grey: 'var(--fni-surface-muted)', // Mode-aware neutral surface
+          border: 'var(--fni-border)', // Mode-aware border
+          text: 'var(--fni-text)', // Mode-aware primary text
+          muted: 'var(--fni-text-muted)', // Mode-aware secondary text
           success: '#23845B',  // Success green
           warning: '#D99A32',  // Warning amber
           error: '#C74646',    // Error red
         },
         navy: {
-          50: '#F0F4F8',
-          100: '#D9E2EC',
-          200: '#BCCCDC',
-          300: '#9FB3C8',
-          400: '#486581',
-          500: '#334E68',
-          600: '#203D63', // Secondary navy
-          700: '#1A3354',
-          800: '#173B8F', // FNI royal blue
-          900: '#39216B',
-          950: '#172F67',
+          50: '#EDF5FC',
+          100: '#DCEAF6',
+          200: '#C5DBEB',
+          300: '#A8C9E3',
+          400: '#8BB5DC',
+          500: '#6596C5',
+          600: '#4C7FAE',
+          700: '#376F9F',
+          800: '#2D5F8B',
+          900: '#244B70',
+          950: '#19364F',
         },
-        purple: { 50: '#F5F1FC', 100: '#E9E0F8', 500: '#39216B', 600: '#321C60', 700: '#28164D', 800: '#21133F', 900: '#180E30' },
+        purple: { 50: '#EDF5FC', 100: '#DCEAF6', 500: '#6596C5', 600: '#4C7FAE', 700: '#376F9F', 800: '#2D5F8B', 900: '#19364F' }, // Legacy alias mapped to FNI blue
       gold: {
-          50: '#FDFCF7',
-          100: '#FAF6ED',
-          200: '#E9D9B2', // Light gold
-          300: '#DFCA96',
-          400: '#D2B777',
-          500: '#D9A72E', // FNI gold
-          600: '#AB8B42',
-          700: '#8A6E30',
-          800: '#695221',
-          900: '#4A3914',
+          50: '#FBF8F0',
+          100: '#F7F0E1',
+          200: '#E9D9B2', // Pale gold
+          300: '#E2CEA0',
+          400: '#D9BD7B',
+          500: '#D9BD7B', // Champagne gold
+          600: '#A88A4D',
+          700: '#806226',
+          800: '#664D20',
+          900: '#4C391A',
         },
         slate: {
           50: '#F5F7FA', // Light grey
