@@ -1508,12 +1508,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       if (b.id === 'community') return 1;
       return 0;
     });
-  }, [communityMessages, tutorList, userPinnedChats, officialGroup, privateMessages, currentUser, onlineMemberIds, memberLastSeen]);
+  }, [communityMessages, tutorList, userPinnedChats, officialGroup, privateMessages, currentUser, onlineMemberIds, memberLastSeen, groupChats]);
 
   // Helper to determine if a contact is included in a folder
   const isContactInFolder = (contact: any, folder: ChatFolder) => {
     if (folder.included_chat_ids?.includes(contact.id)) return true;
-    if (folder.include_all_groups && contact.type === 'community' && !folder.excluded_chat_ids?.includes(contact.id)) return true;
+    if (folder.include_all_groups && (contact.type === 'community' || contact.type === 'group') && !folder.excluded_chat_ids?.includes(contact.id)) return true;
     if (folder.include_all_direct && (contact.type === 'direct' || contact.id === 'saved_messages') && !folder.excluded_chat_ids?.includes(contact.id)) return true;
     return false;
   };
@@ -1542,7 +1542,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
   const groupsUnreadCount = useMemo(() => {
     return contacts
-      .filter(c => c.type === 'community' || c.id === 'community')
+      .filter(c => c.type === 'community' || c.type === 'group' || c.id === 'community')
       .reduce((sum, c) => sum + (c.unreadCount || 0), 0);
   }, [contacts]);
 
@@ -1565,7 +1565,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       }
       if (activeFolderId === 'all') return true;
       if (activeFolderId === 'personal') {
-        return c.type === 'direct' || c.type === 'saved' || (c.id !== 'community' && c.type !== 'community');
+        return c.type === 'direct' || c.type === 'saved';
       }
       if (activeFolderId === 'groups') {
         return c.type === 'community' || c.type === 'group' || c.id === 'community';
@@ -3379,6 +3379,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           {/* Conversations List */}
           <div className="fni-messages-conversation-list flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#17212b]">
+            {groupChatsError && <div role="alert" className="px-3 py-2 text-xs text-rose-600 dark:text-rose-300">{groupChatsError}</div>}
             {filteredContacts.map(c => {
               const isSelected = selectedChatId === c.id;
               const isPinned = c.isPinned;
