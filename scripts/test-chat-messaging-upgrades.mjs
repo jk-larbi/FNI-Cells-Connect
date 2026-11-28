@@ -97,5 +97,7 @@ assert.match(view, /from\('fni_user_presence'\)[\s\S]*?upsert\(/, 'chat must per
 assert.match(view, /setInterval\(\(\) => \{[\s\S]*?writeLastSeen\(\)/, 'chat must refresh last-seen while active');
 assert.match(view, /visibilitychange/, 'chat must update availability when the app is backgrounded or resumed');
 assert.match(view, /isOnline: onlineMemberIds\.has\(peer\.id\)/, 'direct contacts must use actual presence, not a hardcoded online flag');
+assert.match(view, /const isOnline = onlineMemberIds\.has\(tutor\.id\)/, 'the tutor directory must use live presence rather than treating every active account as online');
+assert.match(view, /formatMemberLastSeen\(memberLastSeen\[tutor\.id\]\)/, 'offline tutors must show their persisted last-seen timestamp');
 assert.match(view, /formatMemberLastSeen\(activeContact\?\.lastSeenAt\)/, 'chat headers must display the stored last-seen time');
 console.log('FNI real-time online presence and durable last-seen regression checks passed.');
