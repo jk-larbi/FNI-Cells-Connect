@@ -265,3 +265,79 @@
 @media(prefers-reduced-motion:reduce){
   .fni-cell-groups-stitch .fni-edit-cell-actions button{transition:none}
 }
+
+
+/* Cell Groups directory — final theme coverage for all Stitch status,
+   selection, empty-state and destructive-action surfaces. */
+html.dark .fni-cell-groups-stitch [class*="bg-[#E4ECF7]"],
+html.dark .fni-cell-groups-stitch [class*="bg-[#DCF2E5]"],
+html.dark .fni-cell-groups-stitch [class~="bg-sky-50"],
+html.dark .fni-cell-groups-stitch [class~="bg-emerald-50"] {
+  background-color:#203449!important;
+  border-color:#38516B!important;
+}
+html.dark .fni-cell-groups-stitch [class*="bg-[#FDF8E8]"],
+html.dark .fni-cell-groups-stitch [class~="bg-amber-50"] {
+  background-color:#332D20!important;
+  border-color:#665638!important;
+}
+html.dark .fni-cell-groups-stitch [class*="bg-[#FFDAD6]"],
+html.dark .fni-cell-groups-stitch [class~="bg-rose-50"] {
+  background-color:#3A2428!important;
+  border-color:#714047!important;
+}
+html.dark .fni-cell-groups-stitch [class*="bg-[#EEF2F7]"],
+html.dark .fni-cell-groups-stitch [class~="bg-slate-100"] {
+  background-color:#253145!important;
+  border-color:#3A4A60!important;
+}
+html.dark .fni-cell-groups-stitch [class*="text-[#0B3D22]"],
+html.dark .fni-cell-groups-stitch [class*="text-[#1F6E43]"],
+html.dark .fni-cell-groups-stitch [class~="text-emerald-600"],
+html.dark .fni-cell-groups-stitch [class~="text-emerald-700"] {
+  color:#A8DFC0!important;
+}
+html.dark .fni-cell-groups-stitch [class*="text-[#5D4200]"],
+html.dark .fni-cell-groups-stitch [class*="text-[#8E6C23]"] {
+  color:#E9D9B2!important;
+}
+html.dark .fni-cell-groups-stitch [class*="text-[#93000A]"],
+html.dark .fni-cell-groups-stitch [class*="text-[#BA1A1A]"],
+html.dark .fni-cell-groups-stitch [class*="text-[#C74646]"],
+html.dark .fni-cell-groups-stitch [class~="text-rose-600"],
+html.dark .fni-cell-groups-stitch [class~="text-rose-700"],
+html.dark .fni-cell-groups-stitch [class~="text-rose-800"] {
+  color:#FFC2C2!important;
+}
+html.dark .fni-cell-groups-stitch [class*="border-[#FFDAD6]"],
+html.dark .fni-cell-groups-stitch [class~="border-rose-200"],
+html.dark .fni-cell-groups-stitch [class~="border-rose-300"] {
+  border-color:#714047!important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-group-card {
+  background:#1C2636!important;
+  border-color:#2E3B4E!important;
+  color:#E8EDF5!important;
+}
+html.dark .fni-cell-groups-stitch button:disabled {
+  color:#8190A3;
+}
+html.dark .fni-cell-groups-stitch [role="tab"]:not([aria-selected="true"]) {
+  color:#A8B6C8;
+}
+html.dark .fni-cell-groups-stitch .fni-edit-cell-panel {
+  color:#E8EDF5!important;
+}
+html.dark .fni-cell-groups-stitch .fni-edit-cell-field input:focus,
+html.dark .fni-cell-groups-stitch .fni-edit-cell-field select:focus {
+  border-color:#8BB5DC!important;
+  outline-color:rgba(139,181,220,.2)!important;
+}
+html:not(.dark) .fni-cell-groups-stitch .fni-cell-group-card {
+  background:#FFFFFF;
+  border-color:#DCE3EC;
+}
+@media(max-width:767px) {
+  .fni-cell-groups-stitch table { min-width:720px; }
+  .fni-cell-groups-stitch .table-scroll-container { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+}
