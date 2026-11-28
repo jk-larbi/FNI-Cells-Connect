@@ -297,6 +297,17 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
   const isApprovedMeeting = (report: CellMeetingReport) => report.status === 'Approved' || report.status === 'approved';
   const approvedCellMeetings = cellMeetings.filter(isApprovedMeeting);
+  // These statuses represent a completed outcome; all other contact statuses remain in the follow-up pipeline.
+  const completedFollowUpStatuses = new Set([
+    'Completed',
+    'Completed / Joined',
+    'Established in Church',
+    'Joined a cell',
+    'Joined Ministry',
+  ]);
+  const requiringFollowUpCount = cellContacts.filter(
+    contact => !completedFollowUpStatuses.has(contact.followUpStatus)
+  ).length;
   const meetingPerformance = approvedCellMeetings.reduce((totals, report) => ({
     attendance: totals.attendance + (Number(report.attendance) || 0),
     absentees: totals.absentees + (Number(report.absentees) || 0),
@@ -906,7 +917,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 <div className="p-2.5 bg-white rounded-xl border border-[#DCE3EC]">
                   <div className="text-[10px] text-[#5A6B7C] font-semibold">Requiring Follow-up</div>
                   <div className="text-base font-black text-[#C74646] mt-0.5">
-                    {selectedCell.requiring_follow_up ?? cellContacts.filter(c => c.followUpStatus !== 'Completed' && c.followUpStatus !== 'Joined Ministry').length}
+                    {requiringFollowUpCount}
                   </div>
                 </div>
               </div>
