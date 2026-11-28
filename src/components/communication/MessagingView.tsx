@@ -3532,6 +3532,33 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 >
                   <Search className="w-5 h-5" />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedChatId === 'community') {
+                      setIsGroupInfoModalOpen(true);
+                      return;
+                    }
+                    if (!activeContact?.id || activeContact.id === 'saved_messages') return;
+                    const member = allMembers.find(person => person.id === activeContact.id)
+                      || tutorList.find(person => person.id === activeContact.id);
+                    if (!member) return;
+                    setSelectedUserProfile({
+                      id: member.id,
+                      fullName: member.full_name || member.name,
+                      role: member.role,
+                      avatarUrl: member.avatar_url || member.photo_url,
+                      cellName: member.cell_name || member.cell,
+                      phone: member.phone_number || member.phone,
+                      email: member.email,
+                    });
+                  }}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-[#2AABEE] cursor-pointer transition-colors"
+                  title={selectedChatId === 'community' ? 'Group information' : 'View profile'}
+                  aria-label={selectedChatId === 'community' ? 'Group information' : 'View profile'}
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
