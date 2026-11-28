@@ -294,6 +294,11 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
   const [groupMembers, setGroupMembers] = useState<Array<{ user_id: string; full_name: string; role: string; cell_name?: string; photo_url?: string; member_role: string; joined_at: string }>>([]);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [groupInfoOpen, setGroupInfoOpen] = useState(false);
+  const [groupInfoName, setGroupInfoName] = useState(group.name);
+  const [groupInfoDescription, setGroupInfoDescription] = useState(group.description || '');
+  const [groupInfoSaving, setGroupInfoSaving] = useState(false);
+  const [groupInfoError, setGroupInfoError] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState('');
   const [candidateProfiles, setCandidateProfiles] = useState<Array<{ id: string; full_name: string; role: string }>>([]);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
@@ -353,6 +358,36 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     if (!query) return groupMembers;
     return groupMembers.filter(member => [member.full_name, member.role, member.cell_name, member.member_role].filter(Boolean).join(' ').toLowerCase().includes(query));
   }, [groupMembers, memberSearch]);
+
+  useEffect(() => {
+    setGroupInfoName(group.name);
+    setGroupInfoDescription(group.description || '');
+  }, [group.id, group.name, group.description]);
+
+  const saveGroupInfo = async () => {
+    const name = groupInfoName.trim();
+    const description = groupInfoDescription.trim();
+    if (!name || name.length > 80) {
+      setGroupInfoError('Group name must be between 1 and 80 characters.');
+      return;
+    }
+    if (description.length > 300) {
+      setGroupInfoError('Description must be 300 characters or fewer.');
+      return;
+    }
+    if (currentMemberRole !== 'owner' || groupInfoSaving) return;
+    setGroupInfoSaving(true);
+    setGroupInfoError(null);
+    try {
+      await MessagingService.updateGroupChatDetails({ groupId: group.id, name, description });
+      window.dispatchEvent(new CustomEvent('fni-group-chat-created'));
+      setGroupInfoOpen(false);
+    } catch (reason) {
+      setGroupInfoError(reason instanceof Error ? reason.message : 'Group information could not be saved.');
+    } finally {
+      setGroupInfoSaving(false);
+    }
+  };
 
   const currentMemberRole = group.member_role || 'member';
   const canManageGroupMembers = currentMemberRole === 'owner' || currentMemberRole === 'moderator';
@@ -443,10 +478,12 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
           <button type="button" onClick={onBack} aria-label="Back to messages" className="md:hidden w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 flex items-center justify-center"><ChevronLeft className="w-5 h-5" /></button>
           <div className="w-10 h-10 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/50 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center font-bold shrink-0">{group.name.slice(0, 2).toUpperCase()}</div>
           <div className="min-w-0">
-            <button type="button" onClick={() => setMembersOpen(true)} className="min-w-0 text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B18A3C]" aria-label={`View members of ${group.name}`}>
-              <h2 className="font-semibold text-sm truncate">{group.name}</h2>
-              <p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate tabular-nums">{groupMembers.length || group.member_count} members · View members</p>
-            </button>
+            <div className="min-w-0">
+              <button type="button" onClick={() => { setGroupInfoError(null); setGroupInfoOpen(true); }} className="block max-w-full text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B18A3C]" aria-label={`View information for ${group.name}`}>
+                <h2 className="font-semibold text-sm truncate">{group.name}</h2>
+              </button>
+              <button type="button" onClick={() => setMembersOpen(true)} className="block text-xs text-[#536273] dark:text-[#A8B6C8] truncate tabular-nums hover:underline" aria-label={`View members of ${group.name}`}>{groupMembers.length || group.member_count} members · View members</button>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -455,6 +492,28 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
         </div>
       </header>
       {group.description && <div className="px-4 py-2 text-xs bg-[#F5EDD9] dark:bg-[#5D4200]/25 text-[#785A1B] dark:text-[#D9BD7B] border-b border-[#E8DAB8] dark:border-[#5D4200]/40">{group.description}</div>}
+      {groupInfoOpen && (
+        <div className="fixed inset-0 z-[95] bg-black/55 flex items-center justify-center p-3" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setGroupInfoOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="group-info-title" className="w-full max-w-md rounded-2xl overflow-hidden bg-white dark:bg-[#161E2B] text-[#354454] dark:text-[#E8EDF5] shadow-2xl border border-[#DCEAF6] dark:border-[#2E3B4E]">
+            <header className="px-4 py-3 flex items-center justify-between bg-[#EDF5FC] dark:bg-[#1C2636] border-b border-[#DCEAF6] dark:border-[#2E3B4E]">
+              <div><h3 id="group-info-title" className="font-semibold text-sm">Group information</h3><p className="text-xs text-[#536273] dark:text-[#A8B6C8]">Details and administration</p></div>
+              <button type="button" onClick={() => setGroupInfoOpen(false)} aria-label="Close group information" className="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10"><X className="w-4 h-4 mx-auto" /></button>
+            </header>
+            <div className="p-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-[#F5EDD9] dark:bg-[#5D4200]/40 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center text-lg font-bold">{group.name.slice(0, 2).toUpperCase()}</div>
+                <div className="min-w-0"><p className="font-semibold truncate">{group.name}</p><p className="text-xs text-[#536273] dark:text-[#A8B6C8]">{groupMembers.length || group.member_count} members</p></div>
+              </div>
+              <div><label htmlFor="fni-group-info-name" className="block text-xs font-semibold mb-1.5">Group name</label><input id="fni-group-info-name" value={groupInfoName} onChange={event => setGroupInfoName(event.target.value)} maxLength={80} disabled={currentMemberRole !== 'owner'} className="w-full rounded-xl px-3 py-2.5 text-sm bg-[#F5F8FB] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] disabled:opacity-75" /></div>
+              <div><label htmlFor="fni-group-info-description" className="block text-xs font-semibold mb-1.5">Description</label><textarea id="fni-group-info-description" value={groupInfoDescription} onChange={event => setGroupInfoDescription(event.target.value)} maxLength={300} rows={3} disabled={currentMemberRole !== 'owner'} placeholder="What is this group about?" className="w-full resize-none rounded-xl px-3 py-2.5 text-sm bg-[#F5F8FB] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] disabled:opacity-75" /><p className="text-right text-[10px] text-[#7A8795]">{groupInfoDescription.length}/300</p></div>
+              <div className="grid grid-cols-2 gap-3 text-xs"><div className="rounded-xl p-3 bg-[#F5F8FB] dark:bg-[#101620]"><p className="text-[#7A8795]">Created</p><p className="font-semibold mt-1">{new Date(group.created_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</p></div><div className="rounded-xl p-3 bg-[#F5F8FB] dark:bg-[#101620]"><p className="text-[#7A8795]">Your role</p><p className="font-semibold mt-1 capitalize">{currentMemberRole}</p></div></div>
+              {currentMemberRole !== 'owner' && <p className="text-xs text-[#536273] dark:text-[#A8B6C8]">Only the group owner can edit these details.</p>}
+              {groupInfoError && <p role="alert" className="text-xs text-red-600 dark:text-red-300">{groupInfoError}</p>}
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setGroupInfoOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#EDF5FC] dark:bg-[#253145]">Close</button>{currentMemberRole === 'owner' && <button type="button" onClick={() => void saveGroupInfo()} disabled={groupInfoSaving || !groupInfoName.trim()} className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#263445] disabled:opacity-50">{groupInfoSaving ? 'Saving…' : 'Save changes'}</button>}</div>
+            </div>
+          </section>
+        </div>
+      )}
       {membersOpen && (
         <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-3" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setMembersOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="group-members-title" className="w-full max-w-md max-h-[80vh] flex flex-col rounded-2xl overflow-hidden bg-white dark:bg-[#161E2B] text-[#354454] dark:text-[#E8EDF5] shadow-2xl border border-[#DCEAF6] dark:border-[#2E3B4E]">
