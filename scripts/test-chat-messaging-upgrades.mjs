@@ -34,6 +34,9 @@ assert.match(view, /documentSize = att\.size \? formatAttachmentSize\(att\.size\
 assert.match(view, /fileExtension\.slice\(0, 5\)/, 'document previews must identify the file format');
 assert.match(view, /Save or share/, 'document previews must expose a save or share action');
 assert.match(view, /cycleAudioPlaybackRate/, 'voice notes must expose playback speed controls');
+assert.match(view, /border-l-\[3px\] border-l-\[#C6A45A\]/, 'reply previews must use the Stitch gold accent');
+assert.match(view, /dark:bg-\[#101d2b\]\/75/, 'reply previews must remain readable in dark mode');
+assert.match(view, /text-slate-600 dark:text-slate-200/, 'reply preview content must use theme-aware contrast');
 assert.match(view, /audio\.playbackRate = audioPlaybackRate/, 'selected voice playback speed must be applied to audio playback');
 assert.match(view, /\{audioPlaybackRate\}x/, 'voice note player must display the active playback speed');
 assert.match(view, /voiceRecordingCancelledRef\.current/, 'discarding a voice note must prevent its upload');
