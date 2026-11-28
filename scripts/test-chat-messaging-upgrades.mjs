@@ -240,3 +240,19 @@ assert.match(view, /fileNames = \(message\.attachments \|\| \[\]\)\.map\(file =>
 assert.match(view, /fni-group-message-\$\{message\.id\}/, 'group messages must expose stable scroll targets');
 assert.match(view, /scrollIntoView\(\{ behavior: 'smooth', block: 'center' \}\)/, 'search results must jump to the original message');
 assert.match(view, /latest \{messages\.length\} messages currently loaded/, 'search scope must be clear to members');
+
+
+// Group pinned-message regression checks.
+assert.match(messaging, /manageGroupChatPin\(input:/, 'group message pinning must be exposed through the messaging service');
+assert.match(messaging, /rpc\('manage_fni_group_chat_pin'/, 'pin and unpin must be authorized by the Supabase RPC');
+assert.match(groupConversationComponent, /pinnedGroupMessages = useMemo/, 'pinned banners must derive from persisted group message rows');
+assert.match(groupConversationComponent, /Pinned messages/, 'group members must see a pinned-message banner');
+assert.match(groupConversationComponent, /handleGroupPinToggle/, 'authorized group managers must be able to pin and unpin messages');
+assert.match(groupConversationComponent, /canManageGroupMembers && !message\.deleted_at/, 'only owners and moderators may manage pins and deleted messages cannot be pinned');
+assert.match(groupConversationComponent, /setJumpToGroupMessageId\(message\.id\)/, 'opening a pinned item must jump to the original message');
+const groupMessagePinMigration = read('../supabase/migrations/20261128163000_group_chat_message_pins.sql');
+assert.match(groupMessagePinMigration, /v_actor_role not in \('owner', 'moderator'\)/, 'database authorization must restrict pins to owners and moderators');
+assert.match(groupMessagePinMigration, /for update/, 'pin changes must lock the target message');
+assert.match(groupMessagePinMigration, /PIN_GROUP_CHAT_MESSAGE/, 'pin actions must be audited');
+assert.match(groupMessagePinMigration, /revoke all on function public\.manage_fni_group_chat_pin[\s\S]*?from public, anon/, 'pin RPC must not be executable by public or anonymous users');
+console.log('Group pinned-message banner, role-gated controls, Realtime persistence and audit regression checks passed.');
