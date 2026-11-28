@@ -5,6 +5,7 @@ const read = path => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const view = read('../src/components/communication/MessagingView.tsx');
 const messaging = read('../src/services/messagingService.ts');
 const supabase = read('../src/services/supabaseService.ts');
+const types = read('../src/types/index.ts');
 
 assert.match(supabase, /supabase\.auth\.getUser\(\)/, 'chat uploads must use the authenticated storage owner');
 assert.match(supabase, /return \{ name: file\.name, path, mimeType, size: file\.size \}/, 'messages must store stable object paths');
@@ -204,3 +205,11 @@ assert.match(view, /currentMemberRole !== 'owner'/, 'only group owners may edit 
 assert.match(view, /MessagingService\.updateGroupChatDetails\(/, 'saving group information must persist through Supabase');
 assert.match(view, /Group information/, 'the group details panel must be discoverable from the conversation header');
 console.log('Group information, owner-only editing and persistent metadata regression checks passed.');
+
+assert.match(messaging, /transferGroupChatOwnership\(input:/, 'group ownership transfer must be available through the messaging service');
+assert.match(messaging, /transfer_fni_group_chat_ownership/, 'ownership transfer must call the secure Supabase RPC');
+assert.match(view, /Transfer group ownership/, 'group information must expose ownership transfer to owners');
+assert.match(view, /Confirm transfer/, 'ownership transfer must require an explicit confirmation step');
+assert.match(view, /member\.member_role !== 'owner'/, 'ownership can only be transferred to another current group member');
+assert.match(types, /group_chat_ownership_transferred/, 'ownership transfer notifications must be represented in the notification type');
+console.log('Group ownership transfer service, owner-only UI, confirmation and notification regression checks passed.');
