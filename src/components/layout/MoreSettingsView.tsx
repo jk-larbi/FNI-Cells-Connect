@@ -23,24 +23,27 @@ interface MoreAction {
 const ActionRow: React.FC<{ item: MoreAction }> = ({ item }) => {
   const Icon = item.icon;
   return (
-    <button type="button" onClick={item.onClick}
-      className="group flex min-h-[76px] w-full items-center gap-3 border-b border-[#DCE3EC] bg-white px-4 py-3 text-left transition-colors hover:bg-[#F7F9FC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#8E6C23] last:border-b-0 sm:rounded-xl sm:border sm:px-4">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#E4ECF7] text-[#142842]">
+    <button
+      type="button"
+      onClick={item.onClick}
+      className="fni-more-action group flex min-h-[76px] w-full items-center gap-3 border-b border-[#DCE3EC] bg-white px-4 py-3 text-left transition-colors hover:bg-[#F7F9FC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#8E6C23] last:border-b-0 sm:rounded-xl sm:border sm:px-4 dark:border-[#354863] dark:bg-[#161E2B] dark:hover:bg-[#1C2636] dark:focus-visible:ring-[#EEC068]"
+    >
+      <span className="fni-more-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#E4ECF7] text-[#142842] dark:bg-[#253145] dark:text-[#D4E3FF]">
         <Icon className="h-5 w-5" aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-[#142842]">{item.title}</span>
-        <span className="mt-0.5 block text-xs leading-relaxed text-[#5A6B7C]">{item.description}</span>
+        <span className="fni-more-title block text-sm font-semibold text-[#142842] dark:text-[#E8EDF5]">{item.title}</span>
+        <span className="fni-more-description mt-0.5 block text-xs leading-relaxed text-[#5A6B7C] dark:text-[#A8B6C8]">{item.description}</span>
       </span>
-      <ArrowRight className="h-4 w-4 shrink-0 text-[#8E6C23] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+      <ArrowRight className="h-4 w-4 shrink-0 text-[#8E6C23] transition-transform group-hover:translate-x-0.5 dark:text-[#EEC068]" aria-hidden="true" />
     </button>
   );
 };
 
 const ActionGroup: React.FC<{ title: string; items: MoreAction[] }> = ({ title, items }) => (
-  <section className="space-y-2.5">
-    <h2 className="px-1 font-['Libre_Franklin'] text-xs font-bold uppercase tracking-[0.12em] text-[#8E6C23]">{title}</h2>
-    <div className="overflow-hidden rounded-xl border border-[#DCE3EC] bg-white sm:grid sm:grid-cols-2 sm:gap-0 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent">
+  <section className="fni-more-group space-y-2.5">
+    <h2 className="px-1 font-['Libre_Franklin'] text-xs font-bold uppercase tracking-[0.12em] text-[#8E6C23] dark:text-[#EEC068]">{title}</h2>
+    <div className="fni-more-group-list overflow-hidden rounded-xl border border-[#DCE3EC] bg-white sm:grid sm:grid-cols-2 sm:gap-0 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent dark:border-[#354863] dark:bg-[#161E2B] dark:sm:border-0 dark:sm:bg-transparent">
       {items.map(item => <ActionRow key={item.title} item={item} />)}
     </div>
   </section>
@@ -65,11 +68,11 @@ export const MoreSettingsView: React.FC<MoreSettingsViewProps> = ({ onNavigate, 
     { title: 'Notifications', description: 'Open important alerts and recent updates.', icon: Bell, onClick: () => onNavigate('notifications') },
   ];
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 pb-4">
-      <header className="border-b border-[#DCE3EC] pb-4 sm:rounded-xl sm:border sm:bg-white sm:px-6 sm:py-5">
-        <p className="font-['Libre_Franklin'] text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8E6C23]">FNI CELLS CONNECT</p>
-        <h1 className="mt-1 font-['Libre_Franklin'] text-2xl font-bold tracking-tight text-[#142842] sm:text-[28px]">More</h1>
-        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#5A6B7C]">Ministry tools, leadership, and workspace settings.</p>
+    <main className="fni-more-settings mx-auto w-full max-w-5xl space-y-6 pb-4 text-[#25384A] dark:text-[#E8EDF5]">
+      <header className="fni-more-header border-b border-[#DCE3EC] pb-4 sm:rounded-xl sm:border sm:bg-white sm:px-6 sm:py-5 dark:border-[#354863] dark:sm:bg-[#161E2B]">
+        <p className="font-['Libre_Franklin'] text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8E6C23] dark:text-[#EEC068]">FNI CELLS CONNECT</p>
+        <h1 className="mt-1 font-['Libre_Franklin'] text-2xl font-bold tracking-tight text-[#142842] sm:text-[28px] dark:text-[#F1F5F9]">More</h1>
+        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#5A6B7C] dark:text-[#B5C2D0]">Ministry tools, leadership, and workspace settings.</p>
       </header>
       <ActionGroup title="Ministry" items={ministryItems} />
       <ActionGroup title="Administration" items={administrationItems} />
