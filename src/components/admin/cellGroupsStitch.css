@@ -88,3 +88,180 @@
   .fni-cell-groups-stitch summary,
   .fni-cell-groups-stitch input{transition:none}
 }
+
+/* Edit Cell — Stitch desktop/mobile form treatment */
+.fni-cell-groups-stitch .fni-edit-cell-panel{
+  border:1px solid #DCE3EC;
+  border-radius:16px;
+  background:#F7F9FC;
+  color:#142842;
+  box-shadow:0 18px 48px rgba(20,40,66,.16);
+}
+.fni-cell-groups-stitch .fni-edit-cell-eyebrow{
+  margin:0 0 6px;
+  color:#8E6C23;
+  font-family:"Libre Franklin",sans-serif;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.075em;
+}
+.fni-cell-groups-stitch .fni-edit-cell-panel h3{
+  color:#142842;
+  font-family:"Libre Franklin",sans-serif;
+  letter-spacing:-.025em;
+}
+.fni-cell-groups-stitch .fni-edit-cell-panel form{gap:16px}
+.fni-cell-groups-stitch .fni-edit-cell-field{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:7px;
+  padding:15px;
+  border:1px solid #DCE3EC;
+  border-radius:12px;
+  background:#fff;
+}
+.fni-cell-groups-stitch .fni-edit-cell-field label{
+  color:#5A6B7C;
+  font-family:"Libre Franklin",sans-serif;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.015em;
+}
+.fni-cell-groups-stitch .fni-edit-cell-field input,
+.fni-cell-groups-stitch .fni-edit-cell-field select{
+  width:100%;
+  min-height:44px;
+  border:1px solid #C9D4E1;
+  border-radius:8px;
+  background:#F7F9FC;
+  padding:10px 12px;
+  color:#142842;
+  font:400 14px/20px "Source Sans 3",sans-serif;
+  box-shadow:none;
+}
+.fni-cell-groups-stitch .fni-edit-cell-field input:focus,
+.fni-cell-groups-stitch .fni-edit-cell-field select:focus{
+  border-color:#142842;
+  outline:2px solid rgba(20,40,66,.12);
+  outline-offset:1px;
+  box-shadow:none;
+}
+.fni-cell-groups-stitch .fni-edit-cell-field input[readonly]{
+  background:#EEF2F7;
+  color:#5A6B7C;
+  cursor:not-allowed;
+}
+.fni-cell-groups-stitch .fni-edit-cell-field small{
+  color:#68798B;
+  font-size:12px;
+  line-height:1.45;
+}
+.fni-cell-groups-stitch .fni-edit-cell-coordinate{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:16px;
+  border:1px solid #DCE3EC;
+  border-radius:12px;
+  background:#EEF2F7;
+}
+.fni-cell-groups-stitch .fni-edit-cell-coordinate strong{
+  color:#142842;
+  font:600 13px/20px "Libre Franklin",sans-serif;
+}
+.fni-cell-groups-stitch .fni-edit-cell-coordinate p{
+  margin-top:4px;
+  color:#5A6B7C;
+  font-size:13px;
+  line-height:1.5;
+}
+.fni-cell-groups-stitch .fni-edit-cell-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  border-top:1px solid #DCE3EC;
+  padding-top:16px;
+}
+.fni-cell-groups-stitch .fni-edit-cell-actions button{
+  min-height:44px;
+  border-radius:999px;
+  padding:10px 22px;
+  font:600 13px/20px "Libre Franklin",sans-serif;
+  transition:background-color 120ms ease,border-color 120ms ease,transform 120ms ease;
+}
+.fni-cell-groups-stitch .fni-edit-cell-cancel{
+  border:1px solid #C9D4E1;
+  background:#fff;
+  color:#142842;
+}
+.fni-cell-groups-stitch .fni-edit-cell-save{
+  border:1px solid #142842;
+  background:#142842;
+  color:#fff;
+}
+.fni-cell-groups-stitch .fni-edit-cell-save:hover{background:#354863;border-color:#354863}
+.fni-cell-groups-stitch .fni-edit-cell-cancel:hover{background:#EEF2F7}
+.fni-cell-groups-stitch .fni-edit-cell-actions button:active{transform:scale(.985)}
+.dark .fni-cell-groups-stitch .fni-edit-cell-panel{
+  background:#161E2B!important;
+  border-color:#2E3B4E!important;
+}
+.dark .fni-cell-groups-stitch .fni-edit-cell-panel h3{color:#E8EDF5!important}
+.dark .fni-cell-groups-stitch .fni-edit-cell-panel>div:first-child{border-color:#2E3B4E}
+.dark .fni-cell-groups-stitch .fni-edit-cell-field{
+  background:#1C2636;
+  border-color:#2E3B4E;
+}
+.dark .fni-cell-groups-stitch .fni-edit-cell-field label,
+.dark .fni-cell-groups-stitch .fni-edit-cell-field small{color:#A8B6C8}
+.dark .fni-cell-groups-stitch .fni-edit-cell-field input,
+.dark .fni-cell-groups-stitch .fni-edit-cell-field select{
+  background:#101620!important;
+  border-color:#3A4A60!important;
+  color:#E8EDF5!important;
+}
+.dark .fni-cell-groups-stitch .fni-edit-cell-field input[readonly]{
+  background:#253145!important;
+  color:#A8B6C8!important;
+}
+.dark .fni-cell-groups-stitch .fni-edit-cell-coordinate{
+  background:#1C2636;
+  border-color:#2E3B4E;
+}
+.dark .fni-cell-groups-stitch .fni-edit-cell-coordinate strong{color:#E8EDF5}
+.dark .fni-cell-groups-stitch .fni-edit-cell-coordinate p{color:#A8B6C8}
+.dark .fni-cell-groups-stitch .fni-edit-cell-actions{border-color:#2E3B4E}
+.dark .fni-cell-groups-stitch .fni-edit-cell-cancel{
+  background:#253145;
+  border-color:#43536A;
+  color:#E8EDF5;
+}
+.dark .fni-cell-groups-stitch .fni-edit-cell-save{
+  background:#B4C8E9;
+  border-color:#B4C8E9;
+  color:#142842;
+}
+@media(max-width:767px){
+  .fni-cell-groups-stitch .fni-edit-cell-panel{
+    padding:16px;
+    border-radius:0;
+  }
+  .fni-cell-groups-stitch .fni-edit-cell-panel form{gap:12px}
+  .fni-cell-groups-stitch .fni-edit-cell-field{padding:13px}
+  .fni-cell-groups-stitch .fni-edit-cell-coordinate{padding:13px}
+  .fni-cell-groups-stitch .fni-edit-cell-actions{
+    position:sticky;
+    bottom:-16px;
+    z-index:2;
+    margin:4px -16px -16px;
+    padding:12px 16px max(12px,env(safe-area-inset-bottom));
+    background:#F7F9FC;
+    box-shadow:0 -8px 18px rgba(20,40,66,.06);
+  }
+  .fni-cell-groups-stitch .fni-edit-cell-actions button{flex:1}
+  .dark .fni-cell-groups-stitch .fni-edit-cell-actions{background:#161E2B}
+}
+@media(prefers-reduced-motion:reduce){
+  .fni-cell-groups-stitch .fni-edit-cell-actions button{transition:none}
+}
