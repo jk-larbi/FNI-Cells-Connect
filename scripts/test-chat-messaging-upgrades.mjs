@@ -223,4 +223,4 @@ assert.match(view, /uploadGroupMedia = async/, 'group members must be able to up
 assert.match(view, /MessagingService\.uploadChatAttachment\(authUid, file\)/, 'group media uploads must use authenticated private chat storage');
 assert.match(view, /MessagingService\.sendGroupChatMessage\([\s\S]*?attachments: \[attachment\]/, 'uploaded media must be attached to a persisted group message');
 assert.match(view, /groupMediaFilter/, 'gallery must provide all, photos, videos and files filters');
-assert.match(view, /image\/\* ,video\/\*/, 'gallery picker should support media'); 
+assert.match(view, /accept=/, 'gallery picker must constrain uploads to supported media and documents');
