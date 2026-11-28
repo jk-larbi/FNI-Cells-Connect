@@ -6781,3 +6781,163 @@ html.dark .fni-glass-sidebar .fni-sidebar-tooltip {
   border-color: #617B96 !important;
   color: #FFFFFF !important;
 }
+
+/* Stitch alignment: Evangelism & Follow-ups */
+.fni-evangelism-followups{
+  max-width:1280px;
+  margin-inline:auto;
+  color:#142842;
+  font-family:"Source Sans 3",sans-serif;
+}
+.fni-evangelism-followups h1,
+.fni-evangelism-followups h2,
+.fni-evangelism-followups button,
+.fni-evangelism-followups select{
+  font-family:"Libre Franklin",sans-serif;
+}
+.fni-evangelism-followups h1{letter-spacing:-.035em;line-height:1.2}
+.fni-evangelism-followups>div:first-child{
+  padding-bottom:16px;
+  border-bottom:1px solid #DCE3EC;
+}
+.fni-evangelism-followups>div:first-child h1{font-size:clamp(22px,2.2vw,29px);font-weight:700;color:#142842}
+.fni-evangelism-followups>div:first-child p{max-width:660px;font-size:13px;line-height:1.55;color:#5A6B7C}
+.fni-evangelism-followups>div:first-child>button{
+  min-height:44px;
+  border-radius:999px;
+  padding:10px 19px;
+  background:#142842;
+  box-shadow:none;
+  font-size:12px;
+  letter-spacing:.01em;
+}
+.fni-evangelism-followups>div:first-child>button:hover{background:#354863}
+.fni-evangelism-followups>div:nth-child(2)>div{
+  min-height:112px;
+  border-radius:12px;
+  border-color:#DCE3EC;
+  box-shadow:0 1px 2px rgba(20,40,66,.025);
+  padding:17px;
+}
+.fni-evangelism-followups>div:nth-child(2)>div>div:first-child span{
+  font-family:"Libre Franklin",sans-serif;
+  font-size:11px;
+  font-weight:600;
+}
+.fni-evangelism-followups>div:nth-child(2)>div>div:nth-child(2){
+  font-size:27px;
+  line-height:1.2;
+  font-weight:700;
+  letter-spacing:-.03em;
+}
+.fni-evangelism-followups>div:nth-child(3){
+  border:1px solid #DCE3EC;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:none;
+  padding:16px;
+}
+.fni-evangelism-followups input,
+.fni-evangelism-followups select{
+  min-height:42px;
+  border-radius:8px;
+  border-color:#C9D4E1;
+  color:#142842;
+  font-size:12px;
+}
+.fni-evangelism-followups input::placeholder{color:#718096;opacity:1}
+.fni-evangelism-followups button:focus-visible,
+.fni-evangelism-followups input:focus-visible,
+.fni-evangelism-followups select:focus-visible{
+  outline:2px solid #8E6C23;
+  outline-offset:2px;
+}
+.fni-evangelism-followups>div:nth-child(3) button{
+  min-height:36px;
+  border-radius:999px;
+  padding:8px 13px;
+  font-size:11px;
+}
+.fni-evangelism-followups>div:nth-child(4){
+  border:1px solid #DCE3EC;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:none;
+}
+.fni-evangelism-followups>div:nth-child(4)>div:first-child{
+  padding:15px 18px;
+  border-color:#DCE3EC;
+}
+.fni-evangelism-followups>div:nth-child(4) h2{
+  color:#142842;
+  font-size:13px;
+  font-weight:700;
+}
+.fni-evangelism-followups>div:nth-child(4) table thead tr{
+  background:#EEF2F7;
+  color:#5A6B7C;
+}
+.fni-evangelism-followups>div:nth-child(4) table th{
+  padding-top:12px;
+  padding-bottom:12px;
+  font-family:"Libre Franklin",sans-serif;
+  font-size:10px;
+  letter-spacing:.045em;
+}
+.fni-evangelism-followups>div:nth-child(4) table td{
+  padding-top:13px;
+  padding-bottom:13px;
+}
+.fni-evangelism-followups>div:nth-child(4) table tbody tr:hover{background:#F7F9FC}
+.fni-evangelism-followups button,
+.fni-evangelism-followups input,
+.fni-evangelism-followups select{transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease}
+html.dark .fni-evangelism-followups{color:#E8EDF5}
+html.dark .fni-evangelism-followups>div:first-child{border-color:#2E3B4E}
+html.dark .fni-evangelism-followups>div:first-child h1,
+html.dark .fni-evangelism-followups>div:nth-child(4) h2{color:#E8EDF5!important}
+html.dark .fni-evangelism-followups>div:first-child p{color:#A8B6C8!important}
+html.dark .fni-evangelism-followups>div:nth-child(2)>div,
+html.dark .fni-evangelism-followups>div:nth-child(3),
+html.dark .fni-evangelism-followups>div:nth-child(4){
+  background:#1C2636!important;
+  border-color:#2E3B4E!important;
+}
+html.dark .fni-evangelism-followups>div:nth-child(2)>div span,
+html.dark .fni-evangelism-followups>div:nth-child(2)>div div,
+html.dark .fni-evangelism-followups>div:nth-child(4) table td{color:#E8EDF5}
+html.dark .fni-evangelism-followups input,
+html.dark .fni-evangelism-followups select{
+  background:#101620!important;
+  border-color:#3A4A60!important;
+  color:#E8EDF5!important;
+}
+html.dark .fni-evangelism-followups input::placeholder{color:#A8B6C8}
+html.dark .fni-evangelism-followups>div:nth-child(4)>div:first-child{border-color:#2E3B4E}
+html.dark .fni-evangelism-followups>div:nth-child(4) table thead tr{background:#253145!important;color:#A8B6C8!important}
+html.dark .fni-evangelism-followups>div:nth-child(4) table tbody tr{background:#1C2636}
+html.dark .fni-evangelism-followups>div:nth-child(4) table tbody tr:hover{background:#253145}
+@media(max-width:767px){
+  .fni-evangelism-followups{gap:16px}
+  .fni-evangelism-followups>div:first-child{align-items:stretch;gap:13px}
+  .fni-evangelism-followups>div:first-child>div{min-width:0}
+  .fni-evangelism-followups>div:first-child>button{width:100%;justify-content:center}
+  .fni-evangelism-followups>div:nth-child(2){gap:10px}
+  .fni-evangelism-followups>div:nth-child(2)>div{min-height:104px;padding:13px;border-radius:12px}
+  .fni-evangelism-followups>div:nth-child(2)>div>div:nth-child(2){font-size:24px}
+  .fni-evangelism-followups>div:nth-child(3){padding:12px}
+  .fni-evangelism-followups>div:nth-child(3)>div:first-child{flex-direction:column;align-items:stretch}
+  .fni-evangelism-followups>div:nth-child(3) input,
+  .fni-evangelism-followups>div:nth-child(3) select{width:100%;min-height:44px}
+  .fni-evangelism-followups>div:nth-child(3)>div:nth-child(2){padding-bottom:3px}
+  .fni-evangelism-followups>div:nth-child(4){border-radius:12px}
+  .fni-evangelism-followups>div:nth-child(4)>div:first-child{padding:13px}
+  .fni-evangelism-followups>div:nth-child(4)>div:first-child>div{flex-wrap:wrap}
+  .fni-evangelism-followups>div:nth-child(4) article{padding:15px}
+  .fni-evangelism-followups>div:nth-child(4) article button{min-width:40px;min-height:40px}
+}
+@media(prefers-reduced-motion:reduce){
+  .fni-evangelism-followups button,
+  .fni-evangelism-followups input,
+  .fni-evangelism-followups select{transition:none}
+}
