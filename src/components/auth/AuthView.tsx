@@ -723,16 +723,16 @@ export const AuthView: React.FC<AuthViewProps> = ({
           {/* 4. ADMINISTRATOR LOGIN FORM (Strict Supabase Auth)           */}
           {/* ============================================================ */}
           {currentView === 'admin-login' && (
-            <div className="fni-admin-signin-form space-y-4">
+            <div className="fni-admin-signin-form space-y-4" aria-label="Admin Login">
               <div className="fni-admin-signin-brand flex items-center gap-3">
                 <span className="font-bold text-2xl tracking-tight text-[#142842]">FNI</span>
                 <span className="h-5 w-px bg-[#DCE3EC]" aria-hidden="true" />
                 <span className="text-xs font-semibold tracking-wider text-[#8E6C23] uppercase">Cells Connect</span>
               </div>
               <div className="border-b border-[#DCE3EC] pb-4 text-left">
-                <span className="fni-admin-signin-eyebrow">FNI ADMIN · SIGN IN</span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#142842]">Welcome back.</h2>
-                <p className="text-sm text-[#5A6B7C] mt-1">Sign in to your FNI administrator workspace.</p>
+                <span className="fni-admin-signin-eyebrow">FNI ADMINISTRATOR ACCESS</span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#142842]">Admin Login</h2>
+                <p className="text-sm text-[#5A6B7C] mt-1">Welcome back. Log in to your FNI administrator workspace.</p>
               </div>
               <div className="fni-admin-signin-mission rounded-xl border border-[#DCE3EC] bg-[#F7F9FC] p-4 flex flex-col gap-1 text-left">
                 <span className="font-semibold text-sm text-[#142842]">Forerunners Network International</span>
@@ -789,7 +789,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   className="w-full mt-4 py-3.5 px-4 bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#142B4A]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group active:scale-[0.99] border border-[#142B4A]"
                 >
                   <Shield className="w-4 h-4 text-[#C6A45A]" />
-                  <span>{isLoading ? 'Signing in...' : 'Sign in'}</span>
+                  <span>{isLoading ? 'Logging in...' : 'Login'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#C6A45A] group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </form>
