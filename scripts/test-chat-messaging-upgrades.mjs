@@ -133,3 +133,9 @@ assert.match(groupConversationComponent, /MessagingService\.sendGroupChatMessage
 assert.match(groupConversationComponent, /supabase\.removeChannel\(channel\)/, 'group conversation must clean up its Realtime channel');
 assert.match(groupConversationComponent, /onVoiceMeeting|onVideoMeeting/, 'group conversation header must expose meeting actions');
 console.log('Stitch group conversation UI, persistent history, composer and Realtime regression checks passed.');
+
+const folderModal = read('../src/components/communication/ChatFolderModal.tsx');
+assert.match(folderModal, /type: 'community' \| 'direct' \| 'saved' \| 'group'/, 'custom chat folders must support member-created groups');
+assert.match(view, /groupChats\]);/, 'group list memo must refresh when authenticated memberships load');
+assert.match(view, /c\.type === 'community' \|\| c\.type === 'group'/, 'group folder counts must include member-created groups');
+console.log('Group chats are supported by custom folder filters and unread grouping.');
