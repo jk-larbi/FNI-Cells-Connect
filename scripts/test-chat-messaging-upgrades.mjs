@@ -116,3 +116,10 @@ assert.match(messaging, /from\('group_chat_messages'\)[\s\S]*?\.eq\('group_id', 
 assert.match(messaging, /sender_uid: senderUid/, 'group messages must be attributed to the authenticated sender');
 assert.match(messaging, /subscribeToGroupChatMessages/, 'group messages must subscribe to Supabase Realtime updates');
 assert.match(messaging, /fni-group-chat-\$\{groupId\}/, 'each group conversation must use its own realtime channel');
+
+assert.match(messaging, /static async getMyGroupChats\(\): Promise<GroupChatSummary\[\]>/, 'group chat list must load for the authenticated member');
+assert.match(messaging, /from\('group_chat_members'\)[\s\S]*?\.eq\('user_id', userId\)/, 'group list must be scoped to the signed-in member');
+assert.match(messaging, /from\('group_chats'\)[\s\S]*?\.in\('id', groupIds\)/, 'group metadata must come from persisted group records');
+assert.match(messaging, /member_count: counts\.get\(group\.id\)/, 'group list must derive member counts from actual membership rows');
+assert.match(messaging, /last_message: latest\.get\(group\.id\)/, 'group list previews must use persisted latest messages');
+console.log('Authenticated group chat discovery and live metadata regression checks passed.');
