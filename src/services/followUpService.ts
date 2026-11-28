@@ -72,8 +72,8 @@ export class FollowUpService {
     const effectiveName = data.name || data.contactName || 'New Contact';
     const effectivePhone = data.phone || data.contactDetails || '';
     const effectiveWA = data.whatsappNumber || effectivePhone;
-    const effectiveLoc = data.location || data.evangelismLocation || 'Territory';
-    const effectiveNotes = data.notes || data.followUpNotes || 'Contact initially captured';
+    const effectiveLoc = data.location || data.evangelismLocation || '';
+    const effectiveNotes = data.notes || data.followUpNotes || '';
     const initialStatus = data.followUpStatus || 'Uncontacted';
 
     const newContact: EvangelismContact = {
@@ -86,8 +86,8 @@ export class FollowUpService {
       whatsappNumber: effectiveWA,
       location: effectiveLoc,
       evangelismLocation: effectiveLoc,
-      tutorName: data.tutorName || data.assignedToName || 'Tutor',
-      assignedToName: data.assignedToName || data.tutorName || 'Tutor',
+      tutorName: data.tutorName || data.assignedToName || '',
+      assignedToName: data.assignedToName || data.tutorName || '',
       notes: effectiveNotes,
       followUpNotes: effectiveNotes,
       leadSource: data.leadSource || 'Evangelism Outing',
