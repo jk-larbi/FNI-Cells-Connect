@@ -99,6 +99,7 @@ export type NotificationType =
   | 'group_chat_approved'
   | 'group_chat_declined'
   | 'group_chat_added'
+  | 'group_chat_ownership_transferred'
   // System & Security
   | 'password_changed'
   | 'new_device_login'
