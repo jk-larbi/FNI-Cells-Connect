@@ -125,10 +125,12 @@ export class FollowUpService {
     changedBy?: string
   ): Promise<EvangelismContact> {
     const nowIso = new Date().toISOString();
-    // Load the canonical record first; never overwrite a database row from a partial browser-cache object.
-    const all = await this.getContacts();
-    const index = all.findIndex(c => c.id === contactId);
-    const existing = index >= 0 ? all[index] : null;
+    // Read the record directly from Supabase; never base an update on a stale browser cache.
+    const remoteContacts = await SupabaseService.getEvangelismContacts();
+    if (remoteContacts === null) {
+      throw new Error('The contact could not be refreshed from the FNI database. Check your connection and try again.');
+    }
+    const existing = remoteContacts.find(contact => contact.id === contactId) || null;
     if (!existing) {
       throw new Error('This contact is no longer available. Refresh the list and try again.');
     }
@@ -160,8 +162,8 @@ export class FollowUpService {
       throw new Error('The contact update was not saved to the FNI database. Check your connection and permissions, then try again.');
     }
 
-    all[index] = merged;
-    saveStoredContacts(all);
+    const cachedContacts = getStoredContacts().filter(contact => contact.id !== contactId);
+    saveStoredContacts([merged, ...cachedContacts]);
     return merged;
   }
 
