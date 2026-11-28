@@ -146,8 +146,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
       setSettings(sysSettings);
       const memberCounts = await SupabaseService.getCellMemberCounts();
       setCells(cellList.map(cell => {
-        const counts = memberCounts?.[cell.id];
-        return counts ? {
+        const counts = memberCounts?.[cell.id] || { total: 0, active: 0, followUp: 0 };
+        return memberCounts !== null ? {
           ...cell,
           total_members: counts.total,
           active_members: counts.active,
