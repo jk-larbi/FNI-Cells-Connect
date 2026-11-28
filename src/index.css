@@ -7607,3 +7607,158 @@ html.dark .fni-cell-groups-stitch .fni-cell-followup-card .border-l-2 { border-l
     outline-color:#EEC068;
   }
 }
+
+
+/* ===============================================================
+   TUTOR PORTAL — SHARED STITCH DESIGN SYSTEM
+   Mirrors the Admin Portal's calm navy/ivory visual language while
+   keeping all tutor navigation and actions role-specific.
+   =============================================================== */
+.fni-tutor-stitch-shell {
+  background: #F7F9FC;
+  color: #142842;
+}
+.fni-tutor-stitch-shell .fni-app-main {
+  max-width: 1440px;
+}
+.fni-tutor-stitch-header {
+  min-height: 64px;
+  background: rgba(255,255,255,.96) !important;
+  border-bottom: 1px solid #DCE3EC;
+  box-shadow: 0 1px 3px rgba(20,40,66,.04);
+  backdrop-filter: blur(14px);
+}
+.fni-tutor-stitch-header button[aria-label="Open left navigation menu"] {
+  background: #142842 !important;
+  border: 1px solid #142842;
+  border-radius: 12px;
+  color: #FFFFFF !important;
+}
+.fni-tutor-stitch-header button[aria-label="Open left navigation menu"] svg {
+  color: #EEC068 !important;
+}
+.fni-tutor-stitch-sidebar {
+  background: #FFFFFF !important;
+  border-right: 1px solid #DCE3EC;
+  box-shadow: 8px 0 28px rgba(20,40,66,.06) !important;
+}
+.fni-tutor-stitch-sidebar .fni-sidebar-brand-header {
+  background: linear-gradient(135deg,#FFFFFF 0%,#F3F6FA 100%);
+  border-bottom-color: #DCE3EC !important;
+}
+.fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav {
+  background: rgba(255,255,255,.97) !important;
+  border-top-color: #DCE3EC !important;
+  box-shadow: 0 -5px 22px rgba(20,40,66,.07);
+  backdrop-filter: blur(16px);
+}
+.fni-tutor-stitch-shell .fni-tutor-dashboard {
+  color: #142842;
+}
+.fni-tutor-dashboard .fni-tutor-sanctuary-header {
+  background: #142842 !important;
+  border: 1px solid #243B58 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 22px rgba(20,40,66,.12) !important;
+}
+.fni-tutor-dashboard .fni-tutor-sanctuary-header > div[aria-hidden="true"] {
+  display: none;
+}
+.fni-tutor-dashboard .bg-white.rounded-3xl,
+.fni-tutor-dashboard .bg-white.rounded-2xl,
+.fni-tutor-dashboard .bg-white.rounded-xl {
+  border-color: #DCE3EC !important;
+  box-shadow: 0 1px 3px rgba(20,40,66,.045) !important;
+}
+.fni-tutor-dashboard .bg-\[\#F5F7FA\] {
+  background: #EEF2F7 !important;
+  border-color: #DCE3EC !important;
+}
+.fni-tutor-dashboard h2,
+.fni-tutor-dashboard h3,
+.fni-tutor-dashboard h4 {
+  letter-spacing: -.015em;
+}
+.fni-tutor-dashboard button {
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.fni-tutor-dashboard button:focus-visible,
+.fni-tutor-stitch-shell button:focus-visible,
+.fni-tutor-stitch-shell a:focus-visible {
+  outline: 2px solid #A88743;
+  outline-offset: 2px;
+}
+.fni-tutor-dashboard .rounded-3xl { border-radius: 20px !important; }
+.fni-tutor-dashboard .rounded-2xl { border-radius: 16px !important; }
+.fni-tutor-dashboard .rounded-xl { border-radius: 12px !important; }
+
+html.dark .fni-tutor-stitch-shell {
+  background: #101620;
+  color: #E8EDF5;
+}
+html.dark .fni-tutor-stitch-header {
+  background: rgba(16,22,32,.96) !important;
+  border-bottom-color: #2E3B4E;
+}
+html.dark .fni-tutor-stitch-header button[aria-label="Open left navigation menu"] {
+  background: #253145 !important;
+  border-color: #465A73;
+  color: #F7F9FC !important;
+}
+html.dark .fni-tutor-stitch-sidebar {
+  background: #111C2D !important;
+  border-right-color: #2E3B4E;
+  box-shadow: 8px 0 28px rgba(0,0,0,.22) !important;
+}
+html.dark .fni-tutor-stitch-sidebar .fni-sidebar-brand-header {
+  background: linear-gradient(135deg,#17263A 0%,#111C2D 100%);
+  border-bottom-color: #2E3B4E !important;
+}
+html.dark .fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav {
+  background: rgba(17,28,45,.97) !important;
+  border-top-color: #2E3B4E !important;
+}
+html.dark .fni-tutor-dashboard .bg-white.rounded-3xl,
+html.dark .fni-tutor-dashboard .bg-white.rounded-2xl,
+html.dark .fni-tutor-dashboard .bg-white.rounded-xl {
+  background: #1C2636 !important;
+  border-color: #354861 !important;
+  color: #E8EDF5 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.14) !important;
+}
+html.dark .fni-tutor-dashboard .bg-\[\#F5F7FA\] {
+  background: #253145 !important;
+  border-color: #465A73 !important;
+}
+html.dark .fni-tutor-dashboard .text-\[\#142B4A\],
+html.dark .fni-tutor-dashboard .text-\[\#182230\] {
+  color: #E8EDF5 !important;
+}
+html.dark .fni-tutor-dashboard .text-\[\#667085\] {
+  color: #A8B6C8 !important;
+}
+html.dark .fni-tutor-dashboard .border-\[\#E3E8EF\] {
+  border-color: #354861 !important;
+}
+html.dark .fni-tutor-dashboard .bg-white {
+  background-color: #1C2636 !important;
+}
+html.dark .fni-tutor-dashboard .fni-tutor-sanctuary-header {
+  background: #142842 !important;
+  border-color: #354863 !important;
+}
+@media (max-width: 767px) {
+  .fni-tutor-stitch-shell .fni-app-main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 18px !important;
+  }
+  .fni-tutor-dashboard { gap: 18px; }
+  .fni-tutor-dashboard .fni-tutor-sanctuary-header {
+    padding: 20px !important;
+    border-radius: 18px !important;
+  }
+  .fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav {
+    min-height: 64px;
+  }
+}
