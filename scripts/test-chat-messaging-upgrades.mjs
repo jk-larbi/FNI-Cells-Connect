@@ -23,6 +23,14 @@ assert.match(view, /onContextMenu=\{e => e\.stopPropagation\(\)\}/, 'attachment 
 assert.match(view, /window\.open\(fileUrl, '_blank'/, 'documents must open for viewing');
 assert.match(view, /Save \$\{att\.name \|\| 'document'\}/, 'documents must have a save action');
 assert.match(view, /Save audio/, 'music and audio attachments must have an explicit save action');
+assert.match(view, /Share a document/, 'the composer must offer a dedicated document picker');
+assert.match(view, /Share audio/, 'the composer must offer a dedicated audio picker');
+assert.match(view, /Attachment review strip/, 'staged files must be reviewable before sending');
+assert.match(view, /formatAttachmentSize\(file\.size\)/, 'staged attachment review must show file sizes');
+assert.match(view, /pauseVoiceRecording/, 'voice notes must support pausing');
+assert.match(view, /resumeVoiceRecording/, 'voice notes must support resuming');
+assert.match(view, /cancelVoiceRecording/, 'voice notes must support discarding a recording');
+assert.match(view, /voiceRecordingCancelledRef\.current/, 'discarding a voice note must prevent its upload');
 assert.match(view, /onClick=\{e => e\.stopPropagation\(\)\}/, 'native media controls must not trigger message context menus');
 assert.match(view, /accept="image\/\*,video\/\*,audio\/\*/, 'the attachment picker must accept audio and video');
 assert.match(view, /const message: PrivateMessage = \{/, 'private Realtime rows must be mapped directly without a second fetch');
