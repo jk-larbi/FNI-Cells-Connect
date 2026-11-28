@@ -6557,3 +6557,176 @@ html.dark .fni-report-approved-actions .fni-report-primary-action:hover {
     min-height: 46px;
   }
 }
+
+
+/* Return for Correction — Stitch desktop/mobile form refinement */
+.fni-rr-action-panel {
+  border-radius: 12px;
+  padding: clamp(14px, 2.5vw, 22px);
+}
+.fni-rr-return-form {
+  gap: 18px;
+}
+.fni-rr-return-heading {
+  align-items:flex-start;
+  padding-bottom:14px;
+  border-bottom:1px solid #DCE3EC;
+}
+.fni-rr-return-heading>div {
+  min-width:0;
+}
+.fni-rr-return-heading h3 {
+  font-size:clamp(17px, 2vw, 21px);
+  letter-spacing:-.02em;
+}
+.fni-rr-return-heading p:last-child {
+  font-size:12px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+.fni-rr-return-tag {
+  flex:0 0 auto;
+  padding:7px 11px;
+  font-size:10px;
+}
+.fni-rr-reason-list {
+  gap:0;
+  padding:14px 16px;
+}
+.fni-rr-reason-list legend {
+  padding:0 6px 4px;
+  font-size:13px;
+}
+.fni-rr-reason-list label {
+  align-items:center;
+  min-height:46px;
+  padding:9px 2px;
+  border-bottom:1px solid #EEF2F7;
+  font-size:12px;
+  line-height:1.45;
+}
+.fni-rr-reason-list label:last-child {
+  border-bottom:0;
+}
+.fni-rr-reason-list input {
+  width:18px;
+  height:18px;
+  margin:0;
+  accent-color:#142842;
+}
+.fni-rr-message-field {
+  gap:9px;
+}
+.fni-rr-message-field label {
+  font-size:12px;
+}
+.fni-rr-message-field textarea {
+  min-height:116px;
+  padding:13px 14px;
+  font-size:13px;
+  line-height:1.55;
+}
+.fni-rr-preset-notes {
+  gap:8px;
+}
+.fni-rr-preset-notes>span {
+  font-size:10px;
+}
+.fni-rr-preset-notes button {
+  min-height:36px;
+  padding:8px 10px;
+  font-size:10px;
+}
+.fni-rr-return-actions {
+  gap:10px;
+  padding-top:16px;
+}
+.fni-rr-return-actions button {
+  min-height:44px;
+  padding:10px 17px;
+  font-size:11px;
+}
+.fni-rr-return-actions .fni-rr-send-return {
+  box-shadow:0 2px 5px rgba(20,40,66,.12);
+}
+.fni-rr-return-actions button:focus-visible,
+.fni-rr-reason-list input:focus-visible,
+.fni-rr-message-field textarea:focus-visible,
+.fni-rr-preset-notes button:focus-visible {
+  outline:3px solid #B4C8E9;
+  outline-offset:2px;
+}
+html.dark .fni-report-review-stitch .fni-rr-return-heading {
+  border-color:#2E3B4E;
+}
+html.dark .fni-report-review-stitch .fni-rr-reason-list label {
+  border-color:#2E3B4E;
+}
+html.dark .fni-report-review-stitch .fni-rr-reason-list input {
+  accent-color:#B4C8E9;
+}
+html.dark .fni-report-review-stitch .fni-rr-message-field textarea,
+html.dark .fni-report-review-stitch .fni-rr-approve-confirm textarea {
+  background:#0C1119 !important;
+  border-color:#40516A !important;
+  color:#E8EDF5 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-message-field textarea::placeholder {
+  color:#91A0B4;
+  opacity:1;
+}
+html.dark .fni-report-review-stitch .fni-rr-preset-notes button:hover {
+  background:#354863 !important;
+  border-color:#B4C8E9 !important;
+  color:#FFFFFF !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-return-tag {
+  background:#5D4200;
+  color:#FFEFD7;
+}
+html.dark .fni-report-review-stitch .fni-rr-return-actions .fni-rr-send-return {
+  background:#B4C8E9 !important;
+  border-color:#B4C8E9 !important;
+  color:#142842 !important;
+}
+@media (max-width:760px) {
+  .fni-rr-action-panel {
+    margin-top:10px;
+    padding:13px;
+  }
+  .fni-rr-return-form {
+    gap:15px;
+  }
+  .fni-rr-return-heading {
+    flex-direction:column;
+    gap:9px;
+    padding-bottom:12px;
+  }
+  .fni-rr-return-tag {
+    align-self:flex-start;
+  }
+  .fni-rr-reason-list {
+    padding:12px;
+  }
+  .fni-rr-reason-list label {
+    min-height:50px;
+    font-size:12px;
+  }
+  .fni-rr-message-field textarea {
+    min-height:128px;
+    font-size:14px;
+  }
+  .fni-rr-preset-notes button {
+    min-height:42px;
+    flex:1 1 auto;
+  }
+  .fni-rr-return-actions {
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .fni-rr-return-actions button {
+    width:100%;
+    min-height:48px;
+  }
+}
