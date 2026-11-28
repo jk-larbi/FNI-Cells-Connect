@@ -372,13 +372,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
               <div className="border-b border-[#E3E8EF] pb-3 text-center sm:text-left">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#142B4A]/5 border border-[#C6A45A]/30 text-[10px] font-bold text-[#142B4A] uppercase tracking-wider mb-1.5">
                   <UserPlus className="w-3 h-3 text-[#C6A45A]" />
-                  <span>Leader Registration</span>
+                  <span>Tutor Registration</span>
                 </div>
                 <h2 className="text-lg font-bold text-[#142B4A]">
-                  Register as a Cell Leader
+                  Register as a Tutor
                 </h2>
                 <p className="text-xs text-[#667085] mt-0.5">
-                  Select your cell, enter your full name (which automatically becomes your username), and create your password.
+                  Choose your registered cell, enter your full name, and create a password. Your username is generated automatically.
                 </p>
               </div>
 
@@ -566,7 +566,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                         Log In as Tutor
                       </div>
                       <div className="text-xs text-[#667085]">
-                        Cell Leader / Field Fellowship Account
+                        Tutor account for your registered cell
                       </div>
                     </div>
                   </div>
@@ -601,7 +601,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
               {/* Link to sign up if new */}
               <div className="pt-3 border-t border-[#E3E8EF] text-center">
-                <span className="text-xs text-[#667085]">New cell leader? </span>
+                <span className="text-xs text-[#667085]">New tutor? </span>
                 <button
                   type="button"
                   onClick={() => {
