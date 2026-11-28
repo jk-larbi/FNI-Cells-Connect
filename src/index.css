@@ -7452,3 +7452,83 @@ html.dark .fni-cell-groups-stitch .fni-cell-report-reviewer-comment [class*="tex
 html.dark .fni-cell-groups-stitch .fni-cell-report-reviewer-comment [class*="text-[#5D4200]"] {
   color: #F1DDAE !important;
 }
+
+
+/* Report workflows: keep form fields, archives and report details legible in dark mode. */
+html.dark .fni-report-form,
+html.dark .fni-received-reports,
+html.dark .fni-my-reports { color:#E8EDF5; }
+html.dark .fni-report-form [class*="bg-white"],
+html.dark .fni-received-reports [class*="bg-white"],
+html.dark .fni-my-reports [class*="bg-white"] { background-color:#17263A !important; }
+html.dark .fni-report-form [class*="bg-slate-50"],
+html.dark .fni-report-form [class*="bg-slate-100"],
+html.dark .fni-received-reports [class*="bg-[#F5F7FA]"],
+html.dark .fni-received-reports [class*="bg-[#F8FAFC]"],
+html.dark .fni-my-reports [class*="bg-[#F5F7FA]"],
+html.dark .fni-my-reports [class*="bg-[#F8FAFC]"] { background-color:#1C2C41 !important; }
+html.dark .fni-report-form [class*="border-slate-100"],
+html.dark .fni-report-form [class*="border-slate-200"],
+html.dark .fni-report-form [class*="border-slate-300"],
+html.dark .fni-received-reports [class*="border-[#E3E8EF]"],
+html.dark .fni-received-reports [class*="border-[#DCE3EC]"],
+html.dark .fni-my-reports [class*="border-[#E3E8EF]"],
+html.dark .fni-my-reports [class*="border-[#DCE3EC]"] { border-color:#354861 !important; }
+html.dark .fni-report-form [class*="text-[#182230]"],
+html.dark .fni-report-form [class*="text-[#142B4A]"],
+html.dark .fni-report-form [class*="text-navy-950"],
+html.dark .fni-received-reports [class*="text-[#182230]"],
+html.dark .fni-received-reports [class*="text-[#142B4A]"],
+html.dark .fni-my-reports [class*="text-[#182230]"],
+html.dark .fni-my-reports [class*="text-[#142B4A]"] { color:#E8EDF5 !important; }
+html.dark .fni-report-form [class*="text-slate-700"],
+html.dark .fni-report-form [class*="text-slate-600"],
+html.dark .fni-report-form [class*="text-[#667085]"],
+html.dark .fni-report-form [class*="text-[#98A2B3]"],
+html.dark .fni-received-reports [class*="text-[#667085]"],
+html.dark .fni-received-reports [class*="text-[#98A2B3]"],
+html.dark .fni-my-reports [class*="text-[#667085]"],
+html.dark .fni-my-reports [class*="text-[#98A2B3]"] { color:#A8B6C8 !important; }
+html.dark .fni-report-form input:not([type="checkbox"]):not([type="radio"]),
+html.dark .fni-report-form select,
+html.dark .fni-report-form textarea,
+html.dark .fni-received-reports input,
+html.dark .fni-received-reports select,
+html.dark .fni-my-reports input,
+html.dark .fni-my-reports select {
+  color:#E8EDF5 !important;
+  background-color:#1C2C41 !important;
+  border-color:#465A73 !important;
+}
+html.dark .fni-report-form input::placeholder,
+html.dark .fni-report-form textarea::placeholder,
+html.dark .fni-received-reports input::placeholder,
+html.dark .fni-my-reports input::placeholder { color:#91A2B6 !important; }
+html.dark .fni-report-form button:focus-visible,
+html.dark .fni-report-form input:focus-visible,
+html.dark .fni-report-form select:focus-visible,
+html.dark .fni-report-form textarea:focus-visible,
+html.dark .fni-received-reports button:focus-visible,
+html.dark .fni-received-reports input:focus-visible,
+html.dark .fni-my-reports button:focus-visible,
+html.dark .fni-my-reports input:focus-visible { outline:2px solid #EEC068; outline-offset:2px; }
+
+
+/* Cell profile follow-up history: match report-card theme in both modes. */
+.fni-cell-groups-stitch .fni-cell-followup-card { background:#FFFFFF; border-color:#DCE3EC; }
+.fni-cell-groups-stitch .fni-cell-followup-toggle { background:#FFFFFF; color:#25384A; }
+.fni-cell-groups-stitch .fni-cell-followup-toggle:hover { background:#F2F6FB; }
+.fni-cell-groups-stitch .fni-cell-followup-details { background:#F7F9FC; border-color:#DCE3EC; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card { background:#17263A !important; border-color:#354861 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-toggle { background:#17263A !important; color:#E8EDF5 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-toggle:hover { background:#20344D !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-details { background:#1C2C41 !important; border-color:#354861 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#182230]"],
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#25384A]"] { color:#E8EDF5 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#5A6B7C]"] { color:#A8B6C8 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#142842]"] { color:#C9D8EA !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#1F6E43]"] { color:#75D6A5 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="bg-emerald-50"] { background:#173B32 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="bg-[#FDF8E8]"] { background:#3B3020 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#8E6C23]"] { color:#E9C77C !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card .border-l-2 { border-left-color:#9B8351 !important; }

@@ -64,7 +64,7 @@ export const ReceivedReportsView: React.FC = () => {
   const meetingCount = reports.filter(report => report.reportType === 'meeting').length;
 
   return (
-    <div className="space-y-6">
+    <div className="fni-received-reports space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C6A45A]">Report archive</p>

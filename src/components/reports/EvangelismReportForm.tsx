@@ -253,7 +253,7 @@ export const EvangelismReportForm: React.FC<EvangelismReportFormProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="fni-report-form fni-evangelism-report-form space-y-4">
       <div className="bg-white rounded-3xl border border-slate-100 shadow-card overflow-hidden">
         {/* Header Banner */}
       <div className="bg-navy-950 text-white p-6 sm:p-7 border-b border-navy-800">
