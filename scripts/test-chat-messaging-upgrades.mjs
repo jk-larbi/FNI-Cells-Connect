@@ -256,3 +256,8 @@ assert.match(groupMessagePinMigration, /for update/, 'pin changes must lock the 
 assert.match(groupMessagePinMigration, /PIN_GROUP_CHAT_MESSAGE/, 'pin actions must be audited');
 assert.match(groupMessagePinMigration, /revoke all on function public\.manage_fni_group_chat_pin[\s\S]*?from public, anon/, 'pin RPC must not be executable by public or anonymous users');
 console.log('Group pinned-message banner, role-gated controls, Realtime persistence and audit regression checks passed.');
+
+assert.match(messaging, /getPinnedGroupChatMessages\(groupId: string\)/, 'pinned messages must load independently of the latest message window');
+assert.match(messaging, /\.eq\('is_pinned', true\)[\s\S]*?\.is\('deleted_at', null\)/, 'the pinned-message query must exclude unpinned and deleted messages');
+assert.match(groupConversationComponent, /setPinnedMessages\(previous =>/, 'Realtime message changes must keep the pinned-message list synchronized');
+assert.match(groupConversationComponent, /MessagingService\.getPinnedGroupChatMessages\(group\.id\)/, 'older pinned messages must load even outside the latest 100 messages');
