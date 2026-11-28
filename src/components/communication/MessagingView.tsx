@@ -2830,9 +2830,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 )}
-                <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900 dark:text-white">
-                  <MessageSquare className="w-4 h-4 text-blue-600" />
-                  <span>FNI Communication</span>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="relative w-9 h-9 rounded-full bg-[#142B4A] text-[#D9BD7B] flex items-center justify-center font-black text-[11px] tracking-wide shrink-0">
+                    FNI
+                    <span className="absolute right-0 bottom-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0e1621]" aria-label="Online" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-sm leading-tight text-slate-900 dark:text-white">FNI Messages</span>
+                    <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[#785A1B] dark:text-[#D9BD7B]">Cells Connect</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2845,7 +2851,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search"
+                  placeholder="Search people, @usernames, messages..."
                   className="w-full pl-9 pr-7 py-1.5 rounded-full bg-slate-100 dark:bg-[#242f3d] text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2AABEE]"
                 />
                 {searchQuery && (
