@@ -3631,7 +3631,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             )}
 
             {/* Chat Header Bar (FNI Layout) */}
-            <div className="px-3 sm:px-4 py-2 bg-white dark:bg-[#17212b] border-b border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
+            <div className="px-3 sm:px-4 py-2 bg-[#EDF5FC] dark:bg-[#1C2636] border-b border-[#DCEAF6] dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
               <div className="flex items-center gap-2.5 min-w-0">
                 {/* Mobile Back Button returning to list */}
                 <button
@@ -3698,7 +3698,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       {selectedChatId === 'saved_messages'
                         ? 'Private notes · Only you'
                         : selectedChatId === 'community'
-                        ? `${allMembers.length} members · Official FNI community`
+                        ? `${allMembers.length} members · ${allMembers.filter(member => onlineMemberIds.has(member.id)).length} online`
                         : activeContact?.isOnline
                         ? 'Online now'
                         : formatMemberLastSeen(activeContact?.lastSeenAt)}
