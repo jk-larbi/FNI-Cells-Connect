@@ -255,6 +255,13 @@ function formatMemberLastSeen(value?: string): string {
   return `Last seen ${new Date(timestamp).toLocaleDateString([], { day: 'numeric', month: 'short' })}`;
 }
 
+function formatAttachmentSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 interface ChatContact {
   id: string; // 'community' | 'saved_messages' | profileId
   name: string;
@@ -4166,22 +4173,49 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               </div>
             )}
 
-            {/* Staged file chips */}
+            {/* Attachment review strip */}
             {stagedFiles.length > 0 && (
-              <div className="px-4 py-2 bg-slate-100 dark:bg-[#182533] border-t border-slate-200 dark:border-white/10 flex items-center gap-2 overflow-x-auto shrink-0 z-10 text-xs">
-                {stagedFiles.map((file, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 shrink-0">
-                    <Paperclip className="w-3.5 h-3.5" />
-                    <span className="truncate max-w-[120px]">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => setStagedFiles(stagedFiles.filter((_, i) => i !== idx))}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+              <div className="px-3 sm:px-4 py-2 bg-slate-50 dark:bg-[#182533] border-t border-slate-200 dark:border-white/10 shrink-0 z-10">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Ready to send · {stagedFiles.length} {stagedFiles.length === 1 ? 'file' : 'files'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setStagedFiles([])}
+                    className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 hover:underline"
+                  >
+                    Remove all
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
+                  {stagedFiles.map((file, idx) => {
+                    const isImage = file.type.startsWith('image/');
+                    const isAudio = file.type.startsWith('audio/');
+                    const isVideo = file.type.startsWith('video/');
+                    const AttachmentIcon = isImage ? ImageIcon : isAudio ? Music : isVideo ? Video : FileText;
+                    return (
+                      <div key={`${file.name}-${file.lastModified}-${idx}`} className="min-w-0 max-w-[220px] flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white dark:bg-[#202d3c] border border-slate-200 dark:border-white/10 shrink-0 shadow-sm">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 flex items-center justify-center shrink-0">
+                          <AttachmentIcon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate">{file.name}</p>
+                          <p className="text-[10px] text-slate-400">{formatAttachmentSize(file.size)} · {isImage ? 'Image' : isAudio ? 'Audio' : isVideo ? 'Video' : 'Document'}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setStagedFiles(previous => previous.filter((_, i) => i !== idx))}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 shrink-0"
+                          aria-label={`Remove ${file.name}`}
+                          title="Remove attachment"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
