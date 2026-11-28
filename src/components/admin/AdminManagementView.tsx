@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { GroupChatRequestsView } from './GroupChatRequestsView';
 import { Region, Cell, ReportingPeriod, Profile, UserRole, CellReport, AccountDeactivationRequest } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { AuthService } from '../../services/authService';
@@ -32,7 +33,7 @@ import {
 export const AdminManagementView: React.FC = () => {
   const { currentUser, deleteUserAccount } = useAuth();
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods' | 'deactivations'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'cells' | 'regions' | 'periods' | 'deactivations' | 'group-requests'>('users');
   const [deactivationRequests, setDeactivationRequests] = useState<AccountDeactivationRequest[]>([]);
   const [isLoadingDeactivations, setIsLoadingDeactivations] = useState(false);
   const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
@@ -329,7 +330,7 @@ export const AdminManagementView: React.FC = () => {
       )}
 
       {/* Keep all management areas accessible in a compact desktop grid and swipeable mobile tab strip. */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-2 text-xs font-bold overflow-x-auto md:overflow-visible -mx-1 px-1 snap-x snap-mandatory md:grid md:grid-cols-5 md:gap-2 md:mx-0 md:px-0">
+      <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-2 text-xs font-bold overflow-x-auto md:overflow-visible -mx-1 px-1 snap-x snap-mandatory md:grid md:grid-cols-6 md:gap-2 md:mx-0 md:px-0">
         <button
           onClick={() => setActiveTab('users')}
           className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap snap-start ${
@@ -371,6 +372,16 @@ export const AdminManagementView: React.FC = () => {
           Cycles ({periods.length})
         </button>
         <button
+          onClick={() => setActiveTab('group-requests')}
+          className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 snap-start ${
+            activeTab === 'group-requests'
+              ? 'bg-navy-900 text-white shadow-card'
+              : 'text-slate-500 hover:text-navy-900 hover:bg-white'
+          }`}
+        >
+          <span>Group Approvals</span>
+        </button>
+        <button
           onClick={() => setActiveTab('deactivations')}
           className={`min-h-10 px-3 sm:px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 snap-start ${
             activeTab === 'deactivations'
@@ -400,9 +411,11 @@ export const AdminManagementView: React.FC = () => {
               ? 'Territories'
               : activeTab === 'periods'
               ? 'Reporting Cycles'
-              : 'Account Deactivation Requests'}
+              : activeTab === 'deactivations' ? 'Account Deactivation Requests' : 'Group Creation Approvals'}
           </h2>
         </div>
+
+        {activeTab === 'group-requests' && <GroupChatRequestsView />}
 
         {/* Top Horizontal Stat Squircles + Action Card */}
         {activeTab === 'users' && (
