@@ -71,7 +71,8 @@ export function getNotificationPriority(item: NotificationItem | { type?: string
     type === 'revision_requested' ||
     type === 'assignment_feedback' ||
     type === 'assignment_graded' ||
-    type === 'quiz_results'
+    type === 'quiz_results' ||
+    type === 'group_chat_approval_requested'
   ) {
     return 'important';
   }
@@ -89,7 +90,7 @@ export function getNotificationCategory(item: NotificationItem | { type?: string
   if (type.startsWith('cell_')) return 'cells';
   if (type.startsWith('leadership_')) return 'leadership';
   if (type.startsWith('meeting_')) return 'meetings';
-  if (type === 'direct_message' || type === 'community_message' || type === 'message_reply' || type === 'message_mention' || type === 'broadcast' || type === 'announcement') return 'communication';
+  if (type === 'direct_message' || type === 'community_message' || type === 'message_reply' || type === 'message_mention' || type === 'broadcast' || type === 'announcement' || type.startsWith('group_chat_')) return 'communication';
   if (type === 'password_changed' || type === 'new_device_login' || type === 'security_alert' || type === 'system_maintenance' || type === 'system_alert') return 'system';
   return 'reports';
 }
