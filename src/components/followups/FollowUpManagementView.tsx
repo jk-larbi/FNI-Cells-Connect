@@ -183,20 +183,16 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
       c.followUpStatus === 'Requiring Follow-up' ||
       c.followUpStatus === 'Follow-up required' ||
       c.followUpStatus === 'Follow-up Pending' ||
-      c.followUpStatus === 'Contacted' ||
       c.followUpStatus === 'Interested'
     ).length;
 
     const activeDiscipleship = contacts.filter(c =>
-      c.followUpStatus === 'Active Discipleship' ||
-      c.followUpStatus === 'Completed / Joined' ||
-      c.followUpStatus === 'Joined a cell' ||
-      c.followUpStatus === 'Joined Ministry' ||
-      c.followUpStatus === 'Completed'
+      c.followUpStatus === 'Active Discipleship'
     ).length;
 
     const establishedInChurch = contacts.filter(c =>
       c.followUpStatus === 'Established in Church' ||
+      c.discipleshipProgress === 'Established in Church' ||
       Boolean(c.establishedDate)
     ).length;
 
@@ -223,7 +219,7 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
       phone: '',
       whatsappNumber: '',
       email: '',
-      location: currentUser.cell_name ? `${currentUser.cell_name} Territory` : '',
+      location: '',
       cellId: currentUser.cell_id || (cells[0]?.id || ''),
       cellName: currentUser.cell_name || (cells[0]?.name || ''),
       leadSource: 'Evangelism Outing',
@@ -484,7 +480,7 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
             {metrics.activeDiscipleship}
           </div>
           <div className="text-[10px] text-sky-700 dark:text-sky-300 mt-0.5 font-medium">
-            Completed / Joined
+            Active Discipleship
           </div>
         </div>
 
@@ -498,7 +494,7 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
             {metrics.establishedInChurch}
           </div>
           <div className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-0.5 font-medium">
-            Rooted & Baptized
+            Established in Church
           </div>
         </div>
 
