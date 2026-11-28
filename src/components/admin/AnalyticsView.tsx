@@ -7,6 +7,7 @@ import { SettingsService } from '../../services/settingsService';
 import { SoulTargetService } from '../../services/soulTargetService';
 import { CellLocationService } from '../../services/cellLocationService';
 import { AuthService } from '../../services/authService';
+import { SupabaseService } from '../../services/supabaseService';
 import { DeadlineService } from '../../services/deadlineService';
 import { DashboardStats, SystemSettings, Cell, CellPerformanceRecord, CellLocationRecord, CellMeetingReport, EvangelismReport } from '../../types';
 import {
@@ -143,7 +144,16 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
       ]);
       setStats(dashStats);
       setSettings(sysSettings);
-      setCells(cellList);
+      const memberCounts = await SupabaseService.getCellMemberCounts();
+      setCells(cellList.map(cell => {
+        const counts = memberCounts?.[cell.id];
+        return counts ? {
+          ...cell,
+          total_members: counts.total,
+          active_members: counts.active,
+          requiring_follow_up: counts.followUp,
+        } : cell;
+      }));
       setWeeklyTrends(trends);
       setCellStats(cStats);
       setLocationHistory(locHistory);
