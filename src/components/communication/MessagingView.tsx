@@ -2994,7 +2994,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   return (
     <div
       style={isMobileEnvironment() && viewportHeight ? { height: `${viewportHeight}px` } : undefined}
-      className="h-full w-full flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-none border-0"
+      className="fni-messages-stitch h-full w-full flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0c1421] rounded-none border-0"
     >
       <div className="flex-1 flex overflow-hidden h-full">
         {/* =====================================================================
@@ -3003,10 +3003,10 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         <div
           className={`${
             mobileScreen === 'chat' ? 'hidden md:flex' : 'flex'
-          } w-full md:w-[320px] lg:w-[360px] xl:w-[400px] flex-col border-r border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0e1621] shrink-0 overflow-hidden h-full`}
+          } w-full md:w-[320px] lg:w-[360px] xl:w-[400px] fni-messages-list-pane flex-col border-r border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0e1621] shrink-0 overflow-hidden h-full`}
         >
           {/* Top Header Bar */}
-          <div className="p-3.5 border-b border-slate-200/80 dark:border-white/10 space-y-2.5 shrink-0 bg-white dark:bg-[#0e1621]">
+          <div className="fni-messages-list-header p-3.5 border-b border-slate-200/80 dark:border-white/10 space-y-2.5 shrink-0 bg-white dark:bg-[#0e1621]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {onToggleSidebar && (
@@ -3052,7 +3052,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search people, @usernames, messages..."
-                  className="w-full pl-9 pr-7 py-1.5 rounded-full bg-slate-100 dark:bg-[#242f3d] text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2AABEE]"
+                  className="fni-messages-search-input w-full pl-9 pr-7 py-1.5 rounded-full bg-slate-100 dark:bg-[#242f3d] text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2AABEE]"
                 />
                 {searchQuery && (
                   <button
@@ -3075,12 +3075,12 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             </div>
 
             {/* Folder Filter Tabs (Personal Chat Folders) */}
-            <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pt-1 pb-0.5 text-xs select-none">
+            <div className="fni-messages-category-tabs flex items-center gap-1 overflow-x-auto custom-scrollbar pt-1 pb-0.5 text-xs select-none">
               {/* All Chats Tab (Always exists, not deletable) */}
               <button
                 type="button"
                 onClick={() => setActiveFolderId('all')}
-                className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
+                className={`fni-messages-folder-tab relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
                   activeFolderId === 'all'
                     ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
@@ -3104,7 +3104,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveFolderId('personal')}
-                className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
+                className={`fni-messages-folder-tab relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
                   activeFolderId === 'personal'
                     ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
@@ -3128,7 +3128,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveFolderId('groups')}
-                className={`relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
+                className={`fni-messages-folder-tab relative pb-1.5 font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 px-2.5 text-xs shrink-0 ${
                   activeFolderId === 'groups'
                     ? 'text-[#2AABEE] border-b-2 border-[#2AABEE]'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
@@ -3216,7 +3216,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           </div>
 
           {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#17212b]">
+          <div className="fni-messages-conversation-list flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#17212b]">
             {filteredContacts.map(c => {
               const isSelected = selectedChatId === c.id;
               const isPinned = c.isPinned;
@@ -3226,7 +3226,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               return (
                 <div
                   key={c.id}
-                  className={`group relative w-full flex items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
+                  className={`fni-message-row group relative w-full flex items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
                     isSelected
                       ? 'bg-[#2AABEE]/15 dark:bg-[#2b5278]/40 border-l-4 border-l-[#2AABEE]'
                       : 'hover:bg-slate-50 dark:hover:bg-white/5'
