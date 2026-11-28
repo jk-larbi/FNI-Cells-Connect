@@ -85,7 +85,7 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
   };
 
   return (
-    <section className="rounded-2xl border border-[#DCE4EF] bg-[#F7F9FC] p-4 space-y-3">
+    <section className="fni-cell-leadership-panel rounded-2xl border border-[#DCE4EF] bg-[#F7F9FC] p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div>
           <h4 className="text-sm font-bold text-[#142B4A] flex items-center gap-2"><UserRoundCheck className="w-4 h-4 text-[#C6A45A]" /> Cell Leadership</h4>
@@ -94,7 +94,7 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
         <span className="text-[10px] font-bold rounded-full bg-white border border-[#DCE4EF] px-2 py-1 text-[#667085]">{history.length} changes</span>
       </div>
 
-      <div className="rounded-xl bg-white border border-[#E3E8EF] p-3">
+      <div className="fni-leadership-card rounded-xl bg-white border border-[#E3E8EF] p-3">
         <div className="text-[10px] uppercase tracking-wide font-bold text-[#667085]">Current leader</div>
         <div className="text-sm font-semibold text-[#182230] mt-1">{cell.leader_name || 'No leader assigned'}</div>
       </div>
@@ -136,7 +136,7 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
           type="button"
           disabled={saving || loading}
           onClick={() => save(null)}
-          className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-40 inline-flex items-center gap-2"
+          className="fni-leadership-danger rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-40 inline-flex items-center gap-2"
         >
           <UserMinus className="w-3.5 h-3.5" /> Dismiss current leader
         </button>
@@ -156,7 +156,7 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
         ) : (
           <div className="space-y-2 max-h-52 overflow-y-auto">
             {history.map(item => (
-              <div key={item.id} className="rounded-xl bg-white border border-[#E3E8EF] p-3">
+              <div key={item.id} className="fni-leadership-card rounded-xl bg-white border border-[#E3E8EF] p-3">
                 <div className="flex flex-wrap justify-between gap-1 text-xs">
                   <span className="font-bold text-[#182230]">
                     {item.previous_leader_name || 'No previous leader'} → {item.new_leader_name || 'Unassigned'}
