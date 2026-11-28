@@ -398,7 +398,7 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
   }, [contacts, searchQuery, selectedStatus, selectedCellFilter, selectedTutorFilter]);
 
   return (
-    <div className="space-y-6">
+    <div className="fni-evangelism-followups space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
