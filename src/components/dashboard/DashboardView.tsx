@@ -231,7 +231,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const currentQuarterSouls = soulMetrics?.quarterlyProgress.find(item => item.quarter === currentQuarterLabel)?.souls ?? 0;
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] space-y-6 sm:space-y-8">
+    <div className="fni-ministry-overview mx-auto w-full max-w-[1440px] space-y-6 sm:space-y-8">
       {/* Figma-led ministry overview — all figures are supplied by the live services above. */}
       <header className="flex flex-col gap-3 border-b border-[#DCE3EC] pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
