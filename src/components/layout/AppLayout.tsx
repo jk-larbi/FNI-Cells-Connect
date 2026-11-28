@@ -371,7 +371,7 @@ export const AppLayout: React.FC = () => {
   const isLearningTab = effectiveTab.startsWith('learning-') || effectiveTab === 'learning-portal';
 
   return (
-    <div className={`fni-app-shell ${isAdmin ? 'fni-admin-stitch-shell' : ''} min-h-screen bg-white dark:bg-[#0a111c] flex flex-col text-[#182230] dark:text-slate-100 overflow-x-hidden w-full max-w-full ${effectiveTab === 'messages' ? 'fni-messaging-route' : ''}`}>
+    <div className={`fni-app-shell ${isAdmin ? 'fni-admin-stitch-shell' : 'fni-tutor-stitch-shell'} min-h-screen bg-white dark:bg-[#0a111c] flex flex-col text-[#182230] dark:text-slate-100 overflow-x-hidden w-full max-w-full ${effectiveTab === 'messages' ? 'fni-messaging-route' : ''}`}>
       <div className="fni-app-body flex flex-1 min-h-0 w-full min-w-0">
         {/* Navigation Sidebar */}
         <Sidebar
@@ -626,7 +626,7 @@ export const AppLayout: React.FC = () => {
       {/* Thumb-friendly mobile navigation with iOS safe-area support */}
       <nav
         aria-label="Mobile navigation"
-        className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-5'} border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
+        className={`mobile-bottom-nav ${!isAdmin ? 'fni-tutor-mobile-nav' : ''} fixed bottom-0 inset-x-0 z-30 md:hidden grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-5'} border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
           (isMobileChatOpen && effectiveTab === 'messages') || (activeSession && !isCallMinimized) ? 'hidden' : ''
         }`}
       >
