@@ -17,6 +17,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { Button } from '../common/Button';
+import './financeView.css';
 
 interface FinanceViewProps {
   onBack?: () => void;
@@ -113,23 +114,23 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
   const currentLabel = selectedCurrency === 'ALL' ? 'GHS' : selectedCurrency;
 
   return (
-    <div className="fni-finance-view space-y-6">
+    <div className="fni-finance-view fni-offering-ledger-stitch space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="fni-offering-header flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold bg-gold-50 text-gold-700 border border-gold-200 mb-1">
+          <div className="fni-offering-eyebrow inline-flex items-center gap-1 px-2.5 py-0.5 mb-1">
             FNI Financial Stewardship
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-navy-950 tracking-tight">
+          <h1 className="fni-offering-title text-xl sm:text-2xl font-black tracking-tight">
             Cell Offering & Financial Stewardship
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="fni-offering-subtitle text-xs mt-0.5">
             Real-time verified financial records from cell meeting returns with duplicate prevention.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="fni-offering-toolbar flex items-center gap-2">
+          <div className="fni-offering-currency flex items-center gap-1.5 p-1">
             <span className="text-[10px] font-bold text-[#667085] px-1 uppercase">Currency:</span>
             {(['ALL', 'GHS', 'GBP', 'USD'] as const).map(curr => (
               <button
@@ -159,8 +160,8 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
+      <section className="fni-offering-kpis grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Offering totals">
+        <div className="fni-offering-kpi p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">This Week Total</span>
             <div className="p-2 bg-navy-50 text-navy-900 rounded-xl">
@@ -175,7 +176,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </span>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
+        <div className="fni-offering-kpi p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">This Month</span>
             <div className="p-2 bg-sky-50 text-sky-700 rounded-xl">
@@ -190,7 +191,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </span>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
+        <div className="fni-offering-kpi p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">This Quarter</span>
             <div className="p-2 bg-purple-50 text-purple-700 rounded-xl">
@@ -205,7 +206,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </span>
         </div>
 
-        <div className="p-5 bg-gradient-to-br from-navy-950 to-navy-900 text-white rounded-2xl border border-navy-800 shadow-card">
+        <div className="fni-offering-kpi fni-offering-kpi-featured p-5 bg-gradient-to-br from-navy-950 to-navy-900 text-white rounded-2xl border border-navy-800 shadow-card">
           <div className="flex items-center justify-between text-slate-300 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-gold-400">Annual Total (YTD)</span>
             <div className="p-2 bg-gold-500/20 text-gold-400 rounded-xl border border-gold-500/30">
@@ -219,10 +220,10 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             {new Date().getFullYear()} Ministry Year-to-Date
           </span>
         </div>
-      </div>
+      </section>
 
       {/* Cell-Level Financial Breakdown */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-card p-6">
+      <section className="fni-offering-breakdown bg-white rounded-2xl border border-slate-200 shadow-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100">
           <div>
             <h2 className="text-base font-bold text-navy-950">Cell-Level Financial Breakdown</h2>
@@ -259,23 +260,23 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             </div>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Offering Ledger Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+      <section className="fni-offering-ledger bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-navy-950 text-sm">Individual Offering Ledger Records</h3>
+            <h3 className="font-bold text-navy-950 text-sm">Recent submissions</h3>
             <span className="text-xs text-slate-500">
-              Immutable entry log tied to weekly cell meeting returns ({records.length} records)
+              Immutable entry log tied to weekly cell meeting returns ({filteredRecords.length} records)
             </span>
           </div>
         </div>
 
         <div className="md:hidden divide-y divide-slate-100">
-          {records.length === 0 ? (
+          {filteredRecords.length === 0 ? (
             <p className="p-6 text-center text-sm text-slate-500">No individual offering entries recorded yet.</p>
-          ) : records.map(rec => (
+          ) : filteredRecords.map(rec => (
             <article key={rec.id} className="p-4 space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -307,14 +308,14 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {records.length === 0 ? (
+              {filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400">
                     No individual offering entries recorded yet.
                   </td>
                 </tr>
               ) : (
-                records.map(rec => (
+                filteredRecords.map(rec => (
                   <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3.5 px-5 font-semibold text-navy-950 whitespace-nowrap">
                       {rec.meetingDate}
@@ -340,7 +341,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
