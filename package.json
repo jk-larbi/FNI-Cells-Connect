@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node scripts/test-fni-system.mjs && node scripts/test-learning-quiz-security.mjs && node scripts/test-chat-messaging-upgrades.mjs",
+    "test": "node scripts/test-fni-system.mjs && node scripts/test-learning-quiz-security.mjs && node scripts/test-chat-messaging-upgrades.mjs && node scripts/test-auth-portal-views.mjs",
     "test:reminders": "node scripts/test-activity-reminders.mjs",
     "test:calling": "node scripts/test-calling-system.mjs",
     "test:notifications": "node scripts/test-notification-system.mjs",
