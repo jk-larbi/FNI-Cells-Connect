@@ -277,6 +277,118 @@ interface ChatContact {
   type: 'community' | 'saved' | 'direct' | 'group';
 }
 
+
+interface GroupChatConversationProps {
+  group: GroupChatSummary;
+  currentUserId: string;
+  onBack: () => void;
+  onVoiceMeeting: () => void;
+  onVideoMeeting: () => void;
+}
+
+const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
+  group, currentUserId, onBack, onVoiceMeeting, onVideoMeeting,
+}) => {
+  const [messages, setMessages] = useState<GroupChatMessage[]>([]);
+  const [draft, setDraft] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const streamRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const rows = await MessagingService.getGroupChatMessages(group.id);
+        if (!cancelled) setMessages(rows);
+      } catch (reason) {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : 'Unable to load group messages.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    const channel = MessagingService.subscribeToGroupChatMessages(group.id, (message, eventType) => {
+      if (cancelled) return;
+      setMessages(previous => {
+        if (eventType === 'DELETE') return previous.filter(item => item.id !== message.id);
+        const exists = previous.some(item => item.id === message.id);
+        if (exists) return previous.map(item => item.id === message.id ? message : item);
+        return [...previous, message].sort((a, b) => a.created_at.localeCompare(b.created_at));
+      });
+    });
+    return () => {
+      cancelled = true;
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
+  }, [group.id]);
+
+  useEffect(() => {
+    const node = streamRef.current;
+    if (node) node.scrollTop = node.scrollHeight;
+  }, [messages.length]);
+
+  const send = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const content = draft.trim();
+    if (!content || sending) return;
+    setSending(true);
+    setError(null);
+    setDraft('');
+    try {
+      const saved = await MessagingService.sendGroupChatMessage({ groupId: group.id, content });
+      setMessages(previous => previous.some(item => item.id === saved.id) ? previous : [...previous, saved]);
+    } catch (reason) {
+      setDraft(content);
+      setError(reason instanceof Error ? reason.message : 'Message could not be sent.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section className="flex-1 min-w-0 h-full flex flex-col bg-[#FAFAF8] dark:bg-[#101620] text-[#354454] dark:text-[#E8EDF5]">
+      <header className="shrink-0 px-3 py-3 flex items-center justify-between gap-2 bg-[#EDF5FC] dark:bg-[#1C2636] border-b border-[#DCEAF6] dark:border-[#2E3B4E]">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button type="button" onClick={onBack} aria-label="Back to messages" className="md:hidden w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 flex items-center justify-center"><ChevronLeft className="w-5 h-5" /></button>
+          <div className="w-10 h-10 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/50 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center font-bold shrink-0">{group.name.slice(0, 2).toUpperCase()}</div>
+          <div className="min-w-0">
+            <h2 className="font-semibold text-sm truncate">{group.name}</h2>
+            <p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate tabular-nums">{group.member_count} members · {group.member_role}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button type="button" onClick={onVoiceMeeting} aria-label="Start voice meeting" title="Voice meeting" className="w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 flex items-center justify-center"><Phone className="w-4 h-4" /></button>
+          <button type="button" onClick={onVideoMeeting} aria-label="Start video meeting" title="Video meeting" className="w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 flex items-center justify-center"><Video className="w-4 h-4" /></button>
+        </div>
+      </header>
+      {group.description && <div className="px-4 py-2 text-xs bg-[#F5EDD9] dark:bg-[#5D4200]/25 text-[#785A1B] dark:text-[#D9BD7B] border-b border-[#E8DAB8] dark:border-[#5D4200]/40">{group.description}</div>}
+      <div ref={streamRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-3">
+        {loading && <p className="text-center text-sm text-[#536273] dark:text-[#A8B6C8] py-8">Loading messages…</p>}
+        {!loading && messages.length === 0 && <div className="max-w-sm mx-auto mt-12 text-center rounded-2xl bg-[#EDF5FC] dark:bg-[#1C2636] p-5"><Users className="w-7 h-7 mx-auto mb-2 text-[#785A1B] dark:text-[#D9BD7B]" /><p className="font-semibold text-sm">Start the conversation</p><p className="text-xs mt-1 text-[#536273] dark:text-[#A8B6C8]">Messages sent here are saved to this group and delivered to its members.</p></div>}
+        {messages.map(message => {
+          const mine = message.sender_uid === currentUserId;
+          return <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+            <article className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm ${mine ? 'bg-[#DCEAF6] dark:bg-[#253145] rounded-br-md' : 'bg-white dark:bg-[#1C2636] border border-[#E9EDF1] dark:border-[#2E3B4E] rounded-bl-md'}`}>
+              {!mine && <p className="text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B] mb-1">{`Member · ${message.sender_uid.slice(0, 8)}`}</p>}
+              {message.deleted_at ? <p className="text-sm italic opacity-60">This message was deleted</p> : <p className="text-sm whitespace-pre-wrap break-words">{message.content || (message.message_type === 'image' ? 'Photo' : 'Attachment')}</p>}
+              <div className="flex justify-end gap-1.5 mt-1"><span className="text-[10px] opacity-60">{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>{message.edited_at && <span className="text-[10px] opacity-60">edited</span>}</div>
+            </article>
+          </div>;
+        })}
+      </div>
+      {error && <p role="alert" className="px-4 py-2 text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/30">{error}</p>}
+      <form onSubmit={send} className="shrink-0 p-3 bg-white dark:bg-[#161E2B] border-t border-[#E9EDF1] dark:border-[#2E3B4E] flex items-end gap-2">
+        <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={1} placeholder="Message this group…" className="flex-1 resize-none max-h-32 rounded-2xl px-4 py-3 text-sm bg-[#EDF5FC] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] focus:outline-none focus:ring-2 focus:ring-[#8BB5DC]" />
+        <button type="submit" disabled={!draft.trim() || sending} className="w-11 h-11 shrink-0 rounded-full bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#354454] disabled:opacity-40 flex items-center justify-center" aria-label="Send group message"><Send className="w-4 h-4" /></button>
+      </form>
+    </section>
+  );
+};
+
 export const MessagingView: React.FC<MessagingViewProps> = ({
   initialConversationId,
   initialTab,
