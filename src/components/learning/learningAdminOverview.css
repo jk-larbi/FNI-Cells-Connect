@@ -175,3 +175,166 @@
  .fni-la-custom-range{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
  .fni-la-custom-range input{width:100%;min-width:0}
 }
+
+
+/* Learning Hub — Stitch desktop/mobile finish.
+   Keep the existing Supabase-backed overview and actions; this layer only
+   refines presentation and makes the same content readable in both themes. */
+.fni-learning-stitch .fni-learning-topbar{
+  background:#FFFFFF;border-color:#DCE3EC;box-shadow:0 1px 2px rgba(20,40,66,.025)
+}
+.fni-learning-stitch .fni-learning-breadcrumb{color:#5A6B7C}
+.fni-learning-stitch .fni-learning-breadcrumb strong{color:#142842}
+.fni-learning-stitch .fni-learning-page-heading{border-color:#DCE3EC}
+.fni-learning-stitch .fni-learning-admin-overview{gap:20px}
+.fni-learning-stitch .fni-la-heading{align-items:flex-end;gap:18px;padding-bottom:17px}
+.fni-learning-stitch .fni-la-heading h1{font-size:clamp(25px,2.2vw,32px);line-height:1.2}
+.fni-learning-stitch .fni-la-heading-actions{gap:9px}
+.fni-learning-stitch .fni-la-primary-action{min-height:40px;padding:9px 15px;background:#315F87;box-shadow:0 1px 2px rgba(20,40,66,.1)}
+.fni-learning-stitch .fni-la-primary-action:hover{background:#244F75}
+.fni-learning-stitch .fni-la-kpi{min-height:116px;padding:15px 14px;border:1px solid #DCE3EC;border-radius:10px;background:#FFFFFF;box-shadow:0 1px 2px rgba(20,40,66,.035)}
+.fni-learning-stitch .fni-la-kpi.is-highlighted{border-color:#E9D9AC;background:#FDF8E8}
+.fni-learning-stitch .fni-la-kpi-label{font-size:10px;line-height:1.45}
+.fni-learning-stitch .fni-la-kpi>strong{font-size:27px;line-height:1.15}
+.fni-learning-stitch .fni-la-alerts,.fni-learning-stitch .fni-la-analytics,.fni-learning-stitch .fni-la-panel,.fni-learning-stitch .fni-la-events{
+  border:1px solid #DCE3EC;border-radius:10px;background:#FFFFFF;box-shadow:0 1px 2px rgba(20,40,66,.035)
+}
+.fni-learning-stitch .fni-la-section-heading h2{color:#142842;font-size:13px}
+.fni-learning-stitch .fni-la-section-heading p{color:#5A6B7C}
+.fni-learning-stitch .fni-la-heading-icon{background:#E4ECF7;color:#315F87}
+.fni-learning-stitch .fni-la-alert{border-radius:8px}
+.fni-learning-stitch .fni-la-table-wrap{border:1px solid #DCE3EC;border-radius:8px;background:#FFFFFF}
+.fni-learning-stitch .fni-la-table-wrap table{min-width:560px}
+.fni-learning-stitch .fni-la-table-wrap th{background:#F3F6FA;color:#536779}
+.fni-learning-stitch .fni-la-table-wrap td{color:#354863}
+.fni-learning-stitch .fni-la-table-wrap td strong{color:#142842}
+.fni-learning-stitch .fni-la-filters label,.fni-learning-stitch .fni-la-filters>select{min-height:38px;border-color:#DCE3EC;background:#FFFFFF;color:#40566B}
+.fni-learning-stitch .fni-la-filters input,.fni-learning-stitch .fni-la-filters select{color:#25384A}
+.fni-learning-stitch .fni-la-status{font-size:9px;line-height:1.35}
+.fni-learning-stitch .fni-la-empty{padding:27px 14px}
+.fni-learning-stitch .fni-la-empty strong{color:#354863}
+.fni-learning-stitch .fni-la-empty p{color:#68798B}
+.fni-learning-stitch .fni-la-policy-note{border-color:#DCE3EC;border-radius:9px;background:#F3F6FA}
+.fni-learning-stitch button:focus-visible,.fni-learning-stitch input:focus-visible,.fni-learning-stitch select:focus-visible{
+  outline:2px solid #8E6C23;outline-offset:2px
+}
+.fni-learning-stitch .fni-learning-sidebar{background:#142842;color:#FFFFFF}
+.fni-learning-stitch .fni-learning-sidebar-nav button{min-height:44px}
+.fni-learning-stitch .fni-learning-mobile-nav button{min-height:40px}
+@media(max-width:1023px){
+ .fni-learning-stitch .fni-learning-topbar{padding:9px 16px}
+ .fni-learning-stitch .fni-learning-main{gap:16px;padding:18px 16px 30px}
+ .fni-learning-stitch .fni-learning-page-heading{display:none}
+ .fni-learning-stitch .fni-learning-mobile-nav{position:sticky;top:56px;z-index:15;margin:0 -16px;padding:9px 16px 10px;background:#F7F9FC;border-bottom:1px solid #DCE3EC}
+ .fni-learning-stitch .fni-learning-admin-overview{gap:15px}
+ .fni-learning-stitch .fni-la-heading{gap:12px}
+ .fni-learning-stitch .fni-la-heading-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+ .fni-learning-stitch .fni-la-range-label{grid-column:1/-1}
+ .fni-learning-stitch .fni-la-heading-actions select{width:100%}
+ .fni-learning-stitch .fni-la-custom-range{grid-column:1/-1}
+ .fni-learning-stitch .fni-la-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .fni-learning-stitch .fni-la-kpi{min-height:100px;padding:12px}
+ .fni-learning-stitch .fni-la-kpi>strong{font-size:23px}
+ .fni-learning-stitch .fni-la-alerts,.fni-learning-stitch .fni-la-analytics,.fni-learning-stitch .fni-la-panel,.fni-learning-stitch .fni-la-events{padding:14px}
+ .fni-learning-stitch .fni-la-analytics-grid,.fni-learning-stitch .fni-la-management-grid,.fni-learning-stitch .fni-la-participants-grid,.fni-learning-stitch .fni-la-bottom-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+ .fni-learning-stitch .fni-la-filters{display:grid;grid-template-columns:1fr 1fr}
+ .fni-learning-stitch .fni-la-filters label:first-child{grid-column:1/-1}
+ .fni-learning-stitch .fni-la-filters input{width:100%;max-width:none}
+ .fni-learning-stitch .fni-la-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .fni-learning-stitch .fni-la-policy-note{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:640px){
+ .fni-learning-stitch .fni-learning-breadcrumb{font-size:11px}
+ .fni-learning-stitch .fni-learning-top-actions{gap:6px}
+ .fni-learning-stitch .fni-learning-create-action{min-height:36px;padding:7px 10px}
+ .fni-learning-stitch .fni-learning-main{padding-inline:12px}
+ .fni-learning-stitch .fni-learning-mobile-nav{top:54px;margin-inline:-12px;padding-inline:12px}
+ .fni-learning-stitch .fni-la-heading h1{font-size:23px}
+ .fni-learning-stitch .fni-la-heading>div:first-child>p:last-child{font-size:12px;line-height:1.5}
+ .fni-learning-stitch .fni-la-heading-actions{grid-template-columns:1fr 1fr}
+ .fni-learning-stitch .fni-la-heading-actions .fni-la-primary-action{min-height:42px;padding-inline:8px;font-size:10px}
+ .fni-learning-stitch .fni-la-kpi{min-height:96px;padding:11px}
+ .fni-learning-stitch .fni-la-kpi-label{font-size:9px}
+ .fni-learning-stitch .fni-la-kpi>strong{font-size:22px}
+ .fni-learning-stitch .fni-la-kpi>small{font-size:9px;line-height:1.35}
+ .fni-learning-stitch .fni-la-section-heading{align-items:flex-start}
+ .fni-learning-stitch .fni-la-section-heading h2{font-size:12px}
+ .fni-learning-stitch .fni-la-score-summary{grid-template-columns:1fr}
+ .fni-learning-stitch .fni-la-trend-summary{gap:5px}
+ .fni-learning-stitch .fni-la-trend-summary>div{padding:7px}
+ .fni-learning-stitch .fni-la-trend-bars{gap:5px}
+ .fni-learning-stitch .fni-la-custom-range{grid-template-columns:1fr 1fr}
+ .fni-learning-stitch .fni-la-policy-note{padding:13px}
+}
+@media(prefers-reduced-motion:reduce){
+ .fni-learning-stitch *, .fni-learning-stitch *::before, .fni-learning-stitch *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* Dark theme: explicitly pair every surface and text tone to avoid the
+   low-contrast labels that can result from the legacy light-only stylesheet. */
+html.dark .fni-learning-stitch{background:#101620;color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-learning-workspace{background:#101620}
+html.dark .fni-learning-stitch .fni-learning-topbar{background:#161E2B;border-color:#2E3B4E}
+html.dark .fni-learning-stitch .fni-learning-breadcrumb{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-learning-breadcrumb strong{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-learning-back,html.dark .fni-learning-stitch .fni-learning-icon-action,html.dark .fni-learning-stitch .fni-learning-top-avatar{border-color:#3A4A60;background:#1C2636;color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-learning-page-heading{border-color:#2E3B4E}
+html.dark .fni-learning-stitch .fni-learning-page-heading h1{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-learning-page-heading p:not(.fni-learning-eyebrow){color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav{background:#101620;border-color:#2E3B4E}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav button{border-color:#3A4A60;background:#1C2636;color:#C2CDDA}
+html.dark .fni-learning-stitch .fni-learning-mobile-nav button.is-active{border-color:#B4C8E9;background:#B4C8E9;color:#142842}
+html.dark .fni-learning-stitch .fni-la-heading{border-color:#2E3B4E}
+html.dark .fni-learning-stitch .fni-la-heading h1,html.dark .fni-learning-stitch .fni-la-section-heading h2{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-heading>div:first-child>p:last-child,html.dark .fni-learning-stitch .fni-la-section-heading p{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-la-eyebrow{color:#EEC068}
+html.dark .fni-learning-stitch .fni-la-kpi,html.dark .fni-learning-stitch .fni-la-alerts,html.dark .fni-learning-stitch .fni-la-analytics,html.dark .fni-learning-stitch .fni-la-panel,html.dark .fni-learning-stitch .fni-la-events{border-color:#2E3B4E;background:#161E2B;box-shadow:none}
+html.dark .fni-learning-stitch .fni-la-kpi-label{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-la-kpi>strong{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-kpi>small{color:#9EADBF}
+html.dark .fni-learning-stitch .fni-la-kpi.is-highlighted{border-color:#725A2B;background:#332A1A}
+html.dark .fni-learning-stitch .fni-la-kpi.is-highlighted .fni-la-kpi-label,html.dark .fni-learning-stitch .fni-la-kpi.is-highlighted>strong,html.dark .fni-learning-stitch .fni-la-kpi.is-highlighted>small{color:#FFE6B2}
+html.dark .fni-learning-stitch .fni-la-heading-icon{background:#253145;color:#B4C8E9}
+html.dark .fni-learning-stitch .fni-la-alert{border-color:#3A4A60;background:#1C2636}
+html.dark .fni-learning-stitch .fni-la-alert strong,html.dark .fni-learning-stitch .fni-la-alert p{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-table-wrap{border-color:#3A4A60;background:#101620}
+html.dark .fni-learning-stitch .fni-la-table-wrap th{border-color:#3A4A60;background:#253145;color:#D5DFEA}
+html.dark .fni-learning-stitch .fni-la-table-wrap td{border-color:#2E3B4E;color:#C2CDDA}
+html.dark .fni-learning-stitch .fni-la-table-wrap td strong{color:#F1F5FA}
+html.dark .fni-learning-stitch .fni-la-table-wrap td small{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-la-filters label,html.dark .fni-learning-stitch .fni-la-filters>select{border-color:#3A4A60;background:#1C2636;color:#C2CDDA}
+html.dark .fni-learning-stitch .fni-la-filters input,html.dark .fni-learning-stitch .fni-la-filters select{background:transparent;color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-filters input::placeholder{color:#91A1B5}
+html.dark .fni-learning-stitch .fni-la-empty{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-empty strong{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-empty p{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-la-empty-icon{background:#253145;color:#B4C8E9}
+html.dark .fni-learning-stitch .fni-la-cell-row strong,html.dark .fni-learning-stitch .fni-la-review-list strong,html.dark .fni-learning-stitch .fni-la-event-list strong{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-cell-row small,html.dark .fni-learning-stitch .fni-la-review-list small,html.dark .fni-learning-stitch .fni-la-event-list small{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-la-cell-row,html.dark .fni-learning-stitch .fni-la-review-list>div,html.dark .fni-learning-stitch .fni-la-event-list>div{border-color:#2E3B4E}
+html.dark .fni-learning-stitch .fni-la-cell-row>span{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-policy-note{border-color:#3A4A60;background:#1C2636}
+html.dark .fni-learning-stitch .fni-la-policy-note h2{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-policy-note p{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-la-range-label,html.dark .fni-learning-stitch .fni-la-field-label,html.dark .fni-learning-stitch .fni-la-custom-range label{color:#B9C6D5}
+html.dark .fni-learning-stitch .fni-la-heading-actions select,html.dark .fni-learning-stitch .fni-la-reports-panel select,html.dark .fni-learning-stitch .fni-la-custom-range input{border-color:#3A4A60;background:#1C2636;color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-filters input:focus,html.dark .fni-learning-stitch .fni-la-filters select:focus,html.dark .fni-learning-stitch .fni-la-heading-actions select:focus,html.dark .fni-learning-stitch .fni-la-custom-range input:focus{outline-color:#EEC068}
+html.dark .fni-learning-stitch .fni-la-band-label{background:#253145;color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-band-label small{color:#B9C6D5}
+html.dark .fni-learning-stitch .fni-la-band-label.band-excellent{background:#173D2B;color:#A7E0BD}
+html.dark .fni-learning-stitch .fni-la-band-label.band-good{background:#253B56;color:#C9DDF7}
+html.dark .fni-learning-stitch .fni-la-band-label.band-average{background:#303E54;color:#D5DFEA}
+html.dark .fni-learning-stitch .fni-la-band-label.band-below-average{background:#49391E;color:#F4D28B}
+html.dark .fni-learning-stitch .fni-la-band-label.band-failed{background:#4A272A;color:#FFC7C2}
+html.dark .fni-learning-stitch .fni-la-trend-card{border-color:#3A4A60;background:#1C2636}
+html.dark .fni-learning-stitch .fni-la-trend-summary>div{background:#253145}
+html.dark .fni-learning-stitch .fni-la-trend-summary span,html.dark .fni-learning-stitch .fni-la-trend-bars small{color:#A8B6C8}
+html.dark .fni-learning-stitch .fni-la-trend-summary strong{color:#E8EDF5}
+html.dark .fni-learning-stitch .fni-la-trend-bars>div>span{background:#EEC068}
+html.dark .fni-learning-stitch .fni-la-text-action,html.dark .fni-learning-stitch .fni-la-panel-footer{color:#EEC068}
+html.dark .fni-learning-stitch .fni-la-primary-action{background:#B4C8E9;color:#142842}
+html.dark .fni-learning-stitch .fni-la-primary-action:hover{background:#D4E3FF}
+html.dark .fni-learning-stitch .fni-la-cadence{background:#253145}
+html.dark .fni-learning-stitch .fni-la-cadence button{color:#C2CDDA}
+html.dark .fni-learning-stitch .fni-la-cadence button.is-active{background:#B4C8E9;color:#142842}
+html.dark .fni-learning-stitch button:focus-visible,html.dark .fni-learning-stitch input:focus-visible,html.dark .fni-learning-stitch select:focus-visible{outline-color:#EEC068}
