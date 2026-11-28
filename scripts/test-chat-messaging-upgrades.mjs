@@ -123,3 +123,13 @@ assert.match(messaging, /from\('group_chats'\)[\s\S]*?\.in\('id', groupIds\)/, '
 assert.match(messaging, /member_count: counts\.get\(group\.id\)/, 'group list must derive member counts from actual membership rows');
 assert.match(messaging, /last_message: latest\.get\(group\.id\)/, 'group list previews must use persisted latest messages');
 console.log('Authenticated group chat discovery and live metadata regression checks passed.');
+
+const groupConversationComponent = view.slice(view.indexOf('const GroupChatConversation: React.FC'), view.indexOf('export const MessagingView: React.FC'));
+assert.match(view, /Member-created group conversations/, 'member-created groups must appear in the FNI Messages list');
+assert.match(view, /selectedGroupChat \? \(/, 'opening a group must render its dedicated conversation screen');
+assert.match(groupConversationComponent, /MessagingService\.getGroupChatMessages\(group\.id\)/, 'group screen must load its persisted message history');
+assert.match(groupConversationComponent, /subscribeToGroupChatMessages\(group\.id/, 'group screen must receive live Realtime updates');
+assert.match(groupConversationComponent, /MessagingService\.sendGroupChatMessage\(\{ groupId: group\.id, content \}\)/, 'group composer must send through the authenticated persistent service');
+assert.match(groupConversationComponent, /supabase\.removeChannel\(channel\)/, 'group conversation must clean up its Realtime channel');
+assert.match(groupConversationComponent, /onVoiceMeeting|onVideoMeeting/, 'group conversation header must expose meeting actions');
+console.log('Stitch group conversation UI, persistent history, composer and Realtime regression checks passed.');
