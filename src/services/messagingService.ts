@@ -225,6 +225,20 @@ export class MessagingService {
     });
   }
 
+  static async getGroupChatSenderNames(userIds: string[]): Promise<Record<string, string>> {
+    if (!supabase || !isSupabaseConfigured || userIds.length === 0) return {};
+    const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+    if (uniqueIds.length === 0) return {};
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('supabase_user_id,full_name')
+      .in('supabase_user_id', uniqueIds);
+    if (error) throw error;
+    return Object.fromEntries((data || [])
+      .filter(profile => profile.supabase_user_id && profile.full_name?.trim())
+      .map(profile => [profile.supabase_user_id, profile.full_name.trim()]));
+  }
+
   static async getGroupChatMessages(groupId: string, limit = 100): Promise<GroupChatMessage[]> {
     if (!supabase || !isSupabaseConfigured || !groupId) throw new Error('A valid group and FNI connection are required.');
     const { data, error } = await supabase
