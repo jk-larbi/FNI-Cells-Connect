@@ -2928,7 +2928,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         <div
           className={`${
             mobileScreen === 'chat' ? 'hidden md:flex' : 'flex'
-          } w-full md:w-[320px] lg:w-[360px] xl:w-[400px] flex-col border-r border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0e1621] shrink-0 overflow-hidden h-full`}
+          } w-full md:w-[320px] lg:w-[360px] xl:w-[400px] fni-messages-list-pane flex-col border-r border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0e1621] shrink-0 overflow-hidden h-full`}
         >
           {/* Top Header Bar */}
           <div className="fni-messages-list-header p-3.5 border-b border-slate-200/80 dark:border-white/10 space-y-2.5 shrink-0 bg-white dark:bg-[#0e1621]">
