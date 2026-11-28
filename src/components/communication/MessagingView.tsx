@@ -87,6 +87,7 @@ import {
   List,
   ChevronLeft,
   User,
+  UserPlus,
   SquarePen,
   Menu,
   Delete as BackspaceIcon,
@@ -294,6 +295,10 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [groupMembers, setGroupMembers] = useState<Array<{ user_id: string; full_name: string; role: string; cell_name?: string; photo_url?: string; member_role: string; joined_at: string }>>([]);
   const [membersOpen, setMembersOpen] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
+  const [candidateProfiles, setCandidateProfiles] = useState<Array<{ id: string; full_name: string; role: string }>>([]);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [addMemberSearch, setAddMemberSearch] = useState('');
+  const [memberActionBusy, setMemberActionBusy] = useState(false);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -349,6 +354,50 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     return groupMembers.filter(member => [member.full_name, member.role, member.cell_name, member.member_role].filter(Boolean).join(' ').toLowerCase().includes(query));
   }, [groupMembers, memberSearch]);
 
+  const currentMemberRole = group.member_role || 'member';
+  const canManageGroupMembers = currentMemberRole === 'owner' || currentMemberRole === 'moderator';
+  const availableGroupCandidates = useMemo(() => {
+    const existingIds = new Set(groupMembers.map(member => member.user_id));
+    const query = addMemberSearch.trim().toLowerCase();
+    return candidateProfiles
+      .filter(profile => !existingIds.has(profile.id))
+      .filter(profile => !query || [profile.full_name, profile.role].filter(Boolean).join(' ').toLowerCase().includes(query))
+      .slice(0, 12);
+  }, [candidateProfiles, groupMembers, addMemberSearch]);
+
+  useEffect(() => {
+    if (!membersOpen || !canManageGroupMembers) return;
+    let cancelled = false;
+    void MessagingService.getGroupChatOversightProfiles()
+      .then(rows => { if (!cancelled) setCandidateProfiles(rows); })
+      .catch(reason => { if (!cancelled) setMembersError(reason instanceof Error ? reason.message : 'Unable to load FNI members.'); });
+    return () => { cancelled = true; };
+  }, [membersOpen, canManageGroupMembers]);
+
+  const manageGroupMember = async (
+    action: 'add_member' | 'remove_member' | 'set_role',
+    memberId: string,
+    memberRole?: 'member' | 'moderator'
+  ) => {
+    if (memberActionBusy) return;
+    setMemberActionBusy(true);
+    setMembersError(null);
+    try {
+      await MessagingService.manageGroupChatMember({ groupId: group.id, memberId, action, memberRole });
+      const rows = await MessagingService.getGroupChatMembers(group.id);
+      setGroupMembers(rows);
+      window.dispatchEvent(new CustomEvent('fni-group-chat-created'));
+      if (action === 'add_member') {
+        setAddMemberOpen(false);
+        setAddMemberSearch('');
+      }
+    } catch (reason) {
+      setMembersError(reason instanceof Error ? reason.message : 'The group member change could not be saved.');
+    } finally {
+      setMemberActionBusy(false);
+    }
+  };
+
   const senderIdsKey = useMemo(
     () => Array.from(new Set(messages.map(message => message.sender_uid).filter(uid => uid && uid !== currentUserId))).sort().join(','),
     [messages, currentUserId]
@@ -396,7 +445,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
           <div className="min-w-0">
             <button type="button" onClick={() => setMembersOpen(true)} className="min-w-0 text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B18A3C]" aria-label={`View members of ${group.name}`}>
               <h2 className="font-semibold text-sm truncate">{group.name}</h2>
-              <p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate tabular-nums">{group.member_count} members · View members</p>
+              <p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate tabular-nums">{groupMembers.length || group.member_count} members · View members</p>
             </button>
           </div>
         </div>
@@ -414,6 +463,21 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
               <button type="button" onClick={() => setMembersOpen(false)} aria-label="Close group members" className="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10"><X className="w-4 h-4 mx-auto" /></button>
             </header>
             <div className="px-3 pt-3"><input type="search" value={memberSearch} onChange={event => setMemberSearch(event.target.value)} placeholder="Search group members…" aria-label="Search group members" className="w-full rounded-xl px-3 py-2.5 text-sm bg-[#EDF5FC] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] outline-none focus:ring-2 focus:ring-[#8BB5DC]" /></div>
+            {canManageGroupMembers && <div className="px-3 pt-3">
+              <button type="button" onClick={() => setAddMemberOpen(value => !value)} className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#263445] disabled:opacity-50">
+                <UserPlus className="w-4 h-4" /> {addMemberOpen ? 'Close add member' : 'Add member'}
+              </button>
+              {addMemberOpen && <div className="mt-2 rounded-xl border border-[#DCEAF6] dark:border-[#2E3B4E] overflow-hidden">
+                <input type="search" value={addMemberSearch} onChange={event => setAddMemberSearch(event.target.value)} placeholder="Find an FNI member…" aria-label="Find an FNI member to add" className="w-full px-3 py-2.5 text-sm bg-[#EDF5FC] dark:bg-[#101620] outline-none" />
+                <div className="max-h-44 overflow-y-auto p-1">
+                  {availableGroupCandidates.map(profile => <div key={profile.id} className="flex items-center gap-2 px-2 py-2 rounded-lg">
+                    <div className="min-w-0 flex-1"><p className="text-sm font-medium truncate">{profile.full_name || 'FNI Member'}</p><p className="text-xs text-[#718096] dark:text-[#A8B6C8]">{profile.role || 'Member'}</p></div>
+                    <button type="button" disabled={memberActionBusy} onClick={() => void manageGroupMember('add_member', profile.id)} className="text-xs font-semibold rounded-lg px-3 py-2 bg-[#EDF5FC] dark:bg-[#253145] text-[#354454] dark:text-[#E8EDF5] disabled:opacity-40">Add</button>
+                  </div>)}
+                  {availableGroupCandidates.length === 0 && <p className="px-3 py-4 text-center text-xs text-[#718096] dark:text-[#A8B6C8]">No matching members to add.</p>}
+                </div>
+              </div>}
+            </div>}
             <div className="overflow-y-auto p-3 space-y-1">
               {membersLoading && <p className="py-8 text-center text-sm text-[#536273] dark:text-[#A8B6C8]">Loading members…</p>}
               {membersError && <p role="alert" className="p-3 text-sm text-red-600 dark:text-red-300">{membersError}</p>}
@@ -422,6 +486,10 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
                   {member.photo_url ? <img src={member.photo_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className="w-10 h-10 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/40 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center text-sm font-semibold shrink-0">{member.full_name.split(/\s+/).map(part => part[0]).slice(0,2).join('').toUpperCase()}</div>}
                   <div className="min-w-0 flex-1"><p className="text-sm font-semibold truncate">{member.full_name}</p><p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate">{[member.role, member.cell_name].filter(Boolean).join(' · ') || 'FNI Member'}</p><p className="text-[10px] text-[#7A8795] dark:text-[#91A0B2]">Joined {new Date(member.joined_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</p></div>
                   <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/30 text-[#785A1B] dark:text-[#D9BD7B] capitalize">{member.member_role}</span>
+                  {canManageGroupMembers && member.member_role !== 'owner' && member.user_id !== currentUserId && <div className="flex items-center gap-1">
+                    {currentMemberRole === 'owner' && <button type="button" disabled={memberActionBusy} onClick={() => void manageGroupMember('set_role', member.user_id, member.member_role === 'moderator' ? 'member' : 'moderator')} title={member.member_role === 'moderator' ? 'Remove moderator role' : 'Make moderator'} className="text-[10px] font-semibold rounded-lg px-2 py-1.5 bg-[#EDF5FC] dark:bg-[#253145] text-[#354454] dark:text-[#E8EDF5] disabled:opacity-40">{member.member_role === 'moderator' ? 'Make member' : 'Make moderator'}</button>}
+                    {(currentMemberRole === 'owner' || member.member_role === 'member') && <button type="button" disabled={memberActionBusy} onClick={() => { if (window.confirm(`Remove ${member.full_name} from this group?`)) void manageGroupMember('remove_member', member.user_id); }} title="Remove member" className="text-[10px] font-semibold rounded-lg px-2 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 disabled:opacity-40">Remove</button>}
+                  </div>}
                 </div>
               ))}
               {!membersLoading && !membersError && filteredGroupMembers.length === 0 && <p className="py-8 text-center text-sm text-[#536273] dark:text-[#A8B6C8]">No member details are available.</p>}
