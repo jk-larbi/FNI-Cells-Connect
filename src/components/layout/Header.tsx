@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
           aria-label="Open left navigation menu"
           title="Open left navigation menu"
         >
-          {isAdmin ? <span className="material-symbols-outlined text-[20px]">menu</span> : <Menu className="w-4 h-4 text-[#C6A45A]" />}
+          <span className="material-symbols-outlined text-[20px]">menu</span>
           <span className="hidden sm:inline text-xs font-bold tracking-wide">Menu</span>
         </button>
 
@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="Go back to previous screen"
             aria-label="Go back to previous screen"
           >
-            {isAdmin ? <span className="material-symbols-outlined text-[18px]">arrow_back</span> : <ArrowLeft className="w-4 h-4 text-[#C6A45A] group-hover:-translate-x-1 transition-transform shrink-0" />}
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             <span className="font-semibold hidden xs:inline">Back</span>
           </button>
         )}
@@ -64,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <ThemeToggle placement="inline" />
           <div className="hidden xs:flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#142B4A] dark:text-slate-200 font-bold text-xs border border-[#E3E8EF] dark:border-[#26384d] shrink-0 whitespace-nowrap">
-            {isAdmin ? <span className="material-symbols-outlined text-[16px]">calendar_month</span> : <Calendar className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />}
+            <span className="material-symbols-outlined text-[16px]">calendar_month</span>
             <span>
               <span className="hidden md:inline">Cycle: </span>
               <strong>{deadlineInfo.periodName}</strong>
@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#667085] dark:text-slate-400 font-medium text-xs border border-[#E3E8EF] dark:border-[#26384d] shrink-0 whitespace-nowrap">
-            {isAdmin ? <span className="material-symbols-outlined text-[16px]">schedule</span> : <Clock className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />}
+            <span className="material-symbols-outlined text-[16px]">schedule</span>
             <span>Deadline: <strong className="text-[#142B4A] dark:text-white">{deadlineInfo.deadlineFormatted}</strong></span>
           </div>
         </div>
@@ -87,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#142B4A] hover:bg-[#203D63] text-white font-bold text-xs shadow-2xs transition-all shrink-0 whitespace-nowrap"
             title="Submit Weekly Fellowship Return"
           >
-            {isAdmin ? <span className="material-symbols-outlined text-[16px]">add_circle</span> : <PlusCircle className="w-3.5 h-3.5 text-[#C6A45A] shrink-0" />}
+            <span className="material-symbols-outlined text-[16px]">add_circle</span>
             <span>Submit Return</span>
           </button>
         )}
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="relative inline-flex min-h-11 min-w-11 items-center justify-center p-2 sm:p-2.5 rounded-full bg-[#F5F7FA] dark:bg-[#152238] text-[#00A3E0] dark:text-[#38BDF8] hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors border border-[#E3E8EF] dark:border-[#26384d]"
           title="Notifications & Dispatches"
         >
-          {isAdmin ? <span className="material-symbols-outlined text-[20px]">notifications</span> : <Bell className="w-4 h-4 text-[#00A3E0] dark:text-[#38BDF8]" />}
+          <span className="material-symbols-outlined text-[20px]">notifications</span>
           {unreadCount > 0 && (
             <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C74646] text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -146,7 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Sign out of your account"
           aria-label="Sign out"
         >
-          {isAdmin ? <span className="material-symbols-outlined text-[16px]">logout</span> : <LogOut className="w-3.5 h-3.5 text-[#C74646]" />}
+          <span className="material-symbols-outlined text-[16px]">logout</span>
           <span className="hidden sm:inline font-bold">Logout</span>
         </button>
       </div>

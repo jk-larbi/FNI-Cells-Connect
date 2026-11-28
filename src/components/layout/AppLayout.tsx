@@ -626,7 +626,7 @@ export const AppLayout: React.FC = () => {
       {/* Thumb-friendly mobile navigation with iOS safe-area support */}
       <nav
         aria-label="Mobile navigation"
-        className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-30 md:hidden grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-5'} border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
+        className={`mobile-bottom-nav ${!isAdmin ? 'fni-tutor-mobile-nav' : ''} fixed bottom-0 inset-x-0 z-30 md:hidden grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-5'} border-t border-[#E3E8EF] dark:border-[#1e2d42] bg-white/95 dark:bg-[#0d1624]/95 backdrop-blur-lg shadow-[0_-8px_24px_rgba(20,43,74,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] ${
           (isMobileChatOpen && effectiveTab === 'messages') || (activeSession && !isCallMinimized) ? 'hidden' : ''
         }`}
       >

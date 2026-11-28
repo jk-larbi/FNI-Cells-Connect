@@ -10,28 +10,10 @@ import {
   LogOut,
 } from 'lucide-react';
 import {
-  TelegramDashboardIcon,
-  TelegramMoreIcon,
   TelegramCellsIcon,
   TelegramReportsIcon,
   TelegramLearningIcon,
-  TelegramEvangelismIcon,
-  TelegramFollowUpsIcon,
-  TelegramFinanceIcon,
-  TelegramMessagesIcon,
-  TelegramCallsIcon,
-  TelegramAnalyticsIcon,
-  TelegramNotificationsIcon,
-  TelegramProfileIcon,
-  TelegramHistoryIcon,
-  TelegramLocationIcon,
   TelegramDeadlinesIcon,
-  TelegramAssignmentsIcon,
-  TelegramQuizzesIcon,
-  TelegramEventsIcon,
-  TelegramMaterialsIcon,
-  TelegramUsersIcon,
-  TelegramLogoutIcon,
 } from '../common/TelegramSettingsIcons';
 
 const AdminMaterialIcon: React.FC<{ name: string; className?: string }> = ({ name, className = '' }) => (
@@ -108,19 +90,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Tutor Navigation
   const tutorNavItems: { id: AppNavTab; label: string; icon: any; isExpandable?: boolean; badge?: number; colorKey: IconColorKey }[] = [
-    { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: TelegramDashboardIcon, colorKey: 'gold' },
-    { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: TelegramCellsIcon, colorKey: 'teal' },
-    { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: TelegramReportsIcon, colorKey: 'emerald' },
-    { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: TelegramEvangelismIcon, colorKey: 'flame' },
-    { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: TelegramReportsIcon, colorKey: 'emerald' },
-    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: TelegramLearningIcon, isExpandable: true, colorKey: 'purple' },
-    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: TelegramUsersIcon, colorKey: 'teal' },
-    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: TelegramFollowUpsIcon, colorKey: 'teal' },
-    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: TelegramMessagesIcon, colorKey: 'azure' },
-    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: TelegramCallsIcon, colorKey: 'purple' },
-    { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: TelegramHistoryIcon, colorKey: 'blue' },
-    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: TelegramNotificationsIcon, badge: unreadCount, colorKey: 'sky' },
-    { id: 'my-account' as AppNavTab, label: 'My Account', icon: TelegramProfileIcon, colorKey: 'teal' },
+    { id: 'my-dashboard' as AppNavTab, label: 'My Dashboard', icon: (props: any) => <AdminMaterialIcon name="grid_view" {...props} />, colorKey: 'gold' },
+    { id: 'my-cell' as AppNavTab, label: 'My Cell', icon: (props: any) => <AdminMaterialIcon name="groups" {...props} />, colorKey: 'teal' },
+    { id: 'submit-cell-meeting-report' as AppNavTab, label: 'Submit Meeting Report', icon: (props: any) => <AdminMaterialIcon name="assignment_add" {...props} />, colorKey: 'emerald' },
+    { id: 'submit-evangelism-report' as AppNavTab, label: 'Submit Evangelism Report', icon: (props: any) => <AdminMaterialIcon name="volunteer_activism" {...props} />, colorKey: 'flame' },
+    { id: 'my-reports' as AppNavTab, label: 'My Reports', icon: (props: any) => <AdminMaterialIcon name="description" {...props} />, colorKey: 'emerald' },
+    { id: 'learning-portal' as AppNavTab, label: 'Learning Portal', icon: (props: any) => <AdminMaterialIcon name="school" {...props} />, isExpandable: true, colorKey: 'purple' },
+    { id: 'evangelism-contacts' as AppNavTab, label: 'Evangelism Contacts', icon: (props: any) => <AdminMaterialIcon name="contact_phone" {...props} />, colorKey: 'teal' },
+    { id: 'follow-ups' as AppNavTab, label: 'Follow-ups', icon: (props: any) => <AdminMaterialIcon name="support_agent" {...props} />, colorKey: 'teal' },
+    { id: 'messages' as AppNavTab, label: 'Communications Hub', icon: (props: any) => <AdminMaterialIcon name="forum" {...props} />, colorKey: 'azure' },
+    { id: 'call-history' as AppNavTab, label: 'Calls & Meetings', icon: (props: any) => <AdminMaterialIcon name="videocam" {...props} />, colorKey: 'purple' },
+    { id: 'cell-activity-history' as AppNavTab, label: 'Cell Activity History', icon: (props: any) => <AdminMaterialIcon name="history" {...props} />, colorKey: 'blue' },
+    { id: 'notifications' as AppNavTab, label: 'Notifications', icon: (props: any) => <AdminMaterialIcon name="notifications" {...props} />, badge: unreadCount, colorKey: 'sky' },
+    { id: 'my-account' as AppNavTab, label: 'My Account', icon: (props: any) => <AdminMaterialIcon name="account_circle" {...props} />, colorKey: 'teal' },
   ];
 
   // Submodules

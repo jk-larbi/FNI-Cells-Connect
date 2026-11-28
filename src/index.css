@@ -8296,3 +8296,130 @@ html.dark .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-missi
   background:#202D3F!important;
   border-color:#3A4A60!important;
 }
+
+
+/* TUTOR / ADMIN VISUAL PARITY — shared type, iconography and workspace chrome. */
+.fni-tutor-stitch-shell{
+  --fni-stitch-primary:#142842;
+  --fni-stitch-bronze:#8E6C23;
+  --fni-stitch-canvas:#F7F9FC;
+  --fni-stitch-surface:#FFFFFF;
+  --fni-stitch-container:#EEF2F7;
+  --fni-stitch-border:#DCE3EC;
+  --fni-stitch-muted:#5A6B7C;
+  min-height:100vh;
+  background:var(--fni-stitch-canvas)!important;
+  color:var(--fni-stitch-primary);
+  font-family:'Source Sans 3',system-ui,sans-serif;
+}
+.fni-tutor-stitch-shell .fni-app-main{background:var(--fni-stitch-canvas);max-width:1440px}
+.fni-tutor-stitch-shell .fni-app-main>*{font-family:'Source Sans 3',system-ui,sans-serif}
+.fni-tutor-stitch-shell .fni-app-main h1,
+.fni-tutor-stitch-shell .fni-app-main h2,
+.fni-tutor-stitch-shell .fni-app-main h3,
+.fni-tutor-stitch-shell .fni-app-main h4,
+.fni-tutor-stitch-shell .fni-app-main h5,
+.fni-tutor-stitch-shell .fni-app-main h6{
+  font-family:'Libre Franklin',system-ui,sans-serif;
+  letter-spacing:-.025em;
+}
+.fni-tutor-stitch-shell .material-symbols-outlined{
+  font-family:'Material Symbols Outlined';
+  font-weight:400;font-style:normal;line-height:1;letter-spacing:normal;
+  text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;
+  font-feature-settings:'liga';-webkit-font-smoothing:antialiased;
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+}
+.fni-tutor-stitch-header{
+  min-height:64px;
+  background:#EEF2F7!important;
+  color:#142842!important;
+  border-bottom:1px solid #DCE3EC!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+.fni-tutor-stitch-header button{border-color:#DCE3EC!important;box-shadow:none!important}
+.fni-tutor-stitch-header button[aria-label="Open left navigation menu"]{
+  background:#142842!important;color:#FFFFFF!important;border:1px solid #142842!important;border-radius:10px!important
+}
+.fni-tutor-stitch-header button[aria-label="Open left navigation menu"] .material-symbols-outlined{color:#EEC068!important}
+.fni-tutor-stitch-header button[title="Notifications & Dispatches"]{
+  background:#FFFFFF!important;color:#142842!important
+}
+.fni-tutor-stitch-sidebar{
+  background:#142842!important;color:#FFFFFF!important;
+  border-right:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:none!important;backdrop-filter:none!important
+}
+.fni-tutor-stitch-sidebar .fni-sidebar-brand-header{
+  background:#142842!important;border-bottom-color:rgba(255,255,255,.14)!important
+}
+.fni-tutor-stitch-sidebar .material-symbols-outlined{
+  font-size:21px;color:#D8E2EF
+}
+.fni-tutor-stitch-sidebar button[aria-current="page"] .material-symbols-outlined,
+.fni-tutor-stitch-sidebar button[class*="bg-[#142B4A]"] .material-symbols-outlined{color:#EEC068!important}
+.fni-tutor-stitch-sidebar [class*="text-slate-600"],
+.fni-tutor-stitch-sidebar [class*="text-slate-500"],
+.fni-tutor-stitch-sidebar [class*="text-slate-400"]{color:#DCE3EC!important}
+.fni-tutor-stitch-sidebar [class*="border-slate-200"]{border-color:rgba(255,255,255,.14)!important}
+.fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav{
+  background:#FFFFFF!important;border-top:1px solid #DCE3EC!important;
+  box-shadow:0 -2px 10px rgba(20,40,66,.05)!important;backdrop-filter:none!important
+}
+.fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav button{
+  color:#5A6B7C!important;font-family:'Libre Franklin',system-ui,sans-serif
+}
+.fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav button[aria-current="page"]{color:#142842!important}
+.fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav button[aria-current="page"]>span:first-child{
+  background:#E4ECF7!important;color:#142842!important
+}
+/* Bring legacy tutor screens into the same clean admin card and control language. */
+.fni-tutor-stitch-shell .fni-app-main [class*="bg-white"][class*="rounded-"][class*="border"],
+.fni-tutor-stitch-shell .fni-app-main [class*="bg-white"][class*="rounded-"][class*="shadow"]{
+  border-color:#DCE3EC;
+  box-shadow:0 1px 3px rgba(20,40,66,.045);
+}
+.fni-tutor-stitch-shell .fni-app-main button,
+.fni-tutor-stitch-shell .fni-app-main input,
+.fni-tutor-stitch-shell .fni-app-main select,
+.fni-tutor-stitch-shell .fni-app-main textarea{font-family:'Source Sans 3',system-ui,sans-serif}
+.fni-tutor-stitch-shell .fni-app-main button:focus-visible,
+.fni-tutor-stitch-shell header button:focus-visible,
+.fni-tutor-stitch-shell aside button:focus-visible{
+  outline:2px solid #8E6C23;outline-offset:2px
+}
+.fni-tutor-stitch-shell .fni-app-main svg{flex-shrink:0}
+.fni-tutor-stitch-shell .fni-app-main h1{color:#142842}
+.fni-tutor-stitch-shell .fni-app-main h2,
+.fni-tutor-stitch-shell .fni-app-main h3{color:#142842}
+html.dark .fni-tutor-stitch-shell{
+  --fni-stitch-canvas:#101620;--fni-stitch-surface:#1C2636;--fni-stitch-container:#253145;
+  --fni-stitch-border:#2E3B4E;--fni-stitch-muted:#A8B6C8;
+  background:#101620!important;color:#E8EDF5
+}
+html.dark .fni-tutor-stitch-shell .fni-app-main{background:#101620}
+html.dark .fni-tutor-stitch-header{background:#EEF2F7!important;color:#142842!important;border-bottom-color:#DCE3EC!important}
+html.dark .fni-tutor-stitch-sidebar{background:#142842!important;border-right-color:rgba(255,255,255,.12)!important}
+html.dark .fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav{background:#FFFFFF!important;border-top-color:#DCE3EC!important}
+html.dark .fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav button{color:#5A6B7C!important}
+html.dark .fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav button[aria-current="page"]{color:#142842!important}
+html.dark .fni-tutor-stitch-shell .fni-app-main h1,
+html.dark .fni-tutor-stitch-shell .fni-app-main h2,
+html.dark .fni-tutor-stitch-shell .fni-app-main h3,
+html.dark .fni-tutor-stitch-shell .fni-app-main h4{color:#E8EDF5}
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="bg-white"][class*="rounded-"][class*="border"],
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="bg-white"][class*="rounded-"][class*="shadow"]{
+  background:#1C2636!important;border-color:#354861!important;color:#E8EDF5
+}
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="text-[#142B4A]"],
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="text-[#142842]"],
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="text-[#182230]"]{color:#E8EDF5!important}
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="text-[#667085]"],
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="text-[#5A6B7C]"]{color:#A8B6C8!important}
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="border-[#DCE3EC]"],
+html.dark .fni-tutor-stitch-shell .fni-app-main [class*="border-[#E3E8EF]"]{border-color:#354861!important}
+@media(max-width:767px){
+ .fni-tutor-stitch-shell .fni-app-main{padding-left:16px!important;padding-right:16px!important;padding-top:20px!important}
+ .fni-tutor-stitch-shell .mobile-bottom-nav.fni-tutor-mobile-nav{min-height:64px}
+}
