@@ -30,6 +30,9 @@ assert.match(view, /formatAttachmentSize\(file\.size\)/, 'staged attachment revi
 assert.match(view, /pauseVoiceRecording/, 'voice notes must support pausing');
 assert.match(view, /resumeVoiceRecording/, 'voice notes must support resuming');
 assert.match(view, /cancelVoiceRecording/, 'voice notes must support discarding a recording');
+assert.match(view, /documentSize = att\.size \? formatAttachmentSize\(att\.size\)/, 'document previews must show the stored file size');
+assert.match(view, /fileExtension\.slice\(0, 5\)/, 'document previews must identify the file format');
+assert.match(view, /Save or share/, 'document previews must expose a save or share action');
 assert.match(view, /voiceRecordingCancelledRef\.current/, 'discarding a voice note must prevent its upload');
 assert.match(view, /onClick=\{e => e\.stopPropagation\(\)\}/, 'native media controls must not trigger message context menus');
 assert.match(view, /accept="image\/\*,video\/\*,audio\/\*/, 'the attachment picker must accept audio and video');
