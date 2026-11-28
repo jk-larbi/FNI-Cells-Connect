@@ -5,7 +5,7 @@ import { Share } from '@capacitor/share';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useBackHandler } from '../../hooks/useBackHandler';
-import { MessagingService } from '../../services/messagingService';
+import { MessagingService, GroupChatSummary, GroupChatMessage } from '../../services/messagingService';
 import { supabase } from '../../lib/supabase';
 import { CallHistoryView } from '../calling/CallHistoryView';
 import { CommunicationSettingsModal } from './CommunicationSettingsModal';
@@ -274,7 +274,7 @@ interface ChatContact {
   lastMessageTime?: string;
   unreadCount?: number;
   isPinned?: boolean;
-  type: 'community' | 'saved' | 'direct';
+  type: 'community' | 'saved' | 'direct' | 'group';
 }
 
 export const MessagingView: React.FC<MessagingViewProps> = ({
@@ -313,6 +313,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [tutorList, setTutorList] = useState<any[]>([]);
   const [onlineMemberIds, setOnlineMemberIds] = useState<Set<string>>(new Set());
   const [memberLastSeen, setMemberLastSeen] = useState<Record<string, string>>({});
+  const [groupChats, setGroupChats] = useState<GroupChatSummary[]>([]);
+  const [groupChatsError, setGroupChatsError] = useState<string | null>(null);
+
 
   // Presence is authoritative for "online"; the database timestamp supplies durable last-seen.
   useEffect(() => {
@@ -415,6 +418,37 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       void supabase.removeChannel(presenceChannel);
     };
   }, [currentUser?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadGroups = async () => {
+      if (!currentUser?.id) {
+        setGroupChats([]);
+        return;
+      }
+      try {
+        const groups = await MessagingService.getMyGroupChats();
+        if (!cancelled) {
+          setGroupChats(groups);
+          setGroupChatsError(null);
+        }
+      } catch (error) {
+        if (!cancelled) setGroupChatsError(error instanceof Error ? error.message : 'Unable to load your groups.');
+      }
+    };
+    void loadGroups();
+    const refresh = () => { void loadGroups(); };
+    window.addEventListener('fni-group-chat-created', refresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('fni-group-chat-created', refresh);
+    };
+  }, [currentUser?.id]);
+
+  const selectedGroupChat = useMemo(() => {
+    if (!selectedChatId?.startsWith('group:')) return null;
+    return groupChats.find(group => group.id === selectedChatId.slice(6)) || null;
+  }, [selectedChatId, groupChats]);
 
   // Visual Viewport tracking for mobile on-screen keyboard
   const { height: viewportHeight, isKeyboardVisible } = useVisualViewport();
@@ -1309,6 +1343,22 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       unreadCount: 5,
     });
 
+    // 2. Member-created group conversations from the authenticated Supabase membership list
+    groupChats.forEach(group => {
+      const last = group.last_message;
+      list.push({
+        id: `group:${group.id}`,
+        name: group.name,
+        role: group.member_role === 'owner' ? 'Group owner' : 'Group conversation',
+        cellName: `${group.member_count} members`,
+        isPinned: pinnedMap.has(`group:${group.id}`),
+        type: 'group',
+        lastMessage: last ? (last.content || (last.message_type === 'image' ? 'Photo' : 'Attachment')).slice(0, 48) : (group.description || 'Start the conversation'),
+        lastMessageTime: last ? new Date(last.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        unreadCount: 0,
+      });
+    });
+
     // 2. Registered Tutors & Leadership Direct Chats
     tutorList.forEach(peer => {
       const isPeerPinned = pinnedMap.has(peer.id);
@@ -1406,7 +1456,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         return c.type === 'direct' || c.type === 'saved' || (c.id !== 'community' && c.type !== 'community');
       }
       if (activeFolderId === 'groups') {
-        return c.type === 'community' || c.id === 'community';
+        return c.type === 'community' || c.type === 'group' || c.id === 'community';
       }
       if (activeFolderObj) return isContactInFolder(c, activeFolderObj);
       return true;
@@ -3222,6 +3272,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               const isPinned = c.isPinned;
               const isOfficialCommunity = c.id === 'community';
               const isSaved = c.id === 'saved_messages';
+              const isGroupChat = c.type === 'group';
 
               return (
                 <div
@@ -3232,7 +3283,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       : 'hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
                   onClick={() => {
-                    openConversation(c.id);
+                    if (isGroupChat) {
+                      setSelectedChatId(c.id);
+                      setMobileScreen('chat');
+                      setInputText('');
+                    } else {
+                      openConversation(c.id);
+                    }
                   }}
                 >
                   {/* Avatar Circle */}
@@ -3262,8 +3319,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
                           {c.name}
                         </span>
-                        {isOfficialCommunity && (
-                          <span title="Official FNI Community" className="shrink-0">
+                        {(isOfficialCommunity || isGroupChat) && (
+                          <span title={isOfficialCommunity ? 'Official FNI Community' : 'FNI Group Chat'} className="shrink-0">
                             <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
                           </span>
                         )}
@@ -3591,6 +3648,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <span>Select any conversation or tutor from the left panel to begin messaging.</span>
             </div>
           </div>
+        ) : selectedGroupChat ? (
+          <GroupChatConversation
+            group={selectedGroupChat}
+            currentUserId={currentUser?.id || ''}
+            onBack={() => { setSelectedChatId(null); setMobileScreen('list'); }}
+            onVoiceMeeting={() => startGroupMeeting({ title: selectedGroupChat.name, callType: 'voice' })}
+            onVideoMeeting={() => startGroupMeeting({ title: selectedGroupChat.name, callType: 'video' })}
+          />
         ) : (
           /* ===================================================================
              2. ACTIVE CONVERSATION VIEW (Rendered when a chat is open)
