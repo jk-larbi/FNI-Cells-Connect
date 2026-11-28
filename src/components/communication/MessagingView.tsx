@@ -2117,7 +2117,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
           <div className="flex items-center justify-between text-[11px] text-white/70 font-medium px-0.5">
             <span className={isPlayingThis ? 'text-[#3ca3eb] font-bold' : ''}>{timeLabel}</span>
-            <div className="flex items-center gap-2">
+            <div className="fni-private-chat-composer flex items-center gap-2">
               <button
                 type="button"
                 onClick={e => { e.stopPropagation(); cycleAudioPlaybackRate(fileUrl); }}
@@ -3863,7 +3863,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             )}
 
             {/* Chat Header Bar (FNI Layout) */}
-            <div className="px-3 sm:px-4 py-2 bg-[#EDF5FC] dark:bg-[#1C2636] border-b border-[#DCEAF6] dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
+            <div className="fni-private-chat-header px-3 sm:px-4 py-2 bg-[#EDF5FC] dark:bg-[#1C2636] border-b border-[#DCEAF6] dark:border-white/10 flex items-center justify-between shrink-0 z-20 shadow-xs">
               <div className="flex items-center gap-2.5 min-w-0">
                 {/* Mobile Back Button returning to list */}
                 <button
@@ -4093,7 +4093,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             {/* Message Stream */}
             <div
               ref={messageStreamRef}
-              className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-3 sm:p-4 space-y-3 fni-chat-wallpaper"
+              className="fni-private-chat-stream flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-3 sm:p-4 space-y-3 fni-chat-wallpaper"
               style={userWallpaperColor ? { backgroundColor: userWallpaperColor } : undefined}
             >
               {isLoadingChat && currentMessages.length === 0 ? (
@@ -5027,7 +5027,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       )}
                     </div>
 
-                    <div className="flex-1 rounded-2xl bg-slate-100 dark:bg-[#242f3d] border border-slate-200/80 dark:border-white/10 px-4 py-1.5 flex items-center gap-2 min-h-[44px]">
+                    <div className="fni-private-chat-input flex-1 rounded-2xl bg-slate-100 dark:bg-[#242f3d] border border-slate-200/80 dark:border-white/10 px-4 py-1.5 flex items-center gap-2 min-h-[44px]">
                       <textarea
                         ref={composerInputRef}
                         rows={1}
