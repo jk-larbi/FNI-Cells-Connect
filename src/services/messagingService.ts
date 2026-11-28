@@ -281,6 +281,18 @@ export class MessagingService {
     return data as { group_id: string; member_id: string; action: string; member_role?: string };
   }
 
+  static async transferGroupChatOwnership(input: { groupId: string; newOwnerId: string }): Promise<{ group_id: string; previous_owner_id: string; new_owner_id: string }> {
+    if (!supabase || !isSupabaseConfigured || !input.groupId || !input.newOwnerId) {
+      throw new Error('A valid group and new owner are required.');
+    }
+    const { data, error } = await supabase.rpc('transfer_fni_group_chat_ownership', {
+      p_group_id: input.groupId,
+      p_new_owner_id: input.newOwnerId,
+    });
+    if (error) throw error;
+    return data as { group_id: string; previous_owner_id: string; new_owner_id: string };
+  }
+
   static async updateGroupChatDetails(input: { groupId: string; name: string; description: string }): Promise<{ id: string; name: string; description: string }> {
     if (!supabase || !isSupabaseConfigured || !input.groupId) throw new Error('A valid group and FNI connection are required.');
     const name = input.name.trim();
