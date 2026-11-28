@@ -3467,11 +3467,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                       <Bookmark className="w-5 h-5 fill-white text-white" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs sm:text-sm flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                    <div className="relative w-10 h-10 rounded-full bg-[#142B4A] text-[#C6A45A] font-bold text-xs sm:text-sm flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs">
                       {activeContact?.avatarUrl ? (
                         <img src={activeContact.avatarUrl} alt={activeContact.name} className="w-full h-full object-cover" />
                       ) : (
                         activeContact?.name?.slice(0, 2).toUpperCase() || 'FN'
+                      )}
+                      {activeContact?.isOnline && selectedChatId !== 'saved_messages' && (
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#17212b]" aria-label="Online" />
                       )}
                     </div>
                   )}
@@ -3487,14 +3490,14 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 truncate">
+                    <p className={`text-[11px] truncate ${activeContact?.isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
                       {selectedChatId === 'saved_messages'
-                        ? ''
+                        ? 'Private notes · Only you'
                         : selectedChatId === 'community'
-                        ? `${allMembers.length > 0 ? allMembers.length : 12} active tutors enrolled`
+                        ? `${allMembers.length} members · Official FNI community`
                         : activeContact?.isOnline
-                        ? 'online'
-                        : 'last seen recently'}
+                        ? 'Online now'
+                        : 'Last seen recently'}
                     </p>
                   </div>
                 </div>
