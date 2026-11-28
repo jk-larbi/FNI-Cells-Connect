@@ -50,7 +50,110 @@ function setStored<T>(key: string, val: T): void {
   }
 }
 
+export interface GroupChatMessage {
+  id: string;
+  group_id: string;
+  sender_uid: string;
+  content: string;
+  message_type: 'text' | 'image' | 'video' | 'audio' | 'voice' | 'document' | 'location' | 'poll' | 'system';
+  reply_to: MessageReply | null;
+  attachments: ChatAttachment[];
+  mentions: string[];
+  reactions: Record<string, unknown>;
+  created_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  is_pinned: boolean;
+  pinned_at: string | null;
+  pinned_by: string | null;
+}
+
+export interface CreateGroupChatInput {
+  name: string;
+  description?: string;
+  memberIds?: string[];
+}
+
 export class MessagingService {
+  static async createGroupChat(input: CreateGroupChatInput): Promise<{ id: string; name: string; description: string; created_at: string }> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('Group chats require an active FNI connection.');
+    const name = input.name.trim();
+    if (!name || name.length > 80) throw new Error('Group name must be between 1 and 80 characters.');
+    const { data, error } = await supabase.rpc('create_fni_group', {
+      p_name: name,
+      p_description: (input.description || '').trim(),
+      p_member_ids: Array.from(new Set(input.memberIds || [])),
+    });
+    if (error) throw error;
+    const group = Array.isArray(data) ? data[0] : data;
+    if (!group?.id) throw new Error('The group was not created. Please try again.');
+    return group as { id: string; name: string; description: string; created_at: string };
+  }
+
+  static async getGroupChatMessages(groupId: string, limit = 100): Promise<GroupChatMessage[]> {
+    if (!supabase || !isSupabaseConfigured || !groupId) throw new Error('A valid group and FNI connection are required.');
+    const { data, error } = await supabase
+      .from('group_chat_messages')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true })
+      .limit(Math.min(Math.max(limit, 1), 200));
+    if (error) throw error;
+    return (data || []) as GroupChatMessage[];
+  }
+
+  static async sendGroupChatMessage(input: {
+    groupId: string;
+    content?: string;
+    messageType?: GroupChatMessage['message_type'];
+    replyTo?: MessageReply | null;
+    attachments?: ChatAttachment[];
+    mentions?: string[];
+  }): Promise<GroupChatMessage> {
+    if (!supabase || !isSupabaseConfigured || !input.groupId) throw new Error('A valid group and FNI connection are required.');
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const senderUid = authData.user?.id;
+    if (authError || !senderUid) throw new Error('Sign in before sending a group message.');
+    const content = (input.content || '').trim();
+    const attachments = input.attachments || [];
+    if (!content && attachments.length === 0) throw new Error('Write a message or attach a file before sending.');
+    const { data, error } = await supabase
+      .from('group_chat_messages')
+      .insert({
+        group_id: input.groupId,
+        sender_uid: senderUid,
+        content,
+        message_type: input.messageType || 'text',
+        reply_to: input.replyTo || null,
+        attachments,
+        mentions: input.mentions || [],
+      })
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data as GroupChatMessage;
+  }
+
+  static subscribeToGroupChatMessages(
+    groupId: string,
+    onChange: (message: GroupChatMessage, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => void
+  ) {
+    if (!supabase || !isSupabaseConfigured || !groupId) return null;
+    return supabase
+      .channel(`fni-group-chat-${groupId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'group_chat_messages',
+        filter: `group_id=eq.${groupId}`,
+      }, payload => {
+        const message = (payload.eventType === 'DELETE' ? payload.old : payload.new) as GroupChatMessage;
+        if (message?.id) onChange(message, payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE');
+      })
+      .subscribe();
+  }
+
   static async getPrivateMessageById(messageId: string): Promise<PrivateMessage | null> {
     return SupabaseService.getPrivateMessageById(messageId);
   }
