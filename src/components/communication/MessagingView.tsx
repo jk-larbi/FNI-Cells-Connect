@@ -299,6 +299,9 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [groupInfoDescription, setGroupInfoDescription] = useState(group.description || '');
   const [groupInfoSaving, setGroupInfoSaving] = useState(false);
   const [groupInfoError, setGroupInfoError] = useState<string | null>(null);
+  const [transferTargetId, setTransferTargetId] = useState('');
+  const [transferConfirmOpen, setTransferConfirmOpen] = useState(false);
+  const [transferBusy, setTransferBusy] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [candidateProfiles, setCandidateProfiles] = useState<Array<{ id: string; full_name: string; role: string }>>([]);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
@@ -389,7 +392,24 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     }
   };
 
-  const currentMemberRole = group.member_role || 'member';
+  const currentMemberRole = group.member_role || 'member';  const transferGroupOwnership = async () => {
+    if (currentMemberRole !== 'owner' || !transferTargetId || transferBusy) return;
+    setTransferBusy(true);
+    setGroupInfoError(null);
+    try {
+      await MessagingService.transferGroupChatOwnership({ groupId: group.id, newOwnerId: transferTargetId });
+      window.dispatchEvent(new CustomEvent('fni-group-chat-created'));
+      setTransferConfirmOpen(false);
+      setGroupInfoOpen(false);
+      onBack();
+    } catch (reason) {
+      setGroupInfoError(reason instanceof Error ? reason.message : 'Ownership could not be transferred.');
+    } finally {
+      setTransferBusy(false);
+    }
+  };
+
+
   const canManageGroupMembers = currentMemberRole === 'owner' || currentMemberRole === 'moderator';
   const availableGroupCandidates = useMemo(() => {
     const existingIds = new Set(groupMembers.map(member => member.user_id));
@@ -508,6 +528,25 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
               <div><label htmlFor="fni-group-info-description" className="block text-xs font-semibold mb-1.5">Description</label><textarea id="fni-group-info-description" value={groupInfoDescription} onChange={event => setGroupInfoDescription(event.target.value)} maxLength={300} rows={3} disabled={currentMemberRole !== 'owner'} placeholder="What is this group about?" className="w-full resize-none rounded-xl px-3 py-2.5 text-sm bg-[#F5F8FB] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] disabled:opacity-75" /><p className="text-right text-[10px] text-[#7A8795]">{groupInfoDescription.length}/300</p></div>
               <div className="grid grid-cols-2 gap-3 text-xs"><div className="rounded-xl p-3 bg-[#F5F8FB] dark:bg-[#101620]"><p className="text-[#7A8795]">Created</p><p className="font-semibold mt-1">{new Date(group.created_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</p></div><div className="rounded-xl p-3 bg-[#F5F8FB] dark:bg-[#101620]"><p className="text-[#7A8795]">Your role</p><p className="font-semibold mt-1 capitalize">{currentMemberRole}</p></div></div>
               {currentMemberRole !== 'owner' && <p className="text-xs text-[#536273] dark:text-[#A8B6C8]">Only the group owner can edit these details.</p>}
+              {currentMemberRole === 'owner' && (
+                <div className="rounded-xl border border-[#E8DAB8] dark:border-[#5D4200]/50 bg-[#FFFCF5] dark:bg-[#5D4200]/10 p-3 space-y-2.5">
+                  <div><p className="text-xs font-semibold">Transfer group ownership</p><p className="text-[11px] leading-relaxed text-[#6B7280] dark:text-[#B8C2CF] mt-1">Choose an existing member. They will become the owner, and you will remain in the group as a moderator.</p></div>
+                  <select value={transferTargetId} onChange={event => { setTransferTargetId(event.target.value); setTransferConfirmOpen(false); }} aria-label="Choose the new group owner" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E]">
+                    <option value="">Select a group member…</option>
+                    {groupMembers.filter(member => member.user_id !== currentUserId && member.member_role !== 'owner').map(member => <option key={member.user_id} value={member.user_id}>{member.full_name} · {member.member_role}</option>)}
+                  </select>
+                  {!transferConfirmOpen ? (
+                    <button type="button" onClick={() => { setGroupInfoError(null); setTransferConfirmOpen(true); }} disabled={!transferTargetId || transferBusy} className="w-full rounded-xl px-3 py-2 text-xs font-semibold border border-[#B18A3C] text-[#785A1B] dark:text-[#D9BD7B] disabled:opacity-40">Transfer ownership</button>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-[#785A1B] dark:text-[#D9BD7B]" role="alert">Confirm this handover. You will lose owner permissions immediately.</p>
+                      <div className="flex gap-2"><button type="button" onClick={() => setTransferConfirmOpen(false)} disabled={transferBusy} className="flex-1 rounded-xl px-3 py-2 text-xs font-semibold bg-[#EDF5FC] dark:bg-[#253145]">Cancel</button><button type="button" onClick={() => void transferGroupOwnership()} disabled={transferBusy} className="flex-1 rounded-xl px-3 py-2 text-xs font-semibold bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#263445] disabled:opacity-50">{transferBusy ? 'Transferring…' : 'Confirm transfer'}</button></div>
+                    </div>
+                  )}
+                  {groupMembers.filter(member => member.user_id !== currentUserId && member.member_role !== 'owner').length === 0 && <p className="text-[10px] text-[#7A8795]">Add at least one other member before transferring ownership.</p>}
+                </div>
+              )}
+
               {groupInfoError && <p role="alert" className="text-xs text-red-600 dark:text-red-300">{groupInfoError}</p>}
               <div className="flex justify-end gap-2"><button type="button" onClick={() => setGroupInfoOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#EDF5FC] dark:bg-[#253145]">Close</button>{currentMemberRole === 'owner' && <button type="button" onClick={() => void saveGroupInfo()} disabled={groupInfoSaving || !groupInfoName.trim()} className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#263445] disabled:opacity-50">{groupInfoSaving ? 'Saving…' : 'Save changes'}</button>}</div>
             </div>
