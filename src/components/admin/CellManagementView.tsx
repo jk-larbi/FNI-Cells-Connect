@@ -9,6 +9,7 @@ import { CellMembersPanel } from '../CellMembersPanel';
 import { CellLeadershipPanel } from './CellLeadershipPanel';
 import { CellLocationsMap } from './CellLocationsMap';
 import { supabase } from '../../lib/supabase';
+import { SupabaseService } from '../../services/supabaseService';
 import './cellGroupsStitch.css';
 type StitchIconProps = React.HTMLAttributes<HTMLSpanElement>;
 const StitchIcon = (symbol: string) => ({ className = '', ...props }: StitchIconProps) => (
@@ -95,7 +96,16 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
         CellService.getCells(),
         ReportService.getCellMeetingReports(),
       ]);
-      setCells(list.filter(cell => !cell.is_archived));
+      const memberCounts = await SupabaseService.getCellMemberCounts();
+      setCells(list.filter(cell => !cell.is_archived).map(cell => {
+        const counts = memberCounts?.[cell.id];
+        return counts ? {
+          ...cell,
+          total_members: counts.total,
+          active_members: counts.active,
+          requiring_follow_up: counts.followUp,
+        } : cell;
+      }));
       setMeetingReports(reports);
     } catch (error) {
       console.error('Could not load the cell directory:', error);
