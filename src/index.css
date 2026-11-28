@@ -7232,3 +7232,38 @@ html.dark .fni-notification-center .py-12.text-center{border-color:#2E3B4E;backg
 html.dark .fni-notification-center .group.relative.rounded-2xl.border .text-\[\#142B4A\]{color:#E8EDF5}
 html.dark .fni-notification-center .group.relative.rounded-2xl.border .text-slate-500,html.dark .fni-notification-center .group.relative.rounded-2xl.border .text-slate-400{color:#A8B6C8}
 html.dark .fni-notification-center button:focus-visible,html.dark .fni-notification-center input:focus-visible,html.dark .fni-notification-center select:focus-visible,html.dark .fni-notification-center textarea:focus-visible{outline-color:#EEC068}
+
+
+/* Sidebar identity header — distinct, readable surface in both themes. */
+.fni-glass-sidebar .fni-sidebar-brand-header {
+  background: linear-gradient(135deg, #F2F6FB 0%, #FFFFFF 100%);
+  border-bottom-color: #DCE4EE;
+}
+html.dark .fni-glass-sidebar .fni-sidebar-brand-header {
+  background: linear-gradient(135deg, #101D30 0%, #172940 100%) !important;
+  border-bottom-color: #2B405A !important;
+}
+.fni-glass-sidebar .custom-scrollbar {
+  scrollbar-color: #AAB9CA transparent;
+}
+.fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #B8C5D3;
+  border: 1px solid #F2F6FB;
+  border-radius: 999px;
+}
+.fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #8799AD;
+}
+html.dark .fni-glass-sidebar .custom-scrollbar {
+  scrollbar-color: #536A84 transparent;
+}
+html.dark .fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #536A84;
+  border-color: #172940;
+}
+html.dark .fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #7890AD;
+}
