@@ -62,6 +62,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [expandedMeetingReportId, setExpandedMeetingReportId] = useState<string | null>(null);
   const [expandedEvangelismReportId, setExpandedEvangelismReportId] = useState<string | null>(null);
+  const [expandedFollowUpContactId, setExpandedFollowUpContactId] = useState<string | null>(null);
 
   // Edit / Add Cell modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -1076,6 +1077,107 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                   })}
                 </div>
               )}
+
+                {/* Follow-up history — live contact records and recorded status transitions */}
+                <section className="mt-5 border-t border-[#DCE3EC] pt-5">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#142842]">
+                      <UserCheck className="h-3.5 w-3.5 text-[#8E6C23]" />
+                      Follow-up history ({cellContacts.length})
+                    </h4>
+                    <span className="text-[10px] text-[#5A6B7C]">Contact records from this cell</span>
+                  </div>
+                  {cellContacts.length === 0 ? (
+                    <p className="rounded-xl border border-[#DCE3EC] bg-[#EEF2F7] p-3 text-xs italic text-[#5A6B7C]">
+                      No follow-up contact records have been captured for this cell.
+                    </p>
+                  ) : (
+                    <div className="max-h-[28rem] space-y-2 overflow-y-auto custom-scrollbar">
+                      {cellContacts.map(contact => {
+                        const expanded = expandedFollowUpContactId === contact.id;
+                        const contactName = contact.contactName || contact.name || 'Name not recorded';
+                        const contactLocation = contact.location || contact.evangelismLocation;
+                        const contactNotes = contact.followUpNotes || contact.notes;
+                        const history = [...(contact.history || [])].sort(
+                          (a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime()
+                        );
+                        const completed = ['Completed', 'Completed / Joined', 'Joined a cell', 'Joined Ministry', 'Established in Church'].includes(contact.followUpStatus);
+                        return (
+                          <article key={contact.id} className="overflow-hidden rounded-xl border border-[#DCE3EC] bg-white">
+                            <button
+                              type="button"
+                              aria-expanded={expanded}
+                              onClick={() => setExpandedFollowUpContactId(expanded ? null : contact.id)}
+                              className="flex w-full items-center justify-between gap-3 p-3 text-left transition-colors hover:bg-[#F8FAFC]"
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate text-xs font-bold text-[#182230]">{contactName}</span>
+                                <span className="mt-0.5 block text-[10px] text-[#5A6B7C]">
+                                  Captured {contact.dateCaptured || 'date not recorded'}
+                                  {contact.assignedToName || contact.tutorName ? ` · Assigned to ${contact.assignedToName || contact.tutorName}` : ''}
+                                </span>
+                                <span className="mt-1 block text-[10px] text-[#5A6B7C]">
+                                  {contact.contactAttempts ?? 0} recorded contact attempts
+                                  {contact.nextFollowUpDate ? ` · Next: ${contact.nextFollowUpDate}` : ''}
+                                </span>
+                              </span>
+                              <span className="flex shrink-0 items-center gap-2">
+                                <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${completed ? 'bg-emerald-50 text-[#1F6E43]' : 'bg-[#FDF8E8] text-[#8E6C23]'}`}>
+                                  {contact.followUpStatus}
+                                </span>
+                                <span className="text-xs text-[#5A6B7C]">{expanded ? '−' : '+'}</span>
+                              </span>
+                            </button>
+                            {expanded && (
+                              <div className="space-y-3 border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 text-xs">
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                  {contact.phone && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Phone</span><a className="font-semibold text-[#142842] underline-offset-2 hover:underline" href={`tel:${contact.phone}`}>{contact.phone}</a></div>}
+                                  {contact.whatsappNumber && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">WhatsApp</span><a className="font-semibold text-[#142842] underline-offset-2 hover:underline" href={`https://wa.me/${contact.whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer">{contact.whatsappNumber}</a></div>}
+                                  {contact.email && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Email</span><a className="break-all font-semibold text-[#142842] underline-offset-2 hover:underline" href={`mailto:${contact.email}`}>{contact.email}</a></div>}
+                                  {contactLocation && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Outreach location</span><span className="text-[#25384A]">{contactLocation}</span></div>}
+                                  {contact.leadSource && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Lead source</span><span className="text-[#25384A]">{contact.leadSource}</span></div>}
+                                  {contact.discipleshipProgress !== undefined && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Discipleship progress</span><span className="text-[#25384A]">{contact.discipleshipProgress}</span></div>}
+                                  {contact.lastFollowUpDate && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Last follow-up</span><span className="text-[#25384A]">{contact.lastFollowUpDate}</span></div>}
+                                  {contact.establishedDate && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Established in church</span><span className="text-[#25384A]">{contact.establishedDate}</span></div>}
+                                  {contact.completionDate && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Completion date</span><span className="text-[#25384A]">{contact.completionDate}</span></div>}
+                                </div>
+                                {contactNotes && (
+                                  <div>
+                                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[#5A6B7C]">Follow-up notes</div>
+                                    <p className="whitespace-pre-wrap break-words leading-relaxed text-[#25384A]">{contactNotes}</p>
+                                  </div>
+                                )}
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#5A6B7C]">
+                                  <span>Created {contact.createdAt ? new Date(contact.createdAt).toLocaleString() : 'date not recorded'}</span>
+                                  <span>Updated {contact.updatedAt ? new Date(contact.updatedAt).toLocaleString() : 'date not recorded'}</span>
+                                </div>
+                                <div>
+                                  <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-[#5A6B7C]">Status and interaction history ({history.length})</div>
+                                  {history.length ? (
+                                    <ol className="space-y-2">
+                                      {history.map((entry, index) => (
+                                        <li key={`${contact.id}-history-${index}`} className="border-l-2 border-[#D9BD7B] pl-3">
+                                          <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <strong className="text-[#25384A]">{entry.status}</strong>
+                                            <time className="text-[10px] text-[#5A6B7C]">{entry.changedAt ? new Date(entry.changedAt).toLocaleString() : 'Date not recorded'}</time>
+                                          </div>
+                                          {entry.note && <p className="mt-0.5 whitespace-pre-wrap break-words text-[#5A6B7C]">{entry.note}</p>}
+                                          {entry.changedBy && <p className="mt-0.5 text-[10px] text-[#5A6B7C]">Recorded by {entry.changedBy}</p>}
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  ) : (
+                                    <p className="text-[10px] italic text-[#5A6B7C]">No separate status-change history was recorded for this contact.</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
               </div>
               </div>
             </div>
