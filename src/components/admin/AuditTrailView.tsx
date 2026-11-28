@@ -80,7 +80,7 @@ export const AuditTrailView: React.FC = () => {
           <p className="fni-audit-subtitle">Know what changed, when and by whom.</p>
         </div>
         <div className="fni-audit-actions flex flex-col sm:flex-row gap-2.5">
-          <label className="fni-audit-search relative flex-1">
+          <label className="fni-audit-search relative flex-1 hidden md:flex">
             <Search className="w-4 h-4" aria-hidden="true" />
             <input
               type="search"
@@ -98,6 +98,21 @@ export const AuditTrailView: React.FC = () => {
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>{isLoading ? 'Refreshing' : 'Refresh'}</span>
           </button>
+        </div>
+      </section>
+
+      <section className="fni-audit-mobile-search md:hidden" aria-label="Find activity">
+        <label htmlFor="fni-audit-mobile-search-input">Find activity</label>
+        <div className="fni-audit-mobile-search-field">
+          <Search className="w-4 h-4" aria-hidden="true" />
+          <input
+            id="fni-audit-mobile-search-input"
+            type="search"
+            placeholder="Search administrator, action or date"
+            value={searchTerm}
+            onChange={event => setSearchTerm(event.target.value)}
+          />
+          {searchTerm && <button type="button" aria-label="Clear search" onClick={() => setSearchTerm('')}><X className="w-4 h-4" /></button>}
         </div>
       </section>
 
