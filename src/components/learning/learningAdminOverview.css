@@ -161,3 +161,17 @@
  .fni-la-trend-summary strong{font-size:13px}
  .fni-la-trend-bars{gap:5px}
 }
+
+
+/* Learning & Assessment — Stitch date range controls */
+
+.fni-la-range-label select{display:block;min-width:148px;margin-top:5px}
+.fni-la-custom-range{display:flex;align-items:flex-end;gap:8px}
+.fni-la-custom-range label{display:flex;flex-direction:column;gap:5px;color:#5A6B7C;font:600 10px "Libre Franklin",sans-serif}
+.fni-la-custom-range input{min-height:38px;min-width:130px;padding:8px 10px;border:1px solid #DCE3EC;border-radius:8px;background:#fff;color:#142842;font:12px "Source Sans 3",sans-serif}
+.fni-la-custom-range input:focus{outline:2px solid rgba(142,108,35,.18);border-color:#8E6C23}
+@media(max-width:760px){
+ .fni-la-range-label select{min-width:0;width:100%}
+ .fni-la-custom-range{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+ .fni-la-custom-range input{width:100%;min-width:0}
+}
