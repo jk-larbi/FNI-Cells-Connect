@@ -3805,21 +3805,21 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
               <div className="px-2.5 sm:px-4 py-1.5 shrink-0 z-20">
                 <div
                   onClick={handleCyclePinnedMessage}
-                  className="rounded-2xl bg-white/95 dark:bg-[#17212b]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs px-3.5 py-2 flex items-center justify-between gap-3 text-xs cursor-pointer hover:bg-white dark:hover:bg-[#1f2b38] transition-all select-none group"
+                  className="rounded-2xl bg-[#F5EDD9] dark:bg-[#253145] backdrop-blur-md border border-[#D9BD7B]/45 dark:border-[#D9BD7B]/25 shadow-xs px-3.5 py-2 flex items-center justify-between gap-3 text-xs cursor-pointer hover:bg-[#F0E5C9] dark:hover:bg-[#303E54] transition-all select-none group"
                   title="Tap to jump to pinned message"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     {/* Vertical Cyan Accent Bar */}
-                    <div className="w-[3px] self-stretch rounded-full bg-[#2AABEE] shrink-0 min-h-[30px]" />
+                    <div className="w-[3px] self-stretch rounded-full bg-[#B18A3C] dark:bg-[#D9BD7B] shrink-0 min-h-[30px]" />
 
                     {/* Text Details */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-xs text-[#2AABEE] tracking-tight block">
+                        <span className="font-semibold text-xs text-[#785A1B] dark:text-[#D9BD7B] tracking-tight block">
                           Pinned Message{allPinnedMessages.length > 1 ? ` (${activePinnedIndex + 1}/${allPinnedMessages.length})` : ''}
                         </span>
                       </div>
-                      <p className="truncate text-slate-800 dark:text-slate-100 text-xs sm:text-[13px] font-normal leading-snug mt-0.5">
+                      <p className="truncate text-[#354454] dark:text-[#E8EDF5] text-xs sm:text-[13px] font-normal leading-snug mt-0.5">
                         {currentPinnedBannerMessage.content}
                       </p>
                     </div>
