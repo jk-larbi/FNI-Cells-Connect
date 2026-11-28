@@ -7052,3 +7052,84 @@ html.dark .fni-admin-stitch-shell .mobile-bottom-nav button[aria-current="page"]
   background: var(--fni-blue-soft) !important;
   color: var(--fni-gold-text) !important;
 }
+
+
+/* Ministry overview: complete dark-mode surface and contrast mapping.
+   The Stitch layout remains unchanged; only semantic theme colours switch. */
+html.dark .fni-ministry-overview {
+  color: #E8EDF5;
+}
+html.dark .fni-ministry-overview [class~="bg-white"],
+html.dark .fni-ministry-overview [class*="bg-[#F7F9FC]"],
+html.dark .fni-ministry-overview [class*="bg-[#F8FAFC]"],
+html.dark .fni-ministry-overview [class*="bg-[#FAFBFC]"],
+html.dark .fni-ministry-overview [class*="bg-[#E9EDF2]"],
+html.dark .fni-ministry-overview [class~="bg-slate-50"],
+html.dark .fni-ministry-overview [class~="bg-slate-100"],
+html.dark .fni-ministry-overview [class~="bg-blue-50"],
+html.dark .fni-ministry-overview [class~="bg-blue-50/70"],
+html.dark .fni-ministry-overview [class~="bg-emerald-50"],
+html.dark .fni-ministry-overview [class~="bg-rose-50"] {
+  background-color: #1C2636 !important;
+}
+html.dark .fni-ministry-overview [class*="bg-[#FDF8E8]"],
+html.dark .fni-ministry-overview [class*="bg-[#FAF6EE]"],
+html.dark .fni-ministry-overview [class~="bg-amber-50"],
+html.dark .fni-ministry-overview [class~="bg-gold-50"] {
+  background-color: #332D20 !important;
+}
+html.dark .fni-ministry-overview [class*="bg-[#DCE3EC]"],
+html.dark .fni-ministry-overview [class*="bg-[#CBD5E1]"] {
+  background-color: #2E3B4E !important;
+}
+html.dark .fni-ministry-overview [class*="text-[#142842]"],
+html.dark .fni-ministry-overview [class*="text-[#182230]"],
+html.dark .fni-ministry-overview [class~="text-navy-950"],
+html.dark .fni-ministry-overview [class~="text-navy-900"] {
+  color: #E8EDF5 !important;
+}
+html.dark .fni-ministry-overview [class*="text-[#5A6B7C]"],
+html.dark .fni-ministry-overview [class*="text-[#667085]"],
+html.dark .fni-ministry-overview [class~="text-slate-500"],
+html.dark .fni-ministry-overview [class~="text-slate-400"],
+html.dark .fni-ministry-overview [class~="text-[#354863]"] {
+  color: #A8B6C8 !important;
+}
+html.dark .fni-ministry-overview [class*="border-[#DCE3EC]"],
+html.dark .fni-ministry-overview [class*="border-[#E8EDF2]"],
+html.dark .fni-ministry-overview [class*="border-[#D7DEE8]"],
+html.dark .fni-ministry-overview [class~="border-slate-100"],
+html.dark .fni-ministry-overview [class~="border-slate-200"],
+html.dark .fni-ministry-overview [class~="border-blue-100"],
+html.dark .fni-ministry-overview [class~="border-navy-800"],
+html.dark .fni-ministry-overview [class*="divide-[#DCE3EC]"] {
+  border-color: #2E3B4E !important;
+}
+html.dark .fni-ministry-overview input,
+html.dark .fni-ministry-overview select,
+html.dark .fni-ministry-overview textarea {
+  background-color: #101620 !important;
+  color: #E8EDF5 !important;
+  border-color: #3A4A60 !important;
+}
+html.dark .fni-ministry-overview input::placeholder,
+html.dark .fni-ministry-overview textarea::placeholder {
+  color: #91A2B6 !important;
+}
+html.dark .fni-ministry-overview [class*="hover:bg-slate-50"]:hover,
+html.dark .fni-ministry-overview [class*="hover:bg-slate-100"]:hover {
+  background-color: #253145 !important;
+}
+html.dark .fni-ministry-overview [class*="bg-[#142842]"] {
+  background-color: #376F9F !important;
+}
+html.dark .fni-ministry-overview [class*="text-[#8E6C23]"],
+html.dark .fni-ministry-overview [class*="text-[#84672D]"],
+html.dark .fni-ministry-overview [class~="text-gold-700"],
+html.dark .fni-ministry-overview [class~="text-gold-600"] {
+  color: #E9D9B2 !important;
+}
+html.dark .fni-ministry-overview [class*="bg-[#8E6C23]/15"],
+html.dark .fni-ministry-overview [class~="bg-gold-50"] {
+  background-color: #3A3020 !important;
+}
