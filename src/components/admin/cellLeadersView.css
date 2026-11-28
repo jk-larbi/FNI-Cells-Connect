@@ -195,3 +195,23 @@ html.dark .fni-cell-leaders-reference .fni-cl-load-error button{
 html.dark .fni-cell-leaders-reference .fni-cl-row-arrow{
   color:#A8B6C8;
 }
+
+
+/* Cell leadership controls: complete Stitch surfaces in both themes */
+.fni-cell-leadership-panel{color:#25384A}
+.fni-cell-leadership-panel .fni-leadership-card{background:#fff;border-color:#DCE4EF}
+.fni-cell-leadership-panel select,.fni-cell-leadership-panel textarea{color:#25384A;background:#fff;border-color:#DCE4EF}
+.fni-cell-leadership-panel select:focus-visible,.fni-cell-leadership-panel textarea:focus-visible{outline:2px solid #8E6C23;outline-offset:2px}
+.fni-cell-leadership-panel button:disabled{cursor:not-allowed}
+html.dark .fni-cell-leadership-panel{color:#E8EDF5;background:#172433;border-color:#35465B}
+html.dark .fni-cell-leadership-panel h4,html.dark .fni-cell-leadership-panel h5{color:#F1F5F9}
+html.dark .fni-cell-leadership-panel p,html.dark .fni-cell-leadership-panel .fni-leadership-muted{color:#B5C2D0}
+html.dark .fni-cell-leadership-panel .fni-leadership-card{background:#1C2B3A;border-color:#35465B}
+html.dark .fni-cell-leadership-panel select,html.dark .fni-cell-leadership-panel textarea{color:#F1F5F9;background:#101923;border-color:#35465B}
+html.dark .fni-cell-leadership-panel select option{color:#F1F5F9;background:#101923}
+html.dark .fni-cell-leadership-panel .fni-leadership-history-item{background:#1C2B3A;border-color:#35465B}
+html.dark .fni-cell-leadership-panel .fni-leadership-history-item strong{color:#F1F5F9}
+html.dark .fni-cell-leadership-panel .fni-leadership-history-item span,html.dark .fni-cell-leadership-panel .fni-leadership-history-item p{color:#B5C2D0}
+html.dark .fni-cell-leadership-panel .fni-leadership-danger{background:#2A1B20;border-color:#71343D;color:#FFB4AB}
+html.dark .fni-cell-leadership-panel [role="alert"]{background:#3A2024;border-color:#74343A;color:#FFDAD6}
+@media(max-width:640px){.fni-cell-leadership-panel{padding:13px}.fni-cell-leadership-panel .fni-leadership-actions{display:grid;grid-template-columns:1fr}.fni-cell-leadership-panel button{min-height:42px}}
