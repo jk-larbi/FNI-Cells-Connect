@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuditLog } from '../../types';
 import { ReportService } from '../../services/reportService';
 import { History, Search, RefreshCw, Shield, X, Download, FileText } from 'lucide-react';
+import './auditTrailView.css';
 
 export const AuditTrailView: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
