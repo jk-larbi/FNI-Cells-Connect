@@ -7177,3 +7177,58 @@ html.dark .fni-ministry-overview details .bg-amber-50{border-color:#725A2B;backg
 html.dark .fni-ministry-overview details .text-amber-800,html.dark .fni-ministry-overview details .text-amber-900{color:#FFE6B2}
 html.dark .fni-ministry-overview details .border-amber-200{border-color:#725A2B}
 html.dark .fni-ministry-overview button:focus-visible,html.dark .fni-ministry-overview summary:focus-visible{outline-color:#EEC068}
+
+ 
+/* Notifications — Stitch-aligned inbox, actions and responsive controls.
+   Scoped to the existing notification centre; inbox data, delivery, broadcasts,
+   read state, preferences and navigation remain service-backed. */
+.fni-notification-center{display:flex;flex-direction:column;gap:16px;min-width:0;color:#142842;font-family:"Source Sans 3",sans-serif}
+.fni-notification-center>div:first-child{align-items:center;padding-bottom:12px;border-color:#DCE3EC}
+.fni-notification-center>div:first-child>div:first-child{max-width:100%;scrollbar-width:thin}
+.fni-notification-center button{transition:background-color .12s ease,border-color .12s ease,color .12s ease}
+.fni-notification-center button:focus-visible,.fni-notification-center input:focus-visible,.fni-notification-center select:focus-visible,.fni-notification-center textarea:focus-visible{outline:2px solid #8E6C23;outline-offset:2px}
+.fni-notification-center>div:first-child button{min-height:36px;border-radius:999px;font:600 10px "Libre Franklin",sans-serif;white-space:nowrap}
+.fni-notification-center>div:first-child>div:first-child button{padding:8px 13px}
+.fni-notification-center>div:first-child>div:first-child button[class*="bg-[#142B4A]"]{background:#315F87;color:#fff}
+.fni-notification-center>div:first-child>div:last-child{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.fni-notification-center .group.relative.rounded-2xl.border{padding:15px;border-radius:10px;border-color:#DCE3EC;background:#fff;box-shadow:0 1px 2px rgba(20,40,66,.035)}
+.fni-notification-center .group.relative.rounded-2xl.border[class*="bg-[#EAF1FA]"]{border-color:#B8C9DD;background:#F0F5FB}
+.fni-notification-center .group.relative.rounded-2xl.border>div:first-child{gap:12px}
+.fni-notification-center .group.relative.rounded-2xl.border p{color:#536779;line-height:1.55}
+.fni-notification-center .group.relative.rounded-2xl.border>div:last-child{margin-top:12px}
+.fni-notification-center .group.relative.rounded-2xl.border>div:last-child>div:last-child{gap:9px}
+.fni-notification-center .group.relative.rounded-2xl.border button{min-width:30px;min-height:30px;display:inline-grid;place-items:center}
+.fni-notification-center input:not([type=checkbox]),.fni-notification-center select,.fni-notification-center textarea{min-height:40px;border:1px solid #DCE3EC;border-radius:8px;background:#fff;color:#142842;font:13px "Source Sans 3",sans-serif}
+.fni-notification-center input::placeholder,.fni-notification-center textarea::placeholder{color:#8291A2}
+.fni-notification-center textarea{min-height:104px;resize:vertical}
+.fni-notification-center [role=alert],.fni-notification-center [role=status]{border-radius:9px}
+.fni-notification-center .py-12.text-center{border-radius:10px;background:#F7F9FC}
+.fni-notification-center h2,.fni-notification-center h3,.fni-notification-center h4{font-family:"Libre Franklin",sans-serif}
+@media(max-width:640px){
+ .fni-notification-center{gap:13px}
+ .fni-notification-center>div:first-child{align-items:flex-start;flex-direction:column}
+ .fni-notification-center>div:first-child>div:first-child{width:100%;padding-bottom:2px}
+ .fni-notification-center>div:first-child>div:last-child{width:100%;justify-content:flex-start}
+ .fni-notification-center>div:first-child>div:last-child button{flex:1 1 auto}
+ .fni-notification-center .group.relative.rounded-2xl.border{padding:12px}
+ .fni-notification-center .group.relative.rounded-2xl.border>div:first-child{align-items:flex-start}
+ .fni-notification-center .group.relative.rounded-2xl.border>div:first-child>div:last-child{flex-wrap:wrap}
+ .fni-notification-center .group.relative.rounded-2xl.border>p{padding-left:0;margin-top:9px}
+ .fni-notification-center .group.relative.rounded-2xl.border>div:last-child{padding-left:0;align-items:flex-start;flex-direction:column}
+ .fni-notification-center .group.relative.rounded-2xl.border>div:last-child>div:last-child{width:100%;justify-content:flex-end}
+ .fni-notification-center .grid.grid-cols-1.sm\:grid-cols-2{grid-template-columns:minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){.fni-notification-center *,.fni-notification-center *::before,.fni-notification-center *::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+html.dark .fni-notification-center{color:#E8EDF5}
+html.dark .fni-notification-center>div:first-child{border-color:#2E3B4E}
+html.dark .fni-notification-center>div:first-child>div:first-child button:not([class*="bg-[#142B4A]"]){background:#1C2636;color:#C2CDDA}
+html.dark .fni-notification-center>div:first-child>div:first-child button[class*="bg-[#142B4A]"]{background:#376F9F;color:#fff}
+html.dark .fni-notification-center .group.relative.rounded-2xl.border{border-color:#2E3B4E;background:#161E2B;color:#E8EDF5;box-shadow:none}
+html.dark .fni-notification-center .group.relative.rounded-2xl.border[class*="bg-[#EAF1FA]"]{border-color:#3B5878;background:#1C2B3E}
+html.dark .fni-notification-center .group.relative.rounded-2xl.border p{color:#C0CCDA}
+html.dark .fni-notification-center input:not([type=checkbox]),html.dark .fni-notification-center select,html.dark .fni-notification-center textarea{border-color:#3A4A60;background:#1C2636;color:#E8EDF5}
+html.dark .fni-notification-center input::placeholder,html.dark .fni-notification-center textarea::placeholder{color:#91A2B6}
+html.dark .fni-notification-center .py-12.text-center{border-color:#2E3B4E;background:#1C2636;color:#A8B6C8}
+html.dark .fni-notification-center .group.relative.rounded-2xl.border .text-\[\#142B4A\]{color:#E8EDF5}
+html.dark .fni-notification-center .group.relative.rounded-2xl.border .text-slate-500,html.dark .fni-notification-center .group.relative.rounded-2xl.border .text-slate-400{color:#A8B6C8}
+html.dark .fni-notification-center button:focus-visible,html.dark .fni-notification-center input:focus-visible,html.dark .fni-notification-center select:focus-visible,html.dark .fni-notification-center textarea:focus-visible{outline-color:#EEC068}
