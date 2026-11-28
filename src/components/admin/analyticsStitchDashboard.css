@@ -167,3 +167,32 @@
  .fni-an-activity-list>div{align-items:flex-start}
  .fni-an-activity-list .fni-an-status{display:none}
 }
+
+
+/* Stitch analytics filter controls: desktop toolbar and mobile collapsible filters */
+.fni-an-date-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.fni-an-date-select,.fni-an-filter-toggle{display:inline-flex;align-items:center;gap:9px;min-height:42px;padding:9px 14px;border:1px solid #DCE3EC;border-radius:999px;background:#fff;color:#142842}
+.fni-an-date-select select{border:0;background:transparent;color:#142842;font:600 12px "Libre Franklin",sans-serif;outline:none}
+.fni-an-filter-toggle{font:600 12px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-custom-range{display:flex;align-items:end;gap:14px;flex-wrap:wrap;padding:14px 16px;border:1px solid #DCE3EC;border-radius:12px;background:#fff}
+.fni-an-custom-range label{display:flex;flex-direction:column;gap:6px;color:#5A6B7C;font:600 11px "Libre Franklin",sans-serif}
+.fni-an-custom-range input{min-height:38px;padding:7px 10px;border:1px solid #DCE3EC;border-radius:7px;background:#F7F9FC;color:#142842;font:13px "Source Sans 3",sans-serif}
+.fni-an-filters{grid-template-columns:minmax(180px,1.5fr) repeat(4,minmax(145px,1fr)) minmax(145px,1fr) auto auto}
+.fni-an-filters>label{min-width:0}
+.fni-an-filters select{min-width:0;max-width:100%}
+.fni-an-reset-filters,.fni-an-apply-filters{min-height:38px;padding:8px 12px;border:1px solid #DCE3EC;border-radius:999px;background:#fff;color:#5A6B7C;font:600 11px "Libre Franklin",sans-serif;cursor:pointer}
+.fni-an-apply-filters{border-color:#142842;background:#142842;color:#fff}
+@media(max-width:760px){
+  .fni-an-date-toolbar{justify-content:space-between}
+  .fni-an-date-select{flex:1;min-width:0}
+  .fni-an-date-select select{width:100%}
+  .fni-an-filter-toggle{flex:0 0 auto}
+  .fni-an-filters{display:none;grid-template-columns:1fr 1fr;padding:13px}
+  .fni-an-filters.is-open{display:grid}
+  .fni-an-filters .fni-an-search{grid-column:1/-1}
+  .fni-an-filters .fni-an-reset-filters,.fni-an-filters .fni-an-apply-filters{grid-column:span 1}
+  .fni-an-custom-range{display:grid;grid-template-columns:1fr 1fr}
+  .fni-an-custom-range label{min-width:0}
+  .fni-an-custom-range input{width:100%;min-width:0}
+}
+@media(min-width:761px){.fni-an-filter-toggle{display:none}.fni-an-filters{display:grid}}
