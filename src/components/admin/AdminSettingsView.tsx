@@ -47,9 +47,10 @@ import {
 
 interface AdminSettingsViewProps {
   onBack?: () => void;
+  initialTab?: 'system' | 'security' | 'audit';
 }
 
-export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) => {
+export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack, initialTab = 'system' }) => {
   const { currentUser, changePassword, updateAvatar, updateProfileDetails } = useAuth();
   const {
     pushPermission,
@@ -66,7 +67,9 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({ onBack }) 
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [settingsLoadAttempt, setSettingsLoadAttempt] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [activeTab, setActiveTab] = useState<'system' | 'security' | 'audit'>('system');
+  const [activeTab, setActiveTab] = useState<'system' | 'security' | 'audit'>(initialTab);
+
+  useEffect(() => { setActiveTab(initialTab); }, [initialTab]);
 
   // System Settings state
   const [vision, setVision] = useState('');

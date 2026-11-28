@@ -32,6 +32,7 @@ import { ActivityScheduleService } from '../../services/activityScheduleService'
 import { ICON_STYLES, IconColorKey } from '../../utils/iconColors';
 import { LocationSharingPanel } from '../location/LocationSharingPanel';
 import { SectionHub } from './SectionHub';
+import { MoreSettingsView } from './MoreSettingsView';
 
 // Administrator Portal Views
 import { DashboardView } from '../dashboard/DashboardView';
@@ -90,6 +91,8 @@ export const AppLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+  const [accountSettingsInitialSection, setAccountSettingsInitialSection] = useState<'menu' | 'help_support'>('menu');
+  const [adminSettingsInitialTab, setAdminSettingsInitialTab] = useState<'system' | 'security' | 'audit'>('system');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('fni_sidebar_collapsed') === 'true';
@@ -258,6 +261,16 @@ export const AppLayout: React.FC = () => {
     setCurrentTab(newTab);
   };
 
+  const openAdminSettings = (tab: 'system' | 'security' | 'audit') => {
+    setAdminSettingsInitialTab(tab);
+    navigateToTab('settings');
+  };
+
+  const openHelpSupport = () => {
+    setAccountSettingsInitialSection('help_support');
+    setIsAccountSettingsOpen(true);
+  };
+
   const handleGoBack = useCallback(() => {
     // 1. Check if an active modal/drawer interceptor is open and consumes the action
     const intercepted = NavigationService.triggerInterceptor();
@@ -368,7 +381,7 @@ export const AppLayout: React.FC = () => {
           onCloseMobile={() => setIsSidebarOpen(false)}
           unreadCount={unreadCount}
           onOpenNotifications={() => setIsNotifModalOpen(true)}
-          onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+          onOpenAccountSettings={() => { setAccountSettingsInitialSection('menu'); setIsAccountSettingsOpen(true); }}
           isCollapsed={isSidebarCollapsed && !isSidebarOpen}
           onToggleCollapse={handleToggleCollapse}
           isOverlayMode={effectiveTab === 'messages'}
@@ -417,15 +430,11 @@ export const AppLayout: React.FC = () => {
                 { title: 'Communications', description: 'Open private and community messaging.', icon: MessagesSquare, onClick: () => navigateToTab('messages') },
                 { title: 'Calls & Meetings', description: 'Review call and meeting history.', icon: Phone, onClick: () => navigateToTab('call-history') },
               ]} />}
-            {isAdmin && effectiveTab === 'more-hub' && <SectionHub
-              className="fni-admin-more-hub"
-              title="More" description="Other tools and settings for managing FNI Cells Connect."
-              items={[
-                { title: 'Learning Portal', description: 'Assignments, quizzes, participation and grades.', icon: GraduationCap, onClick: () => navigateToTab('learning-portal') },
-                { title: 'Analytics', description: 'A clear overview of activity and ministry progress.', icon: BarChart3, onClick: () => navigateToTab('analytics') },
-                { title: 'Notifications', description: 'Important alerts and recent updates.', icon: Bell, onClick: () => navigateToTab('notifications') },
-                { title: 'Settings', description: 'Account and administrator preferences.', icon: Settings, onClick: () => navigateToTab('settings') },
-              ]} />}
+            {isAdmin && effectiveTab === 'more-hub' && <MoreSettingsView
+              onNavigate={navigateToTab}
+              onOpenAdminSettings={openAdminSettings}
+              onOpenHelp={openHelpSupport}
+            />}
 
             {/* ADMINISTRATOR PORTAL PAGES */}
             {isAdmin && (
@@ -496,7 +505,7 @@ export const AppLayout: React.FC = () => {
                   <AnalyticsView onBack={handleGoBack} />
                 )}
                 {effectiveTab === 'settings' && (
-                  <AdminSettingsView onBack={handleGoBack} />
+                  <AdminSettingsView onBack={handleGoBack} initialTab={adminSettingsInitialTab} />
                 )}
               </>
             )}
@@ -684,6 +693,7 @@ export const AppLayout: React.FC = () => {
       <AccountSettingsModal
         isOpen={isAccountSettingsOpen}
         onClose={() => setIsAccountSettingsOpen(false)}
+        initialSection={accountSettingsInitialSection}
       />
 
       {/* Global In-App Voice & Video Call Overlay */}
