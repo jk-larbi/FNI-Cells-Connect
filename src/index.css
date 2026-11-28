@@ -7133,3 +7133,47 @@ html.dark .fni-ministry-overview [class*="bg-[#8E6C23]/15"],
 html.dark .fni-ministry-overview [class~="bg-gold-50"] {
   background-color: #3A3020 !important;
 }
+
+
+/* Stitch responsive refinements for the live Ministry overview. */
+.fni-ministry-overview{display:flex;flex-direction:column;gap:20px;color:#142842;font-family:"Source Sans 3",sans-serif}
+.fni-ministry-overview>header{align-items:flex-end;gap:16px;padding-bottom:18px;border-color:#DCE3EC}
+.fni-ministry-overview>header h1{font-family:"Libre Franklin",sans-serif;font-size:clamp(25px,2.2vw,34px);line-height:1.2;letter-spacing:-.035em}
+.fni-ministry-overview>header>div:last-child{min-height:34px;padding:7px 11px;border:1px solid #DCE3EC;border-radius:8px;background:#F7F9FC}
+.fni-ministry-overview>section[aria-label="Ministry totals"]{gap:12px}
+.fni-ministry-overview>section[aria-label="Ministry totals"]>button,.fni-ministry-overview>section[aria-label="Ministry totals"]>div{min-height:116px;border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(20,40,66,.035)}
+.fni-ministry-overview>section[aria-label="Ministry totals"]>button>span:nth-child(2),.fni-ministry-overview>section[aria-label="Ministry totals"]>div>span:nth-child(2){font:700 27px/1.2 "Libre Franklin",sans-serif}
+.fni-ministry-overview>section[aria-label="Attendance trend for the last six weeks"]{padding:20px;border-radius:10px;box-shadow:0 1px 2px rgba(20,40,66,.035)}
+.fni-ministry-overview>section[aria-label="Attendance trend for the last six weeks"] h2{font:600 16px "Libre Franklin",sans-serif}
+.fni-ministry-overview>button.w-full.rounded-2xl,.fni-ministry-overview details{border-radius:10px;box-shadow:0 1px 2px rgba(20,40,66,.035)}
+.fni-ministry-overview details>summary{min-height:58px;padding:14px 17px;font-family:"Libre Franklin",sans-serif}
+.fni-ministry-overview details>div{border-color:#DCE3EC}
+.fni-ministry-overview button:focus-visible,.fni-ministry-overview summary:focus-visible{outline:2px solid #8E6C23;outline-offset:2px}
+@media(max-width:640px){
+ .fni-ministry-overview{gap:15px}
+ .fni-ministry-overview>header{align-items:flex-start;padding-bottom:14px}
+ .fni-ministry-overview>header h1{font-size:25px}
+ .fni-ministry-overview>header>div:last-child{align-self:flex-start}
+ .fni-ministry-overview>section[aria-label="Ministry totals"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .fni-ministry-overview>section[aria-label="Ministry totals"]>button,.fni-ministry-overview>section[aria-label="Ministry totals"]>div{min-height:102px;padding:12px}
+ .fni-ministry-overview>section[aria-label="Ministry totals"]>button>span:nth-child(2),.fni-ministry-overview>section[aria-label="Ministry totals"]>div>span:nth-child(2){font-size:23px}
+ .fni-ministry-overview>section[aria-label="Attendance trend for the last six weeks"]{padding:14px}
+ .fni-ministry-overview>section[aria-label="Attendance trend for the last six weeks"] .h-40{height:132px;gap:5px}
+ .fni-ministry-overview>button.w-full.rounded-2xl{padding:14px}
+ .fni-ministry-overview details>summary{padding:12px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.fni-ministry-overview *, .fni-ministry-overview *::before,.fni-ministry-overview *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+html.dark .fni-ministry-overview>header{border-color:#2E3B4E}
+html.dark .fni-ministry-overview>header>div:last-child{border-color:#3A4A60;background:#1C2636}
+html.dark .fni-ministry-overview>section[aria-label="Ministry totals"]>button,html.dark .fni-ministry-overview>section[aria-label="Ministry totals"]>div,html.dark .fni-ministry-overview>section[aria-label="Attendance trend for the last six weeks"],html.dark .fni-ministry-overview>button.w-full.rounded-2xl,html.dark .fni-ministry-overview>section.grid.grid-cols-2:not([aria-label])>div,html.dark .fni-ministry-overview details{border-color:#2E3B4E;background:#161E2B;box-shadow:none}
+html.dark .fni-ministry-overview>section[aria-label="Attendance trend for the last six weeks"]>div:first-child>span{border-color:#3A4A60;background:#1C2636;color:#E8EDF5}
+html.dark .fni-ministry-overview details>div{border-color:#2E3B4E}
+html.dark .fni-ministry-overview details .bg-white,html.dark .fni-ministry-overview details .bg-\[\#F7F9FC\]{border-color:#3A4A60;background:#1C2636}
+html.dark .fni-ministry-overview details .text-\[\#182230\],html.dark .fni-ministry-overview details .text-\[\#142842\]{color:#E8EDF5}
+html.dark .fni-ministry-overview details .border-\[\#DCE3EC\]{border-color:#3A4A60}
+html.dark .fni-ministry-overview details .bg-emerald-50{background:#173D2B}
+html.dark .fni-ministry-overview details .text-emerald-700,html.dark .fni-ministry-overview details .text-\[\#23845B\]{color:#A7E0BD}
+html.dark .fni-ministry-overview details .bg-amber-50{border-color:#725A2B;background:#332A1A}
+html.dark .fni-ministry-overview details .text-amber-800,html.dark .fni-ministry-overview details .text-amber-900{color:#FFE6B2}
+html.dark .fni-ministry-overview details .border-amber-200{border-color:#725A2B}
+html.dark .fni-ministry-overview button:focus-visible,html.dark .fni-ministry-overview summary:focus-visible{outline-color:#EEC068}
