@@ -161,7 +161,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
 
       {/* KPI Cards */}
       <section className="fni-offering-kpis grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Offering totals">
-        <article className="fni-offering-kpi p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
+        <div className="fni-offering-kpi p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">This Week Total</span>
             <div className="p-2 bg-navy-50 text-navy-900 rounded-xl">
@@ -176,7 +176,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </span>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
+        <div className="fni-offering-kpi p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">This Month</span>
             <div className="p-2 bg-sky-50 text-sky-700 rounded-xl">
@@ -191,7 +191,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </span>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
+        <div className="fni-offering-kpi p-5 bg-white rounded-2xl border border-slate-200 shadow-card">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">This Quarter</span>
             <div className="p-2 bg-purple-50 text-purple-700 rounded-xl">
@@ -206,7 +206,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           </span>
         </div>
 
-        <div className="p-5 bg-gradient-to-br from-navy-950 to-navy-900 text-white rounded-2xl border border-navy-800 shadow-card">
+        <div className="fni-offering-kpi fni-offering-kpi-featured p-5 bg-gradient-to-br from-navy-950 to-navy-900 text-white rounded-2xl border border-navy-800 shadow-card">
           <div className="flex items-center justify-between text-slate-300 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-gold-400">Annual Total (YTD)</span>
             <div className="p-2 bg-gold-500/20 text-gold-400 rounded-xl border border-gold-500/30">
