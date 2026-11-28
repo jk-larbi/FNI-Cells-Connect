@@ -151,6 +151,13 @@ assert.match(view, /Member-created group conversations/, 'member-created groups 
 assert.match(view, /selectedGroupChat \? \(/, 'opening a group must render its dedicated conversation screen');
 assert.match(groupConversationComponent, /MessagingService\.getGroupChatMessages\(group\.id\)/, 'group screen must load its persisted message history');
 assert.match(messaging, /getGroupChatSenderNames\(userIds: string\[\]\)/, 'group chat sender names must resolve from real member profiles');
+assert.match(messaging, /getGroupChatMembers\(groupId: string\)/, 'group details must load the real member roster');
+assert.match(messaging, /from\('group_chat_members'\)[\\s\\S]*?\.eq\('group_id', groupId\)/, 'group roster must come from actual membership records');
+assert.match(messaging, /select\('id,full_name,role,cell_name,photo_url'\)/, 'group roster must use approved profile display fields');
+assert.match(groupConversationComponent, /setMembersOpen\(true\)/, 'group header must open the member roster');
+assert.match(groupConversationComponent, /Group members/, 'group conversation must display a member details panel');
+assert.match(groupConversationComponent, /member\.full_name/, 'group roster must show real member names');
+assert.match(groupConversationComponent, /member\.member_role/, 'group roster must distinguish owners and members');
 assert.match(messaging, /\.in\('supabase_user_id', uniqueIds\)/, 'sender profile lookup must use authenticated Supabase user IDs');
 assert.match(groupConversationComponent, /senderNames\[message\.sender_uid\] \|\| 'FNI Member'/, 'group messages must show profile names instead of truncated user IDs');
 assert.doesNotMatch(groupConversationComponent, /Member · \$\{message\.sender_uid\.slice\(0, 8\)\}/, 'group messages must not expose truncated sender identifiers');
