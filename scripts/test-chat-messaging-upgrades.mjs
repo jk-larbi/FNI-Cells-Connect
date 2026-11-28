@@ -152,7 +152,7 @@ assert.match(view, /selectedGroupChat \? \(/, 'opening a group must render its d
 assert.match(groupConversationComponent, /MessagingService\.getGroupChatMessages\(group\.id\)/, 'group screen must load its persisted message history');
 assert.match(messaging, /getGroupChatSenderNames\(userIds: string\[\]\)/, 'group chat sender names must resolve from real member profiles');
 assert.match(messaging, /getGroupChatMembers\(groupId: string\)/, 'group details must load the real member roster');
-assert.match(messaging, /from\('group_chat_members'\)[\\s\\S]*?\.eq\('group_id', groupId\)/, 'group roster must come from actual membership records');
+assert.match(messaging, /from\('group_chat_members'\)[\s\S]*?\.eq\('group_id', groupId\)/, 'group roster must come from actual membership records');
 assert.match(messaging, /select\('id,full_name,role,cell_name,photo_url'\)/, 'group roster must use approved profile display fields');
 assert.match(groupConversationComponent, /setMembersOpen\(true\)/, 'group header must open the member roster');
 assert.match(groupConversationComponent, /Group members/, 'group conversation must display a member details panel');
