@@ -4019,15 +4019,15 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                 e.stopPropagation();
                                 scrollToMessageId(msg.replyTo!.id);
                               }}
-                              className="mb-1.5 p-2 rounded-xl bg-black/25 border-l-[3px] border-[#38a5e1] cursor-pointer text-[11px] hover:bg-black/35 transition-colors text-left"
+                              className="mb-1.5 p-2.5 rounded-lg bg-slate-100/90 dark:bg-[#101d2b]/75 border border-slate-200/70 dark:border-white/5 border-l-[3px] border-l-[#C6A45A] cursor-pointer text-[11px] hover:bg-slate-200/80 dark:hover:bg-[#14263a] transition-colors text-left shadow-sm"
                             >
-                              <div className="font-bold text-[#38a5e1] text-xs leading-tight">
+                              <div className="font-bold text-[#8A6727] dark:text-[#D9BD7B] text-xs leading-tight">
                                 {msg.replyTo.senderName}
                               </div>
-                              <div className="flex items-center gap-1 text-[11px] text-white/80 truncate mt-0.5">
+                              <div className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-200 truncate mt-0.5">
                                 {msg.replyTo.content.includes('Voice') || msg.replyTo.content.includes('🎤') ? (
                                   <>
-                                    <Mic className="w-3 h-3 text-[#38a5e1] shrink-0" />
+                                    <Mic className="w-3 h-3 text-[#A17A32] dark:text-[#D9BD7B] shrink-0" />
                                     <span className="truncate">Voice message</span>
                                   </>
                                 ) : (
