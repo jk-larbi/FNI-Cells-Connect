@@ -4088,18 +4088,25 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                   );
                                 }
 
+                                const fileExtension = (att.name || '').split('.').pop()?.toUpperCase() || 'FILE';
+                                const documentSize = att.size ? formatAttachmentSize(att.size) : 'Document';
                                 return (
-                                  <div key={attIdx} className="p-2 rounded-xl bg-black/15 flex items-center gap-2 min-w-0">
-                                    <Paperclip className="w-4 h-4 shrink-0" />
+                                  <div key={attIdx} className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/75 dark:bg-[#172536]/80 p-2.5 flex items-center gap-2.5 min-w-0 max-w-[min(100%,340px)] shadow-sm">
+                                    <div className="w-10 h-11 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 flex flex-col items-center justify-center shrink-0 border border-blue-100 dark:border-blue-400/15">
+                                      <FileText className="w-4 h-4" />
+                                      <span className="text-[8px] font-extrabold tracking-wide mt-0.5">{fileExtension.slice(0, 5)}</span>
+                                    </div>
                                     <button
                                       type="button"
                                       onClick={e => {
                                         e.stopPropagation();
                                         window.open(fileUrl, '_blank', 'noopener,noreferrer');
                                       }}
-                                      className="truncate flex-1 text-left hover:underline"
+                                      className="min-w-0 flex-1 text-left"
+                                      title={att.name || 'Open document'}
                                     >
-                                      {att.name || 'Open document'}
+                                      <span className="block text-[12px] font-bold leading-4 truncate hover:underline">{att.name || 'Open document'}</span>
+                                      <span className="block text-[10px] text-slate-500 dark:text-slate-400 mt-1">{fileExtension} · {documentSize}</span>
                                     </button>
                                     <button
                                       type="button"
@@ -4107,7 +4114,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                                         e.stopPropagation();
                                         void handleSaveAttachment(fileUrl, att.name || 'FNI-document');
                                       }}
-                                      className="shrink-0 rounded-lg p-2 hover:bg-black/10 dark:hover:bg-white/10"
+                                      className="w-9 h-9 shrink-0 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-slate-600 dark:text-slate-200 flex items-center justify-center transition-colors"
                                       aria-label={`Save ${att.name || 'document'}`}
                                       title="Save or share"
                                     >
