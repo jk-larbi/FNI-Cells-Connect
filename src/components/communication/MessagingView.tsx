@@ -442,6 +442,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [imagePreview, setImagePreview] = useState<{ url: string; name: string } | null>(null);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [isVoiceRecordingPaused, setIsVoiceRecordingPaused] = useState(false);
+  const voiceRecordingCancelledRef = useRef(false);
   const recordingSecondsRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -2447,6 +2449,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       });
 
       mediaStreamRef.current = stream;
+      voiceRecordingCancelledRef.current = false;
+      setIsVoiceRecordingPaused(false);
 
       // Safari/iOS commonly records AAC in MP4; Chromium/Android generally supports Opus in WebM.
       const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -2486,6 +2490,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         const blob = new Blob(chunks, { type: actualMimeType });
 
         try {
+          if (voiceRecordingCancelledRef.current) return;
           if (!blob.size) {
             setSendError('No audio was captured. Check microphone permission and try again.');
             return;
@@ -2542,6 +2547,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           mediaStreamRef.current = null;
           mediaRecorderRef.current = null;
           setIsRecordingVoice(false);
+          setIsVoiceRecordingPaused(false);
+          voiceRecordingCancelledRef.current = false;
           if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
           recordingTimerRef.current = null;
         }
@@ -2573,6 +2580,46 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setIsRecordingVoice(false);
       mediaRecorderRef.current = null;
     }
+  };
+
+  const pauseVoiceRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== 'recording') return;
+    recorder.pause();
+    setIsVoiceRecordingPaused(true);
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    recordingTimerRef.current = null;
+  };
+
+  const resumeVoiceRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== 'paused') return;
+    recorder.resume();
+    setIsVoiceRecordingPaused(false);
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingSeconds(seconds => {
+        const next = seconds + 1;
+        recordingSecondsRef.current = next;
+        return next;
+      });
+    }, 1000);
+  };
+
+  const cancelVoiceRecording = () => {
+    voiceRecordingCancelledRef.current = true;
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    recordingTimerRef.current = null;
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop();
+      return;
+    }
+    mediaStreamRef.current?.getTracks().forEach(track => track.stop());
+    mediaStreamRef.current = null;
+    mediaRecorderRef.current = null;
+    setIsRecordingVoice(false);
+    setIsVoiceRecordingPaused(false);
   };
 
   const stopVoiceRecording = () => {
@@ -4562,22 +4609,30 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 </>
               )}
               {isRecordingVoice ? (
-                /* Voice recording active row */
-                <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-rose-600 animate-ping" />
-                    <span className="font-bold text-xs">
-                      Recording Voice Note ({Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')})
-                    </span>
+                /* Voice recording controls: pause, resume, cancel and send */
+                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0 ${isVoiceRecordingPaused ? '' : 'animate-pulse'}`} />
+                    <div className="min-w-0">
+                      <span className="font-bold text-xs block">{isVoiceRecordingPaused ? 'Recording paused' : 'Recording voice note'}</span>
+                      <span className="text-[10px] tabular-nums opacity-80">
+                        {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={stopVoiceRecording}
-                    className="p-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 px-3 shadow-xs cursor-pointer"
-                  >
-                    <Square className="w-3.5 h-3.5 fill-current" />
-                    <span>Send</span>
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button type="button" onClick={cancelVoiceRecording} className="h-9 px-2.5 rounded-full text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50" title="Discard voice note">
+                      <X className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={isVoiceRecordingPaused ? resumeVoiceRecording : pauseVoiceRecording} className="h-9 px-3 rounded-full border border-rose-300 dark:border-rose-800 text-xs font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/50 flex items-center gap-1.5" title={isVoiceRecordingPaused ? 'Resume recording' : 'Pause recording'}>
+                      {isVoiceRecordingPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                      <span>{isVoiceRecordingPaused ? 'Resume' : 'Pause'}</span>
+                    </button>
+                    <button type="button" onClick={stopVoiceRecording} className="h-9 px-3 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs">
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="relative">
