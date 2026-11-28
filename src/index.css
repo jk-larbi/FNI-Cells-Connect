@@ -5864,3 +5864,41 @@ html:not(.dark) .fni-theme-toggle {
   }
 }
 
+/* Final contrast corrections for legacy utility classes and page shells. */
+html:not(.dark) body, html:not(.dark) #root {
+  background-color: var(--fni-canvas) !important;
+  color: var(--fni-text) !important;
+}
+html.dark body, html.dark #root {
+  background-color: var(--fni-canvas) !important;
+  color: var(--fni-text) !important;
+}
+html:not(.dark) .text-navy-400,
+html:not(.dark) .text-navy-500,
+html:not(.dark) .text-purple-500,
+html:not(.dark) .text-purple-600,
+html:not(.dark) .text-gold-400,
+html:not(.dark) .text-gold-500,
+html:not(.dark) .text-gold-600 { color: #376F9F !important; }
+html.dark .text-navy-400,
+html.dark .text-navy-500,
+html.dark .text-navy-600,
+html.dark .text-purple-400,
+html.dark .text-purple-500,
+html.dark .text-purple-600,
+html.dark .text-purple-700 { color: #A8C9E8 !important; }
+html.dark .text-gold-400,
+html.dark .text-gold-500,
+html.dark .text-gold-600,
+html.dark .text-gold-700 { color: #E9D9B2 !important; }
+html.dark .text-blue-600,
+html.dark .text-blue-700,
+html.dark .text-indigo-600,
+html.dark .text-indigo-700 { color: #A8C9E8 !important; }
+html.dark .bg-purple-50,
+html.dark .bg-purple-100,
+html.dark .bg-indigo-50 { background-color: var(--fni-blue-soft) !important; }
+html:not(.dark) .bg-purple-50,
+html:not(.dark) .bg-purple-100,
+html:not(.dark) .bg-indigo-50 { background-color: var(--fni-blue-soft) !important; }
+
