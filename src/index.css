@@ -5857,10 +5857,8 @@ html:not(.dark) .fni-theme-toggle {
 ::selection { background: var(--fni-blue-soft); color: var(--fni-text); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .fni-app-shell, .fni-app-shell * {
-    transition-property: background-color, border-color, color, box-shadow;
-    transition-duration: 160ms;
-    transition-timing-function: ease-out;
+  .fni-app-shell {
+    transition: background-color 160ms ease-out, color 160ms ease-out;
   }
 }
 
@@ -5902,3 +5900,14 @@ html:not(.dark) .bg-purple-50,
 html:not(.dark) .bg-purple-100,
 html:not(.dark) .bg-indigo-50 { background-color: var(--fni-blue-soft) !important; }
 
+
+/* Brand accent text must remain readable when older screens use direct hex utilities. */
+html:not(.dark) [class*="text-[#6596C5]"],
+html:not(.dark) [class*="text-[#8BB5DC]"],
+html:not(.dark) .text-blue-500,
+html:not(.dark) .text-indigo-500 { color: #376F9F !important; }
+html.dark [class*="text-[#6596C5]"],
+html.dark [class*="text-[#8BB5DC]"],
+html.dark [class*="text-[#D9BD7B]"],
+html.dark .text-blue-500,
+html.dark .text-indigo-500 { color: #A8C9E8 !important; }
