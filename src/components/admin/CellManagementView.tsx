@@ -292,7 +292,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     return matchesSearch && matchesStatus && matchesDirectoryFilter;
   });
 
-  const approvedCellMeetings = cellMeetings.filter(report => report.status === 'Approved');
+  const isApprovedMeeting = (report: CellMeetingReport) => report.status === 'Approved' || report.status === 'approved';
+  const approvedCellMeetings = cellMeetings.filter(isApprovedMeeting);
   const meetingPerformance = approvedCellMeetings.reduce((totals, report) => ({
     attendance: totals.attendance + (Number(report.attendance) || 0),
     absentees: totals.absentees + (Number(report.absentees) || 0),
@@ -841,7 +842,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
                   <div className="text-[10px] font-semibold text-[#5A6B7C]">Meeting Reports</div>
                   <div className="text-lg font-bold text-[#142842] mt-0.5">{cellMeetings.length}</div>
-                  <div className="text-[10px] text-[#5A6B7C] mt-0.5">{cellMeetings.filter(report => report.status === 'Approved').length} approved</div>
+                  <div className="text-[10px] text-[#5A6B7C] mt-0.5">{cellMeetings.filter(isApprovedMeeting).length} approved</div>
                 </div>
                 <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
                   <div className="text-[10px] font-semibold text-[#5A6B7C]">Evangelism Outreaches</div>
