@@ -291,6 +291,10 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
 }) => {
   const [messages, setMessages] = useState<GroupChatMessage[]>([]);
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
+  const [groupMembers, setGroupMembers] = useState<Array<{ user_id: string; full_name: string; role: string; cell_name?: string; photo_url?: string; member_role: string; joined_at: string }>>([]);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -325,6 +329,17 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
       cancelled = true;
       if (channel && supabase) void supabase.removeChannel(channel);
     };
+  }, [group.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMembersLoading(true);
+    setMembersError(null);
+    void MessagingService.getGroupChatMembers(group.id)
+      .then(rows => { if (!cancelled) setGroupMembers(rows); })
+      .catch(reason => { if (!cancelled) setMembersError(reason instanceof Error ? reason.message : 'Unable to load group members.'); })
+      .finally(() => { if (!cancelled) setMembersLoading(false); });
+    return () => { cancelled = true; };
   }, [group.id]);
 
   const senderIdsKey = useMemo(
@@ -372,8 +387,10 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
           <button type="button" onClick={onBack} aria-label="Back to messages" className="md:hidden w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 flex items-center justify-center"><ChevronLeft className="w-5 h-5" /></button>
           <div className="w-10 h-10 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/50 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center font-bold shrink-0">{group.name.slice(0, 2).toUpperCase()}</div>
           <div className="min-w-0">
-            <h2 className="font-semibold text-sm truncate">{group.name}</h2>
-            <p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate tabular-nums">{group.member_count} members · {group.member_role}</p>
+            <button type="button" onClick={() => setMembersOpen(true)} className="min-w-0 text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B18A3C]" aria-label={`View members of ${group.name}`}>
+              <h2 className="font-semibold text-sm truncate">{group.name}</h2>
+              <p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate tabular-nums">{group.member_count} members · View members</p>
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -382,6 +399,29 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
         </div>
       </header>
       {group.description && <div className="px-4 py-2 text-xs bg-[#F5EDD9] dark:bg-[#5D4200]/25 text-[#785A1B] dark:text-[#D9BD7B] border-b border-[#E8DAB8] dark:border-[#5D4200]/40">{group.description}</div>}
+      {membersOpen && (
+        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-3" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setMembersOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="group-members-title" className="w-full max-w-md max-h-[80vh] flex flex-col rounded-2xl overflow-hidden bg-white dark:bg-[#161E2B] text-[#354454] dark:text-[#E8EDF5] shadow-2xl border border-[#DCEAF6] dark:border-[#2E3B4E]">
+            <header className="px-4 py-3 flex items-center justify-between border-b border-[#E9EDF1] dark:border-[#2E3B4E] bg-[#EDF5FC] dark:bg-[#1C2636]">
+              <div><h3 id="group-members-title" className="font-semibold text-sm">Group members</h3><p className="text-xs text-[#536273] dark:text-[#A8B6C8]">{groupMembers.length} members in {group.name}</p></div>
+              <button type="button" onClick={() => setMembersOpen(false)} aria-label="Close group members" className="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10"><X className="w-4 h-4 mx-auto" /></button>
+            </header>
+            <div className="overflow-y-auto p-3 space-y-1">
+              {membersLoading && <p className="py-8 text-center text-sm text-[#536273] dark:text-[#A8B6C8]">Loading members…</p>}
+              {membersError && <p role="alert" className="p-3 text-sm text-red-600 dark:text-red-300">{membersError}</p>}
+              {!membersLoading && !membersError && groupMembers.map(member => (
+                <div key={member.user_id} className="flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-[#EDF5FC] dark:hover:bg-[#1C2636]">
+                  {member.photo_url ? <img src={member.photo_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className="w-10 h-10 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/40 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center text-sm font-semibold shrink-0">{member.full_name.split(/\s+/).map(part => part[0]).slice(0,2).join('').toUpperCase()}</div>}
+                  <div className="min-w-0 flex-1"><p className="text-sm font-semibold truncate">{member.full_name}</p><p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate">{[member.role, member.cell_name].filter(Boolean).join(' · ') || 'FNI Member'}</p></div>
+                  <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/30 text-[#785A1B] dark:text-[#D9BD7B] capitalize">{member.member_role}</span>
+                </div>
+              ))}
+              {!membersLoading && !membersError && groupMembers.length === 0 && <p className="py-8 text-center text-sm text-[#536273] dark:text-[#A8B6C8]">No member details are available.</p>}
+            </div>
+          </section>
+        </div>
+      )}
+
       <div ref={streamRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-3">
         {loading && <p className="text-center text-sm text-[#536273] dark:text-[#A8B6C8] py-8">Loading messages…</p>}
         {!loading && messages.length === 0 && <div className="max-w-sm mx-auto mt-12 text-center rounded-2xl bg-[#EDF5FC] dark:bg-[#1C2636] p-5"><Users className="w-7 h-7 mx-auto mb-2 text-[#785A1B] dark:text-[#D9BD7B]" /><p className="font-semibold text-sm">Start the conversation</p><p className="text-xs mt-1 text-[#536273] dark:text-[#A8B6C8]">Messages sent here are saved to this group and delivered to its members.</p></div>}
