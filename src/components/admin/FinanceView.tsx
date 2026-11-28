@@ -17,7 +17,6 @@ import {
   Clock,
 } from 'lucide-react';
 import { Button } from '../common/Button';
-import './financeView.css';
 
 interface FinanceViewProps {
   onBack?: () => void;
