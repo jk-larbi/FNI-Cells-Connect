@@ -379,6 +379,9 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [memberActionBusy, setMemberActionBusy] = useState(false);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
+  const [groupSearchOpen, setGroupSearchOpen] = useState(false);
+  const [groupSearchTerm, setGroupSearchTerm] = useState('');
+  const [jumpToGroupMessageId, setJumpToGroupMessageId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -523,6 +526,26 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     }
   };
 
+  const groupSearchResults = useMemo(() => {
+    const query = groupSearchTerm.trim().toLocaleLowerCase();
+    if (!query) return [];
+    return messages.filter(message => {
+      if (message.deleted_at) return false;
+      const messageText = message.content || '';
+      const fileNames = (message.attachments || []).map(file => file.name || '').join(' ');
+      const senderName = senderNames[message.sender_uid] || '';
+      return `${messageText} ${fileNames} ${senderName}`.toLocaleLowerCase().includes(query);
+    }).slice(0, 50);
+  }, [messages, groupSearchTerm, senderNames]);
+
+  useEffect(() => {
+    if (!jumpToGroupMessageId) return;
+    const target = document.getElementById(`fni-group-message-${jumpToGroupMessageId}`);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const timeout = window.setTimeout(() => setJumpToGroupMessageId(null), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [jumpToGroupMessageId]);
+
   const senderIdsKey = useMemo(
     () => Array.from(new Set(messages.map(message => message.sender_uid).filter(uid => uid && uid !== currentUserId))).sort().join(','),
     [messages, currentUserId]
@@ -579,8 +602,33 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           <button type="button" onClick={onVoiceMeeting} aria-label="Start voice meeting" title="Voice meeting" className="w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 flex items-center justify-center"><Phone className="w-4 h-4" /></button>
           <button type="button" onClick={onVideoMeeting} aria-label="Start video meeting" title="Video meeting" className="w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 flex items-center justify-center"><Video className="w-4 h-4" /></button>
+          <button type="button" onClick={() => { setGroupSearchOpen(value => !value); setGroupSearchTerm(''); }} aria-label={groupSearchOpen ? 'Close group search' : 'Search group messages and files'} title="Search messages and files" className={`w-9 h-9 rounded-full flex items-center justify-center ${groupSearchOpen ? 'bg-[#785A1B] text-white dark:bg-[#D9BD7B] dark:text-[#263445]' : 'bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10'}`}><Search className="w-4 h-4" /></button>
         </div>
       </header>
+      {groupSearchOpen && (
+        <section className="shrink-0 px-3 py-3 bg-white dark:bg-[#161E2B] border-b border-[#DCEAF6] dark:border-[#2E3B4E] space-y-2" aria-label="Search this group">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A8795]" />
+              <input autoFocus type="search" value={groupSearchTerm} onChange={event => setGroupSearchTerm(event.target.value)} placeholder="Search messages, files or people…" aria-label="Search group messages and shared files" className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm bg-[#EDF5FC] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] outline-none focus:ring-2 focus:ring-[#8BB5DC]" />
+            </div>
+            <button type="button" onClick={() => { setGroupSearchOpen(false); setGroupSearchTerm(''); }} className="px-2.5 py-2 rounded-lg text-xs font-semibold bg-[#EDF5FC] dark:bg-[#253145]">Close</button>
+          </div>
+          <p className="text-[10px] text-[#7A8795]">Searching the latest {messages.length} messages currently loaded on this device, including shared file names.</p>
+          {groupSearchTerm.trim() && <div className="max-h-56 overflow-y-auto space-y-1">
+            <p className="text-[11px] font-semibold text-[#536273] dark:text-[#A8B6C8]">{groupSearchResults.length} matching message{groupSearchResults.length === 1 ? '' : 's'}{groupSearchResults.length === 50 ? ' · showing first 50' : ''}</p>
+            {groupSearchResults.map(result => {
+              const matchedFiles = (result.attachments || []).filter(file => file.name.toLocaleLowerCase().includes(groupSearchTerm.trim().toLocaleLowerCase()));
+              const preview = matchedFiles.length ? `File · ${matchedFiles.map(file => file.name).join(', ')}` : result.content;
+              return <button key={result.id} type="button" onClick={() => { setGroupSearchOpen(false); setGroupSearchTerm(''); setJumpToGroupMessageId(result.id); }} className="w-full text-left rounded-xl px-3 py-2.5 bg-[#F5F8FB] dark:bg-[#101620] hover:bg-[#EDF5FC] dark:hover:bg-[#253145]">
+                <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold truncate">{senderNames[result.sender_uid] || (result.sender_uid === currentUserId ? 'You' : 'FNI Member')}</span><span className="text-[10px] shrink-0 text-[#7A8795]">{new Date(result.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })} · {new Date(result.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+                <p className="text-xs mt-1 line-clamp-2 break-words text-[#536273] dark:text-[#A8B6C8]">{preview || 'Attachment'}</p>
+              </button>;
+            })}
+            {groupSearchResults.length === 0 && <p className="py-4 text-center text-xs text-[#7A8795]">No matching messages or shared file names.</p>}
+          </div>}
+        </section>
+      )}
       {group.description && <div className="px-4 py-2 text-xs bg-[#F5EDD9] dark:bg-[#5D4200]/25 text-[#785A1B] dark:text-[#D9BD7B] border-b border-[#E8DAB8] dark:border-[#5D4200]/40">{group.description}</div>}
       {groupInfoOpen && (
         <div className="fixed inset-0 z-[95] bg-black/55 flex items-center justify-center p-3" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setGroupInfoOpen(false); }}>
@@ -715,7 +763,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
         {messages.map(message => {
           const mine = message.sender_uid === currentUserId;
           return <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-            <article className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm ${mine ? 'bg-[#DCEAF6] dark:bg-[#253145] rounded-br-md' : 'bg-white dark:bg-[#1C2636] border border-[#E9EDF1] dark:border-[#2E3B4E] rounded-bl-md'}`}>
+            <article id={`fni-group-message-${message.id}`} data-group-message-id={message.id} className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm transition-shadow ${jumpToGroupMessageId === message.id ? 'ring-2 ring-[#B18A3C] shadow-lg' : ''} ${mine ? 'bg-[#DCEAF6] dark:bg-[#253145] rounded-br-md' : 'bg-white dark:bg-[#1C2636] border border-[#E9EDF1] dark:border-[#2E3B4E] rounded-bl-md'}`}>
               {!mine && <p className="text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B] mb-1">{senderNames[message.sender_uid] || 'FNI Member'}</p>}
               {message.deleted_at ? <p className="text-sm italic opacity-60">This message was deleted</p> : <p className="text-sm whitespace-pre-wrap break-words">{message.content || (message.message_type === 'image' ? 'Photo' : 'Attachment')}</p>}
               <div className="flex justify-end gap-1.5 mt-1"><span className="text-[10px] opacity-60">{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>{message.edited_at && <span className="text-[10px] opacity-60">edited</span>}</div>
