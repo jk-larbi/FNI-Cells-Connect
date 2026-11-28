@@ -1318,6 +1318,16 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 <span className="fni-notification-row-copy"><strong>Quizzes</strong><span>Quiz publishing, availability windows and score releases</span></span>
                 <input type="checkbox" checked={notifPrefs.quizzes !== false} onChange={() => handleToggleNotif('quizzes')} />
               </label>
+            </section>
+
+            <section className="fni-notification-card">
+              <div className="fni-notification-card-heading">
+                <div>
+                  <h2>Communication notifications</h2>
+                  <p>Manage alerts for conversations, calls and fellowship group activity.</p>
+                </div>
+                <Bell />
+              </div>
               <label className="fni-notification-toggle-row">
                 <span className="fni-notification-row-copy"><strong>Calls &amp; meeting notifications</strong><span>Incoming voice and video calls, group meetings and missed calls</span></span>
                 <input type="checkbox" checked={notifPrefs.calls !== false} onChange={() => handleToggleNotif('calls')} />
