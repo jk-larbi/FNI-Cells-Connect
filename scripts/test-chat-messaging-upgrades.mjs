@@ -231,3 +231,12 @@ assert.match(groupMediaStorageMigration, /bucket_id = 'fni-chat-media'/, 'group 
 assert.match(groupMediaStorageMigration, /message\.attachments @> jsonb_build_array/, 'private media access must require a matching persisted group message attachment');
 assert.match(groupMediaStorageMigration, /private\.is_group_member\(message\.group_id\)/, 'only current group members may resolve attached media');
 console.log('Private group media gallery, upload, preview and member-only Storage access regression checks passed.');
+
+
+// Group search regression checks.
+assert.match(view, /Search messages, files or people/, 'group header must expose group search');
+assert.match(view, /groupSearchResults = useMemo/, 'search results must derive from loaded group messages');
+assert.match(view, /fileNames = \(message\.attachments \|\| \[\]\)\.map\(file => file\.name/, 'group search must include shared attachment names');
+assert.match(view, /fni-group-message-\$\{message\.id\}/, 'group messages must expose stable scroll targets');
+assert.match(view, /scrollIntoView\(\{ behavior: 'smooth', block: 'center' \}\)/, 'search results must jump to the original message');
+assert.match(view, /latest \{messages\.length\} messages currently loaded/, 'search scope must be clear to members');
