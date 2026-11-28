@@ -5911,3 +5911,103 @@ html.dark [class*="text-[#8BB5DC]"],
 html.dark [class*="text-[#D9BD7B]"],
 html.dark .text-blue-500,
 html.dark .text-indigo-500 { color: #A8C9E8 !important; }
+
+ 
+/* ================================================================
+   GLOBAL FNI THEME NORMALISATION
+   All legacy screens/components inherit the same light/dark palette.
+   Keep semantic status colours and filled action buttons intentional.
+   ================================================================ */
+:root {
+  --fni-icon: var(--fni-text-muted);
+  --fni-link: var(--fni-blue-strong);
+  --fni-control-bg: var(--fni-surface);
+}
+html.dark {
+  --fni-icon: var(--fni-text-muted);
+  --fni-link: #A8C9E8;
+  --fni-control-bg: var(--fni-surface-muted);
+}
+
+/* Neutral text utilities used by older screens. */
+html:not(.dark) :is(
+  .text-slate-950,.text-slate-900,.text-slate-800,.text-slate-700,
+  .text-gray-950,.text-gray-900,.text-gray-800,.text-gray-700,
+  .text-zinc-950,.text-zinc-900,.text-zinc-800,.text-zinc-700,
+  .text-neutral-950,.text-neutral-900,.text-neutral-800,.text-neutral-700,
+  .text-stone-900,.text-stone-800,.text-stone-700
+) { color: var(--fni-text) !important; }
+
+html.dark :is(
+  .text-slate-950,.text-slate-900,.text-slate-800,.text-slate-700,.text-slate-600,.text-slate-500,
+  .text-gray-950,.text-gray-900,.text-gray-800,.text-gray-700,.text-gray-600,.text-gray-500,
+  .text-zinc-950,.text-zinc-900,.text-zinc-800,.text-zinc-700,.text-zinc-600,.text-zinc-500,
+  .text-neutral-950,.text-neutral-900,.text-neutral-800,.text-neutral-700,.text-neutral-600,.text-neutral-500,
+  .text-stone-900,.text-stone-800,.text-stone-700,.text-stone-600,.text-stone-500
+) { color: var(--fni-text-muted) !important; }
+
+/* Pale/white text must not disappear on unfilled light-mode surfaces. */
+html:not(.dark) .text-white:not([class*="bg-"]):not(button):not([role="button"]),
+html:not(.dark) [class~="text-[#FFFFFF]"]:not([class*="bg-"]) {
+  color: var(--fni-text) !important;
+}
+html:not(.dark) :is(.text-slate-100,.text-slate-200,.text-gray-100,.text-gray-200,
+  .text-zinc-100,.text-zinc-200,.text-neutral-100,.text-neutral-200) {
+  color: var(--fni-text-muted) !important;
+}
+html.dark :is(.text-black,.text-slate-950,.text-slate-900,.text-gray-950,.text-gray-900,
+  .text-zinc-950,.text-zinc-900,.text-neutral-950,.text-neutral-900) {
+  color: var(--fni-text) !important;
+}
+
+/* Legacy blue/purple/navy text now follows the FNI blue accent in both modes. */
+html:not(.dark) :is(.text-blue-400,.text-blue-500,.text-blue-600,.text-blue-700,
+  .text-indigo-400,.text-indigo-500,.text-indigo-600,.text-indigo-700,
+  .text-purple-400,.text-purple-500,.text-purple-600,.text-purple-700,
+  .text-navy-400,.text-navy-500,.text-navy-600) {
+  color: var(--fni-blue-strong) !important;
+}
+html.dark :is(.text-blue-400,.text-blue-500,.text-blue-600,.text-blue-700,
+  .text-indigo-400,.text-indigo-500,.text-indigo-600,.text-indigo-700,
+  .text-purple-400,.text-purple-500,.text-purple-600,.text-purple-700,
+  .text-navy-400,.text-navy-500,.text-navy-600) {
+  color: #A8C9E8 !important;
+}
+
+/* All common neutral/pale surfaces switch together in dark mode. */
+html.dark :is(
+  .bg-white,.bg-slate-50,.bg-slate-100,.bg-gray-50,.bg-gray-100,
+  .bg-zinc-50,.bg-zinc-100,.bg-neutral-50,.bg-neutral-100,
+  .bg-stone-50,.bg-stone-100,.bg-blue-50,.bg-indigo-50,.bg-purple-50
+) {
+  background-color: var(--fni-surface-muted) !important;
+  color: var(--fni-text) !important;
+}
+html.dark :is(.bg-slate-200,.bg-gray-200,.bg-zinc-200,.bg-neutral-200,.bg-stone-200) {
+  background-color: var(--fni-surface-raised) !important;
+  color: var(--fni-text) !important;
+}
+html.dark :is(.border-white,.border-slate-100,.border-slate-200,.border-gray-100,
+  .border-gray-200,.border-zinc-100,.border-zinc-200) {
+  border-color: var(--fni-border) !important;
+}
+
+/* Inline SVG icons inherit the readable foreground unless explicitly semantic. */
+html body :is(button,a,[role="button"],label) svg:not([class*="text-"]):not([fill="none"]) {
+  color: inherit;
+}
+html.dark input, html.dark textarea, html.dark select,
+html:not(.dark) input, html:not(.dark) textarea, html:not(.dark) select {
+  accent-color: var(--fni-blue-strong);
+}
+html.dark input::placeholder, html.dark textarea::placeholder {
+  color: var(--fni-text-subtle) !important;
+  opacity: 1;
+}
+
+/* Headings and standard copy always use semantic foreground tokens. */
+html:not(.dark) :is(h1,h2,h3,h4,h5,h6),
+html:not(.dark) :is(p,li,dt,dd,th,td) { color: inherit; }
+html.dark :is(h1,h2,h3,h4,h5,h6) { color: var(--fni-text) !important; }
+html.dark :is(p,li,dt,dd) { color: inherit; }
+html.dark a:not([class*="bg-"]) { color: var(--fni-link); }
