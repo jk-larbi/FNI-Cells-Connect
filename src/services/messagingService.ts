@@ -264,6 +264,23 @@ export class MessagingService {
     });
   }
 
+  static async manageGroupChatMember(input: {
+    groupId: string;
+    memberId: string;
+    action: 'add_member' | 'remove_member' | 'set_role' | 'leave';
+    memberRole?: 'member' | 'moderator';
+  }): Promise<{ group_id: string; member_id: string; action: string; member_role?: string }> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('FNI connection is unavailable.');
+    const { data, error } = await supabase.rpc('manage_fni_group_chat_member', {
+      p_group_id: input.groupId,
+      p_member_id: input.memberId,
+      p_action: input.action,
+      p_member_role: input.memberRole || 'member',
+    });
+    if (error) throw error;
+    return data as { group_id: string; member_id: string; action: string; member_role?: string };
+  }
+
   static async getGroupChatSenderNames(userIds: string[]): Promise<Record<string, string>> {
     if (!supabase || !isSupabaseConfigured || userIds.length === 0) return {};
     const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
