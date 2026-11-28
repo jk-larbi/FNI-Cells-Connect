@@ -60,6 +60,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
   const [cellContacts, setCellContacts] = useState<EvangelismContact[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [expandedMeetingReportId, setExpandedMeetingReportId] = useState<string | null>(null);
 
   // Edit / Add Cell modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -934,24 +935,64 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 </p>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-                  {cellMeetings.map(m => (
-                    <div
-                      key={m.id}
-                      className="p-3 rounded-xl border border-[#DCE3EC] flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <div className="font-bold text-[#182230]">Meeting on {m.meetingDate}</div>
-                        <div className="text-[11px] text-[#5A6B7C]">
-                          Attendance: {m.attendance} &bull; Members: {m.members} &bull; Absentees: {m.absentees}
-                        </div>
+                  {cellMeetings.map(m => {
+                    const expanded = expandedMeetingReportId === m.id;
+                    const detailFields = [
+                      { label: 'Meeting theme', value: m.scripturalTheme },
+                      { label: 'Scriptures used', value: m.scripturesUsed },
+                      { label: 'Testimonies', value: m.testimonies },
+                      { label: 'Tutor notes', value: m.tutorNotes },
+                      { label: 'Tutor experience', value: m.tutorExperience },
+                      { label: 'Meeting location', value: m.meetingLocation },
+                    ].filter(field => Boolean(field.value?.trim()));
+                    return (
+                      <div key={m.id} className="rounded-xl border border-[#DCE3EC] overflow-hidden">
+                        <button
+                          type="button"
+                          aria-expanded={expanded}
+                          onClick={() => setExpandedMeetingReportId(expanded ? null : m.id)}
+                          className="w-full p-3 flex items-center justify-between gap-3 text-left text-xs hover:bg-[#F8FAFC] transition-colors"
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-bold text-[#182230]">Meeting on {m.meetingDate}</span>
+                            <span className="block text-[11px] text-[#5A6B7C] mt-0.5">
+                              Attendance: {m.attendance} &bull; Members: {m.members} &bull; Absentees: {m.absentees}
+                            </span>
+                            <span className="block text-[10px] text-[#5A6B7C] mt-1">Submitted by {m.tutorName}</span>
+                          </span>
+                          <span className="shrink-0 flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isApprovedMeeting(m) ? 'bg-emerald-50 text-[#23845B]' : 'bg-amber-50 text-[#D99A32]'
+                            }`}>{m.status}</span>
+                            <span className="text-[#5A6B7C]">{expanded ? '−' : '+'}</span>
+                          </span>
+                        </button>
+                        {expanded && (
+                          <div className="border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 space-y-3 text-xs">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              <div><span className="block text-[10px] text-[#5A6B7C]">New members</span><strong className="text-[#182230]">{m.newMembers}</strong></div>
+                              <div><span className="block text-[10px] text-[#5A6B7C]">Follow-up needed</span><strong className="text-[#182230]">{m.followUpNeeded}</strong></div>
+                              <div><span className="block text-[10px] text-[#5A6B7C]">Active members</span><strong className="text-[#182230]">{m.activeMembers}</strong></div>
+                              {m.offering !== undefined && <div><span className="block text-[10px] text-[#5A6B7C]">Offering</span><strong className="text-[#182230]">{m.currency || 'GHS'} {Number(m.offering).toFixed(2)}</strong></div>}
+                            </div>
+                            {detailFields.length ? detailFields.map(field => (
+                              <div key={field.label}>
+                                <div className="text-[10px] font-bold uppercase tracking-wide text-[#5A6B7C] mb-1">{field.label}</div>
+                                <p className="whitespace-pre-wrap break-words text-[#25384A] leading-relaxed">{field.value}</p>
+                              </div>
+                            )) : <p className="text-[#5A6B7C] italic">No theme, scripture, testimony or tutor notes were included in this report.</p>}
+                            {m.reviewerComment && (
+                              <div className="rounded-lg border border-[#E7D9B5] bg-[#FDF8E8] p-2">
+                                <div className="text-[10px] font-bold uppercase tracking-wide text-[#8E6C23] mb-1">Reviewer comment</div>
+                                <p className="whitespace-pre-wrap break-words text-[#5D4200]">{m.reviewerComment}</p>
+                              </div>
+                            )}
+                            <div className="text-[10px] text-[#5A6B7C]">Submitted {m.submittedAt ? new Date(m.submittedAt).toLocaleString() : 'date not recorded'}{m.reviewedAt ? ` · Reviewed ${new Date(m.reviewedAt).toLocaleString()}` : ''}</div>
+                          </div>
+                        )}
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        m.status === 'Approved' ? 'bg-emerald-50 text-[#23845B]' : 'bg-amber-50 text-[#D99A32]'
-                      }`}>
-                        {m.status}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
