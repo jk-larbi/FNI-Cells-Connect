@@ -3151,6 +3151,24 @@ export class SupabaseService {
     return data as any;
   }
 
+  static async getCellMemberCounts(): Promise<Record<string, { total: number; active: number; followUp: number }> | null> {
+    if (!this.isAvailable()) return null;
+    const { data, error } = await supabase!.from('cell_members').select('cell_id,status');
+    if (error || !data) {
+      console.warn('getCellMemberCounts failed:', error?.message);
+      return null;
+    }
+    return data.reduce((counts: Record<string, { total: number; active: number; followUp: number }>, row: any) => {
+      const cellId = String(row.cell_id || '');
+      if (!cellId) return counts;
+      const current = counts[cellId] || (counts[cellId] = { total: 0, active: 0, followUp: 0 });
+      current.total += 1;
+      if (row.status === 'Active') current.active += 1;
+      if (row.status === 'Needs Follow-up') current.followUp += 1;
+      return counts;
+    }, {});
+  }
+
   static async saveCellMember(member: {id?:string;cell_id:string;full_name:string;phone_number?:string;status:string;notes?:string;created_by?:string}): Promise<void> {
     if (!this.isAvailable()) throw new Error('The member directory requires an active connection.');
     const payload = { ...member, full_name: member.full_name.trim(), phone_number: member.phone_number?.trim() || null, notes: member.notes?.trim() || null };
