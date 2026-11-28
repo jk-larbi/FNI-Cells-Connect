@@ -100,4 +100,7 @@ assert.match(view, /isOnline: onlineMemberIds\.has\(peer\.id\)/, 'direct contact
 assert.match(view, /const isOnline = onlineMemberIds\.has\(tutor\.id\)/, 'the tutor directory must use live presence rather than treating every active account as online');
 assert.match(view, /formatMemberLastSeen\(memberLastSeen\[tutor\.id\]\)/, 'offline tutors must show their persisted last-seen timestamp');
 assert.match(view, /formatMemberLastSeen\(activeContact\?\.lastSeenAt\)/, 'chat headers must display the stored last-seen time');
-console.log('FNI real-time online presence and durable last-seen regression checks passed.');
+assert.match(view, /fni-messages-stitch/, 'FNI Messages must expose its Stitch conversation-list styling scope');
+assert.match(view, /fni-messages-search-input/, 'FNI Messages search must retain its Stitch styling hook');
+assert.match(view, /fni-messages-conversation-list/, 'FNI conversation rows must remain inside the styled live list');
+console.log('FNI real-time online presence, last-seen and Stitch list regression checks passed.');
