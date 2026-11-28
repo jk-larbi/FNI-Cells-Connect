@@ -136,6 +136,6 @@ console.log('Stitch group conversation UI, persistent history, composer and Real
 
 const folderModal = read('../src/components/communication/ChatFolderModal.tsx');
 assert.match(folderModal, /type: 'community' \| 'direct' \| 'saved' \| 'group'/, 'custom chat folders must support member-created groups');
-assert.match(view, /groupChats\]);/, 'group list memo must refresh when authenticated memberships load');
+assert.match(view, /groupChats\]\);/, 'group list memo must refresh when authenticated memberships load');
 assert.match(view, /c\.type === 'community' \|\| c\.type === 'group'/, 'group folder counts must include member-created groups');
 console.log('Group chats are supported by custom folder filters and unread grouping.');
