@@ -98,8 +98,8 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
       ]);
       const memberCounts = await SupabaseService.getCellMemberCounts();
       setCells(list.filter(cell => !cell.is_archived).map(cell => {
-        const counts = memberCounts?.[cell.id];
-        return counts ? {
+        const counts = memberCounts?.[cell.id] || { total: 0, active: 0, followUp: 0 };
+        return memberCounts !== null ? {
           ...cell,
           total_members: counts.total,
           active_members: counts.active,
