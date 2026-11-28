@@ -161,6 +161,24 @@ assert.match(groupConversationComponent, /filteredGroupMembers = useMemo/, 'memb
 assert.match(groupConversationComponent, /Joined \{new Date\(member\.joined_at\)/, 'member directory must show the real membership join date');
 assert.match(groupConversationComponent, /member\.full_name/, 'group roster must show real member names');
 assert.match(groupConversationComponent, /member\.member_role/, 'group roster must distinguish owners and members');
+assert.match(messaging, /manageGroupChatMember\(input:/, 'group member changes must use the management service');
+assert.match(messaging, /rpc\('manage_fni_group_chat_member'/, 'member changes must be enforced by the Supabase management RPC');
+assert.match(groupConversationComponent, /canManageGroupMembers = currentMemberRole === 'owner' \|\| currentMemberRole === 'moderator'/, 'only owners and moderators should see member management controls');
+assert.match(groupConversationComponent, /Add member/, 'group owners and moderators must be able to add members');
+assert.match(groupConversationComponent, /Make moderator/, 'group owners must be able to appoint moderators');
+assert.match(groupConversationComponent, /manageGroupMember\('remove_member'/, 'authorized managers must be able to remove members');
+assert.match(groupConversationComponent, /manageGroupMember\('set_role'/, 'group owners must be able to change moderator roles');
+const groupMemberManagementMigration = read('../supabase/migrations/20261128155716_group_chat_member_management.sql');
+const groupMemberManagementGuard = read('../supabase/migrations/20261128155732_group_chat_member_management_auth_guard.sql');
+assert.match(groupMemberManagementMigration, /drop policy if exists group_members_insert_owner_or_self/, 'members must not be able to self-join arbitrary private groups');
+assert.match(groupMemberManagementMigration, /drop policy if exists group_members_delete_owner_or_self/, 'membership removal must go through the authorized RPC');
+assert.match(groupMemberManagementMigration, /revoke insert, update, delete on public\.group_chat_members from authenticated/, 'direct client writes to group membership must be revoked');
+assert.match(groupMemberManagementMigration, /Only the group owner can appoint or remove moderators/, 'moderator appointment must be owner-only');
+assert.match(groupMemberManagementMigration, /Moderators can only remove regular members/, 'moderators must not remove other moderators or owners');
+assert.match(groupMemberManagementMigration, /Transfer group ownership before leaving this group/, 'group owners cannot leave and orphan a group');
+assert.match(groupMemberManagementMigration, /revoke all on function public\.manage_fni_group_chat_member[\s\S]*?from public, anon/, 'the privileged RPC must not be executable by public or anonymous users');
+assert.match(groupMemberManagementGuard, /v_actor_role is null or v_actor_role not in/, 'non-members must fail the manager authorization check');
+
 assert.match(messaging, /\.in\('supabase_user_id', uniqueIds\)/, 'sender profile lookup must use authenticated Supabase user IDs');
 assert.match(groupConversationComponent, /senderNames\[message\.sender_uid\] \|\| 'FNI Member'/, 'group messages must show profile names instead of truncated user IDs');
 assert.doesNotMatch(groupConversationComponent, /Member · \$\{message\.sender_uid\.slice\(0, 8\)\}/, 'group messages must not expose truncated sender identifiers');
