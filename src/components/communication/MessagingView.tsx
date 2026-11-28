@@ -299,6 +299,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [groupMediaUrls, setGroupMediaUrls] = useState<Record<string, string>>({});
   const [groupMediaLoading, setGroupMediaLoading] = useState(false);
   const [groupMediaError, setGroupMediaError] = useState<string | null>(null);
+  const [groupImagePreview, setGroupImagePreview] = useState<{ url: string; name: string } | null>(null);
   const [groupMediaUploading, setGroupMediaUploading] = useState(false);
   const groupMediaInputRef = useRef<HTMLInputElement>(null);
   const groupMediaItems = useMemo(() => messages
@@ -618,7 +619,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
                     const url = groupMediaUrls[item.attachment.path];
                     const mime = item.attachment.mimeType.toLowerCase();
                     return <div key={item.key} className="min-w-0 rounded-xl overflow-hidden border border-[#E9EDF1] dark:border-[#2E3B4E] bg-[#F5F8FB] dark:bg-[#101620]">
-                      {url && mime.startsWith('image/') ? <button type="button" onClick={() => setImagePreview({ url, name: item.attachment.name || 'Group photo' })} className="block w-full aspect-square bg-black/5"><img src={url} alt={item.attachment.name || 'Shared group photo'} loading="lazy" className="w-full h-full object-cover" /></button>
+                      {url && mime.startsWith('image/') ? <button type="button" onClick={() => setGroupImagePreview({ url, name: item.attachment.name || 'Group photo' })} className="block w-full aspect-square bg-black/5"><img src={url} alt={item.attachment.name || 'Shared group photo'} loading="lazy" className="w-full h-full object-cover" /></button>
                         : url && mime.startsWith('video/') ? <video src={url} controls playsInline preload="metadata" className="w-full aspect-square object-cover bg-black" />
                         : <a href={url || undefined} target="_blank" rel="noreferrer" onClick={event => { if (!url) event.preventDefault(); }} className="w-full aspect-square flex flex-col items-center justify-center gap-2 p-3 text-center text-[#785A1B] dark:text-[#D9BD7B]"><FileText className="w-8 h-8" /><span className="text-[10px] font-semibold break-all line-clamp-2">{item.attachment.name || 'Shared file'}</span><span className="text-[9px] text-[#7A8795]">{formatAttachmentSize(item.attachment.size)}</span></a>}
                       <div className="px-2 py-1.5 flex items-center justify-between gap-2"><span className="text-[9px] truncate text-[#536273] dark:text-[#A8B6C8]">{item.attachment.name}</span>{url && <a href={url} target="_blank" rel="noreferrer" aria-label={`Open ${item.attachment.name}`} className="shrink-0 text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B]">Open</a>}</div>
@@ -657,6 +658,12 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
               <div className="flex justify-end gap-2"><button type="button" onClick={() => setGroupInfoOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#EDF5FC] dark:bg-[#253145]">Close</button>{currentMemberRole === 'owner' && <button type="button" onClick={() => void saveGroupInfo()} disabled={groupInfoSaving || !groupInfoName.trim()} className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#263445] disabled:opacity-50">{groupInfoSaving ? 'Saving…' : 'Save changes'}</button>}</div>
             </div>
           </section>
+        </div>
+      )}
+      {groupImagePreview && (
+        <div className="fixed inset-0 z-[120] bg-black/90 flex flex-col items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={groupImagePreview.name}>
+          <div className="w-full max-w-4xl flex items-center justify-between gap-3 mb-3 text-white"><p className="text-sm font-medium truncate">{groupImagePreview.name}</p><button type="button" onClick={() => setGroupImagePreview(null)} className="rounded-full px-3 py-2 bg-white/15 text-sm font-semibold">Close</button></div>
+          <img src={groupImagePreview.url} alt={groupImagePreview.name} className="max-w-full max-h-[78vh] object-contain rounded-xl" />
         </div>
       )}
       {membersOpen && (
