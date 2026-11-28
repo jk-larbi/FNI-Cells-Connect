@@ -3459,7 +3459,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                   {filteredHomeTutors.map(tutor => {
                     const name = tutor.full_name || tutor.name || 'FNI Tutor';
                     const cell = tutor.cell_name || tutor.cell || 'Cell Leader';
-                    const isOnline = tutor.is_active || true;
+                    const isOnline = onlineMemberIds.has(tutor.id);
+                    const lastSeenLabel = isOnline ? 'Online now' : formatMemberLastSeen(memberLastSeen[tutor.id]);
 
                     return (
                       <div
@@ -3490,6 +3491,9 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                             </p>
                             <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                               {cell}
+                            </p>
+                            <p className={`text-[10px] truncate ${isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                              {lastSeenLabel}
                             </p>
                           </div>
                         </div>
