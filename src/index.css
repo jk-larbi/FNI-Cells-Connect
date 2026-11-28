@@ -7267,3 +7267,62 @@ html.dark .fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-thumb {
 html.dark .fni-glass-sidebar .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #7890AD;
 }
+
+
+/* Cell profile meeting and evangelism report cards: readable in both themes. */
+.fni-cell-groups-stitch .fni-cell-report-card {
+  background: #FFFFFF;
+  border-color: #DCE3EC;
+}
+.fni-cell-groups-stitch .fni-cell-report-toggle {
+  background: #FFFFFF;
+  color: #25384A;
+}
+.fni-cell-groups-stitch .fni-cell-report-toggle:hover {
+  background: #F2F6FB;
+}
+.fni-cell-groups-stitch .fni-cell-report-details {
+  background: #F7F9FC;
+  border-color: #DCE3EC;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-card {
+  background: #17263A !important;
+  border-color: #354861 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-toggle {
+  background: #17263A !important;
+  color: #E8EDF5 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-toggle:hover {
+  background: #20344D !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-details {
+  background: #1C2C41 !important;
+  border-color: #354861 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-card [class*="text-[#182230]"],
+html.dark .fni-cell-groups-stitch .fni-cell-report-card [class*="text-[#25384A]"] {
+  color: #E8EDF5 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-card [class*="text-[#5A6B7C]"] {
+  color: #A8B6C8 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-card [class*="text-[#23845B]"] {
+  color: #75D6A5 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-card [class*="bg-emerald-50"] {
+  background: #173B32 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-card [class*="bg-amber-50"] {
+  background: #3B3020 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-reviewer-comment {
+  background: #352E20 !important;
+  border-color: #6C5A32 !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-reviewer-comment [class*="text-[#8E6C23]"] {
+  color: #E9C77C !important;
+}
+html.dark .fni-cell-groups-stitch .fni-cell-report-reviewer-comment [class*="text-[#5D4200]"] {
+  color: #F1DDAE !important;
+}
