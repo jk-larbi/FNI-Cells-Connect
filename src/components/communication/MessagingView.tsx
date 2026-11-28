@@ -295,6 +295,75 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [groupMembers, setGroupMembers] = useState<Array<{ user_id: string; full_name: string; role: string; cell_name?: string; photo_url?: string; member_role: string; joined_at: string }>>([]);
   const [membersOpen, setMembersOpen] = useState(false);
   const [groupInfoOpen, setGroupInfoOpen] = useState(false);
+  const [groupMediaFilter, setGroupMediaFilter] = useState<'all' | 'photos' | 'videos' | 'files'>('all');
+  const [groupMediaUrls, setGroupMediaUrls] = useState<Record<string, string>>({});
+  const [groupMediaLoading, setGroupMediaLoading] = useState(false);
+  const [groupMediaError, setGroupMediaError] = useState<string | null>(null);
+  const [groupMediaUploading, setGroupMediaUploading] = useState(false);
+  const groupMediaInputRef = useRef<HTMLInputElement>(null);
+  const groupMediaItems = useMemo(() => messages
+    .filter(message => !message.deleted_at)
+    .flatMap(message => (message.attachments || []).map((attachment, index) => ({
+      key: `${message.id}-${index}-${attachment.path}`,
+      attachment,
+      senderUid: message.sender_uid,
+      createdAt: message.created_at,
+    }))), [messages]);
+
+  useEffect(() => {
+    if (!groupInfoOpen || groupMediaItems.length === 0) {
+      setGroupMediaLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setGroupMediaLoading(true);
+    setGroupMediaError(null);
+    const paths = Array.from(new Set(groupMediaItems.map(item => item.attachment.path).filter(Boolean)));
+    void Promise.all(paths.map(async path => [path, await MessagingService.getChatAttachmentUrl(path)] as const))
+      .then(results => {
+        if (cancelled) return;
+        setGroupMediaUrls(previous => {
+          const next = { ...previous };
+          results.forEach(([path, url]) => { if (url) next[path] = url; });
+          return next;
+        });
+      })
+      .catch(reason => {
+        if (!cancelled) setGroupMediaError(reason instanceof Error ? reason.message : 'Group media could not be loaded.');
+      })
+      .finally(() => { if (!cancelled) setGroupMediaLoading(false); });
+    return () => { cancelled = true; };
+  }, [groupInfoOpen, groupMediaItems]);
+
+  const uploadGroupMedia = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || groupMediaUploading) return;
+    setGroupMediaUploading(true);
+    setGroupMediaError(null);
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      const authUid = authData.user?.id;
+      if (authError || !authUid) throw new Error('Sign in again before sharing group media.');
+      const attachment = await MessagingService.uploadChatAttachment(authUid, file);
+      const mime = attachment.mimeType.toLowerCase();
+      const messageType: GroupChatMessage['message_type'] = mime.startsWith('image/')
+        ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
+      const saved = await MessagingService.sendGroupChatMessage({
+        groupId: group.id,
+        content: '',
+        messageType,
+        attachments: [attachment],
+      });
+      setMessages(previous => previous.some(item => item.id === saved.id) ? previous : [...previous, saved]);
+      setGroupMediaFilter(mime.startsWith('image/') ? 'photos' : mime.startsWith('video/') ? 'videos' : 'files');
+    } catch (reason) {
+      setGroupMediaError(reason instanceof Error ? reason.message : 'The file could not be shared with this group.');
+    } finally {
+      setGroupMediaUploading(false);
+    }
+  };
+
   const [groupInfoName, setGroupInfoName] = useState(group.name);
   const [groupInfoDescription, setGroupInfoDescription] = useState(group.description || '');
   const [groupInfoSaving, setGroupInfoSaving] = useState(false);
@@ -514,12 +583,12 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
       {group.description && <div className="px-4 py-2 text-xs bg-[#F5EDD9] dark:bg-[#5D4200]/25 text-[#785A1B] dark:text-[#D9BD7B] border-b border-[#E8DAB8] dark:border-[#5D4200]/40">{group.description}</div>}
       {groupInfoOpen && (
         <div className="fixed inset-0 z-[95] bg-black/55 flex items-center justify-center p-3" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setGroupInfoOpen(false); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="group-info-title" className="w-full max-w-md rounded-2xl overflow-hidden bg-white dark:bg-[#161E2B] text-[#354454] dark:text-[#E8EDF5] shadow-2xl border border-[#DCEAF6] dark:border-[#2E3B4E]">
+          <section role="dialog" aria-modal="true" aria-labelledby="group-info-title" className="w-full max-w-md max-h-[88vh] flex flex-col rounded-2xl overflow-hidden bg-white dark:bg-[#161E2B] text-[#354454] dark:text-[#E8EDF5] shadow-2xl border border-[#DCEAF6] dark:border-[#2E3B4E]">
             <header className="px-4 py-3 flex items-center justify-between bg-[#EDF5FC] dark:bg-[#1C2636] border-b border-[#DCEAF6] dark:border-[#2E3B4E]">
               <div><h3 id="group-info-title" className="font-semibold text-sm">Group information</h3><p className="text-xs text-[#536273] dark:text-[#A8B6C8]">Details and administration</p></div>
               <button type="button" onClick={() => setGroupInfoOpen(false)} aria-label="Close group information" className="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10"><X className="w-4 h-4 mx-auto" /></button>
             </header>
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 overflow-y-auto">
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-2xl bg-[#F5EDD9] dark:bg-[#5D4200]/40 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center text-lg font-bold">{group.name.slice(0, 2).toUpperCase()}</div>
                 <div className="min-w-0"><p className="font-semibold truncate">{group.name}</p><p className="text-xs text-[#536273] dark:text-[#A8B6C8]">{groupMembers.length || group.member_count} members</p></div>
@@ -527,6 +596,43 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
               <div><label htmlFor="fni-group-info-name" className="block text-xs font-semibold mb-1.5">Group name</label><input id="fni-group-info-name" value={groupInfoName} onChange={event => setGroupInfoName(event.target.value)} maxLength={80} disabled={currentMemberRole !== 'owner'} className="w-full rounded-xl px-3 py-2.5 text-sm bg-[#F5F8FB] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] disabled:opacity-75" /></div>
               <div><label htmlFor="fni-group-info-description" className="block text-xs font-semibold mb-1.5">Description</label><textarea id="fni-group-info-description" value={groupInfoDescription} onChange={event => setGroupInfoDescription(event.target.value)} maxLength={300} rows={3} disabled={currentMemberRole !== 'owner'} placeholder="What is this group about?" className="w-full resize-none rounded-xl px-3 py-2.5 text-sm bg-[#F5F8FB] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] disabled:opacity-75" /><p className="text-right text-[10px] text-[#7A8795]">{groupInfoDescription.length}/300</p></div>
               <div className="grid grid-cols-2 gap-3 text-xs"><div className="rounded-xl p-3 bg-[#F5F8FB] dark:bg-[#101620]"><p className="text-[#7A8795]">Created</p><p className="font-semibold mt-1">{new Date(group.created_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</p></div><div className="rounded-xl p-3 bg-[#F5F8FB] dark:bg-[#101620]"><p className="text-[#7A8795]">Your role</p><p className="font-semibold mt-1 capitalize">{currentMemberRole}</p></div></div>
+              <section className="rounded-2xl border border-[#DCEAF6] dark:border-[#2E3B4E] overflow-hidden">
+                <div className="px-3 py-3 flex items-center justify-between gap-2 bg-[#F5F8FB] dark:bg-[#101620]">
+                  <div><h4 className="text-sm font-semibold">Group media</h4><p className="text-[10px] text-[#7A8795]">{groupMediaItems.length} shared file{groupMediaItems.length === 1 ? '' : 's'}</p></div>
+                  <button type="button" onClick={() => groupMediaInputRef.current?.click()} disabled={groupMediaUploading} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#263445] disabled:opacity-50"><Paperclip className="w-3.5 h-3.5" />{groupMediaUploading ? 'Uploading…' : 'Add media'}</button>
+                  <input ref={groupMediaInputRef} type="file" className="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt" onChange={uploadGroupMedia} />
+                </div>
+                <div className="flex gap-1 px-3 py-2 border-t border-[#DCEAF6] dark:border-[#2E3B4E] overflow-x-auto">
+                  {(['all', 'photos', 'videos', 'files'] as const).map(filter => <button key={filter} type="button" onClick={() => setGroupMediaFilter(filter)} className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold capitalize ${groupMediaFilter === filter ? 'bg-[#785A1B] dark:bg-[#D9BD7B] text-white dark:text-[#263445]' : 'bg-[#EDF5FC] dark:bg-[#253145] text-[#536273] dark:text-[#A8B6C8]'}`}>{filter}</button>)}
+                </div>
+                {groupMediaError && <p role="alert" className="px-3 py-2 text-xs text-red-600 dark:text-red-300">{groupMediaError}</p>}
+                {groupMediaLoading && <p className="px-3 py-5 text-center text-xs text-[#7A8795]">Loading shared media…</p>}
+                <div className="p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                  {groupMediaItems.filter(item => {
+                    const mime = item.attachment.mimeType.toLowerCase();
+                    if (groupMediaFilter === 'photos') return mime.startsWith('image/');
+                    if (groupMediaFilter === 'videos') return mime.startsWith('video/');
+                    if (groupMediaFilter === 'files') return !mime.startsWith('image/') && !mime.startsWith('video/');
+                    return true;
+                  }).map(item => {
+                    const url = groupMediaUrls[item.attachment.path];
+                    const mime = item.attachment.mimeType.toLowerCase();
+                    return <div key={item.key} className="min-w-0 rounded-xl overflow-hidden border border-[#E9EDF1] dark:border-[#2E3B4E] bg-[#F5F8FB] dark:bg-[#101620]">
+                      {url && mime.startsWith('image/') ? <button type="button" onClick={() => setImagePreview({ url, name: item.attachment.name || 'Group photo' })} className="block w-full aspect-square bg-black/5"><img src={url} alt={item.attachment.name || 'Shared group photo'} loading="lazy" className="w-full h-full object-cover" /></button>
+                        : url && mime.startsWith('video/') ? <video src={url} controls playsInline preload="metadata" className="w-full aspect-square object-cover bg-black" />
+                        : <a href={url || undefined} target="_blank" rel="noreferrer" onClick={event => { if (!url) event.preventDefault(); }} className="w-full aspect-square flex flex-col items-center justify-center gap-2 p-3 text-center text-[#785A1B] dark:text-[#D9BD7B]"><FileText className="w-8 h-8" /><span className="text-[10px] font-semibold break-all line-clamp-2">{item.attachment.name || 'Shared file'}</span><span className="text-[9px] text-[#7A8795]">{formatAttachmentSize(item.attachment.size)}</span></a>}
+                      <div className="px-2 py-1.5 flex items-center justify-between gap-2"><span className="text-[9px] truncate text-[#536273] dark:text-[#A8B6C8]">{item.attachment.name}</span>{url && <a href={url} target="_blank" rel="noreferrer" aria-label={`Open ${item.attachment.name}`} className="shrink-0 text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B]">Open</a>}</div>
+                    </div>;
+                  })}
+                  {!groupMediaLoading && groupMediaItems.filter(item => {
+                    const mime = item.attachment.mimeType.toLowerCase();
+                    if (groupMediaFilter === 'photos') return mime.startsWith('image/');
+                    if (groupMediaFilter === 'videos') return mime.startsWith('video/');
+                    if (groupMediaFilter === 'files') return !mime.startsWith('image/') && !mime.startsWith('video/');
+                    return true;
+                  }).length === 0 && <p className="col-span-full py-6 text-center text-xs text-[#7A8795]">No {groupMediaFilter === 'all' ? 'shared media' : groupMediaFilter} yet. Add a file to share it with the group.</p>}
+                </div>
+              </section>
               {currentMemberRole !== 'owner' && <p className="text-xs text-[#536273] dark:text-[#A8B6C8]">Only the group owner can edit these details.</p>}
               {currentMemberRole === 'owner' && (
                 <div className="rounded-xl border border-[#E8DAB8] dark:border-[#5D4200]/50 bg-[#FFFCF5] dark:bg-[#5D4200]/10 p-3 space-y-2.5">
