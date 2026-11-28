@@ -117,7 +117,7 @@ assert.match(view, /MessagingService\.createGroupChat\(/, 'new groups must be cr
 assert.match(view, /memberIds: selectedGroupMemberIds/, 'group invitations must use selected active directory profile IDs');
 assert.match(view, /fni-group-chat-created/, 'successful group creation must refresh the authenticated group list');
 assert.match(view, /setSelectedChatId\(`group:\$\{group\.id\}`\)/, 'the creator must open the newly created group conversation');
-assert.match(view, /Private group/, 'the create-group form must preserve the Stitch group identity and privacy design');
+assert.match(view, /Add Members/, 'the create-group form must provide the Stitch member-selection section');
 assert.match(messaging, /from\('group_chat_messages'\)[\s\S]*?\.eq\('group_id', groupId\)/, 'group history must load from the persistent group message table');
 assert.match(messaging, /sender_uid: senderUid/, 'group messages must be attributed to the authenticated sender');
 assert.match(messaging, /subscribeToGroupChatMessages/, 'group messages must subscribe to Supabase Realtime updates');
