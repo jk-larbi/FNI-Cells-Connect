@@ -9,6 +9,7 @@ import { CellMembersPanel } from '../CellMembersPanel';
 import { CellLeadershipPanel } from './CellLeadershipPanel';
 import { CellLocationsMap } from './CellLocationsMap';
 import { supabase } from '../../lib/supabase';
+import './cellGroupsStitch.css';
 type StitchIconProps = React.HTMLAttributes<HTMLSpanElement>;
 const StitchIcon = (symbol: string) => ({ className = '', ...props }: StitchIconProps) => (
   <span aria-hidden="true" {...props} className={`material-symbols-outlined ${className}`}>{symbol}</span>
@@ -356,11 +357,11 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
         </div>
         <div className="min-w-0 rounded-lg border border-[#DCE3EC] bg-white p-4">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold text-[#5A6B7C]">Active cell leaders</span>
+            <span className="text-[11px] font-semibold text-[#5A6B7C]">Cells with assigned leaders</span>
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#DCF2E5] text-[#0B3D22]"><CheckCircle2 className="h-4 w-4" /></span>
           </div>
           <p className="mt-2 text-2xl font-black tracking-tight text-[#142842] tabular-nums">{isLoading && cells.length === 0 ? '—' : assignedLeaderCount}</p>
-          <p className="mt-0.5 text-[10px] text-[#5A6B7C]">{assignedLeaderCount} of {cells.filter(cell => !cell.is_archived).length} cells assigned</p>
+          <p className="mt-0.5 text-[10px] text-[#5A6B7C]">{assignedLeaderCount} of {cells.filter(cell => !cell.is_archived).length} cells have a leader</p>
         </div>
         <div className="min-w-0 rounded-lg border border-[#DCE3EC] bg-white p-3.5 shadow-none sm:p-4">
           <div className="flex items-center justify-between gap-2">
@@ -474,7 +475,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             const status = cell.status || (cell.is_active ? 'Active' : 'Suspended');
             const missingLeader = !cell.leader_name?.trim();
             const missingSchedule = !cell.meeting_day?.trim() || !cell.meeting_time?.trim();
-            const needsAttention = missingLeader || missingSchedule || status !== 'Active';
+            const needsAttention = missingLeader || missingSchedule || status !== 'Active' || !hasWeeklyReport(cell);
             const cellReports = meetingReports
               .filter(report => report.cellId === cell.id || (cell.firebase_id && report.cellId === cell.firebase_id))
               .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime());
@@ -499,7 +500,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                 </span>
                 {needsAttention && (
                   <span className="mt-1 block text-[11px] font-medium text-[#8E6C23]">
-                    {missingLeader ? 'Assign a cell leader' : missingSchedule ? 'Confirm schedule with the leader' : 'Review cell status'}
+                    {missingLeader ? 'Assign a cell leader' : missingSchedule ? 'Confirm schedule with the leader' : status !== 'Active' ? 'Review cell status' : 'Follow up on the weekly report'}
                   </span>
                 )}
                 <span className="mt-3 flex items-center justify-between border-t border-[#DCE3EC] pt-3 text-xs font-semibold text-[#142842]">
