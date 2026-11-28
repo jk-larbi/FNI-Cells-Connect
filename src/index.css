@@ -6229,3 +6229,191 @@ html.dark .fni-admin-stitch-shell .fni-cell-meeting-dossier > div:last-child {
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+
+/* Review Reports queue — Stitch desktop/mobile parity and full dark-mode contrast */
+.fni-report-review-stitch {
+  max-width:1280px; margin-inline:auto;
+}
+.fni-rr-queue-panel {
+  box-shadow:0 1px 3px rgba(20,40,66,.035);
+}
+.fni-rr-status-tabs button:focus-visible,
+.fni-rr-filter-row input:focus-visible,
+.fni-rr-filter-row select:focus-visible,
+.fni-rr-report-card button:focus-visible,
+.fni-rr-header-actions button:focus-visible {
+  outline:2px solid #8E6C23; outline-offset:2px;
+}
+.fni-rr-report-card {
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center; border-radius:12px;
+}
+.fni-rr-card-actions button { min-height:38px; }
+.fni-rr-card-actions .fni-rr-review-button { min-height:40px; }
+.fni-rr-card-identity { min-width:0; }
+.fni-rr-card-identity > div:last-child { min-width:0; }
+.fni-rr-card-identity h2,
+.fni-rr-card-identity p,
+.fni-rr-card-identity small { overflow-wrap:anywhere; }
+html.dark .fni-report-review-stitch {
+  color:#E8EDF5;
+}
+html.dark .fni-report-review-stitch .fni-rr-header {
+  border-color:#2E3B4E;
+}
+html.dark .fni-report-review-stitch .fni-rr-header h1,
+html.dark .fni-report-review-stitch .fni-rr-card-identity h2,
+html.dark .fni-report-review-stitch .fni-rr-empty-state strong,
+html.dark .fni-report-review-stitch .fni-rr-return-heading h3,
+html.dark .fni-report-review-stitch .fni-rr-approve-confirm h3,
+html.dark .fni-report-review-stitch .fni-rr-message-field label,
+html.dark .fni-report-review-stitch .fni-rr-approve-confirm > label {
+  color:#E8EDF5 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-header>div:first-child>p:last-child,
+html.dark .fni-report-review-stitch .fni-rr-card-identity p,
+html.dark .fni-report-review-stitch .fni-rr-card-identity small,
+html.dark .fni-report-review-stitch .fni-rr-card-metrics span,
+html.dark .fni-report-review-stitch .fni-rr-live-time,
+html.dark .fni-report-review-stitch .fni-rr-secondary-metric,
+html.dark .fni-report-review-stitch .fni-rr-list-toolbar,
+html.dark .fni-report-review-stitch .fni-rr-empty-state,
+html.dark .fni-report-review-stitch .fni-rr-return-heading p:last-child,
+html.dark .fni-report-review-stitch .fni-rr-approve-confirm>div:first-child p {
+  color:#A8B6C8 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-queue-panel,
+html.dark .fni-report-review-stitch .fni-rr-report-card,
+html.dark .fni-report-review-stitch .fni-rr-empty-state,
+html.dark .fni-report-review-stitch .fni-rr-reason-list,
+html.dark .fni-report-review-stitch .fni-rr-message-field textarea,
+html.dark .fni-report-review-stitch .fni-rr-approve-confirm textarea,
+html.dark .fni-report-review-stitch .fni-rr-header-actions button,
+html.dark .fni-report-review-stitch .fni-rr-card-actions button,
+html.dark .fni-report-review-stitch .fni-rr-return-actions button,
+html.dark .fni-report-review-stitch .fni-rr-preset-notes button {
+  background:#161E2B !important;
+  border-color:#354863 !important;
+  color:#E8EDF5 !important;
+  box-shadow:none;
+}
+html.dark .fni-report-review-stitch .fni-rr-report-card:hover,
+html.dark .fni-report-review-stitch .fni-rr-header-actions button:hover,
+html.dark .fni-report-review-stitch .fni-rr-preset-notes button:hover {
+  background:#1C2636 !important; border-color:#526783 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-status-tabs {
+  background:#0C1119;
+}
+html.dark .fni-report-review-stitch .fni-rr-status-tabs button {
+  color:#A8B6C8;
+}
+html.dark .fni-report-review-stitch .fni-rr-status-tabs button.is-active {
+  background:#354863 !important; color:#FFFFFF !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-status-tabs button span {
+  background:#253145; color:#D4E3FF;
+}
+html.dark .fni-report-review-stitch .fni-rr-filter-row>label {
+  background:#0C1119; border-color:#354863; color:#A8B6C8;
+}
+html.dark .fni-report-review-stitch .fni-rr-filter-row input,
+html.dark .fni-report-review-stitch .fni-rr-filter-row select {
+  background:transparent !important; color:#E8EDF5 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-filter-row input::placeholder {
+  color:#91A0B4 !important; opacity:1;
+}
+html.dark .fni-report-review-stitch .fni-rr-card-metrics {
+  border-color:#2E3B4E;
+}
+html.dark .fni-report-review-stitch .fni-rr-card-metrics strong,
+html.dark .fni-report-review-stitch .fni-rr-select-all {
+  color:#E8EDF5 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-live-time {
+  border-color:#2E3B4E;
+}
+html.dark .fni-report-review-stitch .fni-rr-cell-avatar {
+  background:#253145; color:#D4E3FF;
+}
+html.dark .fni-report-review-stitch .fni-rr-status-pill.is-pending,
+html.dark .fni-report-review-stitch .fni-rr-type-pill.is-evangelism {
+  background:#5D4200; border-color:#80601A; color:#FFEFD7;
+}
+html.dark .fni-report-review-stitch .fni-rr-status-pill.is-returned,
+html.dark .fni-report-review-stitch .fni-rr-deadline.is-late {
+  background:#54272A; border-color:#854347; color:#FFDAD6;
+}
+html.dark .fni-report-review-stitch .fni-rr-status-pill.is-approved,
+html.dark .fni-report-review-stitch .fni-rr-deadline.is-on-time {
+  background:#17452E; border-color:#286847; color:#DCF2E5;
+}
+html.dark .fni-report-review-stitch .fni-rr-type-pill.is-meeting {
+  background:#253145; border-color:#526783; color:#D4E3FF;
+}
+html.dark .fni-report-review-stitch .fni-rr-card-actions .fni-rr-review-button,
+html.dark .fni-report-review-stitch .fni-rr-return-actions .fni-rr-send-return {
+  background:#B4C8E9 !important; border-color:#B4C8E9 !important; color:#142842 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-card-actions .fni-rr-approve-button,
+html.dark .fni-report-review-stitch .fni-rr-return-actions .fni-rr-send-approve {
+  background:#17452E !important; border-color:#286847 !important; color:#DCF2E5 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-card-actions .fni-rr-return-button {
+  background:#54272A !important; border-color:#854347 !important; color:#FFDAD6 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-action-panel {
+  background:#101620; border-color:#354863;
+}
+html.dark .fni-report-review-stitch .fni-rr-reason-list legend,
+html.dark .fni-report-review-stitch .fni-rr-reason-list label,
+html.dark .fni-report-review-stitch .fni-rr-message-field textarea,
+html.dark .fni-report-review-stitch .fni-rr-approve-confirm textarea {
+  color:#E8EDF5 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-preset-notes>span {
+  color:#A8B6C8;
+}
+html.dark .fni-report-review-stitch .fni-rr-preset-notes button:hover {
+  color:#FFEFD7 !important;
+}
+html.dark .fni-report-review-stitch .fni-rr-error {
+  background:#54272A; border-color:#854347; color:#FFDAD6;
+}
+html.dark .fni-report-review-stitch .fni-rr-error button { color:#FFDAD6; }
+html.dark .fni-report-review-stitch .fni-rr-bulk-bar {
+  border-color:#2E3B4E;
+}
+html.dark .fni-report-review-stitch .fni-rr-bulk-bar>span {
+  color:#E8EDF5;
+}
+html.dark .fni-report-review-stitch .fni-rr-bulk-bar button {
+  background:#161E2B; border-color:#354863; color:#E8EDF5;
+}
+html.dark .fni-report-review-stitch .fni-rr-bulk-bar button:nth-of-type(1) {
+  background:#17452E; border-color:#286847; color:#DCF2E5;
+}
+html.dark .fni-report-review-stitch .fni-rr-bulk-bar button:nth-of-type(2) {
+  background:#54272A; border-color:#854347; color:#FFDAD6;
+}
+@media(max-width:760px) {
+  .fni-report-review-stitch { min-width:0; }
+  .fni-rr-header-actions button,
+  .fni-rr-status-tabs button,
+  .fni-rr-filter-row>label,
+  .fni-rr-bulk-bar button,
+  .fni-rr-card-actions button { min-height:44px; }
+  .fni-rr-status-tabs button { padding-inline:5px; font-size:10px; }
+  .fni-rr-filter-row>label { gap:6px; }
+  .fni-rr-card-top { row-gap:8px; }
+  .fni-rr-card-identity { align-items:flex-start; }
+  .fni-rr-card-identity small { line-height:1.45; }
+  .fni-rr-card-metrics { align-items:flex-start; }
+  .fni-rr-card-metrics>div { overflow-wrap:anywhere; }
+  .fni-rr-card-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .fni-rr-card-actions .fni-rr-review-button { grid-column:1/-1; margin-right:0; }
+  .fni-rr-card-actions button { width:100%; padding-inline:8px; }
+  .fni-rr-live-time { line-height:1.5; }
+}
