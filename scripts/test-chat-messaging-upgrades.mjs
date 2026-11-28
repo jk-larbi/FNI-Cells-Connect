@@ -123,6 +123,11 @@ const groupApprovalMigration = read('../supabase/migrations/20261128152147_group
 assert.match(groupApprovalMigration, /group_chat_creation_requests/, 'group creation requests must persist in Supabase');
 assert.match(groupApprovalMigration, /private\.is_fni_admin\(\)/, 'group request review must be restricted to ministry administrators');
 assert.match(groupApprovalMigration, /REQUEST_GROUP_CHAT_APPROVAL/, 'group requests must be written to the audit trail');
+assert.match(groupApprovalView, /Man of God \/ Ministry Overseer/, 'admin must be able to assign the ministry oversight recipient');
+assert.match(messaging, /setGroupChatOverseerProfile\(/, 'oversight assignment must use the administrator-only RPC');
+const oversightMigration = read('../supabase/migrations/20261128152538_group_chat_oversight_recipient.sql');
+assert.match(oversightMigration, /group_chat_oversight_settings/, 'the ministry overseer selection must persist in Supabase');
+assert.match(oversightMigration, /notify_group_chat_oversight_request/, 'new requests must notify the configured ministry overseer');
 assert.match(view, /const createMemberGroup = async/, 'group creation form must submit through the persistent group service');
 assert.match(view, /MessagingService\.createGroupChat\(/, 'new groups must be created through the authenticated RPC service');
 assert.match(view, /memberIds: selectedGroupMemberIds/, 'group invitations must use selected active directory profile IDs');
