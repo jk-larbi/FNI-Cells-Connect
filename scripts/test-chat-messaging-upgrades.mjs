@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const read = path => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const view = read('../src/components/communication/MessagingView.tsx');
+const css = read('../src/index.css');
 const messaging = read('../src/services/messagingService.ts');
 const supabase = read('../src/services/supabaseService.ts');
 
