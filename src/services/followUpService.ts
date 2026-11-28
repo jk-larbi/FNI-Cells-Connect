@@ -136,11 +136,34 @@ export class FollowUpService {
     }
 
     let history = existing.history || [];
-    if (updates.followUpStatus && updates.followUpStatus !== existing.followUpStatus) {
+    const statusChanged = Boolean(
+      updates.followUpStatus && updates.followUpStatus !== existing.followUpStatus
+    );
+    const notesChanged = (
+      updates.followUpNotes ?? updates.notes ?? existing.followUpNotes ?? existing.notes ?? ''
+    ) !== (existing.followUpNotes ?? existing.notes ?? '');
+    const attemptsChanged = (
+      updates.contactAttempts !== undefined &&
+      updates.contactAttempts !== existing.contactAttempts
+    );
+    const nextDateChanged = (
+      updates.nextFollowUpDate !== undefined &&
+      updates.nextFollowUpDate !== existing.nextFollowUpDate
+    );
+
+    // Record actual follow-up interactions as well as status transitions so the
+    // tutor timeline and the admin cell history show the same audit trail.
+    if (statusChanged || notesChanged || attemptsChanged || nextDateChanged) {
+      const interactionNote = updates.followUpNotes || updates.notes ||
+        (statusChanged
+          ? `Status transitioned to ${updates.followUpStatus}`
+          : attemptsChanged
+            ? `Contact attempts updated to ${updates.contactAttempts}`
+            : 'Follow-up schedule updated');
       history = [
         {
-          status: updates.followUpStatus,
-          note: updates.followUpNotes || updates.notes || `Status transitioned to ${updates.followUpStatus}`,
+          status: updates.followUpStatus || existing.followUpStatus,
+          note: interactionNote,
           changedAt: nowIso,
           changedBy: changedBy || existing.tutorName || 'Tutor',
         },
