@@ -31,8 +31,7 @@ export const CellLeadershipPanel: React.FC<CellLeadershipPanelProps> = ({ cell, 
   const currentLeaderId = cell.leader_id || cell.tutorUid || '';
   const activeTutors = useMemo(() => profiles.filter(profile =>
     (profile.role === 'tutor' || profile.role === 'cell_leader') &&
-    profile.is_active &&
-    profile.id !== currentLeaderId
+    profile.is_active
   ), [profiles, currentLeaderId]);
 
   const load = async () => {
