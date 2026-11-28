@@ -7452,3 +7452,23 @@ html.dark .fni-cell-groups-stitch .fni-cell-report-reviewer-comment [class*="tex
 html.dark .fni-cell-groups-stitch .fni-cell-report-reviewer-comment [class*="text-[#5D4200]"] {
   color: #F1DDAE !important;
 }
+
+
+/* Cell profile follow-up history: match report-card theme in both modes. */
+.fni-cell-groups-stitch .fni-cell-followup-card { background:#FFFFFF; border-color:#DCE3EC; }
+.fni-cell-groups-stitch .fni-cell-followup-toggle { background:#FFFFFF; color:#25384A; }
+.fni-cell-groups-stitch .fni-cell-followup-toggle:hover { background:#F2F6FB; }
+.fni-cell-groups-stitch .fni-cell-followup-details { background:#F7F9FC; border-color:#DCE3EC; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card { background:#17263A !important; border-color:#354861 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-toggle { background:#17263A !important; color:#E8EDF5 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-toggle:hover { background:#20344D !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-details { background:#1C2C41 !important; border-color:#354861 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#182230]"],
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#25384A]"] { color:#E8EDF5 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#5A6B7C]"] { color:#A8B6C8 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#142842]"] { color:#C9D8EA !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#1F6E43]"] { color:#75D6A5 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="bg-emerald-50"] { background:#173B32 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="bg-[#FDF8E8]"] { background:#3B3020 !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#8E6C23]"] { color:#E9C77C !important; }
+html.dark .fni-cell-groups-stitch .fni-cell-followup-card .border-l-2 { border-left-color:#9B8351 !important; }
