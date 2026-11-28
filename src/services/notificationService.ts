@@ -72,7 +72,8 @@ export function getNotificationPriority(item: NotificationItem | { type?: string
     type === 'assignment_feedback' ||
     type === 'assignment_graded' ||
     type === 'quiz_results' ||
-    type === 'group_chat_approval_requested'
+    type === 'group_chat_approval_requested' ||
+    type === 'group_chat_ownership_transferred'
   ) {
     return 'important';
   }
