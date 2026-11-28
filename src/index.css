@@ -6011,3 +6011,64 @@ html:not(.dark) :is(p,li,dt,dd,th,td) { color: inherit; }
 html.dark :is(h1,h2,h3,h4,h5,h6) { color: var(--fni-text) !important; }
 html.dark :is(p,li,dt,dd) { color: inherit; }
 html.dark a:not([class*="bg-"]) { color: var(--fni-link); }
+
+
+/* Light-mode visibility fixes: sidebar identity and low-contrast action controls. */
+html:not(.dark) .fni-glass-sidebar {
+  color: var(--fni-text) !important;
+}
+html:not(.dark) .fni-glass-sidebar [class~="text-[#142B4A]"] {
+  color: var(--fni-blue-strong) !important;
+}
+html:not(.dark) .fni-glass-sidebar [class~="text-[#667085]"],
+html:not(.dark) .fni-glass-sidebar .text-slate-500,
+html:not(.dark) .fni-glass-sidebar .text-slate-400 {
+  color: #536273 !important;
+}
+html:not(.dark) .fni-glass-sidebar [class~="text-slate-600"],
+html:not(.dark) .fni-glass-sidebar [class~="text-gray-600"] {
+  color: #42566A !important;
+}
+html:not(.dark) .fni-glass-sidebar button:not([class*="bg-[#142B4A]"]):not([class*="bg-rose-"]):not([class*="bg-[#C74646]"]) {
+  color: #42566A;
+}
+html:not(.dark) .fni-glass-sidebar button:hover:not([class*="bg-[#142B4A]"]):not([class*="bg-rose-"]) {
+  color: #244F75 !important;
+}
+html:not(.dark) .fni-glass-sidebar button[class*="bg-[#142B4A]"],
+html:not(.dark) .fni-glass-sidebar button[class*="bg-brand-navy"],
+html:not(.dark) .fni-glass-sidebar button[class*="bg-navy-800"] {
+  background-color: #376F9F !important;
+  color: #FFFFFF !important;
+}
+html:not(.dark) .fni-glass-sidebar button[class*="bg-[#142B4A]"] svg,
+html:not(.dark) .fni-glass-sidebar button[class*="bg-brand-navy"] svg,
+html:not(.dark) .fni-glass-sidebar button[class*="bg-navy-800"] svg {
+  color: inherit !important;
+}
+
+/* Administrator Portal label and workspace heading should never fade into white. */
+html:not(.dark) .fni-glass-sidebar span[class*="text-[10px]"][class*="uppercase"] {
+  color: #536273 !important;
+}
+html:not(.dark) .fni-glass-sidebar span[class*="text-sm"][class*="font-extrabold"] {
+  color: #376F9F !important;
+}
+
+/* Keep outlined/light action buttons readable without flattening their semantic fills. */
+html:not(.dark) button[class*="bg-slate-50"],
+html:not(.dark) button[class*="bg-slate-100"],
+html:not(.dark) button[class*="bg-gray-50"],
+html:not(.dark) button[class*="bg-gray-100"],
+html:not(.dark) button[class*="bg-[#F5F7FA]"],
+html:not(.dark) button[class*="bg-[#F8FAFC]"] {
+  color: #344B60 !important;
+  border-color: #CFDAE5;
+}
+html:not(.dark) button:disabled {
+  color: #657789 !important;
+  opacity: .72;
+}
+html:not(.dark) button[class*="text-white"]:not([class*="bg-"]):not([style*="background"]) {
+  color: #344B60 !important;
+}
