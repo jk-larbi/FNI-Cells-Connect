@@ -238,6 +238,21 @@ const EMOJI_CATEGORIES: { name: string; icon: string; emojis: string[] }[] = [
 ];
 const EMOJI_LIST = EMOJI_CATEGORIES[0].emojis;
 
+function formatMemberLastSeen(value?: string): string {
+  if (!value) return 'Last seen unavailable';
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return 'Last seen unavailable';
+  const elapsed = Math.max(0, Date.now() - timestamp);
+  const minutes = Math.floor(elapsed / 60000);
+  if (minutes < 1) return 'Last seen just now';
+  if (minutes < 60) return `Last seen ${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Last seen ${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `Last seen ${days}d ago`;
+  return `Last seen ${new Date(timestamp).toLocaleDateString([], { day: 'numeric', month: 'short' })}`;
+}
+
 interface ChatContact {
   id: string; // 'community' | 'saved_messages' | profileId
   name: string;
@@ -245,6 +260,7 @@ interface ChatContact {
   cellName?: string;
   avatarUrl?: string;
   isOnline?: boolean;
+  lastSeenAt?: string;
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount?: number;
@@ -286,6 +302,110 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   // Contacts / Directory
   const [allMembers, setAllMembers] = useState<any[]>([]);
   const [tutorList, setTutorList] = useState<any[]>([]);
+  const [onlineMemberIds, setOnlineMemberIds] = useState<Set<string>>(new Set());
+  const [memberLastSeen, setMemberLastSeen] = useState<Record<string, string>>({});
+
+  // Presence is authoritative for "online"; the database timestamp supplies durable last-seen.
+  useEffect(() => {
+    const userId = currentUser?.id;
+    if (!userId || !supabase) {
+      setOnlineMemberIds(new Set());
+      return;
+    }
+
+    let disposed = false;
+    let subscribed = false;
+    const presenceChannel = supabase.channel('fni-presence', {
+      config: { presence: { key: userId }, private: true },
+    });
+
+    const refreshLastSeen = async () => {
+      const { data, error } = await supabase
+        .from('fni_user_presence')
+        .select('user_id,last_seen_at');
+      if (disposed || error || !data) return;
+      setMemberLastSeen(previous => {
+        const next = { ...previous };
+        data.forEach((row: any) => {
+          if (row.user_id && row.last_seen_at) next[row.user_id] = row.last_seen_at;
+        });
+        return next;
+      });
+    };
+
+    const writeLastSeen = async () => {
+      const now = new Date().toISOString();
+      const { error } = await supabase.from('fni_user_presence').upsert(
+        { user_id: userId, last_seen_at: now, updated_at: now },
+        { onConflict: 'user_id' }
+      );
+      if (!error && !disposed) {
+        setMemberLastSeen(previous => ({ ...previous, [userId]: now }));
+      }
+    };
+
+    const syncPresence = () => {
+      const state = presenceChannel.presenceState() as Record<string, Array<{ userId?: string }>>;
+      const ids = new Set<string>();
+      Object.values(state).flat().forEach(entry => {
+        if (entry?.userId) ids.add(String(entry.userId));
+      });
+      if (!disposed) setOnlineMemberIds(ids);
+    };
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, syncPresence)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'fni_user_presence',
+      }, (payload: any) => {
+        const row = payload.new as any;
+        if (row?.user_id && row?.last_seen_at && !disposed) {
+          setMemberLastSeen(previous => ({ ...previous, [row.user_id]: row.last_seen_at }));
+        }
+      })
+      .subscribe(async status => {
+        if (status !== 'SUBSCRIBED' || disposed) return;
+        subscribed = true;
+        await presenceChannel.track({
+          userId,
+          connectedAt: new Date().toISOString(),
+        });
+        await writeLastSeen();
+        syncPresence();
+      });
+
+    void refreshLastSeen();
+    const heartbeat = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void writeLastSeen();
+    }, 60_000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        if (subscribed) void presenceChannel.track({ userId, connectedAt: new Date().toISOString() });
+        void writeLastSeen();
+      } else {
+        void writeLastSeen();
+        if (subscribed) void presenceChannel.untrack();
+      }
+    };
+    const handlePageHide = () => {
+      void writeLastSeen();
+      if (subscribed) void presenceChannel.untrack();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('pagehide', handlePageHide);
+      void presenceChannel.untrack();
+      void supabase.removeChannel(presenceChannel);
+    };
+  }, [currentUser?.id]);
 
   // Visual Viewport tracking for mobile on-screen keyboard
   const { height: viewportHeight, isKeyboardVisible } = useVisualViewport();
@@ -1184,7 +1304,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
         role: peer.role === 'admin' || peer.role === 'super_admin' || peer.role === 'national_admin' ? 'FNI Administrator' : 'Fellowship Tutor',
         cellName: peer.cell_name || '',
         avatarUrl: peer.avatar_url || peer.photo_url,
-        isOnline: true,
+        isOnline: onlineMemberIds.has(peer.id),
+        lastSeenAt: memberLastSeen[peer.id],
         type: 'direct',
         isPinned: isPeerPinned,
         lastMessage: 'Tap to open conversation',
@@ -1211,7 +1332,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       if (b.id === 'community') return 1;
       return 0;
     });
-  }, [communityMessages, tutorList, userPinnedChats, officialGroup, privateMessages, currentUser]);
+  }, [communityMessages, tutorList, userPinnedChats, officialGroup, privateMessages, currentUser, onlineMemberIds, memberLastSeen]);
 
   // Helper to determine if a contact is included in a folder
   const isContactInFolder = (contact: any, folder: ChatFolder) => {
@@ -3497,7 +3618,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         ? `${allMembers.length} members · Official FNI community`
                         : activeContact?.isOnline
                         ? 'Online now'
-                        : 'Last seen recently'}
+                        : formatMemberLastSeen(activeContact?.lastSeenAt)}
                     </p>
                   </div>
                 </div>
