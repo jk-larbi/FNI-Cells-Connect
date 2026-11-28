@@ -214,20 +214,17 @@ export class FollowUpService {
       c => c.followUpStatus === 'Requiring Follow-up' ||
         c.followUpStatus === 'Follow-up required' ||
         c.followUpStatus === 'Follow-up Pending' ||
-        c.followUpStatus === 'Contacted' ||
         c.followUpStatus === 'Interested'
     ).length;
 
     const activeDiscipleship = contacts.filter(
-      c => c.followUpStatus === 'Active Discipleship' ||
-        c.followUpStatus === 'Completed / Joined' ||
-        c.followUpStatus === 'Joined a cell' ||
-        c.followUpStatus === 'Joined Ministry' ||
-        c.followUpStatus === 'Completed'
+      c => c.followUpStatus === 'Active Discipleship'
     ).length;
 
     const establishedInChurch = contacts.filter(
-      c => c.followUpStatus === 'Established in Church' || Boolean(c.establishedDate)
+      c => c.followUpStatus === 'Established in Church' ||
+        c.discipleshipProgress === 'Established in Church' ||
+        Boolean(c.establishedDate)
     ).length;
 
     const notContacted = uncontactedLeads;
@@ -235,9 +232,9 @@ export class FollowUpService {
     const contacted = contacts.filter(c => c.followUpStatus === 'Contacted').length;
     const interested = contacts.filter(c => c.followUpStatus === 'Interested').length;
     const joinedCell = contacts.filter(
-      c => c.followUpStatus === 'Joined a cell' || c.followUpStatus === 'Joined Ministry'
+      c => c.followUpStatus === 'Joined a cell' || c.followUpStatus === 'Joined Ministry' || c.followUpStatus === 'Completed / Joined'
     ).length;
-    const completed = activeDiscipleship;
+    const completed = contacts.filter(c => c.followUpStatus === 'Completed').length;
     const unreachable = contacts.filter(c => c.followUpStatus === 'Unreachable').length;
 
     const outstanding = uncontactedLeads;
