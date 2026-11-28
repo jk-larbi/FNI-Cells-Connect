@@ -5199,3 +5199,439 @@ html.dark .fni-chat-composer textarea:focus-visible {
  .fni-report-approved-actions{display:grid;grid-template-columns:1fr}
  .fni-report-approved-actions button{width:100%}
 }
+
+
+/* My Profile — Stitch responsive refinement */
+.fni-profile-settings .fni-profile-stitch {
+  display:flex;
+  flex-direction:column;
+  gap:1.25rem;
+  color:#142842;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-stitch-heading {
+  align-items:flex-end;
+  gap:1rem;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-eyebrow {
+  margin:0 0 .35rem;
+  color:#8E6C23;
+  font:700 10px/1.4 "Libre Franklin",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-stitch-heading h1 {
+  margin:0;
+  color:#142842;
+  font:700 clamp(22px,2.4vw,28px)/1.2 "Libre Franklin",sans-serif;
+  letter-spacing:-.025em;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-stitch-heading p {
+  margin:.45rem 0 0;
+  color:#5A6B7C;
+  font-size:14px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-identity-card,
+.fni-profile-settings .fni-profile-stitch .fni-profile-information-card {
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #DCE3EC;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(20,40,66,.035);
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-preview {
+  position:relative;
+  min-height:132px;
+  overflow:hidden;
+  background-color:#142842;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-label {
+  position:absolute;
+  z-index:1;
+  top:12px;
+  left:14px;
+  padding:5px 9px;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:999px;
+  background:rgba(12,28,48,.55);
+  color:#fff;
+  font:600 10px "Libre Franklin",sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-shade {
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(9,25,44,.18),transparent 65%);
+  pointer-events:none;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-identity-content {
+  padding:18px 20px 20px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-identity-row {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  min-width:0;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-avatar {
+  position:relative;
+  flex:0 0 76px;
+  width:76px;
+  height:76px;
+  overflow:hidden;
+  border:4px solid #fff;
+  border-radius:50%;
+  background:#E7EDF5;
+  box-shadow:0 0 0 1px #DCE3EC;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-avatar img {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-avatar-fallback {
+  display:flex;
+  width:100%;
+  height:100%;
+  align-items:center;
+  justify-content:center;
+  color:#294765;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-avatar-status {
+  position:absolute;
+  right:2px;
+  bottom:3px;
+  z-index:2;
+  width:13px;
+  height:13px;
+  border:2px solid #fff;
+  border-radius:50%;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-identity-copy {
+  flex:1;
+  min-width:0;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-identity-copy h2 {
+  margin:0 0 5px;
+  overflow-wrap:anywhere;
+  color:#142842;
+  font:700 18px/1.25 "Libre Franklin",sans-serif;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-designation {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:5px 9px;
+  margin-top:9px;
+  color:#5A6B7C;
+  font-size:11px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-designation strong {
+  color:#142842;
+  font-size:12px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-designation-readonly {
+  padding-left:9px;
+  border-left:1px solid #DCE3EC;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-photo-actions {
+  flex:0 0 auto;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-tools {
+  display:flex;
+  flex-direction:column;
+  gap:13px;
+  margin-top:19px;
+  padding-top:17px;
+  border-top:1px solid #E6EBF1;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-tools-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-tools-heading h3 {
+  margin:0;
+  color:#142842;
+  font:700 14px "Libre Franklin",sans-serif;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-tools-heading p {
+  margin:4px 0 0;
+  color:#5A6B7C;
+  font-size:12px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-cover-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-outline-action {
+  display:inline-flex;
+  min-height:38px;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:8px 12px;
+  border:1px solid #DCE3EC;
+  border-radius:9px;
+  background:#fff;
+  color:#142842;
+  font:600 11px "Libre Franklin",sans-serif;
+  cursor:pointer;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-outline-action:hover {
+  border-color:#8E6C23;
+  background:#F8F6F0;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-outline-action:disabled {
+  cursor:wait;
+  opacity:.6;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-presets {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-preset-option {
+  display:flex;
+  min-width:0;
+  min-height:58px;
+  align-items:center;
+  gap:9px;
+  padding:8px 10px;
+  border:1px solid #DCE3EC;
+  border-radius:10px;
+  background:#fff;
+  text-align:left;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-preset-option.is-selected {
+  border:2px solid #142842;
+  padding:7px 9px;
+  background:#F4F7FB;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-preset-swatch {
+  display:flex;
+  flex:0 0 27px;
+  width:27px;
+  height:27px;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(20,40,66,.12);
+  border-radius:7px;
+  color:#fff;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-preset-name {
+  overflow:hidden;
+  color:#294765;
+  font:600 11px/1.25 "Libre Franklin",sans-serif;
+  text-overflow:ellipsis;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-information-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);
+  align-items:start;
+  gap:18px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-information-card {
+  padding:19px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-card-heading {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin-bottom:17px;
+  padding-bottom:13px;
+  border-bottom:1px solid #E6EBF1;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-card-heading > span {
+  display:flex;
+  width:36px;
+  height:36px;
+  flex:0 0 36px;
+  align-items:center;
+  justify-content:center;
+  border-radius:9px;
+  background:#E7EDF5;
+  color:#142842;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-card-heading h2,
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-heading h2 {
+  margin:0;
+  color:#142842;
+  font:700 14px "Libre Franklin",sans-serif;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-card-heading p,
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-heading p {
+  margin:4px 0 0;
+  color:#5A6B7C;
+  font-size:11px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-personal-form {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-personal-form > div {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-personal-form label {
+  color:#142842;
+  font:600 11px "Libre Franklin",sans-serif;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-personal-form label span {
+  color:#A33A36;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-field-note {
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  margin:3px 0 0;
+  padding:9px 10px;
+  border:1px solid #E5DCC6;
+  border-radius:8px;
+  background:#F8F6F0;
+  color:#695326;
+  font-size:11px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-field-note svg {
+  flex:0 0 16px;
+  margin-top:1px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-save-action {
+  display:inline-flex;
+  min-height:44px;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:4px;
+  border:0;
+  border-radius:10px;
+  background:#142842;
+  color:#fff;
+  font:700 12px "Libre Franklin",sans-serif;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-save-action:disabled {
+  cursor:wait;
+  opacity:.65;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-column {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:14px;
+  padding-bottom:12px;
+  border-bottom:1px solid #E6EBF1;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-heading > span {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#EEF2F7;
+  color:#526477;
+  font-size:10px;
+  font-weight:700;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-value {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:9px;
+  padding:11px 12px;
+  border:1px solid #E6EBF1;
+  border-radius:9px;
+  background:#F8FAFC;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-value span {
+  color:#5A6B7C;
+  font-size:11px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-value strong {
+  color:#142842;
+  font-size:12px;
+  text-align:right;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-readonly-note {
+  margin:10px 0 0;
+  font-size:11px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-status-text {
+  padding:4px 9px;
+  border-radius:999px;
+  background:#E8F4EC;
+  color:#21633B!important;
+  font-size:11px!important;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-feedback {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:11px 13px;
+  border:1px solid #DCE3EC;
+  border-radius:10px;
+  font-size:12px;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-feedback.is-success {
+  border-color:#CBE4D2;
+  background:#EFF8F1;
+  color:#21633B;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-feedback.is-error {
+  border-color:#E8C9C7;
+  background:#FFF3F2;
+  color:#923B36;
+}
+.fni-profile-settings .fni-profile-stitch .fni-profile-feedback.is-neutral {
+  background:#EEF3F8;
+  color:#294765;
+}
+@media (max-width: 760px) {
+  .fni-profile-settings .fni-profile-stitch { gap:1rem; }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-identity-content { padding:14px; }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-cover-preview { min-height:112px; }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-identity-row {
+    flex-wrap:wrap;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-avatar {
+    flex-basis:62px;
+    width:62px;
+    height:62px;
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-photo-actions {
+    width:100%;
+    padding-left:74px;
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-cover-tools-heading {
+    flex-direction:column;
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-cover-actions {
+    width:100%;
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-outline-action {
+    flex:1 1 145px;
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-presets {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-information-grid {
+    grid-template-columns:minmax(0,1fr);
+    gap:14px;
+  }
+  .fni-profile-settings .fni-profile-stitch .fni-profile-information-card { padding:15px; }
+}
