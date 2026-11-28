@@ -175,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Top Section: Window Controls, Brand Header & Collapse Toggle */}
-        <div className={`p-4 border-b border-slate-200/80 dark:border-white/10 shrink-0 ${isCollapsed ? 'px-2 py-3.5 flex flex-col items-center' : ''}`}>
+        <div className={`fni-sidebar-brand-header p-4 border-b border-slate-200/80 dark:border-white/10 shrink-0 ${isCollapsed ? 'px-2 py-3.5 flex flex-col items-center' : ''}`}>
           {/* macOS Window Controls + Collapse Pill */}
           <div className={`flex items-center justify-between gap-2 mb-3.5 ${isCollapsed ? 'flex-col gap-3 mb-2' : ''}`}>
             {/* Ministry workspace identity */}
