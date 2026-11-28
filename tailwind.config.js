@@ -26,14 +26,14 @@ export default {
           200: '#C5DBEB',
           300: '#A8C9E3',
           400: '#8BB5DC',
-          500: '#6596C5',
-          600: '#4C7FAE',
+          500: '#4779A5',
+          600: '#416F99',
           700: '#376F9F',
           800: '#2D5F8B',
           900: '#244B70',
           950: '#19364F',
         },
-        purple: { 50: '#EDF5FC', 100: '#DCEAF6', 500: '#6596C5', 600: '#4C7FAE', 700: '#376F9F', 800: '#2D5F8B', 900: '#19364F' }, // Legacy alias mapped to FNI blue
+        purple: { 50: '#EDF5FC', 100: '#DCEAF6', 500: '#4779A5', 600: '#416F99', 700: '#376F9F', 800: '#2D5F8B', 900: '#19364F' }, // Legacy alias mapped to FNI blue
       gold: {
           50: '#FBF8F0',
           100: '#F7F0E1',
