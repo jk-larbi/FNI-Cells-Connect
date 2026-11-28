@@ -572,6 +572,8 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const messageStreamRef = useRef<HTMLDivElement | null>(null);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const cameraFileInputRef = useRef<HTMLInputElement | null>(null);
+  const documentFileInputRef = useRef<HTMLInputElement | null>(null);
+  const audioFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Cross-device composer state & refs
   const [editingMessage, setEditingMessage] = useState<{ id: string; content: string; scope: 'private' | 'community' } | null>(null);
@@ -4631,6 +4633,30 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
 
                             <button
                               type="button"
+                              onClick={() => {
+                                setShowAttachmentMenu(false);
+                                documentFileInputRef.current?.click();
+                              }}
+                              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold text-left transition-colors text-slate-800 dark:text-slate-100"
+                            >
+                              <FileText className="w-4 h-4 text-amber-500 shrink-0" />
+                              <span>Share a document</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowAttachmentMenu(false);
+                                audioFileInputRef.current?.click();
+                              }}
+                              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-semibold text-left transition-colors text-slate-800 dark:text-slate-100"
+                            >
+                              <Music className="w-4 h-4 text-violet-500 shrink-0" />
+                              <span>Share audio</span>
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={e => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -4666,6 +4692,30 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                         <Smile className="w-5 h-5" />
                       </button>
                     </div>
+
+                    {/* Dedicated document and audio pickers keep attachment choices focused on mobile */}
+                    <input
+                      ref={documentFileInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.csv,.zip"
+                      multiple
+                      className="hidden"
+                      onChange={e => {
+                        if (e.target.files?.length) setStagedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                        e.currentTarget.value = '';
+                      }}
+                    />
+                    <input
+                      ref={audioFileInputRef}
+                      type="file"
+                      accept="audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.flac"
+                      multiple
+                      className="hidden"
+                      onChange={e => {
+                        if (e.target.files?.length) setStagedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                        e.currentTarget.value = '';
+                      }}
+                    />
 
                     {/* Camera Button */}
                     <input
