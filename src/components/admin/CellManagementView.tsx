@@ -475,7 +475,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             const status = cell.status || (cell.is_active ? 'Active' : 'Suspended');
             const missingLeader = !cell.leader_name?.trim();
             const missingSchedule = !cell.meeting_day?.trim() || !cell.meeting_time?.trim();
-            const needsAttention = missingLeader || missingSchedule || status !== 'Active' || !submittedThisWeek;
+            const needsAttention = missingLeader || missingSchedule || status !== 'Active' || !hasWeeklyReport(cell);
             const cellReports = meetingReports
               .filter(report => report.cellId === cell.id || (cell.firebase_id && report.cellId === cell.firebase_id))
               .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime());
