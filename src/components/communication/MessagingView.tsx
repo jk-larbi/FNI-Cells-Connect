@@ -382,6 +382,9 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [groupSearchOpen, setGroupSearchOpen] = useState(false);
   const [groupSearchTerm, setGroupSearchTerm] = useState('');
   const [jumpToGroupMessageId, setJumpToGroupMessageId] = useState<string | null>(null);
+  const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
+  const [pinnedActionId, setPinnedActionId] = useState<string | null>(null);
+  const [groupPinError, setGroupPinError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -526,6 +529,10 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     }
   };
 
+  const pinnedGroupMessages = useMemo(() => messages
+    .filter(message => message.is_pinned && !message.deleted_at)
+    .sort((a, b) => (b.pinned_at || b.created_at).localeCompare(a.pinned_at || a.created_at)), [messages]);
+
   const groupSearchResults = useMemo(() => {
     const query = groupSearchTerm.trim().toLocaleLowerCase();
     if (!query) return [];
@@ -545,6 +552,26 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     const timeout = window.setTimeout(() => setJumpToGroupMessageId(null), 1800);
     return () => window.clearTimeout(timeout);
   }, [jumpToGroupMessageId]);
+
+  const handleGroupPinToggle = async (message: GroupChatMessage) => {
+    if (!canManageGroupMembers || pinnedActionId) return;
+    const action = message.is_pinned ? 'unpin' : 'pin';
+    setPinnedActionId(message.id);
+    setGroupPinError(null);
+    try {
+      const result = await MessagingService.manageGroupChatPin({ messageId: message.id, action });
+      setMessages(previous => previous.map(item => item.id === message.id ? {
+        ...item,
+        is_pinned: result.is_pinned,
+        pinned_at: result.pinned_at,
+        pinned_by: result.pinned_by,
+      } : item));
+    } catch (reason) {
+      setGroupPinError(reason instanceof Error ? reason.message : 'The pinned-message change could not be saved.');
+    } finally {
+      setPinnedActionId(null);
+    }
+  };
 
   const senderIdsKey = useMemo(
     () => Array.from(new Set(messages.map(message => message.sender_uid).filter(uid => uid && uid !== currentUserId))).sort().join(','),
@@ -757,6 +784,23 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
         </div>
       )}
 
+      {pinnedGroupMessages.length > 0 && (
+        <section className="shrink-0 border-b border-[#DCEAF6] dark:border-[#2E3B4E] bg-[#FFF9EA] dark:bg-[#292719]">
+          <button type="button" onClick={() => setPinnedPanelOpen(value => !value)} aria-expanded={pinnedPanelOpen} className="w-full px-4 py-2.5 flex items-center gap-2 text-left hover:bg-[#F8F0D9] dark:hover:bg-white/5">
+            <Pin className="w-4 h-4 text-[#8A6727] dark:text-[#D9BD7B] shrink-0" />
+            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#5B4825] dark:text-[#F0DDAE]">Pinned messages</span><span className="block text-[11px] text-[#7A6A4A] dark:text-[#C9BC99] truncate">{pinnedGroupMessages[0].content || (pinnedGroupMessages[0].attachments?.[0]?.name ? `File · ${pinnedGroupMessages[0].attachments[0].name}` : 'Shared group message')}</span></span>
+            <span className="text-[10px] font-semibold rounded-full px-2 py-1 bg-[#F1E4C2] dark:bg-[#3B3524] text-[#72551E] dark:text-[#E8D49B]">{pinnedGroupMessages.length}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${pinnedPanelOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {pinnedPanelOpen && <div className="px-3 pb-2 space-y-1 max-h-48 overflow-y-auto">
+            {pinnedGroupMessages.map(message => <button key={message.id} type="button" onClick={() => { setJumpToGroupMessageId(message.id); setPinnedPanelOpen(false); }} className="w-full text-left rounded-lg px-3 py-2 bg-white/70 dark:bg-black/10 hover:bg-white dark:hover:bg-white/10">
+              <span className="block text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B]">{senderNames[message.sender_uid] || (message.sender_uid === currentUserId ? 'You' : 'FNI Member')} · {new Date(message.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })}</span>
+              <span className="block text-xs truncate">{message.content || message.attachments?.[0]?.name || 'Shared attachment'}</span>
+            </button>)}
+          </div>}
+        </section>
+      )}
+      {groupPinError && <p role="alert" className="shrink-0 px-4 py-2 text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/30">{groupPinError}</p>}
       <div ref={streamRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-3">
         {loading && <p className="text-center text-sm text-[#536273] dark:text-[#A8B6C8] py-8">Loading messages…</p>}
         {!loading && messages.length === 0 && <div className="max-w-sm mx-auto mt-12 text-center rounded-2xl bg-[#EDF5FC] dark:bg-[#1C2636] p-5"><Users className="w-7 h-7 mx-auto mb-2 text-[#785A1B] dark:text-[#D9BD7B]" /><p className="font-semibold text-sm">Start the conversation</p><p className="text-xs mt-1 text-[#536273] dark:text-[#A8B6C8]">Messages sent here are saved to this group and delivered to its members.</p></div>}
@@ -766,7 +810,14 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
             <article id={`fni-group-message-${message.id}`} data-group-message-id={message.id} className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm transition-shadow ${jumpToGroupMessageId === message.id ? 'ring-2 ring-[#B18A3C] shadow-lg' : ''} ${mine ? 'bg-[#DCEAF6] dark:bg-[#253145] rounded-br-md' : 'bg-white dark:bg-[#1C2636] border border-[#E9EDF1] dark:border-[#2E3B4E] rounded-bl-md'}`}>
               {!mine && <p className="text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B] mb-1">{senderNames[message.sender_uid] || 'FNI Member'}</p>}
               {message.deleted_at ? <p className="text-sm italic opacity-60">This message was deleted</p> : <p className="text-sm whitespace-pre-wrap break-words">{message.content || (message.message_type === 'image' ? 'Photo' : 'Attachment')}</p>}
-              <div className="flex justify-end gap-1.5 mt-1"><span className="text-[10px] opacity-60">{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>{message.edited_at && <span className="text-[10px] opacity-60">edited</span>}</div>
+              <div className="flex items-center justify-end gap-2 mt-1">
+                {message.is_pinned && <span className="inline-flex items-center gap-1 text-[10px] text-[#8A6727] dark:text-[#D9BD7B]"><Pin className="w-3 h-3" /> Pinned</span>}
+                {canManageGroupMembers && !message.deleted_at && <button type="button" disabled={pinnedActionId === message.id || Boolean(pinnedActionId)} onClick={() => void handleGroupPinToggle(message)} title={message.is_pinned ? 'Unpin message' : 'Pin message'} aria-label={message.is_pinned ? 'Unpin message' : 'Pin message'} className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B] hover:bg-[#F1E4C2] dark:hover:bg-white/10 disabled:opacity-40">
+                  <Pin className="w-3 h-3" /> {pinnedActionId === message.id ? 'Saving…' : message.is_pinned ? 'Unpin' : 'Pin'}
+                </button>}
+                <span className="text-[10px] opacity-60">{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                {message.edited_at && <span className="text-[10px] opacity-60">edited</span>}
+              </div>
             </article>
           </div>;
         })}
