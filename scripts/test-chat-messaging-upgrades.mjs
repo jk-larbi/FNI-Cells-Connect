@@ -150,6 +150,10 @@ const groupConversationComponent = view.slice(view.indexOf('const GroupChatConve
 assert.match(view, /Member-created group conversations/, 'member-created groups must appear in the FNI Messages list');
 assert.match(view, /selectedGroupChat \? \(/, 'opening a group must render its dedicated conversation screen');
 assert.match(groupConversationComponent, /MessagingService\.getGroupChatMessages\(group\.id\)/, 'group screen must load its persisted message history');
+assert.match(messaging, /getGroupChatSenderNames\(userIds: string\[\]\)/, 'group chat sender names must resolve from real member profiles');
+assert.match(messaging, /\.in\('supabase_user_id', uniqueIds\)/, 'sender profile lookup must use authenticated Supabase user IDs');
+assert.match(groupConversationComponent, /senderNames\[message\.sender_uid\] \|\| 'FNI Member'/, 'group messages must show profile names instead of truncated user IDs');
+assert.doesNotMatch(groupConversationComponent, /Member · \$\{message\.sender_uid\.slice\(0, 8\)\}/, 'group messages must not expose truncated sender identifiers');
 assert.match(groupConversationComponent, /subscribeToGroupChatMessages\(group\.id/, 'group screen must receive live Realtime updates');
 assert.match(groupConversationComponent, /MessagingService\.sendGroupChatMessage\(\{ groupId: group\.id, content \}\)/, 'group composer must send through the authenticated persistent service');
 assert.match(groupConversationComponent, /supabase\.removeChannel\(channel\)/, 'group conversation must clean up its Realtime channel');
