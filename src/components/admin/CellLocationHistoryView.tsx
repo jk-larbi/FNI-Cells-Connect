@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import './cellLocationHistoryStitch.css';
 import { CellLocationRecord, Cell } from '../../types';
 import { CellLocationService } from '../../services/cellLocationService';
 import { CellService } from '../../services/cellService';
@@ -219,7 +220,7 @@ export const CellLocationHistoryView: React.FC<CellLocationHistoryViewProps> = (
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
+    <div className="fni-cell-location-history space-y-6 animate-fade-in pb-12">
       {/* 1. Header Banner */}
       <div className="bg-white dark:bg-[#111c2d] rounded-2xl border border-[#E3E8EF] dark:border-[#26384d] p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
