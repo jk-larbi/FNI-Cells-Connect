@@ -281,6 +281,22 @@ export class MessagingService {
     return data as { group_id: string; member_id: string; action: string; member_role?: string };
   }
 
+  static async updateGroupChatDetails(input: { groupId: string; name: string; description: string }): Promise<{ id: string; name: string; description: string }> {
+    if (!supabase || !isSupabaseConfigured || !input.groupId) throw new Error('A valid group and FNI connection are required.');
+    const name = input.name.trim();
+    const description = input.description.trim();
+    if (!name || name.length > 80) throw new Error('Group name must be between 1 and 80 characters.');
+    if (description.length > 300) throw new Error('Group description must be 300 characters or fewer.');
+    const { data, error } = await supabase
+      .from('group_chats')
+      .update({ name, description })
+      .eq('id', input.groupId)
+      .select('id,name,description')
+      .single();
+    if (error) throw error;
+    return data as { id: string; name: string; description: string };
+  }
+
   static async getGroupChatSenderNames(userIds: string[]): Promise<Record<string, string>> {
     if (!supabase || !isSupabaseConfigured || userIds.length === 0) return {};
     const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
