@@ -114,13 +114,13 @@ export const CellMembersPanel: React.FC<CellMembersPanelProps> = ({ cellId, crea
   if (!cellId) return null;
 
   return (
-    <section className="bg-white rounded-2xl border border-[#E3E8EF] shadow-sm overflow-hidden">
-      <div className="p-4 sm:p-5 border-b border-[#E3E8EF] flex flex-wrap items-center justify-between gap-3">
+    <section className="fni-cell-members-panel rounded-2xl border border-[#E3E8EF] bg-white shadow-sm overflow-hidden dark:border-[#314458] dark:bg-[#172433]">
+      <div className="p-4 sm:p-5 border-b border-[#E3E8EF] dark:border-[#314458] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-[#EEF3FC] text-[#173B8F] flex items-center justify-center shrink-0"><Users className="w-5 h-5" /></div>
           <div className="min-w-0">
-            <h3 className="font-bold text-[#142B4A] text-sm">Cell Member Directory</h3>
-            <p className="text-[11px] text-[#667085]">People in this cell do not need app accounts.</p>
+            <h3 className="font-bold text-[#142B4A] dark:text-[#F1F5F9] text-sm">Cell Member Directory</h3>
+            <p className="text-[11px] text-[#667085] dark:text-[#B5C2D0]">People in this cell do not need app accounts.</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -166,7 +166,7 @@ export const CellMembersPanel: React.FC<CellMembersPanelProps> = ({ cellId, crea
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search members by name or phone…" className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E3E8EF] bg-white text-xs text-[#182230]" />
         </div>
 
-        {loading ? <div className="py-8 text-center text-xs text-[#667085]">Loading member directory…</div> :
+        {loading ? <div className="py-8 text-center text-xs text-[#667085] dark:text-[#B5C2D0]">Loading member directory…</div> :
           filtered.length === 0 ? <div className="py-8 text-center">
             <Users className="w-7 h-7 mx-auto mb-2 text-[#98A2B3]" />
             <p className="text-xs font-semibold text-[#475467]">{search ? 'No members match your search.' : 'No members have been added to this cell yet.'}</p>
@@ -177,12 +177,12 @@ export const CellMembersPanel: React.FC<CellMembersPanelProps> = ({ cellId, crea
               <div key={member.id} className="py-3 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[#EEF3FC] text-[#173B8F] font-bold text-xs flex items-center justify-center shrink-0">{member.full_name.split(/\s+/).slice(0,2).map(part => part[0]).join('').toUpperCase()}</div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#182230] truncate">{member.full_name}</p>
+                  <p className="text-sm font-semibold text-[#182230] dark:text-[#F1F5F9] truncate">{member.full_name}</p>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
                     {member.phone_number && <span className="inline-flex items-center gap-1 text-[11px] text-[#667085]"><Phone className="w-3 h-3" />{member.phone_number}</span>}
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${member.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : member.status === 'Inactive' ? 'bg-slate-100 text-slate-600' : 'bg-amber-50 text-amber-700'}`}>{member.status}</span>
                   </div>
-                  {member.notes && <p className="text-[11px] text-[#667085] mt-1 break-words">{member.notes}</p>}
+                  {member.notes && <p className="text-[11px] text-[#667085] dark:text-[#B5C2D0] mt-1 break-words">{member.notes}</p>}
                 </div>
                 {canEdit && <div className="flex items-center gap-1 shrink-0">
                   <button type="button" onClick={() => startEdit(member)} className="p-2 rounded-lg text-[#667085] hover:bg-[#F5F7FA]" aria-label={'Edit ' + member.full_name}><Pencil className="w-4 h-4" /></button>
