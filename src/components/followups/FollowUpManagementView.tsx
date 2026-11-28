@@ -225,7 +225,7 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
       email: '',
       location: currentUser.cell_name ? `${currentUser.cell_name} Territory` : '',
       cellId: currentUser.cell_id || (cells[0]?.id || ''),
-      cellName: currentUser.cell_name || (cells[0]?.name || 'Central Cell'),
+      cellName: currentUser.cell_name || (cells[0]?.name || ''),
       leadSource: 'Evangelism Outing',
       followUpStatus: 'Uncontacted',
       contactAttempts: 0,
@@ -272,6 +272,10 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving || !formData.name.trim() || !formData.phone.trim()) return;
+    if (!editingContact && !cells.some(cell => cell.id === formData.cellId)) {
+      setSaveError('Select an active cell before saving this contact.');
+      return;
+    }
     setSaveError(null);
 
     if (!editingContact) {
@@ -308,6 +312,7 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
           whatsappNumber: effectiveWhatsApp,
           email: formData.email.trim(),
           location: formData.location.trim(),
+          evangelismLocation: formData.location.trim(),
           leadSource: formData.leadSource,
           followUpStatus: formData.followUpStatus,
           contactAttempts: formData.contactAttempts,
@@ -322,8 +327,8 @@ export const FollowUpManagementView: React.FC<FollowUpManagementViewProps> = ({ 
       } else {
         const targetCell = cells.find(c => c.id === formData.cellId);
         await FollowUpService.addContact({
-          cellId: formData.cellId || currentUser.cell_id || 'unassigned',
-          cellName: targetCell ? targetCell.name : (formData.cellName || currentUser.cell_name || 'Central Cell'),
+          cellId: targetCell!.id,
+          cellName: targetCell!.name,
           tutorName: currentUser.full_name || 'Tutor',
           tutorUid: currentUser.id,
           name: formData.name.trim(),
