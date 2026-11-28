@@ -209,7 +209,7 @@ export const CellReportForm: React.FC<CellReportFormProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="fni-report-form space-y-4">
       {/* Module Switcher Header */}
       <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center text-xs font-bold text-slate-600 shadow-inner max-w-md">
         <button
