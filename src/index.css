@@ -8094,3 +8094,155 @@ html.dark .fni-messages-stitch .fni-private-chat-input textarea{color:#E8EDF5!im
 html.dark .fni-messages-stitch .fni-private-chat-input textarea::placeholder{color:#A8B6C8!important}
 @media(max-width:767px){.fni-messages-stitch .fni-private-chat-header{min-height:60px;padding:8px 10px!important}.fni-messages-stitch .fni-private-chat-stream{padding:14px 12px 18px!important}.fni-messages-stitch .fni-private-chat-composer{gap:5px!important}.fni-messages-stitch .fni-private-chat-input{min-height:44px;padding-left:12px!important;padding-right:10px!important}.fni-messages-stitch .fni-private-chat-composer button{flex-shrink:0}}
 @media(prefers-reduced-motion:reduce){.fni-messages-stitch .fni-private-chat-header button,.fni-messages-stitch .fni-private-chat-composer button{transition:none!important}}
+
+/* FNI AUTH MOTION REFRESH — premium ministry palette, responsive and restrained motion. */
+.fni-auth-portal[data-auth-view="login-select"],
+.fni-auth-portal[data-auth-view="tutor-signup"],
+.fni-auth-portal[data-auth-view="tutor-login"],
+.fni-auth-portal[data-auth-view="admin-login"]{
+  position:relative;isolation:isolate;min-height:100svh;
+  background:
+    radial-gradient(ellipse at 12% 12%,rgba(89,91,180,.18),transparent 34%),
+    radial-gradient(ellipse at 88% 82%,rgba(198,164,90,.16),transparent 32%),
+    linear-gradient(145deg,#F4F7FC 0%,#EEF2F8 48%,#F8F6F1 100%);
+  overflow-x:hidden;
+}
+.fni-auth-portal[data-auth-view="login-select"]::before,
+.fni-auth-portal[data-auth-view="tutor-signup"]::before,
+.fni-auth-portal[data-auth-view="tutor-login"]::before,
+.fni-auth-portal[data-auth-view="admin-login"]::before{
+  content:"";position:fixed;z-index:-1;pointer-events:none;width:min(72vw,760px);aspect-ratio:1;
+  left:50%;top:46%;border:1px solid rgba(198,164,90,.24);border-radius:50%;
+  transform:translate(-50%,-50%);box-shadow:0 0 0 34px rgba(89,91,180,.025),0 0 0 82px rgba(20,43,74,.022);
+  animation:fni-auth-orbit 32s linear infinite;
+}
+.fni-auth-portal[data-auth-view="login-select"]::after,
+.fni-auth-portal[data-auth-view="tutor-signup"]::after,
+.fni-auth-portal[data-auth-view="tutor-login"]::after,
+.fni-auth-portal[data-auth-view="admin-login"]::after{
+  content:"";position:fixed;z-index:-1;pointer-events:none;inset:0;opacity:.36;
+  background-image:radial-gradient(rgba(20,43,74,.16) .65px,transparent .65px);
+  background-size:22px 22px;mask-image:linear-gradient(135deg,#000,transparent 65%);
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-main,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-main,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-main,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-main{animation:fni-auth-rise .72s cubic-bezier(.2,.75,.25,1) both}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-card{
+  position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.9);
+  border-radius:26px;background:rgba(255,255,255,.94);
+  box-shadow:0 24px 70px rgba(20,40,66,.12),0 3px 12px rgba(20,40,66,.045);
+  animation:fni-auth-card-in .82s cubic-bezier(.2,.75,.25,1) both;
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card::before,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card::before,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card::before,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-card::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:4px;
+  background:linear-gradient(90deg,#263D74,#6C5BB5,#C6A45A,#E2C989);
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-logo,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-logo,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-logo{
+  animation:fni-auth-logo-float 5s ease-in-out infinite;
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card form > div,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form > div,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card form > div,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > div{
+  animation:fni-auth-field-in .48s ease both;
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card form > div:nth-child(2),
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form > div:nth-child(2),
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card form > div:nth-child(2),
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > div:nth-child(2){animation-delay:.07s}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form > div:nth-child(3){animation-delay:.13s}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form > div:nth-child(4){animation-delay:.19s}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form > button,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card form > button,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > button{
+  position:relative;overflow:hidden;transition:transform .22s ease,box-shadow .22s ease,background-color .22s ease,border-color .22s ease;
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button:hover,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card form > button:not(:disabled):hover,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card form > button:not(:disabled):hover,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form form > button:not(:disabled):hover{
+  transform:translateY(-2px);box-shadow:0 10px 22px rgba(20,40,66,.14);
+}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card input,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card select,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card input,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card select,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form input{
+  transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease,transform .2s ease;
+}
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card input:focus,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card select:focus,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card input:focus,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card select:focus,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form input:focus{
+  transform:translateY(-1px);box-shadow:0 0 0 4px rgba(108,91,181,.12),0 5px 16px rgba(20,40,66,.06);
+}
+.fni-auth-portal[data-auth-view="login-select"] .fni-auth-card button:active,
+.fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card button:active,
+.fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card button:active,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-auth-card button:active{transform:scale(.985)}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-brand{padding-bottom:4px}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mission{
+  background:linear-gradient(120deg,#F3F5FB,#FBF8F0);border-color:#E2E6EF
+}
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form h2,
+.fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-brand>span:first-child{
+  background:linear-gradient(105deg,#142842 10%,#514C91 65%,#92702C 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+html.dark .fni-auth-portal[data-auth-view="login-select"],
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"],
+html.dark .fni-auth-portal[data-auth-view="tutor-login"],
+html.dark .fni-auth-portal[data-auth-view="admin-login"]{
+  background:radial-gradient(ellipse at 12% 12%,rgba(108,91,181,.2),transparent 36%),
+  radial-gradient(ellipse at 88% 82%,rgba(198,164,90,.1),transparent 32%),linear-gradient(145deg,#0D1727,#111F33 55%,#171C2B);
+}
+html.dark .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card,
+html.dark .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card,
+html.dark .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card,
+html.dark .fni-auth-portal[data-auth-view="admin-login"] .fni-auth-card{
+  background:rgba(20,34,54,.96);border-color:#34445C;box-shadow:0 24px 70px rgba(0,0,0,.3)
+}
+html.dark .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-mission{
+  background:linear-gradient(120deg,#1B2B42,#29283A);border-color:#3A4B63
+}
+html.dark .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-form h2,
+html.dark .fni-auth-portal[data-auth-view="admin-login"] .fni-admin-signin-brand>span:first-child{
+  background:linear-gradient(105deg,#F1F5F9 10%,#C4B8F0 65%,#E5C77F 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+@keyframes fni-auth-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fni-auth-card-in{from{opacity:0;transform:translateY(24px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fni-auth-field-in{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fni-auth-logo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes fni-auth-orbit{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@media(max-width:520px){
+  .fni-auth-portal[data-auth-view="login-select"],
+  .fni-auth-portal[data-auth-view="tutor-signup"],
+  .fni-auth-portal[data-auth-view="tutor-login"],
+  .fni-auth-portal[data-auth-view="admin-login"]{padding-top:max(18px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  .fni-auth-portal[data-auth-view="login-select"] .fni-auth-card,
+  .fni-auth-portal[data-auth-view="tutor-signup"] .fni-auth-card,
+  .fni-auth-portal[data-auth-view="tutor-login"] .fni-auth-card,
+  .fni-auth-portal[data-auth-view="admin-login"] .fni-auth-card{padding:24px 19px;border-radius:22px}
+}
+@media(prefers-reduced-motion:reduce){
+  .fni-auth-portal[data-auth-view="login-select"] *,
+  .fni-auth-portal[data-auth-view="tutor-signup"] *,
+  .fni-auth-portal[data-auth-view="tutor-login"] *,
+  .fni-auth-portal[data-auth-view="admin-login"] *,
+  .fni-auth-portal[data-auth-view="login-select"]::before,
+  .fni-auth-portal[data-auth-view="tutor-signup"]::before,
+  .fni-auth-portal[data-auth-view="tutor-login"]::before,
+  .fni-auth-portal[data-auth-view="admin-login"]::before{animation:none!important;transition:none!important}
+}

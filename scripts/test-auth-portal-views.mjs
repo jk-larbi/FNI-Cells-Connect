@@ -22,3 +22,9 @@ assert.match(styles, /html\.dark \.fni-auth-portal\[data-auth-view="tutor-signup
 assert.match(styles, /html\.dark \.fni-auth-portal\[data-auth-view="tutor-login"\]/, 'tutor login must remain readable in dark mode');
 
 console.log('FNI tutor registration, tutor login, administrator login and responsive theme checks passed.');
+
+assert.match(styles, /fni-auth-card-in/, 'auth cards must use the new entrance motion');
+assert.match(styles, /fni-auth-orbit/, 'auth portal must use the new subtle background motion');
+assert.match(styles, /prefers-reduced-motion:reduce/, 'auth motion must respect reduced-motion preferences');
+assert.match(styles, /data-auth-view="admin-login".*?fni-auth-card/s, 'administrator login must receive the refreshed card styling');
+
