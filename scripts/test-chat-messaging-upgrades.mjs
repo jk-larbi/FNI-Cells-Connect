@@ -250,7 +250,7 @@ assert.match(groupConversationComponent, /Pinned messages/, 'group members must 
 assert.match(groupConversationComponent, /handleGroupPinToggle/, 'authorized group managers must be able to pin and unpin messages');
 assert.match(groupConversationComponent, /canManageGroupMembers && !message\.deleted_at/, 'only owners and moderators may manage pins and deleted messages cannot be pinned');
 assert.match(groupConversationComponent, /setJumpToGroupMessageId\(message\.id\)/, 'opening a pinned item must jump to the original message');
-const groupMessagePinMigration = read('../supabase/migrations/20261128163000_group_chat_message_pins.sql');
+const groupMessagePinMigration = read('../supabase/migrations/20261128162950_group_chat_message_pins.sql');
 assert.match(groupMessagePinMigration, /v_actor_role not in \('owner', 'moderator'\)/, 'database authorization must restrict pins to owners and moderators');
 assert.match(groupMessagePinMigration, /for update/, 'pin changes must lock the target message');
 assert.match(groupMessagePinMigration, /PIN_GROUP_CHAT_MESSAGE/, 'pin actions must be audited');
