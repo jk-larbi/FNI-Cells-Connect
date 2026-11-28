@@ -107,3 +107,6 @@ assert.match(view, /fni-messages-stitch/, 'FNI Messages must expose its Stitch c
 assert.match(view, /fni-messages-search-input/, 'FNI Messages search must retain its Stitch styling hook');
 assert.match(view, /fni-messages-conversation-list/, 'FNI conversation rows must remain inside the styled live list');
 console.log('FNI real-time online presence, last-seen and Stitch list regression checks passed.');
+
+assert.match(view, /bg-\[#EDF5FC\] dark:bg-\[#1C2636\]/, 'group conversation header must use the Stitch light and dark surface tokens');
+assert.match(view, /allMembers\.filter\(member => onlineMemberIds\.has\(member\.id\)\)\.length/, 'official group header must show live online members from the actual presence set');
