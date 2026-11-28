@@ -401,6 +401,8 @@ export interface EvangelismContact {
   discipleshipProgress?: string | number;
   establishedDate?: string;
   completionDate?: string;
+  /** Preserves unmodeled legacy contact fields stored in Supabase JSONB. */
+  legacyData?: Record<string, unknown>;
   lastFollowUpDate?: string;
   nextFollowUpDate?: string;
   history?: Array<{
