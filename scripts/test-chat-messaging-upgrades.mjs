@@ -37,6 +37,9 @@ assert.match(view, /cycleAudioPlaybackRate/, 'voice notes must expose playback s
 assert.match(view, /border-l-\[3px\] border-l-\[#C6A45A\]/, 'reply previews must use the Stitch gold accent');
 assert.match(view, /dark:bg-\[#101d2b\]\/75/, 'reply previews must remain readable in dark mode');
 assert.match(view, /text-slate-600 dark:text-slate-200/, 'reply preview content must use theme-aware contrast');
+assert.match(view, /bg-\[#F5EDD9\] dark:bg-\[#253145\]/, 'pinned message banner must follow the Stitch secondary surface in both themes');
+assert.match(view, /bg-\[#B18A3C\] dark:bg-\[#D9BD7B\]/, 'pinned message banner must use the Stitch gold accent');
+assert.match(view, /text-\[#354454\] dark:text-\[#E8EDF5\]/, 'pinned message text must retain readable light and dark contrast');
 assert.match(view, /audio\.playbackRate = audioPlaybackRate/, 'selected voice playback speed must be applied to audio playback');
 assert.match(view, /\{audioPlaybackRate\}x/, 'voice note player must display the active playback speed');
 assert.match(view, /voiceRecordingCancelledRef\.current/, 'discarding a voice note must prevent its upload');
