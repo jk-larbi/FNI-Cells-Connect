@@ -169,12 +169,54 @@ export const AnalyticsStitchDashboard: React.FC<AnalyticsStitchDashboardProps> =
     onRefresh, onExport, onPrint, onNavigateToTab, onOpenTargetSettings, onOpenCoreFoundation,
   } = props;
 
+  const [dateRange, setDateRange] = React.useState<'week' | 'month' | 'quarter' | 'year' | 'custom'>('month');
+  const [customStart, setCustomStart] = React.useState('');
+  const [customEnd, setCustomEnd] = React.useState('');
+  const [selectedLeader, setSelectedLeader] = React.useState('all');
+  const [reportStatus, setReportStatus] = React.useState('all');
+  const [activityCategory, setActivityCategory] = React.useState('all');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
+
+  const now = new Date();
+  const rangeStart = dateRange === 'custom' && customStart ? new Date(`${customStart}T00:00:00`)
+    : dateRange === 'week' ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7))
+      : dateRange === 'quarter' ? new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
+        : dateRange === 'year' ? new Date(now.getFullYear(), 0, 1)
+          : new Date(now.getFullYear(), now.getMonth(), 1);
+  const rangeEnd = dateRange === 'custom' && customEnd ? new Date(`${customEnd}T23:59:59.999`) : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const withinDateRange = (value?: string) => {
+    if (!value) return false;
+    const date = new Date(value);
+    return !Number.isNaN(date.getTime()) && date >= rangeStart && date <= rangeEnd;
+  };
+
   const totalMembers = cells.reduce((sum, cell) => sum + (Number(cell.total_members ?? cell.active_members) || 0), 0);
   const newMembers = cells.reduce((sum, cell) => sum + (Number(cell.new_members) || 0), 0);
   const averageAttendance = stats.meetingReportsSubmitted
     ? Math.round(stats.totalAttendance / stats.meetingReportsSubmitted)
     : 0;
-  const filteredByCell = filteredCellStats.filter(cell => selectedCell === 'All' || cell.name === selectedCell);
+  const filteredByCell = filteredCellStats.filter(cell =>
+    (selectedCell === 'All' || cell.name === selectedCell) &&
+    (selectedLeader === 'all' || cell.leaderName === selectedLeader) &&
+    (reportStatus === 'all' ||
+      (reportStatus === 'submitted' && !/missing|pending|late|correction/i.test(cell.status)) ||
+      (reportStatus === 'pending' && /pending|awaiting|correction/i.test(cell.status)) ||
+      (reportStatus === 'late' && /late/i.test(cell.status)))
+  );
+  const filteredActivities = liveActivities.filter(item => {
+    const categoryMatch = activityCategory === 'all' ||
+      (activityCategory === 'meetings' && item.type === 'meeting') ||
+      (activityCategory === 'evangelism' && item.type === 'evangelism') ||
+      (activityCategory === 'followups' && item.type === 'followup') ||
+      (activityCategory === 'membership' && /member|visitor|joined/i.test(`${item.actionText} ${item.details}`));
+    const statusText = `${item.valueBadge || ''} ${item.actionText} ${item.details}`;
+    const statusMatch = reportStatus === 'all' ||
+      (reportStatus === 'submitted' && /submitted|approved|filed|logged/i.test(statusText) && !/late/i.test(statusText)) ||
+      (reportStatus === 'pending' && /pending|awaiting|review|correction/i.test(statusText)) ||
+      (reportStatus === 'late' && /late/i.test(statusText));
+    const leaderMatch = selectedLeader === 'all' || item.tutorName === selectedLeader;
+    return categoryMatch && statusMatch && leaderMatch && withinDateRange(item.timestamp);
+  });
   const distribution = filteredByCell.map(cell => ({
     name: cell.name,
     value: selectedMetric === 'attendance' ? cell.totalAttendance
@@ -227,10 +269,20 @@ export const AnalyticsStitchDashboard: React.FC<AnalyticsStitchDashboardProps> =
         </div>
       </header>
 
-      <section className="fni-an-filters" aria-label="Analytics filters">
+      <section className="fni-an-date-toolbar" aria-label="Analytics date range">
+        <label className="fni-an-date-select"><Calendar className="h-4 w-4" /><select value={dateRange} onChange={event => setDateRange(event.target.value as typeof dateRange)} aria-label="Select analytics date range"><option value="week">This Week</option><option value="month">This Month</option><option value="quarter">This Quarter</option><option value="year">This Year</option><option value="custom">Custom Range</option></select></label>
+        <button type="button" className="fni-an-filter-toggle" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen(value => !value)}><Filter className="h-4 w-4" />Filters</button>
+      </section>
+      {dateRange === 'custom' && <section className="fni-an-custom-range" aria-label="Custom date range"><label>Start date<input type="date" value={customStart} max={customEnd || undefined} onChange={event => setCustomStart(event.target.value)} /></label><label>End date<input type="date" value={customEnd} min={customStart || undefined} onChange={event => setCustomEnd(event.target.value)} /></label></section>}
+      <section className={`fni-an-filters ${mobileFiltersOpen ? 'is-open' : ''}`} aria-label="Analytics filters">
         <label className="fni-an-search"><Search className="h-4 w-4" /><input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search cell, leader or code…" aria-label="Search cells by name, leader, or cell code" />{searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear cell search"><X className="h-4 w-4" /></button>}</label>
-        <label><Filter className="h-4 w-4" /><select value={selectedCell} onChange={event => setSelectedCell(event.target.value)} aria-label="Filter by cell"><option value="All">All fellowship cells</option>{cells.map(cell => <option key={cell.id} value={cell.name}>{cell.name}</option>)}</select></label>
-        <label><Calendar className="h-4 w-4" /><select value={timeDimension} onChange={event => setTimeDimension(event.target.value as PeriodKey)} aria-label="Select reporting period"><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+        <label><Building className="h-4 w-4" /><select value={selectedCell} onChange={event => setSelectedCell(event.target.value)} aria-label="Filter by cell"><option value="All">All cell groups</option>{cells.map(cell => <option key={cell.id} value={cell.name}>{cell.name}</option>)}</select></label>
+        <label><Users className="h-4 w-4" /><select value={selectedLeader} onChange={event => setSelectedLeader(event.target.value)} aria-label="Filter by cell leader"><option value="all">All cell leaders</option>{Array.from(new Set(cellStats.map(cell => cell.leaderName).filter(Boolean))).sort().map(leader => <option key={leader} value={leader}>{leader}</option>)}</select></label>
+        <label><FileCheck className="h-4 w-4" /><select value={reportStatus} onChange={event => setReportStatus(event.target.value)} aria-label="Filter by report status"><option value="all">All report statuses</option><option value="submitted">Submitted</option><option value="pending">Pending</option><option value="late">Submitted Late</option></select></label>
+        <label><Activity className="h-4 w-4" /><select value={activityCategory} onChange={event => setActivityCategory(event.target.value)} aria-label="Filter by activity category"><option value="all">All activity categories</option><option value="meetings">Cell meetings</option><option value="evangelism">Evangelism</option><option value="followups">Follow-ups</option><option value="membership">Membership</option></select></label>
+        <label className="fni-an-period-filter"><Calendar className="h-4 w-4" /><select value={timeDimension} onChange={event => setTimeDimension(event.target.value as PeriodKey)} aria-label="Select chart cadence"><option value="weekly">Weekly trend</option><option value="monthly">Monthly trend</option></select></label>
+        <button type="button" className="fni-an-reset-filters" onClick={() => { setSelectedCell('All'); setSelectedLeader('all'); setReportStatus('all'); setActivityCategory('all'); setSearchQuery(''); setDateRange('month'); setCustomStart(''); setCustomEnd(''); }}>Reset filters</button>
+        <button type="button" className="fni-an-apply-filters" onClick={() => setMobileFiltersOpen(false)}>Apply filters</button>
       </section>
 
       <section className="fni-an-kpis" aria-label="Key Performance Indicators">
@@ -332,7 +384,7 @@ export const AnalyticsStitchDashboard: React.FC<AnalyticsStitchDashboardProps> =
         <div className="fni-an-section-heading"><div><span className="fni-an-icon"><Radio className="h-4 w-4" /></span><div><h2>Recent Ministry Activity</h2><p>Latest recorded reports and venue updates.</p></div></div></div>
         <div className="fni-an-activity-tabs" role="tablist" aria-label="Activity view"><button type="button" role="tab" aria-selected={sidebarTab === 'activities'} className={sidebarTab === 'activities' ? 'is-active' : ''} onClick={() => setSidebarTab('activities')}>Activities</button><button type="button" role="tab" aria-selected={sidebarTab === 'tutors'} className={sidebarTab === 'tutors' ? 'is-active' : ''} onClick={() => setSidebarTab('tutors')}>Cell leaders</button></div>
         {sidebarTab === 'activities' ? (
-          liveActivities.length ? <div className="fni-an-activity-list">{liveActivities.slice(0, 6).map(item => <div key={item.id}><span className="fni-an-activity-avatar">{item.avatarInitials}</span><div><strong>{item.tutorName} · {item.cellName}</strong><p>{item.actionText} — {item.details}</p><small>{item.relativeTime}</small></div>{item.valueBadge && <StatusPill value={item.valueBadge} tone="neutral" />}</div>)}</div> : <p className="fni-an-empty">No recent ministry activity is available.</p>
+          filteredActivities.length ? <div className="fni-an-activity-list">{filteredActivities.slice(0, 6).map(item => <div key={item.id}><span className="fni-an-activity-avatar">{item.avatarInitials}</span><div><strong>{item.tutorName} · {item.cellName}</strong><p>{item.actionText} — {item.details}</p><small>{item.relativeTime}</small></div>{item.valueBadge && <StatusPill value={item.valueBadge} tone="neutral" />}</div>)}</div> : <p className="fni-an-empty">No ministry activity matches the selected date range and filters.</p>
         ) : (
           <><label className="fni-an-leader-search"><Search className="h-4 w-4" /><input value={leaderSearchQuery} onChange={event => setLeaderSearchQuery(event.target.value)} placeholder="Search cell leader…" /></label><div className="fni-an-activity-list">{leaders.slice(0, 8).map(cell => <div key={cell.id}><span className="fni-an-activity-avatar">{cell.leaderName.split(' ').map(name => name[0]).slice(0, 2).join('').toUpperCase() || '—'}</span><div><strong>{cell.leaderName || 'Leader not assigned'}</strong><p>{cell.name} · {cell.leaderPhone || 'No phone recorded'}</p></div><StatusPill value={cell.status} /></div>)}</div></>
         )}
