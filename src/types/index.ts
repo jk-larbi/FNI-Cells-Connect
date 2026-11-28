@@ -95,6 +95,10 @@ export type NotificationType =
   | 'announcement'
   | 'incoming_call'
   | 'missed_call'
+  | 'group_chat_approval_requested'
+  | 'group_chat_approved'
+  | 'group_chat_declined'
+  | 'group_chat_added'
   // System & Security
   | 'password_changed'
   | 'new_device_login'
