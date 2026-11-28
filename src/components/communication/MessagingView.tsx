@@ -427,6 +427,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [memberLastSeen, setMemberLastSeen] = useState<Record<string, string>>({});
   const [groupChats, setGroupChats] = useState<GroupChatSummary[]>([]);
   const [groupChatsError, setGroupChatsError] = useState<string | null>(null);
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [groupMemberSearch, setGroupMemberSearch] = useState('');
+  const [selectedGroupMemberIds, setSelectedGroupMemberIds] = useState<string[]>([]);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [createGroupError, setCreateGroupError] = useState<string | null>(null);
 
 
   // Presence is authoritative for "online"; the database timestamp supplies durable last-seen.
@@ -556,6 +563,32 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       window.removeEventListener('fni-group-chat-created', refresh);
     };
   }, [currentUser?.id]);
+
+  const createMemberGroup = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (isCreatingGroup) return;
+    setIsCreatingGroup(true);
+    setCreateGroupError(null);
+    try {
+      const group = await MessagingService.createGroupChat({
+        name: newGroupName,
+        description: newGroupDescription,
+        memberIds: selectedGroupMemberIds,
+      });
+      setIsCreateGroupOpen(false);
+      setNewGroupName('');
+      setNewGroupDescription('');
+      setGroupMemberSearch('');
+      setSelectedGroupMemberIds([]);
+      window.dispatchEvent(new CustomEvent('fni-group-chat-created'));
+      setSelectedChatId(`group:${group.id}`);
+      setMobileScreen('chat');
+    } catch (error) {
+      setCreateGroupError(error instanceof Error ? error.message : 'The group could not be created.');
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
 
   const selectedGroupChat = useMemo(() => {
     if (!selectedChatId?.startsWith('group:')) return null;
@@ -3361,6 +3394,19 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 );
               })}
 
+              <button
+                type="button"
+                onClick={() => {
+                  setCreateGroupError(null);
+                  setIsCreateGroupOpen(true);
+                }}
+                className="pb-1.5 px-2 text-[#785A1B] dark:text-[#D9BD7B] hover:opacity-80 transition-colors cursor-pointer flex items-center gap-1 shrink-0 font-semibold text-[11px]"
+                title="Create a group conversation"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">New Group</span>
+              </button>
+
               {/* Create / Manage Folder Button */}
               <button
                 type="button"
@@ -5763,6 +5809,63 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
             className="max-w-full max-h-[88vh] object-contain select-auto"
           />
           <p className="text-white/70 text-xs mt-3 text-center">{imagePreview.name}</p>
+        </div>
+      )}
+
+      {isCreateGroupOpen && (
+        <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-slate-950/60 p-0 sm:p-4" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setIsCreateGroupOpen(false); }}>
+          <form onSubmit={createMemberGroup} className="w-full max-w-xl max-h-[92dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-[#FAFAF8] dark:bg-[#101620] text-[#354454] dark:text-[#E8EDF5] shadow-2xl border border-[#E9EDF1] dark:border-[#2E3B4E]">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-4 bg-[#FAFAF8] dark:bg-[#101620] border-b border-[#E9EDF1] dark:border-[#2E3B4E]">
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setIsCreateGroupOpen(false)} className="w-9 h-9 rounded-full bg-[#EDF5FC] dark:bg-[#1C2636] inline-flex items-center justify-center" aria-label="Close create group">
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <div>
+                  <h2 className="font-semibold text-base">Create Group</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Start a new FNI conversation</p>
+                </div>
+              </div>
+              <span className="text-[10px] tracking-wide font-bold text-[#785A1B] dark:text-[#D9BD7B]">FNI MESSAGES</span>
+            </div>
+            <div className="p-4 sm:p-6 space-y-4">
+              <section className="rounded-xl bg-white dark:bg-[#1C2636] border border-[#E9EDF1] dark:border-[#2E3B4E] p-4 space-y-3">
+                <label className="block text-xs font-semibold" htmlFor="fni-new-group-name">Group name</label>
+                <input id="fni-new-group-name" required maxLength={80} value={newGroupName} onChange={event => setNewGroupName(event.target.value)} placeholder="Enter group name" className="w-full rounded-lg border border-[#DCEAF6] dark:border-[#39485D] bg-[#FAFAF8] dark:bg-[#101620] px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#8BB5DC]" />
+                <label className="block text-xs font-semibold" htmlFor="fni-new-group-description">Description</label>
+                <textarea id="fni-new-group-description" rows={2} maxLength={300} value={newGroupDescription} onChange={event => setNewGroupDescription(event.target.value)} placeholder="Describe the group's purpose…" className="w-full resize-none rounded-lg border border-[#DCEAF6] dark:border-[#39485D] bg-[#FAFAF8] dark:bg-[#101620] px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#8BB5DC]" />
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right">{newGroupDescription.length}/300</p>
+              </section>
+              <section className="rounded-xl bg-white dark:bg-[#1C2636] border border-[#E9EDF1] dark:border-[#2E3B4E] p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold">Add Members</h3>
+                  <span className="text-xs text-[#785A1B] dark:text-[#D9BD7B]">{selectedGroupMemberIds.length} selected</span>
+                </div>
+                <input type="search" value={groupMemberSearch} onChange={event => setGroupMemberSearch(event.target.value)} placeholder="Search FNI members by name…" className="w-full rounded-full border border-[#DCEAF6] dark:border-[#39485D] bg-[#FAFAF8] dark:bg-[#101620] px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#8BB5DC]" />
+                <div className="max-h-64 overflow-y-auto divide-y divide-[#E9EDF1] dark:divide-[#2E3B4E]">
+                  {allMembers.filter(member => member.id !== currentUser?.id && (member.full_name || member.name || '').toLowerCase().includes(groupMemberSearch.trim().toLowerCase())).map(member => {
+                    const memberId = String(member.id);
+                    const checked = selectedGroupMemberIds.includes(memberId);
+                    return (
+                      <label key={memberId} className="flex items-center gap-3 py-3 cursor-pointer">
+                        <input type="checkbox" checked={checked} onChange={event => setSelectedGroupMemberIds(previous => event.target.checked ? [...previous, memberId] : previous.filter(id => id !== memberId))} className="h-4 w-4 rounded border-slate-300 text-[#785A1B] focus:ring-[#8BB5DC]" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium truncate">{member.full_name || member.name || 'FNI Member'}</span>
+                          <span className="block text-xs text-slate-500 dark:text-slate-400 capitalize">{String(member.role || 'member').replace(/_/g, ' ')}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {allMembers.filter(member => member.id !== currentUser?.id && (member.full_name || member.name || '').toLowerCase().includes(groupMemberSearch.trim().toLowerCase())).length === 0 && (
+                    <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">No matching members found in the directory.</p>
+                  )}
+                </div>
+              </section>
+              {createGroupError && <p role="alert" className="rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 px-3 py-2 text-xs">{createGroupError}</p>}
+              <button type="submit" disabled={isCreatingGroup || !newGroupName.trim()} className="w-full rounded-full bg-[#8BB5DC] hover:bg-[#78A8D2] disabled:opacity-50 text-[#2B3947] font-semibold py-3 text-sm transition-colors">
+                {isCreatingGroup ? 'Creating group…' : 'Create Group'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
