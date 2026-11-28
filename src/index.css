@@ -7013,10 +7013,19 @@ html.dark .fni-admin-stitch-shell header.sticky {
   color: var(--fni-text) !important;
   border-bottom-color: var(--fni-border) !important;
 }
-html.dark .fni-admin-stitch-shell header.sticky button {
+html.dark .fni-admin-stitch-shell header.sticky button[title="Go back to previous screen"] {
   background: var(--fni-surface-muted) !important;
-  color: var(--fni-text-muted) !important;
+  color: var(--fni-text) !important;
   border-color: var(--fni-border) !important;
+}
+html.dark .fni-admin-stitch-shell header.sticky button[title="Account Settings"] {
+  background: transparent !important;
+  color: var(--fni-text) !important;
+}
+html.dark .fni-admin-stitch-shell header.sticky button[title="Sign out of your account"] {
+  background: #3A2428 !important;
+  color: #FFD6D6 !important;
+  border-color: #714047 !important;
 }
 html.dark .fni-admin-stitch-shell header.sticky button[aria-label="Open left navigation menu"] {
   background: #376F9F !important;
