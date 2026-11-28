@@ -763,74 +763,76 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
             MENU VIEW: EXACT TELEGRAM SETTINGS VISUAL REPLICATION
         ========================================================================== */}
         {currentSection === 'menu' && (
-          <div className="fni-account-overview space-y-6">
+          <div className="fni-account-overview space-y-5 sm:space-y-6">
             <div className="fni-account-page-intro">
               <div>
                 <p className="fni-account-eyebrow">FORERUNNERS NETWORK INTERNATIONAL</p>
                 <h1>Account Settings</h1>
-                <p>Manage your personal information, preferences and account security.</p>
+                <p>Manage your personal information, account preferences and security.</p>
               </div>
             </div>
 
-            <section className="fni-account-identity">
-              <div className="fni-account-avatar">
+            <section className="rounded-2xl border border-[#e2e5e9] dark:border-white/10 bg-white dark:bg-[#1c2b3a] p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+              <div className="fni-account-avatar shrink-0">
                 {currentUser?.avatar_url ? (
                   <img src={currentUser.avatar_url} alt="" />
                 ) : (
                   currentUser?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'FN'
                 )}
               </div>
-              <div className="fni-account-identity-copy">
-                <h2>{currentUser?.full_name || 'My Account'}</h2>
-                <p>{currentUser?.email || 'Email address not available'}</p>
-                <div className="fni-account-identity-meta">
-                  <span>{currentUser?.role || 'FNI Member'}</span>
-                  <span className="fni-account-status"><i />{accountStatus}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-500 dark:text-slate-400">Signed-in Account · Supabase Auth</p>
+                <h2 className="mt-1 text-sm sm:text-base font-bold text-[#142B4A] dark:text-white truncate">{currentUser?.full_name || 'My Account'}</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{currentUser?.email || 'Email address not available'}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
+                  <span className="rounded-full bg-[#eef3f8] dark:bg-white/10 px-2.5 py-1 font-semibold text-[#142B4A] dark:text-slate-200">{roleDisplayTitle}</span>
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400"><i className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{accountStatus}</span>
                 </div>
               </div>
-              <button type="button" onClick={() => setCurrentSection('manage_profile')} className="fni-account-outline-action">
+              <button type="button" onClick={() => setCurrentSection('manage_profile')} className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-[#d8e0e8] dark:border-white/15 px-3 py-2 text-xs font-bold text-[#142B4A] dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                 <User className="w-4 h-4" /> Edit profile
               </button>
             </section>
 
-            <div className="fni-account-section-heading">
+            <div className="flex items-end justify-between gap-3">
               <div>
-                <h2>Personalise your account</h2>
-                <p>Choose a section to review or update.</p>
+                <h2 className="text-sm font-bold text-[#142B4A] dark:text-white">Account & Preferences</h2>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Choose a section to review or update.</p>
               </div>
+              <span className="hidden sm:block text-[10px] text-slate-400">FNI CELLS CONNECT</span>
             </div>
 
-            <div className="fni-account-category-grid">
-              <button type="button" onClick={() => setCurrentSection('manage_profile')} className="fni-account-category-card">
-                <span className="fni-account-category-icon"><User /></span>
-                <span className="fni-account-category-copy"><strong>Profile Information</strong><small>Full name, email, phone number and profile photo</small></span>
-                <ChevronRight />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+              <button type="button" onClick={() => setCurrentSection('manage_profile')} className="group flex items-center gap-3 rounded-2xl border border-[#e2e5e9] dark:border-white/10 bg-white dark:bg-[#1c2b3a] p-3.5 sm:p-4 text-left hover:border-[#C6A45A]/70 hover:shadow-sm transition-all">
+                <span className="w-10 h-10 rounded-xl bg-[#edf3fa] dark:bg-[#233b55] text-[#142B4A] dark:text-[#d7e6f6] flex items-center justify-center shrink-0"><User className="w-5 h-5" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-xs sm:text-sm text-[#142B4A] dark:text-white">Profile Information</strong><small className="block mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Full name, username, email, phone and profile photo</small></span>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#C6A45A] shrink-0" />
               </button>
-              <button type="button" onClick={() => setCurrentSection('general')} className="fni-account-category-card">
-                <span className="fni-account-category-icon"><Globe /></span>
-                <span className="fni-account-category-copy"><strong>Personal Preferences</strong><small>Language, time zone, date and time format</small></span>
-                <ChevronRight />
+              <button type="button" onClick={() => setCurrentSection('general')} className="group flex items-center gap-3 rounded-2xl border border-[#e2e5e9] dark:border-white/10 bg-white dark:bg-[#1c2b3a] p-3.5 sm:p-4 text-left hover:border-[#C6A45A]/70 hover:shadow-sm transition-all">
+                <span className="w-10 h-10 rounded-xl bg-[#edf3fa] dark:bg-[#233b55] text-[#142B4A] dark:text-[#d7e6f6] flex items-center justify-center shrink-0"><Globe className="w-5 h-5" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-xs sm:text-sm text-[#142B4A] dark:text-white">Personal Preferences</strong><small className="block mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Display name, language, time zone, date and theme</small></span>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#C6A45A] shrink-0" />
               </button>
-              <button type="button" onClick={() => setCurrentSection('notifications')} className="fni-account-category-card">
-                <span className="fni-account-category-icon"><Bell /></span>
-                <span className="fni-account-category-copy"><strong>Notification Preferences</strong><small>Meeting reminders, report alerts and notification channels</small></span>
-                <ChevronRight />
+              <button type="button" onClick={() => setCurrentSection('notifications')} className="group flex items-center gap-3 rounded-2xl border border-[#e2e5e9] dark:border-white/10 bg-white dark:bg-[#1c2b3a] p-3.5 sm:p-4 text-left hover:border-[#C6A45A]/70 hover:shadow-sm transition-all">
+                <span className="w-10 h-10 rounded-xl bg-[#edf3fa] dark:bg-[#233b55] text-[#142B4A] dark:text-[#d7e6f6] flex items-center justify-center shrink-0"><Bell className="w-5 h-5" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-xs sm:text-sm text-[#142B4A] dark:text-white">Notification Preferences</strong><small className="block mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Alerts, meeting reminders, Push and Email channels</small></span>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#C6A45A] shrink-0" />
               </button>
-              <button type="button" onClick={() => setCurrentSection('password_security')} className="fni-account-category-card">
-                <span className="fni-account-category-icon"><ShieldCheck /></span>
-                <span className="fni-account-category-copy"><strong>Account Security</strong><small>Password management and active account sessions</small></span>
-                <ChevronRight />
+              <button type="button" onClick={() => setCurrentSection('password_security')} className="group flex items-center gap-3 rounded-2xl border border-[#e2e5e9] dark:border-white/10 bg-white dark:bg-[#1c2b3a] p-3.5 sm:p-4 text-left hover:border-[#C6A45A]/70 hover:shadow-sm transition-all">
+                <span className="w-10 h-10 rounded-xl bg-[#edf3fa] dark:bg-[#233b55] text-[#142B4A] dark:text-[#d7e6f6] flex items-center justify-center shrink-0"><ShieldCheck className="w-5 h-5" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-xs sm:text-sm text-[#142B4A] dark:text-white">Account Security</strong><small className="block mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Password, two-factor status and active sessions</small></span>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#C6A45A] shrink-0" />
               </button>
-              <button type="button" onClick={() => setCurrentSection('account_management')} className="fni-account-category-card">
-                <span className="fni-account-category-icon"><Settings /></span>
-                <span className="fni-account-category-copy"><strong>Account Management</strong><small>Devices, support, account requests and sign-out</small></span>
-                <ChevronRight />
+              <button type="button" onClick={() => setCurrentSection('account_management')} className="group flex items-center gap-3 rounded-2xl border border-[#e2e5e9] dark:border-white/10 bg-white dark:bg-[#1c2b3a] p-3.5 sm:p-4 text-left hover:border-[#C6A45A]/70 hover:shadow-sm transition-all sm:col-span-2">
+                <span className="w-10 h-10 rounded-xl bg-[#edf3fa] dark:bg-[#233b55] text-[#142B4A] dark:text-[#d7e6f6] flex items-center justify-center shrink-0"><Settings className="w-5 h-5" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-xs sm:text-sm text-[#142B4A] dark:text-white">Account Management</strong><small className="block mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Data export, account correction, support and sign out</small></span>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#C6A45A] shrink-0" />
               </button>
             </div>
 
-            <div className="fni-account-footnote">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Your account information is managed securely within FNI Cells Connect.</span>
+            <div className="flex items-start gap-2.5 rounded-xl bg-[#edf3fa] dark:bg-[#1b3047] px-3.5 py-3 text-[11px] leading-relaxed text-[#294765] dark:text-slate-300">
+              <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-[#C6A45A]" />
+              <span>Your account information is managed securely within FNI Cells Connect. Contact FNI Administration if your role or assigned cell needs to be corrected.</span>
             </div>
           </div>
         )}
@@ -838,7 +840,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
         {/* =========================================================================
             SECTION 1: MANAGE PROFILE (Requirement 2)
         ========================================================================== */}
-        {/* ACCOUNT MANAGEMENT — existing account actions only */}
         {currentSection === 'account_management' && (
           <div className="fni-account-management space-y-5">
             <div className="fni-account-page-intro">
