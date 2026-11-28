@@ -156,6 +156,9 @@ assert.match(messaging, /from\('group_chat_members'\)[\s\S]*?\.eq\('group_id', g
 assert.match(messaging, /select\('id,full_name,role,cell_name,photo_url'\)/, 'group roster must use approved profile display fields');
 assert.match(groupConversationComponent, /setMembersOpen\(true\)/, 'group header must open the member roster');
 assert.match(groupConversationComponent, /Group members/, 'group conversation must display a member details panel');
+assert.match(groupConversationComponent, /value=\{memberSearch\}/, 'group member directory must expose a controlled search field');
+assert.match(groupConversationComponent, /filteredGroupMembers = useMemo/, 'member search must filter the actual group roster');
+assert.match(groupConversationComponent, /Joined \{new Date\(member\.joined_at\)/, 'member directory must show the real membership join date');
 assert.match(groupConversationComponent, /member\.full_name/, 'group roster must show real member names');
 assert.match(groupConversationComponent, /member\.member_role/, 'group roster must distinguish owners and members');
 assert.match(messaging, /\.in\('supabase_user_id', uniqueIds\)/, 'sender profile lookup must use authenticated Supabase user IDs');
