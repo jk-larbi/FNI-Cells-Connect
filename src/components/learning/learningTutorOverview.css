@@ -60,3 +60,136 @@
 .fni-lt-resource-note>button{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:#8E6C23;font:600 10px "Libre Franklin",sans-serif;cursor:pointer}
 @media(max-width:900px){.fni-lt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.fni-lt-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.fni-learning-tutor-overview{gap:15px}.fni-lt-heading{align-items:stretch;flex-direction:column;gap:12px;padding-bottom:14px}.fni-lt-heading h1{font-size:24px}.fni-lt-heading>div:first-child>p:last-child{font-size:12px}.fni-lt-heading-actions{display:grid;grid-template-columns:1fr 1fr}.fni-lt-heading-actions button{min-height:42px;padding-inline:9px;font-size:10px}.fni-lt-kpis{gap:9px}.fni-lt-kpis article{min-height:104px;padding:12px}.fni-lt-kpis article>strong{font-size:23px}.fni-lt-modules,.fni-lt-panel{padding:14px}.fni-lt-section-heading h2,.fni-lt-panel-heading h2{font-size:12px}.fni-lt-module-grid{grid-template-columns:minmax(0,1fr)}.fni-lt-two-column{grid-template-columns:minmax(0,1fr);gap:12px}.fni-lt-resource-note{align-items:flex-start;flex-direction:column;padding:14px}.fni-lt-resource-note>div{align-items:flex-start}.fni-lt-resource-note>button{align-self:flex-end}}
+
+
+/* Learning Portal — tutor overview dark theme.
+   Keep all live learning content and actions unchanged; pair every light
+   surface and muted label with an accessible dark-theme equivalent. */
+html.dark .fni-learning-stitch .fni-learning-tutor-overview {
+  color:#E8EDF5;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-heading {
+  border-color:#2E3B4E;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-heading h1,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-section-heading h2,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-panel-heading h2 {
+  color:#E8EDF5;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-heading>div:first-child>p:last-child,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-section-heading p,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-panel-heading p,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article>small,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-module-copy small,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-list-copy small,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-resource-note p,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-empty>p {
+  color:#A8B6C8;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-modules,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-panel {
+  border-color:#2E3B4E;
+  background:#161E2B;
+  box-shadow:none;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article>span {
+  color:#B9C5D4;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article>strong {
+  color:#F1F5FA;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article.is-highlighted {
+  border-color:#725A2B;
+  background:#332A1A;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article.is-highlighted>span,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article.is-highlighted>strong,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-kpis article.is-highlighted>small {
+  color:#FFE6B2;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-progress-track {
+  background:#2B394B;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-module-card {
+  border-color:#354861;
+  background:#1C2C41;
+  color:#E8EDF5;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-module-card:hover {
+  border-color:#B99755;
+  background:#26364A;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-module-copy strong,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-list-copy strong,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-resource-note strong,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-empty>strong {
+  color:#E8EDF5;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-module-icon,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-panel-icon,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-list-icon,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-module-count {
+  background:#25364B;
+  color:#D5DFEA;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-module-arrow {
+  color:#A8B6C8;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-action-secondary {
+  border-color:#465A73;
+  background:#1C2C41;
+  color:#E8EDF5;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-action-secondary:hover {
+  background:#253A53;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-action-primary {
+  border-color:#B4C8E9;
+  background:#B4C8E9;
+  color:#142842;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-action-primary:hover {
+  background:#C9D8EA;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-panel-heading>button,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-resource-note>button {
+  color:#E9C77C;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-list>button,
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-result-row {
+  border-color:#2E3B4E;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-list-date {
+  color:#C2CDDA;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-event-date {
+  border-color:#725A2B;
+  background:#3B3020;
+  color:#FFE6B2;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-result-status {
+  border-color:#465A73;
+  background:#25364B;
+  color:#D5DFEA;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-result-status.is-success {
+  border-color:#28634B;
+  background:#173B32;
+  color:#8DE0B4;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-result-status.is-warning {
+  border-color:#725A2B;
+  background:#3B3020;
+  color:#E9C77C;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-empty {
+  color:#A8B6C8;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-resource-note {
+  border-color:#354861;
+  background:#1C2C41;
+}
+html.dark .fni-learning-stitch .fni-learning-tutor-overview .fni-lt-resource-note>div {
+  color:#E9C77C;
+}
