@@ -241,7 +241,7 @@ export const TutorDashboardView: React.FC<TutorDashboardViewProps> = ({
   const checklistPercent = Math.round((completedSteps / 4) * 100);
 
   return (
-    <div className="space-y-6">
+    <div className="fni-tutor-dashboard space-y-6">
       {/* 1. FELLOWSHIP PASTORAL SANCTUARY HEADER */}
       <div className="fni-tutor-sanctuary-header bg-gradient-to-r from-[#142B4A] via-[#1A365D] to-[#203D63] text-white rounded-3xl p-6 sm:p-7 shadow-sm relative overflow-hidden border border-[#142B4A]">
         {/* Subtle decorative gold glow */}
