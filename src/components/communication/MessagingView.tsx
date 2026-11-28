@@ -427,6 +427,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
   const [memberLastSeen, setMemberLastSeen] = useState<Record<string, string>>({});
   const [groupChats, setGroupChats] = useState<GroupChatSummary[]>([]);
   const [groupChatsError, setGroupChatsError] = useState<string | null>(null);
+  const [groupCreationNotice, setGroupCreationNotice] = useState<string | null>(null);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
@@ -581,8 +582,13 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
       setGroupMemberSearch('');
       setSelectedGroupMemberIds([]);
       window.dispatchEvent(new CustomEvent('fni-group-chat-created'));
-      setSelectedChatId(`group:${group.id}`);
-      setMobileScreen('chat');
+      if (group.status === 'approved') {
+        setSelectedChatId(`group:${group.id}`);
+        setMobileScreen('chat');
+        setGroupCreationNotice(null);
+      } else {
+        setGroupCreationNotice(`Your request for "${group.name}" has been submitted. The group will become available after administrator approval.`);
+      }
     } catch (error) {
       setCreateGroupError(error instanceof Error ? error.message : 'The group could not be created.');
     } finally {
@@ -3398,6 +3404,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
                 type="button"
                 onClick={() => {
                   setCreateGroupError(null);
+                  setGroupCreationNotice(null);
                   setIsCreateGroupOpen(true);
                 }}
                 className="pb-1.5 px-2 text-[#785A1B] dark:text-[#D9BD7B] hover:opacity-80 transition-colors cursor-pointer flex items-center gap-1 shrink-0 font-semibold text-[11px]"
@@ -3426,6 +3433,7 @@ export const MessagingView: React.FC<MessagingViewProps> = ({
           {/* Conversations List */}
           <div className="fni-messages-conversation-list flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#17212b]">
             {groupChatsError && <div role="alert" className="px-3 py-2 text-xs text-rose-600 dark:text-rose-300">{groupChatsError}</div>}
+            {groupCreationNotice && <div role="status" className="mx-3 mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-200">{groupCreationNotice}</div>}
             {filteredContacts.map(c => {
               const isSelected = selectedChatId === c.id;
               const isPinned = c.isPinned;
