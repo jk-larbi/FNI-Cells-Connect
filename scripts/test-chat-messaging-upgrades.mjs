@@ -112,6 +112,12 @@ assert.match(view, /bg-\[#EDF5FC\] dark:bg-\[#1C2636\]/, 'group conversation hea
 assert.match(view, /allMembers\.filter\(member => onlineMemberIds\.has\(member\.id\)\)\.length/, 'official group header must show live online members from the actual presence set');
 
 assert.match(messaging, /createGroupChat\(input: CreateGroupChatInput\)/, 'group creation must call the authenticated group creation RPC');
+assert.match(view, /const createMemberGroup = async/, 'group creation form must submit through the persistent group service');
+assert.match(view, /MessagingService\.createGroupChat\(/, 'new groups must be created through the authenticated RPC service');
+assert.match(view, /memberIds: selectedGroupMemberIds/, 'group invitations must use selected active directory profile IDs');
+assert.match(view, /fni-group-chat-created/, 'successful group creation must refresh the authenticated group list');
+assert.match(view, /setSelectedChatId\(`group:\$\{group\.id\}`\)/, 'the creator must open the newly created group conversation');
+assert.match(view, /Private group/, 'the create-group form must preserve the Stitch group identity and privacy design');
 assert.match(messaging, /from\('group_chat_messages'\)[\s\S]*?\.eq\('group_id', groupId\)/, 'group history must load from the persistent group message table');
 assert.match(messaging, /sender_uid: senderUid/, 'group messages must be attributed to the authenticated sender');
 assert.match(messaging, /subscribeToGroupChatMessages/, 'group messages must subscribe to Supabase Realtime updates');
