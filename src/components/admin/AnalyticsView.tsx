@@ -339,7 +339,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onBack, onNavigate
 
     return MONTHS.map((month, idx) => {
       // Find real submitted reports for this calendar month of current year
+      // Keep attendance analytics consistent with approved-only ministry reporting.
       const monthMeetings = meetingReports.filter(r => {
+        if (r.status !== 'Approved' && r.status !== 'approved') return false;
         const d = r.meetingDate || r.submittedAt;
         if (!d) return false;
         const dt = new Date(d);
