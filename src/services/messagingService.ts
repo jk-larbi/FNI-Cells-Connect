@@ -87,8 +87,22 @@ export interface CreateGroupChatInput {
   memberIds?: string[];
 }
 
+export interface GroupChatCreationRequest {
+  id: string;
+  requested_by_uid: string;
+  group_name: string;
+  description: string;
+  requested_member_ids: string[];
+  status: 'pending' | 'approved' | 'declined';
+  reviewed_by_uid: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  created_at: string;
+  requester_name?: string;
+}
+
 export class MessagingService {
-  static async createGroupChat(input: CreateGroupChatInput): Promise<{ id: string; name: string; description: string; created_at: string }> {
+  static async createGroupChat(input: CreateGroupChatInput): Promise<{ id: string; name: string; description: string; created_at: string; status: 'pending' | 'approved' }> {
     if (!supabase || !isSupabaseConfigured) throw new Error('Group chats require an active FNI connection.');
     const name = input.name.trim();
     if (!name || name.length > 80) throw new Error('Group name must be between 1 and 80 characters.');
@@ -100,7 +114,37 @@ export class MessagingService {
     if (error) throw error;
     const group = Array.isArray(data) ? data[0] : data;
     if (!group?.id) throw new Error('The group was not created. Please try again.');
-    return group as { id: string; name: string; description: string; created_at: string };
+    return group as { id: string; name: string; description: string; created_at: string; status: 'pending' | 'approved' };
+  }
+
+  static async getGroupChatCreationRequests(): Promise<GroupChatCreationRequest[]> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('FNI connection is unavailable.');
+    const { data, error } = await supabase
+      .from('group_chat_creation_requests')
+      .select('id,requested_by_uid,group_name,description,requested_member_ids,status,reviewed_by_uid,reviewed_at,review_note,created_at')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    const requests = (data || []) as GroupChatCreationRequest[];
+    const userIds = Array.from(new Set(requests.map(item => item.requested_by_uid).filter(Boolean)));
+    if (!userIds.length) return requests;
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('supabase_user_id,full_name')
+      .in('supabase_user_id', userIds);
+    if (profilesError) throw profilesError;
+    const names = new Map((profiles || []).map(profile => [profile.supabase_user_id, profile.full_name]));
+    return requests.map(item => ({ ...item, requester_name: names.get(item.requested_by_uid) || 'FNI Member' }));
+  }
+
+  static async reviewGroupChatCreationRequest(requestId: string, decision: 'approved' | 'declined', note = ''): Promise<{ request_id: string; status: string; group_id: string | null }> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('FNI connection is unavailable.');
+    const { data, error } = await supabase.rpc('review_fni_group_chat_request', {
+      p_request_id: requestId,
+      p_decision: decision,
+      p_note: note.trim(),
+    });
+    if (error) throw error;
+    return data as { request_id: string; status: string; group_id: string | null };
   }
 
   static async getMyGroupChats(): Promise<GroupChatSummary[]> {
