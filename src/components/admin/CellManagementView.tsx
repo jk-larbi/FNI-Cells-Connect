@@ -292,6 +292,17 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
     return matchesSearch && matchesStatus && matchesDirectoryFilter;
   });
 
+  const approvedCellMeetings = cellMeetings.filter(report => report.status === 'Approved');
+  const meetingPerformance = approvedCellMeetings.reduce((totals, report) => ({
+    attendance: totals.attendance + (Number(report.attendance) || 0),
+    absentees: totals.absentees + (Number(report.absentees) || 0),
+    newMembers: totals.newMembers + (Number(report.newMembers) || 0),
+    followUpNeeded: totals.followUpNeeded + (Number(report.followUpNeeded) || 0),
+  }), { attendance: 0, absentees: 0, newMembers: 0, followUpNeeded: 0 });
+  const averageAttendance = approvedCellMeetings.length
+    ? Math.round(meetingPerformance.attendance / approvedCellMeetings.length)
+    : 0;
+
   return (
     <div className="fni-cell-groups-stitch space-y-5 sm:space-y-6">
       {/* Top Header */}
@@ -824,19 +835,48 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
             )}
             {isLoadingDetails && <p className="text-xs text-[#5A6B7C]">Loading cell history…</p>}
 
-            {/* Performance Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-              <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
-                <div className="text-[10px] font-semibold text-[#5A6B7C]">Meeting Returns</div>
-                <div className="text-lg font-bold text-[#142842] mt-0.5">{cellMeetings.length}</div>
+            {/* Performance Stats Cards — meeting outcomes use approved reports only */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+                <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
+                  <div className="text-[10px] font-semibold text-[#5A6B7C]">Meeting Reports</div>
+                  <div className="text-lg font-bold text-[#142842] mt-0.5">{cellMeetings.length}</div>
+                  <div className="text-[10px] text-[#5A6B7C] mt-0.5">{cellMeetings.filter(report => report.status === 'Approved').length} approved</div>
+                </div>
+                <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
+                  <div className="text-[10px] font-semibold text-[#5A6B7C]">Evangelism Outreaches</div>
+                  <div className="text-lg font-bold text-[#23845B] mt-0.5">{cellEvang.length}</div>
+                </div>
+                <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
+                  <div className="text-[10px] font-semibold text-[#5A6B7C]">Outreach Contacts</div>
+                  <div className="text-lg font-bold text-[#8E6C23] mt-0.5">{cellContacts.length}</div>
+                </div>
               </div>
-              <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
-                <div className="text-[10px] font-semibold text-[#5A6B7C]">Evangelism Outreaches</div>
-                <div className="text-lg font-bold text-[#23845B] mt-0.5">{cellEvang.length}</div>
-              </div>
-              <div className="p-3 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC]">
-                <div className="text-[10px] font-semibold text-[#5A6B7C]">Outreach Contacts</div>
-                <div className="text-lg font-bold text-[#8E6C23] mt-0.5">{cellContacts.length}</div>
+              <div>
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[#5A6B7C] mb-2">Approved meeting performance</h5>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  <div className="p-3 bg-white rounded-xl border border-[#DCE3EC]">
+                    <div className="text-[10px] font-semibold text-[#5A6B7C]">Total attendance</div>
+                    <div className="text-lg font-bold text-[#142842] mt-0.5">{meetingPerformance.attendance}</div>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-[#DCE3EC]">
+                    <div className="text-[10px] font-semibold text-[#5A6B7C]">Average attendance</div>
+                    <div className="text-lg font-bold text-[#142842] mt-0.5">{averageAttendance}</div>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-[#DCE3EC]">
+                    <div className="text-[10px] font-semibold text-[#5A6B7C]">Absentees reported</div>
+                    <div className="text-lg font-bold text-[#142842] mt-0.5">{meetingPerformance.absentees}</div>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-[#DCE3EC]">
+                    <div className="text-[10px] font-semibold text-[#5A6B7C]">New members</div>
+                    <div className="text-lg font-bold text-[#23845B] mt-0.5">{meetingPerformance.newMembers}</div>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-[#DCE3EC]">
+                    <div className="text-[10px] font-semibold text-[#5A6B7C]">Follow-up needed</div>
+                    <div className="text-lg font-bold text-[#8E6C23] mt-0.5">{meetingPerformance.followUpNeeded}</div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-[#5A6B7C] mt-2">Performance totals include approved meeting reports only. Visitor numbers are not captured as a separate field in the current meeting report form.</p>
               </div>
             </div>
 
