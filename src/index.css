@@ -6990,3 +6990,56 @@ html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar .fni-sidebar-tooltip 
   border-color: #D5E1EC !important;
   color: #FFFFFF !important;
 }
+
+
+/* Administrator shell theme tokens and fixed navigation surfaces. */
+html.dark .fni-admin-stitch-shell {
+  --fni-stitch-primary: #376F9F;
+  --fni-stitch-bronze: #D9BD7B;
+  --fni-stitch-canvas: var(--fni-canvas);
+  --fni-stitch-surface: var(--fni-surface);
+  --fni-stitch-container: var(--fni-surface-muted);
+  --fni-stitch-border: var(--fni-border);
+  --fni-stitch-muted: var(--fni-text-muted);
+  background: var(--fni-canvas) !important;
+  color: var(--fni-text) !important;
+}
+html.dark .fni-admin-stitch-shell .fni-app-main {
+  background: var(--fni-canvas) !important;
+  color: var(--fni-text) !important;
+}
+html.dark .fni-admin-stitch-shell header.sticky {
+  background: var(--fni-surface) !important;
+  color: var(--fni-text) !important;
+  border-bottom-color: var(--fni-border) !important;
+}
+html.dark .fni-admin-stitch-shell header.sticky button {
+  background: var(--fni-surface-muted) !important;
+  color: var(--fni-text-muted) !important;
+  border-color: var(--fni-border) !important;
+}
+html.dark .fni-admin-stitch-shell header.sticky button[aria-label="Open left navigation menu"] {
+  background: #376F9F !important;
+  color: #FFFFFF !important;
+  border-color: #477FAE !important;
+}
+html.dark .fni-admin-stitch-shell header.sticky button[title="Notifications & Dispatches"] {
+  background: var(--fni-surface-muted) !important;
+  color: var(--fni-gold) !important;
+}
+html.dark .fni-admin-stitch-shell .mobile-bottom-nav {
+  background: var(--fni-surface) !important;
+  color: var(--fni-text-muted) !important;
+  border-color: var(--fni-border) !important;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, .22) !important;
+}
+html.dark .fni-admin-stitch-shell .mobile-bottom-nav button {
+  color: var(--fni-text-muted) !important;
+}
+html.dark .fni-admin-stitch-shell .mobile-bottom-nav button[aria-current="page"] {
+  color: var(--fni-gold-text) !important;
+}
+html.dark .fni-admin-stitch-shell .mobile-bottom-nav button[aria-current="page"] > span:first-child {
+  background: var(--fni-blue-soft) !important;
+  color: var(--fni-gold-text) !important;
+}
