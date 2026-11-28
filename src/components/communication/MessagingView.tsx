@@ -382,6 +382,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [groupSearchOpen, setGroupSearchOpen] = useState(false);
   const [groupSearchTerm, setGroupSearchTerm] = useState('');
   const [jumpToGroupMessageId, setJumpToGroupMessageId] = useState<string | null>(null);
+  const [pinnedMessages, setPinnedMessages] = useState<GroupChatMessage[]>([]);
   const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
   const [pinnedActionId, setPinnedActionId] = useState<string | null>(null);
   const [groupPinError, setGroupPinError] = useState<string | null>(null);
@@ -397,8 +398,14 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const rows = await MessagingService.getGroupChatMessages(group.id);
-        if (!cancelled) setMessages(rows);
+        const [rows, pinnedRows] = await Promise.all([
+          MessagingService.getGroupChatMessages(group.id),
+          MessagingService.getPinnedGroupChatMessages(group.id),
+        ]);
+        if (!cancelled) {
+          setMessages(rows);
+          setPinnedMessages(pinnedRows);
+        }
       } catch (reason) {
         if (!cancelled) setError(reason instanceof Error ? reason.message : 'Unable to load group messages.');
       } finally {
@@ -413,6 +420,15 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
         const exists = previous.some(item => item.id === message.id);
         if (exists) return previous.map(item => item.id === message.id ? message : item);
         return [...previous, message].sort((a, b) => a.created_at.localeCompare(b.created_at));
+      });
+      setPinnedMessages(previous => {
+        if (eventType === 'DELETE' || !message.is_pinned || message.deleted_at) {
+          return previous.filter(item => item.id !== message.id);
+        }
+        const exists = previous.some(item => item.id === message.id);
+        return exists
+          ? previous.map(item => item.id === message.id ? message : item)
+          : [...previous, message];
       });
     });
     return () => {
@@ -529,9 +545,9 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     }
   };
 
-  const pinnedGroupMessages = useMemo(() => messages
+  const pinnedGroupMessages = useMemo(() => pinnedMessages
     .filter(message => message.is_pinned && !message.deleted_at)
-    .sort((a, b) => (b.pinned_at || b.created_at).localeCompare(a.pinned_at || a.created_at)), [messages]);
+    .sort((a, b) => (b.pinned_at || b.created_at).localeCompare(a.pinned_at || a.created_at)), [pinnedMessages]);
 
   const groupSearchResults = useMemo(() => {
     const query = groupSearchTerm.trim().toLocaleLowerCase();
@@ -560,12 +576,16 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     setGroupPinError(null);
     try {
       const result = await MessagingService.manageGroupChatPin({ messageId: message.id, action });
-      setMessages(previous => previous.map(item => item.id === message.id ? {
-        ...item,
+      const updatedMessage = {
+        ...message,
         is_pinned: result.is_pinned,
         pinned_at: result.pinned_at,
         pinned_by: result.pinned_by,
-      } : item));
+      };
+      setMessages(previous => previous.map(item => item.id === message.id ? updatedMessage : item));
+      setPinnedMessages(previous => action === 'pin'
+        ? [updatedMessage, ...previous.filter(item => item.id !== message.id)]
+        : previous.filter(item => item.id !== message.id));
     } catch (reason) {
       setGroupPinError(reason instanceof Error ? reason.message : 'The pinned-message change could not be saved.');
     } finally {
@@ -793,7 +813,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
             <ChevronDown className={`w-4 h-4 transition-transform ${pinnedPanelOpen ? 'rotate-180' : ''}`} />
           </button>
           {pinnedPanelOpen && <div className="px-3 pb-2 space-y-1 max-h-48 overflow-y-auto">
-            {pinnedGroupMessages.map(message => <button key={message.id} type="button" onClick={() => { setJumpToGroupMessageId(message.id); setPinnedPanelOpen(false); }} className="w-full text-left rounded-lg px-3 py-2 bg-white/70 dark:bg-black/10 hover:bg-white dark:hover:bg-white/10">
+            {pinnedGroupMessages.map(message => <button key={message.id} type="button" onClick={() => { setMessages(previous => previous.some(item => item.id === message.id) ? previous : [...previous, message].sort((a, b) => a.created_at.localeCompare(b.created_at))); setJumpToGroupMessageId(message.id); setPinnedPanelOpen(false); }} className="w-full text-left rounded-lg px-3 py-2 bg-white/70 dark:bg-black/10 hover:bg-white dark:hover:bg-white/10">
               <span className="block text-[10px] font-semibold text-[#785A1B] dark:text-[#D9BD7B]">{senderNames[message.sender_uid] || (message.sender_uid === currentUserId ? 'You' : 'FNI Member')} · {new Date(message.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })}</span>
               <span className="block text-xs truncate">{message.content || message.attachments?.[0]?.name || 'Shared attachment'}</span>
             </button>)}
