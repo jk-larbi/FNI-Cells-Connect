@@ -959,12 +959,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                       { label: 'Meeting location', value: m.meetingLocation },
                     ].filter(field => Boolean(field.value?.trim()));
                     return (
-                      <div key={m.id} className="rounded-xl border border-[#DCE3EC] overflow-hidden">
+                      <div key={m.id} className="fni-cell-report-card rounded-xl border border-[#DCE3EC] overflow-hidden">
                         <button
                           type="button"
                           aria-expanded={expanded}
                           onClick={() => setExpandedMeetingReportId(expanded ? null : m.id)}
-                          className="w-full p-3 flex items-center justify-between gap-3 text-left text-xs hover:bg-[#F8FAFC] transition-colors"
+                          className="fni-cell-report-toggle w-full p-3 flex items-center justify-between gap-3 text-left text-xs hover:bg-[#F8FAFC] transition-colors"
                         >
                           <span className="min-w-0">
                             <span className="block font-bold text-[#182230]">Meeting on {m.meetingDate}</span>
@@ -981,7 +981,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                           </span>
                         </button>
                         {expanded && (
-                          <div className="border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 space-y-3 text-xs">
+                          <div className="fni-cell-report-details border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 space-y-3 text-xs">
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                               <div><span className="block text-[10px] text-[#5A6B7C]">New members</span><strong className="text-[#182230]">{m.newMembers}</strong></div>
                               <div><span className="block text-[10px] text-[#5A6B7C]">Follow-up needed</span><strong className="text-[#182230]">{m.followUpNeeded}</strong></div>
@@ -995,7 +995,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                               </div>
                             )) : <p className="text-[#5A6B7C] italic">No theme, scripture, testimony or tutor notes were included in this report.</p>}
                             {m.reviewerComment && (
-                              <div className="rounded-lg border border-[#E7D9B5] bg-[#FDF8E8] p-2">
+                              <div className="fni-cell-report-reviewer-comment rounded-lg border border-[#E7D9B5] bg-[#FDF8E8] p-2">
                                 <div className="text-[10px] font-bold uppercase tracking-wide text-[#8E6C23] mb-1">Reviewer comment</div>
                                 <p className="whitespace-pre-wrap break-words text-[#5D4200]">{m.reviewerComment}</p>
                               </div>
@@ -1032,12 +1032,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                       { label: 'Outreach notes', value: e.notes },
                     ].filter(field => Boolean(field.value?.trim()));
                     return (
-                      <div key={e.id} className="rounded-xl border border-[#DCE3EC] overflow-hidden">
+                      <div key={e.id} className="fni-cell-report-card rounded-xl border border-[#DCE3EC] overflow-hidden">
                         <button
                           type="button"
                           aria-expanded={expanded}
                           onClick={() => setExpandedEvangelismReportId(expanded ? null : e.id)}
-                          className="w-full p-3 flex items-center justify-between gap-3 text-left text-xs hover:bg-[#F8FAFC] transition-colors"
+                          className="fni-cell-report-toggle w-full p-3 flex items-center justify-between gap-3 text-left text-xs hover:bg-[#F8FAFC] transition-colors"
                         >
                           <span className="min-w-0">
                             <span className="block font-bold text-[#182230]">Outreach on {e.date}</span>
@@ -1054,7 +1054,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                           </span>
                         </button>
                         {expanded && (
-                          <div className="border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 space-y-3 text-xs">
+                          <div className="fni-cell-report-details border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 space-y-3 text-xs">
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                               <div><span className="block text-[10px] text-[#5A6B7C]">Contacts captured</span><strong className="text-[#182230]">{e.contactsCaptured}</strong></div>
                               <div><span className="block text-[10px] text-[#5A6B7C]">Interested in ministry</span><strong className="text-[#182230]">{e.interestedInMinistry}</strong></div>
@@ -1075,7 +1075,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                               </div>
                             )) : <p className="text-[#5A6B7C] italic">No additional outreach narrative was included in this report.</p>}
                             {e.reviewerComment && (
-                              <div className="rounded-lg border border-[#E7D9B5] bg-[#FDF8E8] p-2">
+                              <div className="fni-cell-report-reviewer-comment rounded-lg border border-[#E7D9B5] bg-[#FDF8E8] p-2">
                                 <div className="text-[10px] font-bold uppercase tracking-wide text-[#8E6C23] mb-1">Reviewer comment</div>
                                 <p className="whitespace-pre-wrap break-words text-[#5D4200]">{e.reviewerComment}</p>
                               </div>
