@@ -1116,10 +1116,13 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                                   Captured {contact.dateCaptured || 'date not recorded'}
                                   {contact.assignedToName || contact.tutorName ? ` · Assigned to ${contact.assignedToName || contact.tutorName}` : ''}
                                 </span>
-                                <span className="mt-1 block text-[10px] text-[#5A6B7C]">
-                                  {contact.contactAttempts ?? 0} recorded contact attempts
-                                  {contact.nextFollowUpDate ? ` · Next: ${contact.nextFollowUpDate}` : ''}
-                                </span>
+                                {(contact.contactAttempts !== undefined || contact.nextFollowUpDate) && (
+                                  <span className="mt-1 block text-[10px] text-[#5A6B7C]">
+                                    {contact.contactAttempts !== undefined ? `${contact.contactAttempts} recorded contact attempts` : ''}
+                                    {contact.contactAttempts !== undefined && contact.nextFollowUpDate ? ' · ' : ''}
+                                    {contact.nextFollowUpDate ? `Next: ${contact.nextFollowUpDate}` : ''}
+                                  </span>
+                                )}
                               </span>
                               <span className="flex shrink-0 items-center gap-2">
                                 <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${completed ? 'bg-emerald-50 text-[#1F6E43]' : 'bg-[#FDF8E8] text-[#8E6C23]'}`}>
