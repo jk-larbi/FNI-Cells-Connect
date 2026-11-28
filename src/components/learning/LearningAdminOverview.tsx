@@ -87,7 +87,9 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
   activeTutorsCount,
   onNavigateSection,
 }) => {
-  const [dateRange, setDateRange] = useState<'all' | '30' | '90'>('all');
+  const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter' | 'year' | 'custom'>('month');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [trendCadence, setTrendCadence] = useState<'weekly' | 'monthly'>('weekly');
   const [participantQuery, setParticipantQuery] = useState('');
   const [cellFilter, setCellFilter] = useState('all');
@@ -104,17 +106,36 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
     item.status === 'awaiting_grading' || item.grading_status === 'awaiting_grading'
   );
 
-  const cutoff = dateRange === 'all' ? null : Date.now() - Number(dateRange) * 24 * 60 * 60 * 1000;
-  const rangeSubmissions = submissions.filter(item => {
-    if (!cutoff) return true;
-    const time = new Date(item.submitted_at).getTime();
-    return Number.isFinite(time) && time >= cutoff;
-  });
-  const rangeAttempts = quizAttempts.filter(item => {
-    if (!cutoff) return true;
-    const time = new Date(item.completed_at).getTime();
-    return Number.isFinite(time) && time >= cutoff;
-  });
+  const rangeBounds = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    if (dateRange === 'week') {
+      const daysSinceMonday = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - daysSinceMonday);
+    } else if (dateRange === 'month') {
+      start.setDate(1);
+    } else if (dateRange === 'quarter') {
+      start.setMonth(Math.floor(start.getMonth() / 3) * 3, 1);
+    } else if (dateRange === 'year') {
+      start.setMonth(0, 1);
+    } else if (customStartDate) {
+      const parsedStart = new Date(`${customStartDate}T00:00:00`);
+      if (!Number.isNaN(parsedStart.getTime())) start.setTime(parsedStart.getTime());
+    }
+    let end: number | null = null;
+    if (dateRange === 'custom' && customEndDate) {
+      const parsedEnd = new Date(`${customEndDate}T23:59:59.999`);
+      if (!Number.isNaN(parsedEnd.getTime())) end = parsedEnd.getTime();
+    }
+    return { start: start.getTime(), end };
+  }, [dateRange, customStartDate, customEndDate]);
+  const isWithinRange = (value: string) => {
+    const time = new Date(value).getTime();
+    return Number.isFinite(time) && time >= rangeBounds.start && (rangeBounds.end === null || time <= rangeBounds.end);
+  };
+  const rangeSubmissions = submissions.filter(item => isWithinRange(item.submitted_at));
+  const rangeAttempts = quizAttempts.filter(item => isWithinRange(item.completed_at));
 
   const gradedAssignmentScores = rangeSubmissions
     .filter(item => item.grade !== undefined && item.grade !== null)
@@ -334,12 +355,21 @@ export const LearningAdminOverview: React.FC<LearningAdminOverviewProps> = ({
           <p>Monitor assessments, participation and learning performance across the ministry.</p>
         </div>
         <div className="fni-la-heading-actions">
-          <label className="fni-la-range-label" htmlFor="fni-la-range">Reporting period</label>
-          <select id="fni-la-range" value={dateRange} onChange={event => setDateRange(event.target.value as 'all' | '30' | '90')}>
-            <option value="all">All records</option>
-            <option value="90">Last 90 days</option>
-            <option value="30">Last 30 days</option>
-          </select>
+          <label className="fni-la-range-label" htmlFor="fni-la-range">Date range
+            <select id="fni-la-range" value={dateRange} onChange={event => setDateRange(event.target.value as 'week' | 'month' | 'quarter' | 'year' | 'custom')}>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+              <option value="year">This Year</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </label>
+          {dateRange === 'custom' && (
+            <div className="fni-la-custom-range">
+              <label>Start date<input type="date" value={customStartDate} onChange={event => setCustomStartDate(event.target.value)} /></label>
+              <label>End date<input type="date" min={customStartDate || undefined} value={customEndDate} onChange={event => setCustomEndDate(event.target.value)} /></label>
+            </div>
+          )}
           <button type="button" className="fni-la-primary-action" onClick={() => onNavigateSection('quizzes')}>
             <FileCheck2 className="h-4 w-4" /> New quiz
           </button>
