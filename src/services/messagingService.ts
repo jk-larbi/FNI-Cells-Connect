@@ -69,6 +69,18 @@ export interface GroupChatMessage {
   pinned_by: string | null;
 }
 
+export interface GroupChatSummary {
+  id: string;
+  name: string;
+  description: string;
+  created_by_uid: string;
+  created_at: string;
+  member_role: string;
+  joined_at: string;
+  member_count: number;
+  last_message: GroupChatMessage | null;
+}
+
 export interface CreateGroupChatInput {
   name: string;
   description?: string;
@@ -89,6 +101,55 @@ export class MessagingService {
     const group = Array.isArray(data) ? data[0] : data;
     if (!group?.id) throw new Error('The group was not created. Please try again.');
     return group as { id: string; name: string; description: string; created_at: string };
+  }
+
+  static async getMyGroupChats(): Promise<GroupChatSummary[]> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('Group chats require an active FNI connection.');
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const userId = authData.user?.id;
+    if (authError || !userId) throw new Error('Sign in to view your groups.');
+
+    const { data: memberships, error: membershipError } = await supabase
+      .from('group_chat_members')
+      .select('group_id,member_role,joined_at')
+      .eq('user_id', userId)
+      .order('joined_at', { ascending: false });
+    if (membershipError) throw membershipError;
+    const rows = memberships || [];
+    const groupIds = Array.from(new Set(rows.map(row => row.group_id).filter(Boolean)));
+    if (!groupIds.length) return [];
+
+    const [{ data: groups, error: groupsError }, { data: memberRows, error: membersError }, { data: messages, error: messagesError }] = await Promise.all([
+      supabase.from('group_chats').select('id,name,description,created_by_uid,created_at').in('id', groupIds),
+      supabase.from('group_chat_members').select('group_id').in('group_id', groupIds),
+      supabase.from('group_chat_messages').select('*').in('group_id', groupIds).order('created_at', { ascending: false }).limit(200),
+    ]);
+    if (groupsError) throw groupsError;
+    if (membersError) throw membersError;
+    if (messagesError) throw messagesError;
+
+    const membershipByGroup = new Map(rows.map(row => [row.group_id, row]));
+    const counts = new Map<string, number>();
+    (memberRows || []).forEach(row => counts.set(row.group_id, (counts.get(row.group_id) || 0) + 1));
+    const latest = new Map<string, GroupChatMessage>();
+    (messages || []).forEach(row => {
+      if (!latest.has(row.group_id)) latest.set(row.group_id, row as GroupChatMessage);
+    });
+
+    return (groups || []).map(group => {
+      const membership = membershipByGroup.get(group.id);
+      return {
+        ...group,
+        member_role: membership?.member_role || 'member',
+        joined_at: membership?.joined_at || group.created_at,
+        member_count: counts.get(group.id) || 0,
+        last_message: latest.get(group.id) || null,
+      };
+    }).sort((a, b) => {
+      const aTime = a.last_message?.created_at || a.joined_at;
+      const bTime = b.last_message?.created_at || b.joined_at;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
+    });
   }
 
   static async getGroupChatMessages(groupId: string, limit = 100): Promise<GroupChatMessage[]> {
