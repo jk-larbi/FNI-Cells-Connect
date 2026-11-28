@@ -4,6 +4,10 @@ import { MessagingService, GroupChatCreationRequest } from '../../services/messa
 
 export const GroupChatRequestsView: React.FC = () => {
   const [requests, setRequests] = useState<GroupChatCreationRequest[]>([]);
+  const [oversightProfiles, setOversightProfiles] = useState<Array<{ id: string; full_name: string; role: string }>>([]);
+  const [overseerProfileId, setOverseerProfileId] = useState('');
+  const [savingOverseer, setSavingOverseer] = useState(false);
+  const [oversightNotice, setOversightNotice] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -14,7 +18,14 @@ export const GroupChatRequestsView: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      setRequests(await MessagingService.getGroupChatCreationRequests());
+      const [items, profiles, overseerId] = await Promise.all([
+        MessagingService.getGroupChatCreationRequests(),
+        MessagingService.getGroupChatOversightProfiles(),
+        MessagingService.getGroupChatOverseerProfileId(),
+      ]);
+      setRequests(items);
+      setOversightProfiles(profiles);
+      setOverseerProfileId(overseerId || '');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not load group requests.');
     } finally {
@@ -44,6 +55,23 @@ export const GroupChatRequestsView: React.FC = () => {
     }
   };
 
+  const saveOverseer = async () => {
+    if (savingOverseer) return;
+    setSavingOverseer(true);
+    setError(null);
+    setOversightNotice(null);
+    try {
+      await MessagingService.setGroupChatOverseerProfile(overseerProfileId || null);
+      setOversightNotice(overseerProfileId
+        ? 'Ministry oversight recipient saved. New group requests will notify this member and the administrator inbox.'
+        : 'No separate ministry oversight recipient is assigned. Administrator notifications remain active.');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'The oversight recipient could not be saved.');
+    } finally {
+      setSavingOverseer(false);
+    }
+  };
+
   const pendingCount = requests.filter(request => request.status === 'pending').length;
 
   return (
@@ -63,6 +91,23 @@ export const GroupChatRequestsView: React.FC = () => {
       </div>
 
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-xs">{error}</div>}
+      <section className="rounded-2xl border border-[#E6D8B7] bg-[#FBF8F0] p-4 sm:p-5 space-y-3">
+        <div>
+          <p className="text-xs font-bold tracking-wider text-[#9A7738]">MINISTRY OVERSIGHT</p>
+          <h4 className="text-sm font-extrabold text-navy-950 mt-1">Man of God / Ministry Overseer</h4>
+          <p className="text-xs text-slate-600 mt-1">Choose the active FNI account that should receive a direct notification whenever a member submits a new group request. The administrator inbox is notified separately.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select aria-label="Ministry oversight recipient" value={overseerProfileId} onChange={event => setOverseerProfileId(event.target.value)} className="min-h-10 flex-1 rounded-xl border border-[#E3D7BE] bg-white px-3 text-xs text-slate-800">
+            <option value="">No separate recipient assigned</option>
+            {oversightProfiles.map(profile => <option key={profile.id} value={profile.id}>{profile.full_name} · {profile.role.replace(/_/g, ' ')}</option>)}
+          </select>
+          <button type="button" onClick={() => void saveOverseer()} disabled={savingOverseer} className="min-h-10 rounded-xl bg-navy-900 px-4 text-xs font-bold text-white disabled:opacity-50">{savingOverseer ? 'Saving…' : 'Save oversight'}</button>
+        </div>
+        {oversightNotice && <p role="status" className="text-xs text-emerald-800">{oversightNotice}</p>}
+      </section>
+
+
       {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 px-4 py-3 text-xs">{notice}</div>}
 
       {loading && requests.length === 0 ? (
