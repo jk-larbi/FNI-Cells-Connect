@@ -7532,3 +7532,78 @@ html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="bg-emerald-50
 html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="bg-[#FDF8E8]"] { background:#3B3020 !important; }
 html.dark .fni-cell-groups-stitch .fni-cell-followup-card [class*="text-[#8E6C23]"] { color:#E9C77C !important; }
 html.dark .fni-cell-groups-stitch .fni-cell-followup-card .border-l-2 { border-left-color:#9B8351 !important; }
+
+
+/* Learning Portal mobile section navigation: clear separation in both themes. */
+@media (max-width:1023px) {
+  .fni-learning-stitch .fni-learning-mobile-nav {
+    min-height:48px;
+    padding:6px 6px 10px;
+    border:1px solid #D5DFEA;
+    border-radius:12px;
+    background:#EAF0F7;
+    scrollbar-color:#91A5BC #E1E8F0;
+    -webkit-overflow-scrolling:touch;
+  }
+  .fni-learning-stitch .fni-learning-mobile-nav::-webkit-scrollbar { height:5px; }
+  .fni-learning-stitch .fni-learning-mobile-nav::-webkit-scrollbar-track {
+    border-radius:999px;
+    background:#E1E8F0;
+  }
+  .fni-learning-stitch .fni-learning-mobile-nav::-webkit-scrollbar-thumb {
+    border-radius:999px;
+    background:#91A5BC;
+  }
+  .fni-learning-stitch .fni-learning-mobile-nav button {
+    border-color:#C4D0DE;
+    background:#FFFFFF;
+    color:#31465F;
+    box-shadow:0 1px 2px rgba(20,40,66,.07);
+  }
+  .fni-learning-stitch .fni-learning-mobile-nav button:hover {
+    border-color:#9BAFC5;
+    background:#F7F9FC;
+    color:#142842;
+  }
+  .fni-learning-stitch .fni-learning-mobile-nav button.is-active {
+    border-color:#142842;
+    background:#142842;
+    color:#FFFFFF;
+    box-shadow:0 2px 5px rgba(20,40,66,.18);
+  }
+  .fni-learning-stitch .fni-learning-mobile-nav button.is-active svg { color:#F1D18B; }
+  .fni-learning-stitch .fni-learning-mobile-nav button:focus-visible {
+    outline:2px solid #A88743;
+    outline-offset:2px;
+  }
+}
+@media (max-width:1023px) {
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav {
+    border-color:#354861;
+    background:#111C2D;
+    scrollbar-color:#607894 #17263A;
+  }
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav::-webkit-scrollbar-track { background:#17263A; }
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav::-webkit-scrollbar-thumb { background:#607894; }
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav button {
+    border-color:#465A73;
+    background:#1C2C41;
+    color:#D5DFEA;
+    box-shadow:none;
+  }
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav button:hover {
+    border-color:#7188A3;
+    background:#253A53;
+    color:#FFFFFF;
+  }
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav button.is-active {
+    border-color:#EEC068;
+    background:#EEC068;
+    color:#142842;
+    box-shadow:0 2px 6px rgba(0,0,0,.22);
+  }
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav button.is-active svg { color:#142842; }
+  html.dark .fni-learning-stitch .fni-learning-mobile-nav button:focus-visible {
+    outline-color:#EEC068;
+  }
+}
