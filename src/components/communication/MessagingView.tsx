@@ -71,6 +71,8 @@ import {
   Volume2,
   Repeat,
   Image as ImageIcon,
+  FileText,
+  Music,
   CheckCircle2,
   Settings,
   HelpCircle,
