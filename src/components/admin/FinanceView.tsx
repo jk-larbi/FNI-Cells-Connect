@@ -268,15 +268,15 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
           <div>
             <h3 className="font-bold text-navy-950 text-sm">Recent submissions</h3>
             <span className="text-xs text-slate-500">
-              Immutable entry log tied to weekly cell meeting returns ({records.length} records)
+              Immutable entry log tied to weekly cell meeting returns ({filteredRecords.length} records)
             </span>
           </div>
         </div>
 
         <div className="md:hidden divide-y divide-slate-100">
-          {records.length === 0 ? (
+          {filteredRecords.length === 0 ? (
             <p className="p-6 text-center text-sm text-slate-500">No individual offering entries recorded yet.</p>
-          ) : records.map(rec => (
+          ) : filteredRecords.map(rec => (
             <article key={rec.id} className="p-4 space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -308,14 +308,14 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onBack }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {records.length === 0 ? (
+              {filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400">
                     No individual offering entries recorded yet.
                   </td>
                 </tr>
               ) : (
-                records.map(rec => (
+                filteredRecords.map(rec => (
                   <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3.5 px-5 font-semibold text-navy-950 whitespace-nowrap">
                       {rec.meetingDate}
