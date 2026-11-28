@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         className={`fixed top-0 bottom-0 left-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${
           'z-50 shadow-2xl'
-        } flex flex-col justify-between transition-all duration-200 ease-out motion-reduce:transition-none fni-glass-sidebar ${
+        } flex flex-col justify-between transition-all duration-200 ease-out motion-reduce:transition-none fni-glass-sidebar ${!isAdmin ? 'fni-tutor-stitch-sidebar' : ''} ${
           isOpen
             ? 'translate-x-0'
             : isOverlayMode
