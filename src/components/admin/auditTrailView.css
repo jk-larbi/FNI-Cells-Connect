@@ -1,0 +1,8 @@
+/* Audit Trail mobile search card — aligned with Stitch */
+.fni-audit-mobile-search{padding:13px 14px;border:1px solid #DCE3EC;border-radius:10px;background:#FFFFFF;display:flex;flex-direction:column;gap:7px}
+.fni-audit-mobile-search>label{color:#5A6B7C;font:600 11px/16px 'Libre Franklin',sans-serif}
+.fni-audit-mobile-search-field{display:flex;align-items:center;gap:9px;min-height:26px;color:#5A6B7C}
+.fni-audit-mobile-search-field input{width:100%;min-width:0;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:0!important;color:#142842;font:400 14px/20px 'Source Sans 3',sans-serif}
+.fni-audit-mobile-search-field input::placeholder{color:#7A8999}
+.fni-audit-mobile-search-field button{display:inline-flex;align-items:center;justify-content:center;color:#5A6B7C}
+@media(min-width:768px){.fni-audit-mobile-search{display:none}}
