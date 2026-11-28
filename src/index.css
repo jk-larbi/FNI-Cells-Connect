@@ -4494,6 +4494,15 @@ html.dark .fni-chat-composer textarea:focus-visible {
   display:flex;align-items:center;gap:12px;width:100%;min-height:68px;
   padding:10px 0;text-align:left;border-top:1px solid #E8EDF3;
 }
+
+.fni-account-settings .fni-account-management-notice {
+  display:flex;align-items:flex-start;gap:9px;margin-top:12px;padding:12px 13px;
+  border:1px solid #DCE3EC;border-radius:9px;background:#F7F9FC;
+  color:#5A6B7C;font-family:"Source Sans 3",sans-serif;font-size:12px;line-height:1.5;
+}
+.fni-account-settings .fni-account-management-notice svg {color:#8E6C23;margin-top:1px;}
+.fni-account-settings .fni-account-management-notice p {margin:0;min-width:0;}
+
 .fni-account-settings .fni-account-management-row > span:nth-child(2) {
   display:flex;flex:1;min-width:0;flex-direction:column;gap:4px;
 }

@@ -846,30 +846,35 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
               <div>
                 <p className="fni-account-eyebrow">ACCOUNT CONTROL</p>
                 <h1>Account Management</h1>
-                <p>Manage your signed-in devices, get assistance and review account-level requests.</p>
+                <p>Manage your profile, account access and requests to FNI Administration.</p>
               </div>
             </div>
 
             <section className="fni-account-management-group">
               <div className="fni-account-management-heading">
-                <h2>Access &amp; sessions</h2>
-                <p>Review where your account is signed in.</p>
+                <h2>Profile &amp; account access</h2>
+                <p>Review your personal details and the devices connected to your account.</p>
               </div>
+              <button type="button" onClick={() => setCurrentSection('manage_profile')} className="fni-account-management-row">
+                <span className="fni-account-category-icon"><User /></span>
+                <span><strong>My profile</strong><small>Review your profile photo and personal information</small></span>
+                <ChevronRight />
+              </button>
               <button type="button" onClick={() => setCurrentSection('devices')} className="fni-account-management-row">
                 <span className="fni-account-category-icon"><Smartphone /></span>
-                <span><strong>Devices and active sessions</strong><small>View this device and sign out other sessions</small></span>
+                <span><strong>Devices and active sessions</strong><small>Review this device and manage other signed-in sessions</small></span>
                 <ChevronRight />
               </button>
             </section>
 
             <section className="fni-account-management-group">
               <div className="fni-account-management-heading">
-                <h2>Help &amp; account requests</h2>
-                <p>Get help with your account or submit a request for administrator review.</p>
+                <h2>Support &amp; account requests</h2>
+                <p>Get assistance or submit an account request for review.</p>
               </div>
               <button type="button" onClick={() => setCurrentSection('help_support')} className="fni-account-management-row">
                 <span className="fni-account-category-icon"><HelpCircle /></span>
-                <span><strong>Contact support</strong><small>Find help and guidance for using the portal</small></span>
+                <span><strong>Contact administrator</strong><small>Get help with your account or portal access</small></span>
                 <ChevronRight />
               </button>
               <button type="button" onClick={() => setCurrentSection('deactivate_account')} className="fni-account-management-row">
@@ -877,22 +882,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsProps> = ({
                 <span><strong>Request account deactivation</strong><small>Submit a request for FNI Administration to review</small></span>
                 <ChevronRight />
               </button>
-            </section>
-
-            <section className="fni-account-management-group fni-account-management-more">
-              <div className="fni-account-management-heading">
-                <h2>More app settings</h2>
-                <p>Additional settings already available in your account.</p>
-              </div>
-              <div className="fni-account-more-grid">
-                <button type="button" onClick={() => setCurrentSection('appearance')}><Palette /><span>Appearance</span><ChevronRight /></button>
-                <button type="button" onClick={() => setCurrentSection('data_storage')}><Layers /><span>Data and Storage</span><ChevronRight /></button>
-                <button type="button" onClick={() => setCurrentSection('chat_wallpaper')}><ImageIcon /><span>Chat Wallpaper</span><ChevronRight /></button>
-                <button type="button" onClick={() => setCurrentSection('chat_folders')}><Settings /><span>Chat Folders</span><ChevronRight /></button>
-                <button type="button" onClick={() => setCurrentSection('power_saving')}><Sun /><span>Power Saving</span><ChevronRight /></button>
-                <button type="button" onClick={() => setCurrentSection('app_updates')}><RefreshCw /><span>Advanced</span><ChevronRight /></button>
-                <button type="button" onClick={() => setCurrentSection('privacy_policy')}><Shield /><span>Privacy Policy</span><ChevronRight /></button>
-                <button type="button" onClick={() => setCurrentSection('terms_of_service')}><FileText /><span>Terms of Service</span><ChevronRight /></button>
+              <div className="fni-account-management-notice">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <p>Account removal is handled by authorized FNI administrators rather than self-service. Your request will be reviewed before any account action is taken.</p>
               </div>
             </section>
 
