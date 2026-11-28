@@ -225,6 +225,45 @@ export class MessagingService {
     });
   }
 
+  static async getGroupChatMembers(groupId: string): Promise<Array<{
+    user_id: string;
+    full_name: string;
+    role: string;
+    cell_name?: string;
+    photo_url?: string;
+    member_role: string;
+    joined_at: string;
+  }>> {
+    if (!supabase || !isSupabaseConfigured || !groupId) throw new Error('A valid group and FNI connection are required.');
+    const { data: memberships, error: membershipError } = await supabase
+      .from('group_chat_members')
+      .select('user_id,member_role,joined_at')
+      .eq('group_id', groupId)
+      .order('joined_at', { ascending: true });
+    if (membershipError) throw membershipError;
+    const rows = memberships || [];
+    const userIds = Array.from(new Set(rows.map(row => row.user_id).filter(Boolean)));
+    if (!userIds.length) return [];
+    const { data: profiles, error: profileError } = await supabase
+      .from('profiles')
+      .select('id,full_name,role,cell_name,photo_url')
+      .in('id', userIds);
+    if (profileError) throw profileError;
+    const profileById = new Map((profiles || []).map(profile => [profile.id, profile]));
+    return rows.map(row => {
+      const profile = profileById.get(row.user_id);
+      return {
+        user_id: row.user_id,
+        full_name: profile?.full_name?.trim() || 'FNI Member',
+        role: profile?.role || 'Member',
+        cell_name: profile?.cell_name || undefined,
+        photo_url: profile?.photo_url || undefined,
+        member_role: row.member_role || 'member',
+        joined_at: row.joined_at,
+      };
+    });
+  }
+
   static async getGroupChatSenderNames(userIds: string[]): Promise<Record<string, string>> {
     if (!supabase || !isSupabaseConfigured || userIds.length === 0) return {};
     const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
