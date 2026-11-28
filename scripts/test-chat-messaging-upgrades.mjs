@@ -115,11 +115,11 @@ assert.match(messaging, /createGroupChat\(input: CreateGroupChatInput\)/, 'group
 assert.match(messaging, /getGroupChatCreationRequests\(\)/, 'admin group approval queue must load persisted creation requests');
 assert.match(messaging, /reviewGroupChatCreationRequest\(/, 'admin group review must call the secure approval RPC');
 assert.match(view, /group\.status === 'approved'/, 'member-created groups must remain pending until approved');
-assert.match(view, /awaiting administrator approval/, 'members must receive clear pending approval feedback');
-const groupApprovalView = read('src/components/admin/GroupChatRequestsView.tsx');
+assert.match(view, /after administrator approval/, 'members must receive clear pending approval feedback');
+const groupApprovalView = read('../src/components/admin/GroupChatRequestsView.tsx');
 assert.match(groupApprovalView, /Approve group/, 'admin portal must expose group approval action');
 assert.match(groupApprovalView, /Decline/, 'admin portal must expose group decline action');
-const groupApprovalMigration = read('supabase/migrations/20261128152147_group_chat_approval_workflow.sql');
+const groupApprovalMigration = read('../supabase/migrations/20261128152147_group_chat_approval_workflow.sql');
 assert.match(groupApprovalMigration, /group_chat_creation_requests/, 'group creation requests must persist in Supabase');
 assert.match(groupApprovalMigration, /private\.is_fni_admin\(\)/, 'group request review must be restricted to ministry administrators');
 assert.match(groupApprovalMigration, /REQUEST_GROUP_CHAT_APPROVAL/, 'group requests must be written to the audit trail');
