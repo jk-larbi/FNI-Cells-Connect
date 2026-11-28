@@ -193,3 +193,14 @@ assert.match(folderModal, /type: 'community' \| 'direct' \| 'saved' \| 'group'/,
 assert.match(view, /groupChats\]\);/, 'group list memo must refresh when authenticated memberships load');
 assert.match(view, /c\.type === 'community' \|\| c\.type === 'group'/, 'group folder counts must include member-created groups');
 console.log('Group chats are supported by custom folder filters and unread grouping.');
+
+const groupChatInfoMigrationChecks = [
+  /group_chats_update_owner/,
+];
+assert.match(messaging, /updateGroupChatDetails\(input:/, 'group information must use a dedicated service method');
+assert.match(messaging, /\.from\('group_chats'\)[\s\S]*?\.update\(\{ name, description \}\)[\s\S]*?\.eq\('id', input\.groupId\)/, 'group details must persist to the real group chat record');
+assert.match(view, /groupInfoOpen/, 'group conversations must expose a group information panel');
+assert.match(view, /currentMemberRole !== 'owner'/, 'only group owners may edit group information');
+assert.match(view, /MessagingService\.updateGroupChatDetails\(/, 'saving group information must persist through Supabase');
+assert.match(view, /Group information/, 'the group details panel must be discoverable from the conversation header');
+console.log('Group information, owner-only editing and persistent metadata regression checks passed.');
