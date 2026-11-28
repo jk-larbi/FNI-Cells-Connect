@@ -371,7 +371,7 @@ export const AppLayout: React.FC = () => {
   const isLearningTab = effectiveTab.startsWith('learning-') || effectiveTab === 'learning-portal';
 
   return (
-    <div className={`fni-app-shell ${isAdmin ? 'fni-admin-stitch-shell' : ''} min-h-screen bg-white dark:bg-[#0a111c] flex flex-col text-[#182230] dark:text-slate-100 overflow-x-hidden w-full max-w-full ${effectiveTab === 'messages' ? 'fni-messaging-route' : ''}`}>
+    <div className={`fni-app-shell ${isAdmin ? 'fni-admin-stitch-shell' : 'fni-tutor-stitch-shell'} min-h-screen bg-white dark:bg-[#0a111c] flex flex-col text-[#182230] dark:text-slate-100 overflow-x-hidden w-full max-w-full ${effectiveTab === 'messages' ? 'fni-messaging-route' : ''}`}>
       <div className="fni-app-body flex flex-1 min-h-0 w-full min-w-0">
         {/* Navigation Sidebar */}
         <Sidebar
