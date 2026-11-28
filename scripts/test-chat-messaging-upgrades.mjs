@@ -224,3 +224,10 @@ assert.match(view, /MessagingService\.uploadChatAttachment\(authUid, file\)/, 'g
 assert.match(view, /MessagingService\.sendGroupChatMessage\([\s\S]*?attachments: \[attachment\]/, 'uploaded media must be attached to a persisted group message');
 assert.match(view, /groupMediaFilter/, 'gallery must provide all, photos, videos and files filters');
 assert.match(view, /accept=/, 'gallery picker must constrain uploads to supported media and documents');
+
+assert.match(view, /groupImagePreview/, 'group gallery photos must open in an in-app full-screen preview');
+const groupMediaStorageMigration = read('../supabase/migrations/20261128170000_group_chat_media_storage_access.sql');
+assert.match(groupMediaStorageMigration, /bucket_id = 'fni-chat-media'/, 'group media must reuse the existing private chat bucket');
+assert.match(groupMediaStorageMigration, /message\.attachments @> jsonb_build_array/, 'private media access must require a matching persisted group message attachment');
+assert.match(groupMediaStorageMigration, /private\.is_group_member\(message\.group_id\)/, 'only current group members may resolve attached media');
+console.log('Private group media gallery, upload, preview and member-only Storage access regression checks passed.');
