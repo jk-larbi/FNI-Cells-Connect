@@ -561,14 +561,6 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     }).slice(0, 50);
   }, [messages, groupSearchTerm, senderNames]);
 
-  useEffect(() => {
-    if (!jumpToGroupMessageId) return;
-    const target = document.getElementById(`fni-group-message-${jumpToGroupMessageId}`);
-    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const timeout = window.setTimeout(() => setJumpToGroupMessageId(null), 1800);
-    return () => window.clearTimeout(timeout);
-  }, [jumpToGroupMessageId]);
-
   const handleGroupPinToggle = async (message: GroupChatMessage) => {
     if (!canManageGroupMembers || pinnedActionId) return;
     const action = message.is_pinned ? 'unpin' : 'pin';
@@ -612,6 +604,15 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
     const node = streamRef.current;
     if (node) node.scrollTop = node.scrollHeight;
   }, [messages.length]);
+
+  useEffect(() => {
+    if (!jumpToGroupMessageId) return;
+    const target = document.getElementById(`fni-group-message-${jumpToGroupMessageId}`);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const timeout = window.setTimeout(() => setJumpToGroupMessageId(null), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [jumpToGroupMessageId]);
+
 
   const send = async (event: React.FormEvent) => {
     event.preventDefault();
