@@ -336,6 +336,19 @@ export class MessagingService {
     return data as { group_id: string; message_id: string; is_pinned: boolean; pinned_at: string | null; pinned_by: string | null };
   }
 
+  static async getPinnedGroupChatMessages(groupId: string): Promise<GroupChatMessage[]> {
+    if (!supabase || !isSupabaseConfigured || !groupId) throw new Error('A valid group and FNI connection are required.');
+    const { data, error } = await supabase
+      .from('group_chat_messages')
+      .select('*')
+      .eq('group_id', groupId)
+      .eq('is_pinned', true)
+      .is('deleted_at', null)
+      .order('pinned_at', { ascending: false });
+    if (error) throw error;
+    return (data || []) as GroupChatMessage[];
+  }
+
   static async getGroupChatMessages(groupId: string, limit = 100): Promise<GroupChatMessage[]> {
     if (!supabase || !isSupabaseConfigured || !groupId) throw new Error('A valid group and FNI connection are required.');
     const { data, error } = await supabase
