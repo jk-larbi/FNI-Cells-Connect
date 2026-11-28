@@ -6941,3 +6941,52 @@ html.dark .fni-evangelism-followups>div:nth-child(4) table tbody tr:hover{backgr
   .fni-evangelism-followups input,
   .fni-evangelism-followups select{transition:none}
 }
+
+
+/* Light-mode administrator sidebar: override the Stitch shell's legacy
+   navy/white treatment with the shared FNI white, soft-blue and gold palette.
+   This selector intentionally outranks .fni-admin-stitch-shell .fni-glass-sidebar. */
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar {
+  background: #F3F7FB !important;
+  color: #25384A !important;
+  border-right: 1px solid #DCE6F0 !important;
+  box-shadow: 0 10px 28px rgba(37, 56, 74, .07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar > div:first-child {
+  background: #EAF1F8 !important;
+  border-bottom: 1px solid #D7E2ED !important;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar span[class*="text-[9px]"],
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar span[class*="text-[10px]"],
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar .text-slate-400,
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar .text-slate-500 {
+  color: #536779 !important;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar span[class*="text-sm"][class*="font-extrabold"] {
+  color: #315F87 !important;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar button:not([class*="bg-[#142B4A]"]):not([class*="bg-rose-"]):not([class*="bg-[#C74646]"]) {
+  color: #40566B;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar button:hover:not([class*="bg-[#142B4A]"]):not([class*="bg-rose-"]) {
+  background: #E5EEF7 !important;
+  color: #244F75 !important;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar [class*="bg-[#142B4A]"],
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar button[class*="bg-brand-navy"],
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar button[class*="bg-navy-800"] {
+  background: #376F9F !important;
+  color: #FFFFFF !important;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar [class*="bg-[#142B4A]"] svg,
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar button[class*="bg-brand-navy"] svg,
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar button[class*="bg-navy-800"] svg {
+  color: #FFFFFF !important;
+}
+html:not(.dark) .fni-admin-stitch-shell .fni-glass-sidebar .fni-sidebar-tooltip {
+  background: #315F87 !important;
+  border-color: #D5E1EC !important;
+  color: #FFFFFF !important;
+}
