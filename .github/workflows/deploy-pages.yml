@@ -12,9 +12,12 @@ permissions:
   pages: write
   id-token: write
 
+# Keep production deployments separate from pull-request previews.
+# New commits to the same PR may replace older PR checks, but a PR can
+# never cancel a main-branch deployment.
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
