@@ -117,6 +117,35 @@ export class MessagingService {
     return group as { id: string; name: string; description: string; created_at: string; status: 'pending' | 'approved' };
   }
 
+  static async getGroupChatOversightProfiles(): Promise<Array<{ id: string; full_name: string; role: string }>> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('FNI connection is unavailable.');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id,full_name,role')
+      .eq('is_active', true)
+      .eq('is_test_account', false)
+      .order('full_name', { ascending: true });
+    if (error) throw error;
+    return (data || []) as Array<{ id: string; full_name: string; role: string }>;
+  }
+
+  static async getGroupChatOverseerProfileId(): Promise<string | null> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('FNI connection is unavailable.');
+    const { data, error } = await supabase
+      .from('group_chat_oversight_settings')
+      .select('overseer_profile_id')
+      .eq('id', 1)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.overseer_profile_id || null;
+  }
+
+  static async setGroupChatOverseerProfile(profileId: string | null): Promise<void> {
+    if (!supabase || !isSupabaseConfigured) throw new Error('FNI connection is unavailable.');
+    const { error } = await supabase.rpc('admin_set_group_chat_overseer', { p_profile_id: profileId });
+    if (error) throw error;
+  }
+
   static async getGroupChatCreationRequests(): Promise<GroupChatCreationRequest[]> {
     if (!supabase || !isSupabaseConfigured) throw new Error('FNI connection is unavailable.');
     const { data, error } = await supabase
