@@ -100,7 +100,7 @@ export const CellLocationsMap: React.FC<Props> = ({ cells }) => {
 
   const missing = cells.length - located.length;
   return (
-    <section className="rounded-2xl border border-[#E3E8EF] bg-white p-4 sm:p-5 space-y-3">
+    <section className="fni-cell-location-map rounded-2xl border border-[#E3E8EF] bg-white p-4 sm:p-5 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-bold text-[#142B4A]">All Cell Locations</h2>
@@ -111,7 +111,7 @@ export const CellLocationsMap: React.FC<Props> = ({ cells }) => {
           <span className={missing ? 'text-amber-700' : 'text-slate-500'}>{missing} awaiting location</span>
         </div>
       </div>
-      <div ref={containerRef} className="w-full h-64 sm:h-80 rounded-xl overflow-hidden bg-slate-100" />
+      <div ref={containerRef} className="fni-cell-location-map-canvas w-full h-64 sm:h-80 rounded-xl overflow-hidden bg-slate-100" />
       {mapError && <p role="alert" className="text-xs text-rose-600">{mapError}</p>}
       {located.length === 0 && !mapError && (
         <p className="text-xs text-[#667085]">No cell venue coordinates have been entered yet. Add the real venue address and map coordinates in Edit Cell Details to place a marker.</p>
