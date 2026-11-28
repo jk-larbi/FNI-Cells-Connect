@@ -38,7 +38,7 @@ export interface ChatFolderModalProps {
     name: string;
     role?: string;
     cellName?: string;
-    type: 'community' | 'direct' | 'saved';
+    type: 'community' | 'direct' | 'saved' | 'group';
     avatarUrl?: string;
     unreadCount?: number;
   }>;
