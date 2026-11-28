@@ -860,7 +860,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 lg:gap-6 items-start">
               <div className="min-w-0 space-y-5">
-                <CellMembersPanel cellId={selectedCell.id} canEdit={false} />
+                <CellMembersPanel cellId={selectedCell.id} canEdit />
                 <CellLeadershipPanel
                   cell={selectedCell}
                   onUpdated={async () => {
