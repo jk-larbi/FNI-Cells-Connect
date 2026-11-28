@@ -293,6 +293,7 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
   const [groupMembers, setGroupMembers] = useState<Array<{ user_id: string; full_name: string; role: string; cell_name?: string; photo_url?: string; member_role: string; joined_at: string }>>([]);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [memberSearch, setMemberSearch] = useState('');
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -341,6 +342,12 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
       .finally(() => { if (!cancelled) setMembersLoading(false); });
     return () => { cancelled = true; };
   }, [group.id]);
+
+  const filteredGroupMembers = useMemo(() => {
+    const query = memberSearch.trim().toLowerCase();
+    if (!query) return groupMembers;
+    return groupMembers.filter(member => [member.full_name, member.role, member.cell_name, member.member_role].filter(Boolean).join(' ').toLowerCase().includes(query));
+  }, [groupMembers, memberSearch]);
 
   const senderIdsKey = useMemo(
     () => Array.from(new Set(messages.map(message => message.sender_uid).filter(uid => uid && uid !== currentUserId))).sort().join(','),
@@ -406,17 +413,18 @@ const GroupChatConversation: React.FC<GroupChatConversationProps> = ({
               <div><h3 id="group-members-title" className="font-semibold text-sm">Group members</h3><p className="text-xs text-[#536273] dark:text-[#A8B6C8]">{groupMembers.length} members in {group.name}</p></div>
               <button type="button" onClick={() => setMembersOpen(false)} aria-label="Close group members" className="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10"><X className="w-4 h-4 mx-auto" /></button>
             </header>
+            <div className="px-3 pt-3"><input type="search" value={memberSearch} onChange={event => setMemberSearch(event.target.value)} placeholder="Search group members…" aria-label="Search group members" className="w-full rounded-xl px-3 py-2.5 text-sm bg-[#EDF5FC] dark:bg-[#101620] border border-[#DCEAF6] dark:border-[#2E3B4E] outline-none focus:ring-2 focus:ring-[#8BB5DC]" /></div>
             <div className="overflow-y-auto p-3 space-y-1">
               {membersLoading && <p className="py-8 text-center text-sm text-[#536273] dark:text-[#A8B6C8]">Loading members…</p>}
               {membersError && <p role="alert" className="p-3 text-sm text-red-600 dark:text-red-300">{membersError}</p>}
-              {!membersLoading && !membersError && groupMembers.map(member => (
+              {!membersLoading && !membersError && filteredGroupMembers.map(member => (
                 <div key={member.user_id} className="flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-[#EDF5FC] dark:hover:bg-[#1C2636]">
                   {member.photo_url ? <img src={member.photo_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className="w-10 h-10 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/40 text-[#785A1B] dark:text-[#D9BD7B] flex items-center justify-center text-sm font-semibold shrink-0">{member.full_name.split(/\s+/).map(part => part[0]).slice(0,2).join('').toUpperCase()}</div>}
-                  <div className="min-w-0 flex-1"><p className="text-sm font-semibold truncate">{member.full_name}</p><p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate">{[member.role, member.cell_name].filter(Boolean).join(' · ') || 'FNI Member'}</p></div>
+                  <div className="min-w-0 flex-1"><p className="text-sm font-semibold truncate">{member.full_name}</p><p className="text-xs text-[#536273] dark:text-[#A8B6C8] truncate">{[member.role, member.cell_name].filter(Boolean).join(' · ') || 'FNI Member'}</p><p className="text-[10px] text-[#7A8795] dark:text-[#91A0B2]">Joined {new Date(member.joined_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</p></div>
                   <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-[#F5EDD9] dark:bg-[#5D4200]/30 text-[#785A1B] dark:text-[#D9BD7B] capitalize">{member.member_role}</span>
                 </div>
               ))}
-              {!membersLoading && !membersError && groupMembers.length === 0 && <p className="py-8 text-center text-sm text-[#536273] dark:text-[#A8B6C8]">No member details are available.</p>}
+              {!membersLoading && !membersError && filteredGroupMembers.length === 0 && <p className="py-8 text-center text-sm text-[#536273] dark:text-[#A8B6C8]">No member details are available.</p>}
             </div>
           </section>
         </div>
