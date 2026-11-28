@@ -1114,12 +1114,12 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                         );
                         const completed = ['Completed', 'Completed / Joined', 'Joined a cell', 'Joined Ministry', 'Established in Church'].includes(contact.followUpStatus);
                         return (
-                          <article key={contact.id} className="overflow-hidden rounded-xl border border-[#DCE3EC] bg-white">
+                          <article key={contact.id} className="fni-cell-followup-card overflow-hidden rounded-xl border border-[#DCE3EC] bg-white">
                             <button
                               type="button"
                               aria-expanded={expanded}
                               onClick={() => setExpandedFollowUpContactId(expanded ? null : contact.id)}
-                              className="flex w-full items-center justify-between gap-3 p-3 text-left transition-colors hover:bg-[#F8FAFC]"
+                              className="fni-cell-followup-toggle flex w-full items-center justify-between gap-3 p-3 text-left transition-colors hover:bg-[#F8FAFC]"
                             >
                               <span className="min-w-0">
                                 <span className="block truncate text-xs font-bold text-[#182230]">{contactName}</span>
@@ -1143,7 +1143,7 @@ export const CellManagementView: React.FC<CellManagementViewProps> = ({ onBack }
                               </span>
                             </button>
                             {expanded && (
-                              <div className="space-y-3 border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 text-xs">
+                              <div className="fni-cell-followup-details space-y-3 border-t border-[#DCE3EC] bg-[#F8FAFC] p-3 text-xs">
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                   {contact.phone && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">Phone</span><a className="font-semibold text-[#142842] underline-offset-2 hover:underline" href={`tel:${contact.phone}`}>{contact.phone}</a></div>}
                                   {contact.whatsappNumber && <div><span className="block text-[10px] font-semibold text-[#5A6B7C]">WhatsApp</span><a className="font-semibold text-[#142842] underline-offset-2 hover:underline" href={`https://wa.me/${contact.whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer">{contact.whatsappNumber}</a></div>}
