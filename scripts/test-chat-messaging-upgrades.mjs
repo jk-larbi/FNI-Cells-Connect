@@ -62,3 +62,23 @@ assert.match(privatePinMigration, /v_profile_id is distinct from v_sender/, 'pri
 assert.match(privatePinMigration, /v_profile_id is distinct from v_recipient/, 'private pin RPC must validate recipient participation');
 assert.match(privatePinMigration, /return true;/, 'private pin RPC must return an explicit success result');
 console.log('Private message participant pinning regression checks passed.');
+
+
+// Real-time online status and durable last-seen regression checks.
+const presenceMigration = read('../supabase/migrations/20261128110000_fni_chat_presence_and_last_seen.sql');
+assert.match(presenceMigration, /create table if not exists public\.fni_user_presence/i, 'member presence must have a durable database table');
+assert.match(presenceMigration, /enable row level security/i, 'presence records must be protected by RLS');
+assert.match(presenceMigration, /p\.supabase_user_id = \(select auth\.uid\(\)\)/i, 'members may only write their own presence records');
+assert.match(presenceMigration, /fni_authenticated_member_presence_read/i, 'authenticated active members must be able to receive presence events');
+assert.match(presenceMigration, /fni_authenticated_member_presence_write/i, 'authenticated active members must be able to publish presence events');
+assert.match(presenceMigration, /alter publication supabase_realtime add table public\.fni_user_presence/i, 'last-seen changes must be available through Realtime');
+assert.match(view, /supabase\.channel\('fni-presence'/, 'chat must subscribe to the shared FNI presence channel');
+assert.match(view, /presenceChannel\.track\(/, 'chat must publish the current member as online');
+assert.match(view, /presenceChannel\.untrack\(/, 'chat must clear online presence when the app is backgrounded or closed');
+assert.match(view, /presenceChannel\.presenceState\(\)/, 'chat must derive online members from the Realtime presence state');
+assert.match(view, /from\('fni_user_presence'\)[\s\S]*?upsert\(/, 'chat must persist last-seen heartbeats');
+assert.match(view, /setInterval\(\(\) => \{[\s\S]*?writeLastSeen\(\)/, 'chat must refresh last-seen while active');
+assert.match(view, /visibilitychange/, 'chat must update availability when the app is backgrounded or resumed');
+assert.match(view, /isOnline: onlineMemberIds\.has\(peer\.id\)/, 'direct contacts must use actual presence, not a hardcoded online flag');
+assert.match(view, /formatMemberLastSeen\(activeContact\?\.lastSeenAt\)/, 'chat headers must display the stored last-seen time');
+console.log('FNI real-time online presence and durable last-seen regression checks passed.');
